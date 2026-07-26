@@ -1,0 +1,3167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>ScreeningMantis – Indian & US Stock Screener</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/>
+<style>
+/* ─── TOKENS ──────────────────── */
+:root{
+  --bg:#F1F3F6;--surface:#fff;--border:#E2E8F0;--border2:#CBD5E1;
+  --text:#0F172A;--text2:#475569;--text3:#94A3B8;
+  --green:#16A34A;--green-bg:#DCFCE7;--green-lt:#F0FDF4;
+  --red:#DC2626;  --red-bg:#FEE2E2;  --red-lt:#FEF2F2;
+  --orange:#D97706;--orange-bg:#FEF3C7;
+  --blue:#2563EB; --blue-bg:#EFF6FF;
+  --purple:#7C3AED;--purple-bg:#F5F3FF;
+  --r:8px;--rl:12px;
+  --sh:0 1px 3px rgba(0,0,0,.07),0 1px 2px rgba(0,0,0,.05);
+  --shm:0 4px 12px rgba(0,0,0,.08);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{font-size:13px}
+body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;line-height:1.4}
+button{cursor:pointer;font-family:inherit;border:none;background:none}
+select{font-family:inherit}
+input{font-family:inherit}
+
+/* ─── HEADER ─────────────────── */
+.hdr{position:sticky;top:0;z-index:100;background:var(--surface);
+  border-bottom:1.5px solid var(--border);padding:0 16px;height:52px;
+  display:flex;align-items:center;justify-content:space-between;box-shadow:var(--sh)}
+.logo{display:flex;align-items:center;gap:8px;text-decoration:none;color:inherit}
+.logo-ico{width:30px;height:30px;background:linear-gradient(135deg,#166534,#22C55E);
+  border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0}
+.logo-txt{font-size:15px;font-weight:700;letter-spacing:-.3px}
+.logo-txt span{color:#16A34A}
+.hdr-r{display:flex;align-items:center;gap:6px}
+.search-bar{display:flex;align-items:center;gap:5px;background:var(--bg);
+  border:1.5px solid var(--border2);border-radius:20px;padding:5px 11px;transition:border-color .15s}
+.search-bar:focus-within{border-color:var(--blue)}
+.search-bar input{border:none;background:transparent;outline:none;font-size:12.5px;color:var(--text);width:140px}
+.search-bar input::placeholder{color:var(--text3)}
+.hbtn{display:flex;align-items:center;gap:5px;padding:6px 10px;border-radius:var(--r);
+  font-size:12px;font-weight:500;color:var(--text2);border:1.5px solid var(--border);
+  background:var(--surface);transition:background .12s,border-color .12s}
+.hbtn:hover{background:var(--bg)}
+.hbtn.dark{background:#1E293B;color:#F8FAFC;border-color:#1E293B}
+.hbtn.dark:hover{background:#0F172A}
+.dot-p{width:7px;height:7px;border-radius:50%;background:#EC4899}
+
+/* ─── MARKET TABS ─────────────── */
+.tabs-row{background:#fff;border-bottom:1.5px solid var(--border);
+  padding:0 16px;display:flex;align-items:center;overflow-x:auto;-webkit-overflow-scrolling:touch}
+.tabs-row::-webkit-scrollbar{height:0}
+.mtab{padding:10px 16px;font-size:12.5px;font-weight:600;color:var(--text3);
+  border-bottom:2.5px solid transparent;cursor:pointer;transition:all .15s;
+  display:flex;align-items:center;gap:5px;white-space:nowrap}
+.mtab:hover{color:var(--text2);background:#F8FAFC}
+.mtab.active{color:var(--blue);border-bottom-color:var(--blue)}
+.tab-sep{width:1px;height:20px;background:var(--border);flex-shrink:0}
+
+/* ─── BANNER ──────────────────── */
+.banner{background:linear-gradient(90deg,#0F172A,#1E293B);padding:5px 16px;
+  display:flex;align-items:center;gap:8px;font-size:11.5px;color:#94A3B8;flex-wrap:wrap}
+.banner strong{color:#F8FAFC;font-weight:600}
+.pulse{width:7px;height:7px;border-radius:50%;background:#22C55E;flex-shrink:0;animation:pulse 1.8s infinite}
+@keyframes pulse{0%,100%{opacity:1;box-shadow:0 0 0 0 rgba(34,197,94,.6)}50%{opacity:.8;box-shadow:0 0 0 4px rgba(34,197,94,0)}}
+.src-tag{margin-left:auto;padding:2px 8px;border-radius:10px;font-size:10px;
+  border:1px solid #334155;color:#64748B;display:flex;align-items:center;gap:4px;white-space:nowrap}
+.src-tag.live{border-color:#166534;color:#22C55E}
+.src-tag.cached{border-color:#1D4ED8;color:#60A5FA}
+
+/* ─── PROGRESS ────────────────── */
+#prgSec{display:none;padding:8px 16px 4px;background:var(--surface);border-bottom:1px solid var(--border)}
+.prg-track{height:5px;background:var(--border);border-radius:3px;overflow:hidden}
+.prg-fill{height:100%;background:linear-gradient(90deg,var(--blue),#22C55E);
+  border-radius:3px;transition:width .4s ease;width:0%}
+.prg-meta{display:flex;justify-content:space-between;margin-top:4px;font-size:10.5px;color:var(--text3)}
+
+/* ─── METRIC CARDS ────────────── */
+.metrics-sec{padding:12px 16px 0}
+.metrics-row{display:grid;grid-template-columns:repeat(7,1fr);gap:9px}
+.mcard{background:var(--surface);border:1.5px solid var(--border);border-radius:var(--rl);
+  padding:11px 12px;display:flex;align-items:center;gap:10px;box-shadow:var(--sh);
+  position:relative;overflow:hidden;transition:box-shadow .15s,transform .12s;cursor:default}
+.mcard:hover{box-shadow:var(--shm);transform:translateY(-1px)}
+.mcard::before{content:'';position:absolute;left:0;top:0;bottom:0;width:4px}
+.mcard.gc::before{background:var(--green)}
+.mcard.rc::before{background:var(--red)}
+.mcard.oc::before{background:var(--orange)}
+.mcard.lc::before{background:var(--border2)}
+.mring{position:relative;flex-shrink:0}
+.mring svg{display:block}
+.mring-txt{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+  font-size:10.5px;font-weight:800}
+.minfo{flex:1;min-width:0}
+.mlabel{font-size:9.5px;font-weight:600;letter-spacing:.4px;color:var(--text2);
+  text-transform:uppercase;line-height:1.2;margin-bottom:2px}
+.mfrac{font-size:11px;font-weight:600;color:var(--text)}
+.mfrac.loading{color:var(--text3)}
+.skel-ring{width:44px;height:44px;border-radius:50%;background:var(--border);flex-shrink:0;animation:sk 1.4s ease infinite}
+@keyframes sk{0%,100%{opacity:.45}50%{opacity:.9}}
+
+/* ─── FILTER BAR ──────────────── */
+.filter-sec{padding:10px 16px 0}
+.fbar{background:var(--surface);border:1.5px solid var(--border);border-radius:var(--rl);
+  padding:8px 10px;display:flex;align-items:center;gap:7px;flex-wrap:wrap;box-shadow:var(--sh)}
+.seg-grp{display:flex;align-items:center;background:var(--bg);border:1.5px solid var(--border);
+  border-radius:20px;overflow:hidden;flex-shrink:0}
+.seg-btn{padding:4px 9px;font-size:11px;font-weight:500;color:var(--text2);
+  border-radius:18px;transition:all .12s;white-space:nowrap}
+.seg-btn.active{background:#1E293B;color:#F8FAFC;font-weight:600}
+.seg-btn:not(.active):hover{background:var(--border)}
+.fsep{width:1px;height:18px;background:var(--border2);flex-shrink:0}
+.fsel{appearance:none;background:var(--bg) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%2394A3B8' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E") no-repeat right 7px center;
+  border:1.5px solid var(--border2);border-radius:14px;padding:4px 22px 4px 9px;
+  font-size:11px;font-weight:500;color:var(--text);cursor:pointer;transition:border-color .12s}
+.fsel:focus{outline:none;border-color:var(--blue)}
+.mcap-input{display:flex;align-items:center;gap:5px;background:var(--bg);
+  border:1.5px solid var(--border2);border-radius:14px;padding:4px 9px;transition:border-color .12s}
+.mcap-input:focus-within{border-color:var(--blue)}
+.mcap-input .mcap-label{font-size:11px;font-weight:500;color:var(--text2);white-space:nowrap}
+.mcap-input input{border:none;background:transparent;outline:none;font-size:11px;
+  font-weight:600;color:var(--text);width:60px;text-align:right}
+.ctag{display:flex;align-items:center;gap:4px;padding:4px 8px;border-radius:13px;
+  font-size:11px;font-weight:500;color:var(--text2);border:1.5px solid var(--border2);
+  background:var(--surface);transition:all .12s}
+.ctag:hover{border-color:var(--red);color:var(--red);background:var(--red-lt)}
+.ref-btn{display:flex;align-items:center;gap:5px;padding:4px 10px;border-radius:14px;
+  font-size:11px;font-weight:600;color:var(--blue);border:1.5px solid #BFDBFE;
+  background:var(--blue-bg);transition:all .12s;margin-left:auto}
+.ref-btn:hover{background:#DBEAFE}
+.ref-btn.loading{opacity:.6;pointer-events:none}
+.csv-btn{display:flex;align-items:center;gap:5px;padding:4px 10px;border-radius:14px;
+  font-size:11px;font-weight:600;color:#166534;border:1.5px solid #BBF7D0;background:#F0FDF4;transition:all .12s}
+.csv-btn:hover{background:#DCFCE7}
+@keyframes spin{to{transform:rotate(360deg)}}
+.spin{display:inline-block;animation:spin .7s linear infinite}
+
+/* ─── STATUS ROW ──────────────── */
+.status-row{display:flex;align-items:center;justify-content:space-between;
+  padding:7px 16px 0;font-size:11.5px;color:var(--text2);flex-wrap:wrap;gap:4px}
+.status-row strong{color:var(--text);font-weight:600}
+.status-time{font-size:11px;color:var(--text3)}
+
+/* ─── TABLE ───────────────────── */
+.tbl-sec{padding:8px 16px 0}
+.tbl-wrap{background:var(--surface);border:1.5px solid var(--border);
+  border-radius:var(--rl);overflow:hidden;box-shadow:var(--sh)}
+.tbl-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch}
+.tbl-scroll::-webkit-scrollbar{height:5px}
+.tbl-scroll::-webkit-scrollbar-track{background:var(--bg)}
+.tbl-scroll::-webkit-scrollbar-thumb{background:var(--border2);border-radius:3px}
+table{width:100%;border-collapse:collapse;font-size:11.5px;white-space:nowrap}
+thead{position:sticky;top:52px;z-index:10}
+thead tr{background:#F8FAFC}
+th{padding:8px 9px;text-align:left;font-size:9.5px;font-weight:600;letter-spacing:.4px;
+  color:var(--text2);text-transform:uppercase;border-bottom:2px solid var(--border);
+  border-right:1px solid var(--border);cursor:pointer;user-select:none}
+th:last-child{border-right:none}
+th:hover{background:#EFF6FF;color:var(--text)}
+.sort-ico{color:var(--text3);margin-left:2px;font-size:9px}
+th.sa .sort-ico::after{content:'↑';color:var(--blue)}
+th.sd .sort-ico::after{content:'↓';color:var(--blue)}
+tbody tr{border-bottom:1px solid var(--border);transition:background .1s}
+tbody tr:last-child{border-bottom:none}
+tbody tr:hover{background:#F8FAFC}
+td{padding:6px 9px;border-right:1px solid var(--border);vertical-align:middle}
+td:last-child{border-right:none}
+.td-n{color:var(--text3);font-size:11px;text-align:center;width:26px}
+
+/* skeleton */
+.skel{height:11px;border-radius:4px;background:linear-gradient(90deg,#E2E8F0 25%,#F1F5F9 50%,#E2E8F0 75%);
+  background-size:400% 100%;animation:skim 1.4s ease infinite}
+@keyframes skim{0%{background-position:100% 0}100%{background-position:-100% 0}}
+.sk-sm{width:50px}.sk-md{width:70px}.sk-lg{width:95px}
+
+/* review bubbles */
+.rev-g{display:flex;gap:3px}
+.rev-b{width:20px;height:20px;border-radius:50%;font-size:10px;font-weight:700;
+  display:flex;align-items:center;justify-content:center;cursor:pointer;
+  border:1.5px solid transparent;transition:all .1s}
+.rb-y{background:var(--green-bg);color:var(--green);border-color:#86EFAC}
+.rb-n{background:var(--red-bg);color:var(--red);border-color:#FCA5A5}
+.rb-q{background:var(--orange-bg);color:var(--orange);border-color:#FCD34D}
+.rb-off{background:var(--bg);color:var(--text3);border-color:var(--border2)}
+.rb-off:hover{background:var(--border)}
+
+/* badges */
+.badge{display:inline-flex;align-items:center;justify-content:center;
+  padding:2px 6px;border-radius:9px;font-size:10px;font-weight:700}
+.blc{background:var(--blue-bg);color:var(--blue);border:1px solid #BFDBFE}
+.bmc{background:var(--purple-bg);color:var(--purple);border:1px solid #C4B5FD}
+.bsc{background:#FEF3C7;color:#B45309;border:1px solid #FCD34D}
+.bmic{background:#F1F5F9;color:#64748B;border:1px solid #CBD5E1}
+.betf{background:#F0FDF4;color:#166534;border:1px solid #86EFAC}
+.berr{background:var(--bg);color:var(--text3);border:1px solid var(--border)}
+
+/* value cells */
+.vg{color:var(--green);font-weight:600}.vr{color:var(--red);font-weight:600}
+.vo{color:var(--orange);font-weight:600}.vb{color:var(--blue);font-weight:600}
+.vm{color:var(--text3)}
+.ticker{font-weight:700;font-size:12px}.sec{font-size:10px;color:var(--text3)}
+
+/* EMA alignment (legacy single-badge summary — kept in case referenced elsewhere) */
+.ema-b{color:var(--green);font-size:11px;font-weight:600}
+.ema-p{color:var(--orange);font-size:11px;font-weight:600}
+.ema-r{color:var(--red);font-size:11px;font-weight:600}
+
+/* EMA individual period badges (10/20/50/200 style chips) */
+.ema-badges{display:flex;gap:4px}
+.ema-badge{display:inline-flex;align-items:center;justify-content:center;
+  min-width:20px;padding:2px 5px;border-radius:5px;font-size:10px;font-weight:700;
+  border:1px solid transparent}
+.eb-g{background:var(--green-bg);color:var(--green);border-color:#86EFAC}
+.eb-r{background:var(--red-bg);color:var(--red);border-color:#FCA5A5}
+.eb-m{background:var(--bg);color:var(--text3);border-color:var(--border)}
+
+/* stage 2 */
+.s2w{display:flex;align-items:center;gap:4px;position:relative;cursor:default}
+.s2ds{display:flex;gap:2px}
+.s2d{width:7px;height:7px;border-radius:50%}
+.s2d.on{background:var(--green)}.s2d.off{background:var(--border2)}
+.s2f{font-size:11px;font-weight:600;color:var(--text2)}
+.s2-tooltip{display:none;position:absolute;bottom:calc(100% + 8px);left:0;
+  background:#1E293B;color:#F8FAFC;padding:11px 13px;border-radius:8px;
+  font-size:11px;white-space:nowrap;z-index:999;box-shadow:var(--shm);
+  min-width:230px;text-align:left}
+.s2w:hover .s2-tooltip{display:block}
+.s2t-title{font-weight:700;margin-bottom:7px;font-size:11.5px}
+.s2t-row{padding:2.5px 0;display:flex;align-items:center;gap:7px}
+.s2t-row .s2t-mark{width:13px;flex-shrink:0;font-weight:700}
+.s2t-row.pass .s2t-mark{color:#4ADE80}
+.s2t-row.fail .s2t-mark{color:#F87171}
+.s2t-row.fail{color:#94A3B8}
+.s2t-foot{margin-top:7px;padding-top:7px;border-top:1px solid #334155;color:#64748B;font-size:10px;white-space:normal;max-width:230px}
+
+/* squeeze bar */
+.sqb{width:52px;height:5px;border-radius:3px;background:var(--border);overflow:hidden}
+.sqf{height:100%;border-radius:3px}
+.sq-t{background:linear-gradient(90deg,#F59E0B,#EF4444)}
+.sq-n{background:linear-gradient(90deg,#60A5FA,#3B82F6)}
+
+/* RS box */
+.rsbox{display:inline-flex;align-items:center;justify-content:center;
+  min-width:34px;padding:2px 6px;border-radius:4px;font-size:11px;font-weight:700}
+.rsh{background:#DCFCE7;color:#166534;border:1px solid #86EFAC}
+.rsm{background:#DBEAFE;color:#1D4ED8;border:1px solid #93C5FD}
+.rsl{background:var(--red-bg);color:#991B1B;border:1px solid #FCA5A5}
+.rsna{background:var(--bg);color:var(--text3);border:1px solid var(--border)}
+
+/* lead RS dot */
+.ldot{width:11px;height:11px;border-radius:50%;display:inline-block}
+.ld-y{background:var(--blue);box-shadow:0 0 0 3px #BFDBFE}
+.ld-n{background:var(--border2)}
+
+/* pivot cells */
+.pr2{color:#15803D;font-weight:700}.pr1{color:var(--green);font-weight:600}
+.ppp{color:var(--text2);font-weight:600}.ps1{color:var(--orange);font-weight:600}
+.ps2{color:var(--red);font-weight:600}
+
+/* bo badge */
+.boc{display:inline-flex;align-items:center;padding:2px 6px;border-radius:9px;
+  font-size:10.5px;font-weight:600;background:var(--blue-bg);color:var(--blue);border:1px solid #BFDBFE}
+
+/* notes */
+.note-in{border:none;background:transparent;outline:none;font-size:11px;
+  color:var(--text2);width:85px;font-family:inherit}
+.note-in::placeholder{color:var(--text3)}
+
+/* error row */
+.erow td{color:var(--text3);font-size:11px}
+
+/* ─── FOOTER ──────────────────── */
+.footer{padding:14px 16px 20px;display:flex;flex-direction:column;align-items:center;gap:6px}
+.sm-btn{display:flex;align-items:center;gap:5px;padding:7px 22px;border-radius:18px;
+  font-size:12.5px;font-weight:600;color:var(--blue);border:1.5px solid #BFDBFE;
+  background:var(--blue-bg);transition:all .12s}
+.sm-btn:hover{background:#DBEAFE}
+.sm-lbl{font-size:11px;color:var(--text3)}
+.disc{font-size:10.5px;color:var(--text3);text-align:center;margin-top:2px}
+
+/* ─── COLUMN VISIBILITY ────────── */
+/* hide on ≤768px */
+.c-wrsi,.c-wvol,.c-wpiv,.c-wema,.c-voldry,.c-retrace,.c-rstrend,.c-earns,.c-notes{display:table-cell}
+/* hide on ≤480px — these are additionally hidden */
+.c-vr,.c-ema,.c-bocnt,.c-squeeze,.c-mrsrank{display:table-cell}
+
+/* User-controlled column toggles (via the Columns modal, saved to localStorage).
+   Adding e.g. "hide-wrsi" to <body> hides every cell tagged .c-wrsi — works
+   for skeleton/data/error rows alike since they all share the same classes. */
+body.hide-wrsi    .c-wrsi,
+body.hide-vr      .c-vr,
+body.hide-wvol    .c-wvol,
+body.hide-wpiv    .c-wpiv,
+body.hide-ema     .c-ema,
+body.hide-wema    .c-wema,
+body.hide-bocnt   .c-bocnt,
+body.hide-voldry  .c-voldry,
+body.hide-retrace .c-retrace,
+body.hide-squeeze .c-squeeze,
+body.hide-mrsrank .c-mrsrank,
+body.hide-rstrend .c-rstrend,
+body.hide-earns   .c-earns,
+body.hide-notes   .c-notes{display:none!important}
+
+/* ─── MODAL ───────────────────── */
+.overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.35);
+  z-index:200;align-items:center;justify-content:center}
+.overlay.open{display:flex}
+.modal{background:var(--surface);border-radius:var(--rl);padding:22px;
+  width:360px;max-width:92vw;box-shadow:var(--shm)}
+.modal h3{font-size:14px;font-weight:700;margin-bottom:4px}
+.modal-x{float:right;font-size:15px;color:var(--text3);cursor:pointer;margin-top:-3px}
+.modal p{font-size:12px;color:var(--text2);margin-top:6px;line-height:1.6}
+.modal-grid{display:grid;grid-template-columns:1fr 1fr;gap:7px 10px;margin-top:14px}
+.modal-check{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text);cursor:pointer;user-select:none}
+.modal-check input{cursor:pointer;width:14px;height:14px;flex-shrink:0}
+
+/* Sector Breadth — wider modal, holds a full data table */
+.sector-modal{width:920px;max-width:94vw;max-height:82vh;display:flex;flex-direction:column}
+.sector-table-wrap{margin-top:12px;overflow:auto;flex:1;border:1.5px solid var(--border);border-radius:var(--r)}
+.sector-table{width:100%;border-collapse:collapse;font-size:11px;white-space:nowrap}
+.sector-table thead{position:sticky;top:0;z-index:2;background:#F8FAFC}
+.sector-table th{padding:7px 9px;text-align:left;font-size:9.5px;font-weight:700;letter-spacing:.3px;
+  color:var(--text2);text-transform:uppercase;border-bottom:2px solid var(--border);
+  border-right:1px solid var(--border);cursor:pointer;user-select:none}
+.sector-table th:hover{background:#EFF6FF}
+.sector-table th:first-child{text-align:left}
+.sector-table td{padding:6px 9px;border-bottom:1px solid var(--border);border-right:1px solid var(--border)}
+.sector-table tr.sector-row{cursor:pointer;transition:background .1s}
+.sector-table tr.sector-row:hover{background:var(--blue-bg)}
+.sector-table tr.sector-row td:first-child{font-weight:600;color:var(--text)}
+.sb-pill{display:inline-flex;align-items:center;justify-content:center;min-width:36px;
+  padding:2px 6px;border-radius:9px;font-size:10.5px;font-weight:700}
+.sb-hi{background:var(--green-bg);color:var(--green)}
+.sb-mid{background:var(--orange-bg);color:var(--orange)}
+.sb-lo{background:var(--red-bg);color:var(--red)}
+
+/* ─── TOOLTIP ─────────────────── */
+[data-tip]{position:relative}
+[data-tip]:hover::after{content:attr(data-tip);position:absolute;bottom:calc(100%+6px);
+  left:50%;transform:translateX(-50%);background:#1E293B;color:#F8FAFC;font-size:10px;
+  font-weight:500;white-space:nowrap;padding:4px 8px;border-radius:5px;
+  pointer-events:none;z-index:999}
+
+/* ─── RESPONSIVE ──────────────── */
+@media (max-width:1200px){
+  .metrics-row{grid-template-columns:repeat(4,1fr)}
+}
+@media (max-width:900px){
+  .metrics-row{grid-template-columns:repeat(4,1fr)}
+  .c-wrsi,.c-wvol,.c-wpiv,.c-wema,.c-voldry,.c-retrace,.c-rstrend,.c-earns,.c-notes{display:none!important}
+}
+@media (max-width:768px){
+  .metrics-row{grid-template-columns:repeat(2,1fr)}
+  html{font-size:12px}
+  .search-bar input{width:100px}
+  .hbtn.hd-col,.hbtn.hd-tour{display:none}
+  .logo-txt{font-size:14px}
+  .metrics-sec,.filter-sec,.tbl-sec{padding-left:10px;padding-right:10px}
+  .fbar{padding:8px}
+  .seg-grp .seg-btn{padding:3px 7px;font-size:10.5px}
+}
+@media (max-width:480px){
+  .metrics-row{grid-template-columns:repeat(2,1fr)}
+  .c-vr,.c-ema,.c-bocnt,.c-squeeze,.c-mrsrank{display:none!important}
+  .search-bar input{width:80px}
+}
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header class="hdr">
+  <a href="#" class="logo">
+    <div class="logo-ico">🦗</div>
+    <span class="logo-txt">Screening<span>Mantis</span></span>
+  </a>
+  <div class="hdr-r">
+    <div class="search-bar">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+      <input id="searchQ" type="text" placeholder="Search ticker or sector…" oninput="onSearch()"/>
+    </div>
+    <button class="hbtn hd-col" onclick="buildColModal();$('colModal').classList.add('open')">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+      Columns
+    </button>
+    <button class="hbtn hd-tour"><span class="dot-p"></span> Tour</button>
+    <button class="hbtn dark">💬 Feedback</button>
+  </div>
+</header>
+
+<!-- MARKET TABS -->
+<div class="tabs-row">
+  <div class="mtab active" id="tab-india" onclick="switchMkt('india')">🇮🇳 India (NSE)</div>
+  <div class="tab-sep"></div>
+  <div class="mtab" id="tab-us" onclick="switchMkt('us')">🇺🇸 US Stocks</div>
+  <div class="tab-sep"></div>
+  <div class="mtab" id="tab-etf" onclick="switchMkt('etf')">📊 ETFs</div>
+</div>
+
+<!-- BANNER -->
+<div class="banner">
+  <span class="pulse"></span>
+  <strong id="bnrMkt">India (NSE) · Nifty 500</strong>
+  <span id="bnrSub">&nbsp;·&nbsp; Stooq.com · End-of-Day · Client-side Technicals</span>
+  <span class="src-tag" id="srcTag">⬤ Checking…</span>
+</div>
+
+<!-- PROGRESS -->
+<div id="prgSec">
+  <div class="prg-track"><div class="prg-fill" id="prgFill"></div></div>
+  <div class="prg-meta"><span id="prgLbl">Starting…</span><span id="prgPct">0%</span></div>
+</div>
+
+<!-- METRIC CARDS -->
+<section class="metrics-sec">
+  <div class="metrics-row" id="mRow"><!-- JS renders --></div>
+</section>
+
+<!-- FILTER BAR -->
+<section class="filter-sec">
+  <div class="fbar">
+    <div class="seg-grp" id="segGrp"><!-- JS --></div>
+    <div class="fsep"></div>
+    <select class="fsel" id="sctFil" onchange="applyF()"><option value="">All Sectors</option></select>
+    <button class="ref-btn" onclick="openSectorBreadth()" data-tip="See RSI, momentum, and breakout stats broken down by sector — click any row to filter the main table to just that sector">📊 Sector View</button>
+    <div class="fsep"></div>
+    <select class="fsel" id="emaFil" onchange="applyF()">
+      <option value="">EMA Filter</option>
+      <option value="bull">All EMAs Bullish</option>
+      <option value="a20">Above 20 EMA</option>
+      <option value="a200">Above 200 EMA</option>
+    </select>
+    <select class="fsel" id="rsiFil" onchange="applyF()">
+      <option value="">RSI Filter</option>
+      <option value="ob">RSI ≥ 70</option>
+      <option value="mid">RSI 50–70</option>
+      <option value="os">RSI ≤ 40</option>
+    </select>
+    <select class="fsel" id="pivFil" onchange="applyF()">
+      <option value="">Pivot Zone</option>
+      <option value="above">Above PP</option>
+      <option value="r1">Above R1</option>
+      <option value="below">Below PP</option>
+    </select>
+    <div class="fsep"></div>
+    <div class="mcap-input" id="mcapWrap" data-tip="Only show stocks with market cap above this value. Approximate figures — edit anytime in the file.">
+      <span class="mcap-label" id="mcapPrefix">Min Mkt Cap ₹</span>
+      <input type="number" id="mcapFil" value="5000" step="500" min="0" onchange="applyF()"/>
+      <span class="mcap-label" id="mcapSuffix">Cr</span>
+    </div>
+    <div class="fsep"></div>
+    <button class="ctag" onclick="clrF()">✕ Clear Filters</button>
+    <button class="ctag" onclick="clrRev()">✕ Clear Reviews</button>
+    <button class="ref-btn" id="refBtn" onclick="forceRefresh()">↻ Refresh</button>
+    <button class="ref-btn" id="retryBtn" onclick="retryFailed()" style="display:none;">↻ Retry Failed (<span id="retryCount">0</span>)</button>
+    <button class="csv-btn" onclick="doCSV()">📊 CSV</button>
+  </div>
+</section>
+
+<!-- STATUS ROW -->
+<div class="status-row">
+  <div>Showing <strong id="vCnt">—</strong> of <strong id="tCnt">—</strong> stocks</div>
+  <div class="status-time" id="scanTime">—</div>
+</div>
+
+<!-- DATA TABLE -->
+<section class="tbl-sec">
+  <div class="tbl-wrap">
+    <div class="tbl-scroll">
+      <table id="stk-tbl">
+        <thead id="tHead">
+          <tr>
+            <th style="width:26px">#</th>
+            <th>Review</th>
+            <th data-s="cap">Cap<span class="sort-ico"></span></th>
+            <th data-s="ticker">Ticker<span class="sort-ico"></span></th>
+            <th data-s="price">Price<span class="sort-ico"></span></th>
+            <th data-s="ch1d">1D%<span class="sort-ico"></span></th>
+            <th data-s="rsi">RSI<span class="sort-ico"></span></th>
+            <th class="c-wrsi" data-s="wrsi">W-RSI<span class="sort-ico"></span></th>
+            <th class="c-vr" data-s="vr">Vol Ratio<span class="sort-ico"></span></th>
+            <th class="c-wvol" data-s="wvol">W-VOL<span class="sort-ico"></span></th>
+            <th data-s="dpiv">D-Pivot<span class="sort-ico"></span></th>
+            <th class="c-wpiv" data-s="wpiv">W-Pivot<span class="sort-ico"></span></th>
+            <th data-s="h52">52W High<span class="sort-ico"></span></th>
+            <th class="c-ema" data-s="ema">EMA Align<span class="sort-ico"></span></th>
+            <th class="c-wema" data-s="wema">W-EMA<span class="sort-ico"></span></th>
+            <th data-s="bog">BO Gain%<span class="sort-ico"></span></th>
+            <th class="c-bocnt" data-s="boc">BO Count<span class="sort-ico"></span></th>
+            <th class="c-voldry" data-s="vr">Vol Dry<span class="sort-ico"></span></th>
+            <th class="c-retrace" data-s="ret">Retrace%<span class="sort-ico"></span></th>
+            <th class="c-squeeze" data-s="sq">Squeeze<span class="sort-ico"></span></th>
+            <th data-s="s2">Stage 2<span class="sort-ico"></span></th>
+            <th data-s="rs" style="text-align:center">RS<span class="sort-ico"></span></th>
+            <th class="c-mrsrank" data-s="mrs" style="text-align:center">MRS Rank<span class="sort-ico"></span></th>
+            <th style="text-align:center" data-tip="RS percentile ≥ 70 and trending up">Lead RS</th>
+            <th class="c-rstrend" data-s="rst">RS Trend<span class="sort-ico"></span></th>
+            <th class="c-earns">Next Earn.</th>
+            <th class="c-notes">Notes</th>
+          </tr>
+        </thead>
+        <tbody id="tBody"></tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<div class="footer">
+  <button class="sm-btn" onclick="showMore()">Show more ↓</button>
+  <div class="sm-lbl" id="smLbl">Showing — of —</div>
+  <div class="disc">Data sourced from Stooq.com via CORS proxy. End-of-day data only. For informational purposes — not investment advice.</div>
+</div>
+
+<!-- COLUMNS MODAL -->
+<div class="overlay" id="colModal">
+  <div class="modal">
+    <button class="modal-x" onclick="$('colModal').classList.remove('open')">✕</button>
+    <h3>⊞ Column Visibility</h3>
+    <p>Untick a column to hide it. Your choices are remembered next time you open this file. On mobile, some columns still auto-hide regardless of this setting, to keep the table readable on a small screen.</p>
+    <div class="modal-grid" id="colCheckGrid"><!-- JS fills this --></div>
+    <div style="margin-top:14px;display:flex;gap:8px;justify-content:space-between;align-items:center">
+      <button onclick="resetColumnVisibility()"
+        style="padding:6px 12px;border-radius:8px;border:1.5px solid var(--border2);font-size:11.5px;font-weight:500;color:var(--text2);cursor:pointer">Show All</button>
+      <button onclick="$('colModal').classList.remove('open')"
+        style="padding:6px 14px;border-radius:8px;background:#1E293B;color:#F8FAFC;font-size:12px;font-weight:600;cursor:pointer">Done</button>
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="sectorModal">
+  <div class="modal sector-modal">
+    <button class="modal-x" onclick="closeSectorBreadth()">✕</button>
+    <h3>📊 Sector Breadth</h3>
+    <p id="sectorModalSub">Click any row to filter the main table to that sector.</p>
+    <div class="sector-table-wrap">
+      <table class="sector-table">
+        <thead>
+          <tr id="sectorTableHead"><!-- JS fills this --></tr>
+        </thead>
+        <tbody id="sectorTableBody"><!-- JS fills this --></tbody>
+      </table>
+    </div>
+    <div style="margin-top:12px;display:flex;justify-content:flex-end">
+      <button onclick="closeSectorBreadth()"
+        style="padding:6px 14px;border-radius:8px;background:#1E293B;color:#F8FAFC;font-size:12px;font-weight:600;cursor:pointer">Close</button>
+    </div>
+  </div>
+</div>
+
+<script>
+'use strict';
+/* ══════════════════════════════════
+   CONFIG
+══════════════════════════════════ */
+const CFG = {
+  // ── Google Sheets (published CSV) — PASTE YOUR URL HERE ──
+  // Once you've run the Apps Script and published the "Data" tab
+  // (File > Share > Publish to web > select "Data" sheet > CSV > Publish),
+  // paste that link below between the quotes. Leave blank ('') to skip
+  // this and use Stooq+proxies only (the old behavior).
+  // Example: 'https://docs.google.com/spreadsheets/d/e/2PACX-.../pub?output=csv'
+  GSHEET_CSV_URL: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSvb2f_1RZ0E9wKms9-bm7agqfylm1ifzt1oINqHA6hQ-V4Rfhk0Byws1_vHCkQ692zdd2qD88dtn_U/pub?gid=104279469&single=true&output=csv',
+
+  // allorigins encodes the full target URL; corsproxy passes it raw but we encode for safety
+  PROXIES: [
+    u => `https://api.allorigins.win/raw?url=${encodeURIComponent(u)}`,
+    u => `https://corsproxy.io/?${encodeURIComponent(u)}`,
+    u => `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(u)}`,
+  ],
+  STOOQ: 'https://stooq.com/q/d/l/?s=',
+  CONC: 4,          // parallel fetches — lowered from 8. Free CORS proxies rate-limit
+                    // aggressively; with 781 total stocks now in the universe, high
+                    // concurrency was triggering widespread transient failures.
+  TO:   18000,      // timeout ms
+  RETRIES: 2,       // extra attempts per stock if all proxies fail on the first pass
+  VER:  'sm9',      // bumped: India universe expanded from 271 to 736 stocks (user-provided liquid stocks list), ZOMATO->ETERNAL and AMARAJABAT->ARE&M ticker corrections applied
+  INIT: 25,         // rows shown initially
+};
+
+/* ══════════════════════════════════
+   STOCK UNIVERSE
+══════════════════════════════════ */
+const UNI = {
+  india: [
+    {s:'RELIANCE.NS', d:'RELIANCE', sector:'Energy', mcap:1900000},
+    {s:'TCS.NS', d:'TCS', sector:'IT', mcap:1300000},
+    {s:'HDFCBANK.NS', d:'HDFCBANK', sector:'Banking', mcap:1250000},
+    {s:'BHARTIARTL.NS', d:'BHARTIARTL', sector:'Telecom', mcap:950000},
+    {s:'ICICIBANK.NS', d:'ICICIBANK', sector:'Banking', mcap:850000},
+    {s:'INFY.NS', d:'INFY', sector:'IT', mcap:600000},
+    {s:'SBIN.NS', d:'SBIN', sector:'Banking', mcap:700000},
+    {s:'HINDUNILVR.NS', d:'HINDUNILVR', sector:'FMCG', mcap:550000},
+    {s:'ITC.NS', d:'ITC', sector:'FMCG', mcap:525000},
+    {s:'LT.NS', d:'LT', sector:'Cap Goods', mcap:480000},
+    {s:'KOTAKBANK.NS', d:'KOTAKBANK', sector:'Banking', mcap:370000},
+    {s:'AXISBANK.NS', d:'AXISBANK', sector:'Banking', mcap:350000},
+    {s:'BAJFINANCE.NS', d:'BAJFINANCE', sector:'NBFC', mcap:460000},
+    {s:'MARUTI.NS', d:'MARUTI', sector:'Auto', mcap:370000},
+    {s:'NTPC.NS', d:'NTPC', sector:'Power', mcap:330000},
+    {s:'POWERGRID.NS', d:'POWERGRID', sector:'Power', mcap:280000},
+    {s:'ULTRACEMCO.NS', d:'ULTRACEMCO', sector:'Cement', mcap:290000},
+    {s:'TITAN.NS', d:'TITAN', sector:'Consumer', mcap:300000},
+    {s:'ASIANPAINT.NS', d:'ASIANPAINT', sector:'Paints', mcap:230000},
+    {s:'TECHM.NS', d:'TECHM', sector:'IT', mcap:145000},
+    {s:'SUNPHARMA.NS', d:'SUNPHARMA', sector:'Pharma', mcap:400000},
+    {s:'WIPRO.NS', d:'WIPRO', sector:'IT', mcap:270000},
+    {s:'HCLTECH.NS', d:'HCLTECH', sector:'IT', mcap:430000},
+    {s:'NESTLEIND.NS', d:'NESTLEIND', sector:'FMCG', mcap:230000},
+    {s:'TATAMOTORS.NS', d:'TATAMOTORS', sector:'Auto', mcap:270000},
+    {s:'M&M.NS', d:'M&M', sector:'Auto', mcap:350000},
+    {s:'ADANIENT.NS', d:'ADANIENT', sector:'Diversified', mcap:280000},
+    {s:'ADANIPORTS.NS', d:'ADANIPORTS', sector:'Logistics', mcap:260000},
+    {s:'COALINDIA.NS', d:'COALINDIA', sector:'Mining', mcap:250000},
+    {s:'JSWSTEEL.NS', d:'JSWSTEEL', sector:'Metals', mcap:230000},
+    {s:'TATASTEEL.NS', d:'TATASTEEL', sector:'Metals', mcap:190000},
+    {s:'ONGC.NS', d:'ONGC', sector:'Energy', mcap:330000},
+    {s:'GRASIM.NS', d:'GRASIM', sector:'Cement', mcap:170000},
+    {s:'DIVISLAB.NS', d:'DIVISLAB', sector:'Pharma', mcap:160000},
+    {s:'CIPLA.NS', d:'CIPLA', sector:'Pharma', mcap:120000},
+    {s:'DRREDDY.NS', d:'DRREDDY', sector:'Pharma', mcap:105000},
+    {s:'BPCL.NS', d:'BPCL', sector:'Energy', mcap:110000},
+    {s:'APOLLOHOSP.NS', d:'APOLLOHOSP', sector:'Healthcare', mcap:90000},
+    {s:'EICHERMOT.NS', d:'EICHERMOT', sector:'Auto', mcap:110000},
+    {s:'BAJAJFINSV.NS', d:'BAJAJFINSV', sector:'Financial', mcap:270000},
+    {s:'HINDALCO.NS', d:'HINDALCO', sector:'Metals', mcap:150000},
+    {s:'INDUSINDBK.NS', d:'INDUSINDBK', sector:'Banking', mcap:85000},
+    {s:'TATACONSUM.NS', d:'TATACONSUM', sector:'FMCG', mcap:85000},
+    {s:'BRITANNIA.NS', d:'BRITANNIA', sector:'FMCG', mcap:130000},
+    {s:'HAVELLS.NS', d:'HAVELLS', sector:'Electricals', mcap:95000},
+    {s:'PIDILITIND.NS', d:'PIDILITIND', sector:'Chemicals', mcap:150000},
+    {s:'GODREJCP.NS', d:'GODREJCP', sector:'FMCG', mcap:115000},
+    {s:'MARICO.NS', d:'MARICO', sector:'FMCG', mcap:85000},
+    {s:'COLPAL.NS', d:'COLPAL', sector:'FMCG', mcap:65000},
+    {s:'HAL.NS', d:'HAL', sector:'Defence', mcap:330000},
+    {s:'BEL.NS', d:'BEL', sector:'Defence', mcap:230000},
+    {s:'LICI.NS', d:'LICI', sector:'Insurance', mcap:600000},
+    {s:'DMART.NS', d:'DMART', sector:'Retail', mcap:270000},
+    {s:'ADANIGREEN.NS', d:'ADANIGREEN', sector:'Renewables', mcap:185000},
+    {s:'ADANIPOWER.NS', d:'ADANIPOWER', sector:'Power', mcap:190000},
+    {s:'VEDL.NS', d:'VEDL', sector:'Metals', mcap:180000},
+    {s:'IOC.NS', d:'IOC', sector:'Energy', mcap:200000},
+    {s:'BAJAJ-AUTO.NS', d:'BAJAJ-AUTO', sector:'Auto', mcap:250000},
+    {s:'TRENT.NS', d:'TRENT', sector:'Retail', mcap:280000},
+    {s:'SHREECEM.NS', d:'SHREECEM', sector:'Cement', mcap:110000},
+    {s:'SBILIFE.NS', d:'SBILIFE', sector:'Insurance', mcap:150000},
+    {s:'HDFCLIFE.NS', d:'HDFCLIFE', sector:'Insurance', mcap:140000},
+    {s:'ICICIPRULI.NS', d:'ICICIPRULI', sector:'Insurance', mcap:85000},
+    {s:'ICICIGI.NS', d:'ICICIGI', sector:'Insurance', mcap:95000},
+    {s:'AMBUJACEM.NS', d:'AMBUJACEM', sector:'Cement', mcap:135000},
+    {s:'DABUR.NS', d:'DABUR', sector:'FMCG', mcap:95000},
+    {s:'SIEMENS.NS', d:'SIEMENS', sector:'Cap Goods', mcap:120000},
+    {s:'ABB.NS', d:'ABB', sector:'Cap Goods', mcap:110000},
+    {s:'PNB.NS', d:'PNB', sector:'Banking', mcap:110000},
+    {s:'BANKBARODA.NS', d:'BANKBARODA', sector:'Banking', mcap:130000},
+    {s:'CANBK.NS', d:'CANBK', sector:'Banking', mcap:90000},
+    {s:'UNIONBANK.NS', d:'UNIONBANK', sector:'Banking', mcap:85000},
+    {s:'JIOFIN.NS', d:'JIOFIN', sector:'Financial', mcap:200000},
+    {s:'IRFC.NS', d:'IRFC', sector:'Financial', mcap:180000},
+    {s:'PFC.NS', d:'PFC', sector:'Financial', mcap:140000},
+    {s:'RECLTD.NS', d:'RECLTD', sector:'Financial', mcap:135000},
+    {s:'GAIL.NS', d:'GAIL', sector:'Energy', mcap:110000},
+    {s:'NHPC.NS', d:'NHPC', sector:'Power', mcap:100000},
+    {s:'TORNTPOWER.NS', d:'TORNTPOWER', sector:'Power', mcap:85000},
+    {s:'TATAPOWER.NS', d:'TATAPOWER', sector:'Power', mcap:120000},
+    {s:'INDIGO.NS', d:'INDIGO', sector:'Aviation', mcap:200000},
+    {s:'VBL.NS', d:'VBL', sector:'FMCG', mcap:180000},
+    {s:'UNITDSPR.NS', d:'UNITDSPR', sector:'FMCG', mcap:120000},
+    {s:'HEROMOTOCO.NS', d:'HEROMOTOCO', sector:'Auto', mcap:90000},
+    {s:'TVSMOTOR.NS', d:'TVSMOTOR', sector:'Auto', mcap:130000},
+    {s:'BOSCHLTD.NS', d:'BOSCHLTD', sector:'Auto Anc.', mcap:90000},
+    {s:'MOTHERSON.NS', d:'MOTHERSON', sector:'Auto Anc.', mcap:85000},
+    {s:'BHARATFORG.NS', d:'BHARATFORG', sector:'Auto Anc.', mcap:55000},
+    {s:'ASHOKLEY.NS', d:'ASHOKLEY', sector:'Auto', mcap:55000},
+    {s:'CUMMINSIND.NS', d:'CUMMINSIND', sector:'Cap Goods', mcap:55000},
+    {s:'POLYCAB.NS', d:'POLYCAB', sector:'Electricals', mcap:90000},
+    {s:'VOLTAS.NS', d:'VOLTAS', sector:'Consumer Durables', mcap:55000},
+    {s:'DIXON.NS', d:'DIXON', sector:'Electronics', mcap:80000},
+    {s:'LTIM.NS', d:'LTIM', sector:'IT', mcap:150000},
+    {s:'OFSS.NS', d:'OFSS', sector:'IT', mcap:65000},
+    {s:'DLF.NS', d:'DLF', sector:'Realty', mcap:200000},
+    {s:'DALBHARAT.NS', d:'DALBHARAT', sector:'Cement', mcap:35000},
+    {s:'PERSISTENT.NS', d:'PERSISTENT', sector:'IT', mcap:75000},
+    {s:'COFORGE.NS', d:'COFORGE', sector:'IT', mcap:50000},
+    {s:'LTTS.NS', d:'LTTS', sector:'IT', mcap:40000},
+    {s:'MPHASIS.NS', d:'MPHASIS', sector:'IT', mcap:45000},
+    {s:'KPITTECH.NS', d:'KPITTECH', sector:'IT', mcap:35000},
+    {s:'TATAELXSI.NS', d:'TATAELXSI', sector:'IT', mcap:35000},
+    {s:'CAMS.NS', d:'CAMS', sector:'Financial', mcap:20000},
+    {s:'CDSL.NS', d:'CDSL', sector:'Financial', mcap:25000},
+    {s:'MCX.NS', d:'MCX', sector:'Financial', mcap:25000},
+    {s:'ANGELONE.NS', d:'ANGELONE', sector:'Financial', mcap:18000},
+    {s:'IEX.NS', d:'IEX', sector:'Financial', mcap:18000},
+    {s:'BSE.NS', d:'BSE', sector:'Financial', mcap:55000},
+    {s:'MUTHOOTFIN.NS', d:'MUTHOOTFIN', sector:'NBFC', mcap:75000},
+    {s:'CHOLAFIN.NS', d:'CHOLAFIN', sector:'NBFC', mcap:115000},
+    {s:'SHRIRAMFIN.NS', d:'SHRIRAMFIN', sector:'NBFC', mcap:110000},
+    {s:'LICHSGFIN.NS', d:'LICHSGFIN', sector:'Financial', mcap:40000},
+    {s:'PNBHOUSING.NS', d:'PNBHOUSING', sector:'Financial', mcap:20000},
+    {s:'AUBANK.NS', d:'AUBANK', sector:'Banking', mcap:45000},
+    {s:'BANDHANBNK.NS', d:'BANDHANBNK', sector:'Banking', mcap:35000},
+    {s:'FEDERALBNK.NS', d:'FEDERALBNK', sector:'Banking', mcap:50000},
+    {s:'IDFCFIRSTB.NS', d:'IDFCFIRSTB', sector:'Banking', mcap:55000},
+    {s:'YESBANK.NS', d:'YESBANK', sector:'Banking', mcap:55000},
+    {s:'GODREJPROP.NS', d:'GODREJPROP', sector:'Realty', mcap:75000},
+    {s:'OBEROIRLTY.NS', d:'OBEROIRLTY', sector:'Realty', mcap:60000},
+    {s:'PRESTIGE.NS', d:'PRESTIGE', sector:'Realty', mcap:55000},
+    {s:'PHOENIXLTD.NS', d:'PHOENIXLTD', sector:'Realty', mcap:45000},
+    {s:'LODHA.NS', d:'LODHA', sector:'Realty', mcap:110000},
+    {s:'GMRAIRPORT.NS', d:'GMRAIRPORT', sector:'Infra', mcap:75000},
+    {s:'IRCTC.NS', d:'IRCTC', sector:'Travel', mcap:65000},
+    {s:'RVNL.NS', d:'RVNL', sector:'Infra', mcap:85000},
+    {s:'IRB.NS', d:'IRB', sector:'Infra', mcap:28000},
+    {s:'NBCC.NS', d:'NBCC', sector:'Infra', mcap:18000},
+    {s:'KEC.NS', d:'KEC', sector:'Cap Goods', mcap:20000},
+    {s:'THERMAX.NS', d:'THERMAX', sector:'Cap Goods', mcap:35000},
+    {s:'BHEL.NS', d:'BHEL', sector:'Cap Goods', mcap:85000},
+    {s:'HINDZINC.NS', d:'HINDZINC', sector:'Metals', mcap:140000},
+    {s:'NMDC.NS', d:'NMDC', sector:'Metals', mcap:65000},
+    {s:'NATIONALUM.NS', d:'NATIONALUM', sector:'Metals', mcap:35000},
+    {s:'JINDALSTEL.NS', d:'JINDALSTEL', sector:'Metals', mcap:95000},
+    {s:'SAIL.NS', d:'SAIL', sector:'Metals', mcap:60000},
+    {s:'APLAPOLLO.NS', d:'APLAPOLLO', sector:'Metals', mcap:45000},
+    {s:'JSL.NS', d:'JSL', sector:'Metals', mcap:45000},
+    {s:'RATNAMANI.NS', d:'RATNAMANI', sector:'Metals', mcap:22000},
+    {s:'GLAND.NS', d:'GLAND', sector:'Pharma', mcap:28000},
+    {s:'LUPIN.NS', d:'LUPIN', sector:'Pharma', mcap:90000},
+    {s:'ALKEM.NS', d:'ALKEM', sector:'Pharma', mcap:45000},
+    {s:'AUROPHARMA.NS', d:'AUROPHARMA', sector:'Pharma', mcap:85000},
+    {s:'TORNTPHARM.NS', d:'TORNTPHARM', sector:'Pharma', mcap:110000},
+    {s:'GLENMARK.NS', d:'GLENMARK', sector:'Pharma', mcap:45000},
+    {s:'ZYDUSLIFE.NS', d:'ZYDUSLIFE', sector:'Pharma', mcap:130000},
+    {s:'BIOCON.NS', d:'BIOCON', sector:'Pharma', mcap:35000},
+    {s:'MANKIND.NS', d:'MANKIND', sector:'Pharma', mcap:90000},
+    {s:'LAURUSLABS.NS', d:'LAURUSLABS', sector:'Pharma', mcap:35000},
+    {s:'IPCALAB.NS', d:'IPCALAB', sector:'Pharma', mcap:28000},
+    {s:'ABBOTINDIA.NS', d:'ABBOTINDIA', sector:'Pharma', mcap:55000},
+    {s:'SANOFI.NS', d:'SANOFI', sector:'Pharma', mcap:35000},
+    {s:'NATCOPHARM.NS', d:'NATCOPHARM', sector:'Pharma', mcap:20000},
+    {s:'AJANTPHARM.NS', d:'AJANTPHARM', sector:'Pharma', mcap:28000},
+    {s:'ASTRAL.NS', d:'ASTRAL', sector:'Pipes', mcap:45000},
+    {s:'SUPREMEIND.NS', d:'SUPREMEIND', sector:'Pipes', mcap:55000},
+    {s:'SYNGENE.NS', d:'SYNGENE', sector:'Pharma/Biotech', mcap:22000},
+    {s:'GRANULES.NS', d:'GRANULES', sector:'Pharma', mcap:14000},
+    {s:'APARINDS.NS', d:'APARINDS', sector:'Auto Anc.', mcap:20000},
+    {s:'SONACOMS.NS', d:'SONACOMS', sector:'Auto Anc.', mcap:30000},
+    {s:'UNOMINDA.NS', d:'UNOMINDA', sector:'Auto Anc.', mcap:35000},
+    {s:'ENDURANCE.NS', d:'ENDURANCE', sector:'Auto Anc.', mcap:28000},
+    {s:'EXIDEIND.NS', d:'EXIDEIND', sector:'Auto Anc.', mcap:35000},
+    {s:'TIINDIA.NS', d:'TIINDIA', sector:'Auto Anc.', mcap:55000},
+    {s:'BALKRISIND.NS', d:'BALKRISIND', sector:'Tyres', mcap:45000},
+    {s:'MRF.NS', d:'MRF', sector:'Tyres', mcap:28000},
+    {s:'CEATLTD.NS', d:'CEATLTD', sector:'Tyres', mcap:15000},
+    {s:'ESCORTS.NS', d:'ESCORTS', sector:'Auto', mcap:40000},
+    {s:'SKFINDIA.NS', d:'SKFINDIA', sector:'Cap Goods', mcap:22000},
+    {s:'TIMKEN.NS', d:'TIMKEN', sector:'Cap Goods', mcap:22000},
+    {s:'SCHAEFFLER.NS', d:'SCHAEFFLER', sector:'Auto Anc.', mcap:35000},
+    {s:'GRINDWELL.NS', d:'GRINDWELL', sector:'Abrasives', mcap:18000},
+    {s:'HONAUT.NS', d:'HONAUT', sector:'Cap Goods', mcap:35000},
+    {s:'AIAENG.NS', d:'AIAENG', sector:'Cap Goods', mcap:28000},
+    {s:'KIRLOSENG.NS', d:'KIRLOSENG', sector:'Cap Goods', mcap:14000},
+    {s:'ELGIEQUIP.NS', d:'ELGIEQUIP', sector:'Cap Goods', mcap:11000},
+    {s:'CGPOWER.NS', d:'CGPOWER', sector:'Cap Goods', mcap:85000},
+    {s:'HITACHI.NS', d:'HITACHI', sector:'Cap Goods', mcap:45000},
+    {s:'KAYNES.NS', d:'KAYNES', sector:'Electronics', mcap:28000},
+    {s:'SYRMA.NS', d:'SYRMA', sector:'Electronics', mcap:14000},
+    {s:'AMBER.NS', d:'AMBER', sector:'Electronics', mcap:28000},
+    {s:'VGUARD.NS', d:'VGUARD', sector:'Consumer Durables', mcap:18000},
+    {s:'WHIRLPOOL.NS', d:'WHIRLPOOL', sector:'Consumer Durables', mcap:18000},
+    {s:'BLUESTARCO.NS', d:'BLUESTARCO', sector:'Consumer Durables', mcap:35000},
+    {s:'KALYANKJIL.NS', d:'KALYANKJIL', sector:'Jewellery', mcap:45000},
+    {s:'CROMPTON.NS', d:'CROMPTON', sector:'Consumer Durables', mcap:18000},
+    {s:'JUBLFOOD.NS', d:'JUBLFOOD', sector:'Consumer Services', mcap:30000},
+    {s:'UBL.NS', d:'UBL', sector:'FMCG', mcap:45000},
+    {s:'RADICO.NS', d:'RADICO', sector:'FMCG', mcap:28000},
+    {s:'EMAMILTD.NS', d:'EMAMILTD', sector:'FMCG', mcap:22000},
+    {s:'GILLETTE.NS', d:'GILLETTE', sector:'FMCG', mcap:18000},
+    {s:'NAUKRI.NS', d:'NAUKRI', sector:'Internet', mcap:85000},
+    {s:'INDIAMART.NS', d:'INDIAMART', sector:'Internet', mcap:18000},
+    {s:'NYKAA.NS', d:'NYKAA', sector:'E-commerce', mcap:55000},
+    {s:'POLICYBZR.NS', d:'POLICYBZR', sector:'Fintech', mcap:65000},
+    {s:'SRF.NS', d:'SRF', sector:'Chemicals', mcap:90000},
+    {s:'PIIND.NS', d:'PIIND', sector:'Agrochem', mcap:65000},
+    {s:'UPL.NS', d:'UPL', sector:'Agrochem', mcap:45000},
+    {s:'DEEPAKNTR.NS', d:'DEEPAKNTR', sector:'Chemicals', mcap:28000},
+    {s:'AARTIIND.NS', d:'AARTIIND', sector:'Chemicals', mcap:18000},
+    {s:'NAVINFLUOR.NS', d:'NAVINFLUOR', sector:'Chemicals', mcap:14000},
+    {s:'TATACHEM.NS', d:'TATACHEM', sector:'Chemicals', mcap:22000},
+    {s:'CHAMBLFERT.NS', d:'CHAMBLFERT', sector:'Fertilizers', mcap:18000},
+    {s:'COROMANDEL.NS', d:'COROMANDEL', sector:'Fertilizers', mcap:35000},
+    {s:'BERGEPAINT.NS', d:'BERGEPAINT', sector:'Paints', mcap:45000},
+    {s:'KANSAINER.NS', d:'KANSAINER', sector:'Paints', mcap:18000},
+    {s:'AKZOINDIA.NS', d:'AKZOINDIA', sector:'Paints', mcap:14000},
+    {s:'PAGEIND.NS', d:'PAGEIND', sector:'Textiles', mcap:45000},
+    {s:'KPRMILL.NS', d:'KPRMILL', sector:'Textiles', mcap:28000},
+    {s:'RAYMOND.NS', d:'RAYMOND', sector:'Textiles', mcap:10000},
+    {s:'ABFRL.NS', d:'ABFRL', sector:'Retail', mcap:14000},
+    {s:'RAMCOCEM.NS', d:'RAMCOCEM', sector:'Cement', mcap:22000},
+    {s:'JKCEMENT.NS', d:'JKCEMENT', sector:'Cement', mcap:28000},
+    {s:'SUNTV.NS', d:'SUNTV', sector:'Media', mcap:22000},
+    {s:'IGL.NS', d:'IGL', sector:'Gas', mcap:18000},
+    {s:'MGL.NS', d:'MGL', sector:'Gas', mcap:14000},
+    {s:'ATGL.NS', d:'ATGL', sector:'Gas', mcap:45000},
+    {s:'PETRONET.NS', d:'PETRONET', sector:'Gas', mcap:35000},
+    {s:'CONCOR.NS', d:'CONCOR', sector:'Logistics', mcap:35000},
+    {s:'DELHIVERY.NS', d:'DELHIVERY', sector:'Logistics', mcap:35000},
+    {s:'BLUEDART.NS', d:'BLUEDART', sector:'Logistics', mcap:18000},
+    {s:'HDFCAMC.NS', d:'HDFCAMC', sector:'Financial', mcap:85000},
+    {s:'NAM-INDIA.NS', d:'NAM-INDIA', sector:'Financial', mcap:28000},
+    {s:'UTIAMC.NS', d:'UTIAMC', sector:'Financial', mcap:14000},
+    {s:'ABSLAMC.NS', d:'ABSLAMC', sector:'Financial', mcap:14000},
+    {s:'CRISIL.NS', d:'CRISIL', sector:'Financial', mcap:35000},
+    {s:'IRCON.NS', d:'IRCON', sector:'Infra', mcap:14000},
+    {s:'HUDCO.NS', d:'HUDCO', sector:'Financial', mcap:45000},
+    {s:'PAYTM.NS', d:'PAYTM', sector:'Fintech', mcap:35000},
+    {s:'SUPRAJIT.NS', d:'SUPRAJIT', sector:'Auto Anc.', mcap:5500},
+    {s:'SONATSOFTW.NS', d:'SONATSOFTW', sector:'IT', mcap:8500},
+    {s:'POLYMED.NS', d:'POLYMED', sector:'Healthcare', mcap:14000},
+    {s:'HINDCOPPER.NS', d:'HINDCOPPER', sector:'Metals', mcap:14000},
+    {s:'RELAXO.NS', d:'RELAXO', sector:'Footwear', mcap:9500},
+    {s:'WELCORP.NS', d:'WELCORP', sector:'Metals', mcap:13000},
+    {s:'GNFC.NS', d:'GNFC', sector:'Fertilizers', mcap:14000},
+    {s:'RCF.NS', d:'RCF', sector:'Fertilizers', mcap:7000},
+    {s:'GSFC.NS', d:'GSFC', sector:'Fertilizers', mcap:7000},
+    {s:'INDIGOPNTS.NS', d:'INDIGOPNTS', sector:'Paints', mcap:7000},
+    {s:'CENTURYPLY.NS', d:'CENTURYPLY', sector:'Consumer Durables', mcap:7000},
+    {s:'TRIDENT.NS', d:'TRIDENT', sector:'Textiles', mcap:14000},
+    {s:'VARDHMAN.NS', d:'VARDHMAN', sector:'Textiles', mcap:14000},
+    {s:'WELSPUNLIV.NS', d:'WELSPUNLIV', sector:'Textiles', mcap:14000},
+    {s:'VMART.NS', d:'VMART', sector:'Retail', mcap:7000},
+    {s:'SHOPERSTOP.NS', d:'SHOPERSTOP', sector:'Retail', mcap:5000},
+    {s:'HEIDELBERG.NS', d:'HEIDELBERG', sector:'Cement', mcap:7000},
+    {s:'INDIACEM.NS', d:'INDIACEM', sector:'Cement', mcap:7000},
+    {s:'ZEEL.NS', d:'ZEEL', sector:'Media', mcap:10000},
+    {s:'PVRINOX.NS', d:'PVRINOX', sector:'Media', mcap:10000},
+    {s:'NETWORK18.NS', d:'NETWORK18', sector:'Media', mcap:5000},
+    {s:'BALRAMCHIN.NS', d:'BALRAMCHIN', sector:'Sugar', mcap:10000},
+    {s:'EIDPARRY.NS', d:'EIDPARRY', sector:'Sugar/Agri', mcap:14000},
+    {s:'GUJGASLTD.NS', d:'GUJGASLTD', sector:'Gas', mcap:10000},
+    {s:'TCI.NS', d:'TCI', sector:'Logistics', mcap:7000},
+    {s:'VRLLOG.NS', d:'VRLLOG', sector:'Logistics', mcap:5000},
+    {s:'IFCI.NS', d:'IFCI', sector:'Financial', mcap:7000},
+    {s:'RBLBANK.NS', d:'RBLBANK', sector:'Banking', mcap:12000},
+    {s:'SOUTHBANK.NS', d:'SOUTHBANK', sector:'Banking', mcap:7000},
+    {s:'JKTYRE.NS', d:'JKTYRE', sector:'Tyres', mcap:7000},
+    {s:'JUSTDIAL.NS', d:'JUSTDIAL', sector:'Internet', mcap:10000},
+    {s:'CARTRADE.NS', d:'CARTRADE', sector:'Internet', mcap:7000},
+    {s:'EASEMYTRIP.NS', d:'EASEMYTRIP', sector:'Travel', mcap:5500},
+    {s:'WESTLIFE.NS', d:'WESTLIFE', sector:'Consumer Services', mcap:10000},
+    {s:'DEVYANI.NS', d:'DEVYANI', sector:'Consumer Services', mcap:14000},
+    {s:'SAPPHIRE.NS', d:'SAPPHIRE', sector:'Consumer Services', mcap:7000},
+    {s:'HONASA.NS', d:'HONASA', sector:'FMCG', mcap:10000},
+    {s:'NCC.NS', d:'NCC', sector:'Infra', mcap:14000},
+    {s:'RAILTEL.NS', d:'RAILTEL', sector:'Infra', mcap:7000},
+    {s:'360ONE.NS', d:'360ONE', sector:'Financial', mcap:35000},
+    {s:'AADHARHFC.NS', d:'AADHARHFC', sector:'Financial', mcap:15000},
+    {s:'AARTIPHARM.NS', d:'AARTIPHARM', sector:'Other', mcap:null},
+    {s:'AAVAS.NS', d:'AAVAS', sector:'Financial', mcap:16000},
+    {s:'ABCAPITAL.NS', d:'ABCAPITAL', sector:'Financial', mcap:55000},
+    {s:'ABDL.NS', d:'ABDL', sector:'Other', mcap:null},
+    {s:'ABLBL.NS', d:'ABLBL', sector:'Other', mcap:null},
+    {s:'ABREL.NS', d:'ABREL', sector:'Other', mcap:null},
+    {s:'ACE.NS', d:'ACE', sector:'Cap Goods', mcap:18000},
+    {s:'ACMESOLAR.NS', d:'ACMESOLAR', sector:'Other', mcap:null},
+    {s:'ACUTAAS.NS', d:'ACUTAAS', sector:'Other', mcap:null},
+    {s:'ADANIENSOL.NS', d:'ADANIENSOL', sector:'Power', mcap:135000},
+    {s:'ADFFOODS.NS', d:'ADFFOODS', sector:'Other', mcap:null},
+    {s:'AEGISLOG.NS', d:'AEGISLOG', sector:'Energy', mcap:28000},
+    {s:'AEGISVOPAK.NS', d:'AEGISVOPAK', sector:'Other', mcap:null},
+    {s:'AEQUS.NS', d:'AEQUS', sector:'Other', mcap:null},
+    {s:'AEROFLEX.NS', d:'AEROFLEX', sector:'Other', mcap:null},
+    {s:'AETHER.NS', d:'AETHER', sector:'Other', mcap:null},
+    {s:'AFCONS.NS', d:'AFCONS', sector:'Infra', mcap:18000},
+    {s:'AGIIL.NS', d:'AGIIL', sector:'Other', mcap:null},
+    {s:'AIIL.NS', d:'AIIL', sector:'Other', mcap:null},
+    {s:'AJMERA.NS', d:'AJMERA', sector:'Other', mcap:null},
+    {s:'AKUMS.NS', d:'AKUMS', sector:'Other', mcap:null},
+    {s:'ALEMBICLTD.NS', d:'ALEMBICLTD', sector:'Pharma', mcap:5500},
+    {s:'ANANDRATHI.NS', d:'ANANDRATHI', sector:'Financial', mcap:18000},
+    {s:'ANANTRAJ.NS', d:'ANANTRAJ', sector:'Realty', mcap:28000},
+    {s:'ANTELOPUS.NS', d:'ANTELOPUS', sector:'Other', mcap:null},
+    {s:'ANTHEM.NS', d:'ANTHEM', sector:'Other', mcap:null},
+    {s:'ANURAS.NS', d:'ANURAS', sector:'Other', mcap:null},
+    {s:'APEX.NS', d:'APEX', sector:'Other', mcap:null},
+    {s:'APOLLO.NS', d:'APOLLO', sector:'Other', mcap:null},
+    {s:'APOLLOTYRE.NS', d:'APOLLOTYRE', sector:'Tyres', mcap:28000},
+    {s:'APTUS.NS', d:'APTUS', sector:'Financial', mcap:16000},
+    {s:'ARE&M.NS', d:'ARE&M', sector:'Auto Anc.', mcap:18000},
+    {s:'ARKADE.NS', d:'ARKADE', sector:'Other', mcap:null},
+    {s:'ARSSBL.NS', d:'ARSSBL', sector:'Other', mcap:null},
+    {s:'ARTEMISMED.NS', d:'ARTEMISMED', sector:'Other', mcap:null},
+    {s:'ARVIND.NS', d:'ARVIND', sector:'Textiles', mcap:7000},
+    {s:'ARVINDFASN.NS', d:'ARVINDFASN', sector:'Other', mcap:null},
+    {s:'ASHAPURMIN.NS', d:'ASHAPURMIN', sector:'Other', mcap:null},
+    {s:'ASHIANA.NS', d:'ASHIANA', sector:'Other', mcap:null},
+    {s:'ASHOKA.NS', d:'ASHOKA', sector:'Other', mcap:null},
+    {s:'ASTERDM.NS', d:'ASTERDM', sector:'Healthcare', mcap:28000},
+    {s:'ASTRAMICRO.NS', d:'ASTRAMICRO', sector:'Other', mcap:null},
+    {s:'ATHERENERG.NS', d:'ATHERENERG', sector:'Auto', mcap:14000},
+    {s:'AURIONPRO.NS', d:'AURIONPRO', sector:'Other', mcap:null},
+    {s:'AVALON.NS', d:'AVALON', sector:'Other', mcap:null},
+    {s:'AVANTEL.NS', d:'AVANTEL', sector:'Other', mcap:null},
+    {s:'AVANTIFEED.NS', d:'AVANTIFEED', sector:'Other', mcap:null},
+    {s:'AWFIS.NS', d:'AWFIS', sector:'Realty', mcap:5500},
+    {s:'AWL.NS', d:'AWL', sector:'FMCG', mcap:40000},
+    {s:'AZAD.NS', d:'AZAD', sector:'Other', mcap:null},
+    {s:'BAJAJCON.NS', d:'BAJAJCON', sector:'Other', mcap:null},
+    {s:'BAJAJELEC.NS', d:'BAJAJELEC', sector:'Other', mcap:null},
+    {s:'BAJAJHFL.NS', d:'BAJAJHFL', sector:'Financial', mcap:95000},
+    {s:'BALAMINES.NS', d:'BALAMINES', sector:'Other', mcap:null},
+    {s:'BALUFORGE.NS', d:'BALUFORGE', sector:'Other', mcap:null},
+    {s:'BANCOINDIA.NS', d:'BANCOINDIA', sector:'Other', mcap:null},
+    {s:'BANKINDIA.NS', d:'BANKINDIA', sector:'Banking', mcap:55000},
+    {s:'BBOX.NS', d:'BBOX', sector:'Other', mcap:null},
+    {s:'BDL.NS', d:'BDL', sector:'Defence', mcap:45000},
+    {s:'BECTORFOOD.NS', d:'BECTORFOOD', sector:'Other', mcap:null},
+    {s:'BELRISE.NS', d:'BELRISE', sector:'Other', mcap:null},
+    {s:'BEML.NS', d:'BEML', sector:'Cap Goods', mcap:18000},
+    {s:'BEPL.NS', d:'BEPL', sector:'Other', mcap:null},
+    {s:'BHARTIHEXA.NS', d:'BHARTIHEXA', sector:'Other', mcap:null},
+    {s:'BLACKBUCK.NS', d:'BLACKBUCK', sector:'Other', mcap:null},
+    {s:'BLISSGVS.NS', d:'BLISSGVS', sector:'Other', mcap:null},
+    {s:'BLS.NS', d:'BLS', sector:'Consumer Services', mcap:14000},
+    {s:'BLUEJET.NS', d:'BLUEJET', sector:'Other', mcap:null},
+    {s:'BLUESTONE.NS', d:'BLUESTONE', sector:'Other', mcap:null},
+    {s:'BOMDYEING.NS', d:'BOMDYEING', sector:'Other', mcap:null},
+    {s:'BORORENEW.NS', d:'BORORENEW', sector:'Other', mcap:null},
+    {s:'BRIGADE.NS', d:'BRIGADE', sector:'Realty', mcap:28000},
+    {s:'BRIGHOTEL.NS', d:'BRIGHOTEL', sector:'Other', mcap:null},
+    {s:'BSOFT.NS', d:'BSOFT', sector:'Other', mcap:null},
+    {s:'CAMLINFINE.NS', d:'CAMLINFINE', sector:'Other', mcap:null},
+    {s:'CAMPUS.NS', d:'CAMPUS', sector:'Other', mcap:null},
+    {s:'CANFINHOME.NS', d:'CANFINHOME', sector:'Financial', mcap:10000},
+    {s:'CANHLIFE.NS', d:'CANHLIFE', sector:'Other', mcap:null},
+    {s:'CANTABIL.NS', d:'CANTABIL', sector:'Other', mcap:null},
+    {s:'CAPACITE.NS', d:'CAPACITE', sector:'Other', mcap:null},
+    {s:'CAPILLARY.NS', d:'CAPILLARY', sector:'Other', mcap:null},
+    {s:'CARBORUNIV.NS', d:'CARBORUNIV', sector:'Other', mcap:null},
+    {s:'CASTROLIND.NS', d:'CASTROLIND', sector:'Chemicals', mcap:16000},
+    {s:'CCL.NS', d:'CCL', sector:'FMCG', mcap:10000},
+    {s:'CEIGALL.NS', d:'CEIGALL', sector:'Other', mcap:null},
+    {s:'CEMPRO.NS', d:'CEMPRO', sector:'Other', mcap:null},
+    {s:'CESC.NS', d:'CESC', sector:'Power', mcap:20000},
+    {s:'CGCL.NS', d:'CGCL', sector:'Financial', mcap:7000},
+    {s:'CHEMPLASTS.NS', d:'CHEMPLASTS', sector:'Other', mcap:null},
+    {s:'CHENNPETRO.NS', d:'CHENNPETRO', sector:'Other', mcap:null},
+    {s:'CHOICEIN.NS', d:'CHOICEIN', sector:'Other', mcap:null},
+    {s:'CHOLAHLDNG.NS', d:'CHOLAHLDNG', sector:'Financial', mcap:55000},
+    {s:'CIEINDIA.NS', d:'CIEINDIA', sector:'Other', mcap:null},
+    {s:'CLEAN.NS', d:'CLEAN', sector:'Other', mcap:null},
+    {s:'CMSINFO.NS', d:'CMSINFO', sector:'Other', mcap:null},
+    {s:'COCHINSHIP.NS', d:'COCHINSHIP', sector:'Defence', mcap:40000},
+    {s:'COHANCE.NS', d:'COHANCE', sector:'Other', mcap:null},
+    {s:'CONCORDBIO.NS', d:'CONCORDBIO', sector:'Pharma', mcap:18000},
+    {s:'CRAMC.NS', d:'CRAMC', sector:'Other', mcap:null},
+    {s:'CREDITACC.NS', d:'CREDITACC', sector:'Financial', mcap:14000},
+    {s:'CRIZAC.NS', d:'CRIZAC', sector:'Other', mcap:null},
+    {s:'CSBBANK.NS', d:'CSBBANK', sector:'Banking', mcap:7000},
+    {s:'CUB.NS', d:'CUB', sector:'Banking', mcap:14000},
+    {s:'CUPID.NS', d:'CUPID', sector:'Other', mcap:null},
+    {s:'CYIENT.NS', d:'CYIENT', sector:'IT', mcap:14000},
+    {s:'CYIENTDLM.NS', d:'CYIENTDLM', sector:'Other', mcap:null},
+    {s:'DATAMATICS.NS', d:'DATAMATICS', sector:'Other', mcap:null},
+    {s:'DATAPATTNS.NS', d:'DATAPATTNS', sector:'Other', mcap:null},
+    {s:'DBL.NS', d:'DBL', sector:'Other', mcap:null},
+    {s:'DBREALTY.NS', d:'DBREALTY', sector:'Realty', mcap:10000},
+    {s:'DCAL.NS', d:'DCAL', sector:'Other', mcap:null},
+    {s:'DCBBANK.NS', d:'DCBBANK', sector:'Other', mcap:null},
+    {s:'DCXINDIA.NS', d:'DCXINDIA', sector:'Other', mcap:null},
+    {s:'DEEPAKFERT.NS', d:'DEEPAKFERT', sector:'Other', mcap:null},
+    {s:'DIACABS.NS', d:'DIACABS', sector:'Other', mcap:null},
+    {s:'DREDGECORP.NS', d:'DREDGECORP', sector:'Other', mcap:null},
+    {s:'E2E.NS', d:'E2E', sector:'Other', mcap:null},
+    {s:'EBGNG.NS', d:'EBGNG', sector:'Other', mcap:null},
+    {s:'EDELWEISS.NS', d:'EDELWEISS', sector:'Other', mcap:null},
+    {s:'EFCIL.NS', d:'EFCIL', sector:'Other', mcap:null},
+    {s:'EIEL.NS', d:'EIEL', sector:'Other', mcap:null},
+    {s:'EIHOTEL.NS', d:'EIHOTEL', sector:'Consumer Services', mcap:28000},
+    {s:'ELECON.NS', d:'ELECON', sector:'Other', mcap:null},
+    {s:'ELECTCAST.NS', d:'ELECTCAST', sector:'Other', mcap:null},
+    {s:'ELLEN.NS', d:'ELLEN', sector:'Other', mcap:null},
+    {s:'EMBDL.NS', d:'EMBDL', sector:'Other', mcap:null},
+    {s:'EMIL.NS', d:'EMIL', sector:'Other', mcap:null},
+    {s:'EMMVEE.NS', d:'EMMVEE', sector:'Other', mcap:null},
+    {s:'ENGINERSIN.NS', d:'ENGINERSIN', sector:'Other', mcap:null},
+    {s:'ENRIN.NS', d:'ENRIN', sector:'Other', mcap:null},
+    {s:'EPACK.NS', d:'EPACK', sector:'Other', mcap:null},
+    {s:'EPL.NS', d:'EPL', sector:'Other', mcap:null},
+    {s:'EQUITASBNK.NS', d:'EQUITASBNK', sector:'Banking', mcap:7000},
+    {s:'ETERNAL.NS', d:'ETERNAL', sector:'Other', mcap:null},
+    {s:'EUROPRATIK.NS', d:'EUROPRATIK', sector:'Other', mcap:null},
+    {s:'FEDFINA.NS', d:'FEDFINA', sector:'Other', mcap:null},
+    {s:'FINCABLES.NS', d:'FINCABLES', sector:'Other', mcap:null},
+    {s:'FINPIPE.NS', d:'FINPIPE', sector:'Other', mcap:null},
+    {s:'FIRSTCRY.NS', d:'FIRSTCRY', sector:'E-commerce', mcap:18000},
+    {s:'FIVESTAR.NS', d:'FIVESTAR', sector:'Financial', mcap:28000},
+    {s:'FORTIS.NS', d:'FORTIS', sector:'Healthcare', mcap:45000},
+    {s:'FSL.NS', d:'FSL', sector:'Other', mcap:null},
+    {s:'FUSION.NS', d:'FUSION', sector:'Other', mcap:null},
+    {s:'GABRIEL.NS', d:'GABRIEL', sector:'Other', mcap:null},
+    {s:'GAEL.NS', d:'GAEL', sector:'Other', mcap:null},
+    {s:'GATEWAY.NS', d:'GATEWAY', sector:'Other', mcap:null},
+    {s:'GENUSPOWER.NS', d:'GENUSPOWER', sector:'Other', mcap:null},
+    {s:'GESHIP.NS', d:'GESHIP', sector:'Logistics', mcap:14000},
+    {s:'GICRE.NS', d:'GICRE', sector:'Insurance', mcap:45000},
+    {s:'GIPCL.NS', d:'GIPCL', sector:'Other', mcap:null},
+    {s:'GKENERGY.NS', d:'GKENERGY', sector:'Other', mcap:null},
+    {s:'GMDCLTD.NS', d:'GMDCLTD', sector:'Mining', mcap:10000},
+    {s:'GMRP&UI.NS', d:'GMRP&UI', sector:'Infra', mcap:5500},
+    {s:'GODFRYPHLP.NS', d:'GODFRYPHLP', sector:'Other', mcap:null},
+    {s:'GODIGIT.NS', d:'GODIGIT', sector:'Insurance', mcap:28000},
+    {s:'GODREJAGRO.NS', d:'GODREJAGRO', sector:'FMCG', mcap:18000},
+    {s:'GOKEX.NS', d:'GOKEX', sector:'Other', mcap:null},
+    {s:'GOKULAGRO.NS', d:'GOKULAGRO', sector:'Other', mcap:null},
+    {s:'GOLDIAM.NS', d:'GOLDIAM', sector:'Other', mcap:null},
+    {s:'GPIL.NS', d:'GPIL', sector:'Other', mcap:null},
+    {s:'GPPL.NS', d:'GPPL', sector:'Other', mcap:null},
+    {s:'GRAPHITE.NS', d:'GRAPHITE', sector:'Other', mcap:null},
+    {s:'GREAVESCOT.NS', d:'GREAVESCOT', sector:'Other', mcap:null},
+    {s:'GRMOVER.NS', d:'GRMOVER', sector:'Other', mcap:null},
+    {s:'GROWW.NS', d:'GROWW', sector:'Financial', mcap:60000},
+    {s:'GRSE.NS', d:'GRSE', sector:'Defence', mcap:28000},
+    {s:'GVPIL.NS', d:'GVPIL', sector:'Other', mcap:null},
+    {s:'GVT&D.NS', d:'GVT&D', sector:'Cap Goods', mcap:18000},
+    {s:'HAPPSTMNDS.NS', d:'HAPPSTMNDS', sector:'Other', mcap:null},
+    {s:'HBLENGINE.NS', d:'HBLENGINE', sector:'Other', mcap:null},
+    {s:'HDBFS.NS', d:'HDBFS', sector:'Financial', mcap:65000},
+    {s:'HEG.NS', d:'HEG', sector:'Other', mcap:null},
+    {s:'HEMIPROP.NS', d:'HEMIPROP', sector:'Other', mcap:null},
+    {s:'HERITGFOOD.NS', d:'HERITGFOOD', sector:'Other', mcap:null},
+    {s:'HEXT.NS', d:'HEXT', sector:'Other', mcap:null},
+    {s:'HFCL.NS', d:'HFCL', sector:'Telecom', mcap:18000},
+    {s:'HGINFRA.NS', d:'HGINFRA', sector:'Other', mcap:null},
+    {s:'HIKAL.NS', d:'HIKAL', sector:'Other', mcap:null},
+    {s:'HINDPETRO.NS', d:'HINDPETRO', sector:'Energy', mcap:85000},
+    {s:'HOMEFIRST.NS', d:'HOMEFIRST', sector:'Financial', mcap:11000},
+    {s:'HPL.NS', d:'HPL', sector:'Other', mcap:null},
+    {s:'HSCL.NS', d:'HSCL', sector:'Other', mcap:null},
+    {s:'HUBTOWN.NS', d:'HUBTOWN', sector:'Other', mcap:null},
+    {s:'HYUNDAI.NS', d:'HYUNDAI', sector:'Auto', mcap:150000},
+    {s:'ICICIAMC.NS', d:'ICICIAMC', sector:'Financial', mcap:95000},
+    {s:'ICIL.NS', d:'ICIL', sector:'Other', mcap:null},
+    {s:'IDBI.NS', d:'IDBI', sector:'Banking', mcap:90000},
+    {s:'IGIL.NS', d:'IGIL', sector:'Other', mcap:null},
+    {s:'IIFL.NS', d:'IIFL', sector:'Financial', mcap:18000},
+    {s:'IIFLCAPS.NS', d:'IIFLCAPS', sector:'Other', mcap:null},
+    {s:'IMFA.NS', d:'IMFA', sector:'Other', mcap:null},
+    {s:'INDGN.NS', d:'INDGN', sector:'Chemicals', mcap:5500},
+    {s:'INDHOTEL.NS', d:'INDHOTEL', sector:'Consumer Services', mcap:95000},
+    {s:'INDIANB.NS', d:'INDIANB', sector:'Banking', mcap:75000},
+    {s:'INDOTHAI.NS', d:'INDOTHAI', sector:'Other', mcap:null},
+    {s:'INDRAMEDCO.NS', d:'INDRAMEDCO', sector:'Other', mcap:null},
+    {s:'INDUSTOWER.NS', d:'INDUSTOWER', sector:'Telecom', mcap:85000},
+    {s:'INFOBEAN.NS', d:'INFOBEAN', sector:'Other', mcap:null},
+    {s:'INOXGREEN.NS', d:'INOXGREEN', sector:'Other', mcap:null},
+    {s:'INOXWIND.NS', d:'INOXWIND', sector:'Renewables', mcap:30000},
+    {s:'INTELLECT.NS', d:'INTELLECT', sector:'Other', mcap:null},
+    {s:'IOLCP.NS', d:'IOLCP', sector:'Other', mcap:null},
+    {s:'IONEXCHANG.NS', d:'IONEXCHANG', sector:'Other', mcap:null},
+    {s:'IRBINVIT.NS', d:'IRBINVIT', sector:'Other', mcap:null},
+    {s:'IREDA.NS', d:'IREDA', sector:'Financial', mcap:40000},
+    {s:'ITCHOTELS.NS', d:'ITCHOTELS', sector:'Consumer Services', mcap:45000},
+    {s:'ITDC.NS', d:'ITDC', sector:'Other', mcap:null},
+    {s:'ITI.NS', d:'ITI', sector:'Other', mcap:null},
+    {s:'IXIGO.NS', d:'IXIGO', sector:'Travel', mcap:6000},
+    {s:'J&KBANK.NS', d:'J&KBANK', sector:'Banking', mcap:11000},
+    {s:'JAIBALAJI.NS', d:'JAIBALAJI', sector:'Other', mcap:null},
+    {s:'JAICORPLTD.NS', d:'JAICORPLTD', sector:'Other', mcap:null},
+    {s:'JAINREC.NS', d:'JAINREC', sector:'Other', mcap:null},
+    {s:'JAMNAAUTO.NS', d:'JAMNAAUTO', sector:'Other', mcap:null},
+    {s:'JAYNECOIND.NS', d:'JAYNECOIND', sector:'Other', mcap:null},
+    {s:'JBCHEPHARM.NS', d:'JBCHEPHARM', sector:'Other', mcap:null},
+    {s:'JBMA.NS', d:'JBMA', sector:'Auto Anc.', mcap:18000},
+    {s:'JINDALPOLY.NS', d:'JINDALPOLY', sector:'Other', mcap:null},
+    {s:'JINDALSAW.NS', d:'JINDALSAW', sector:'Other', mcap:null},
+    {s:'JKPAPER.NS', d:'JKPAPER', sector:'Other', mcap:null},
+    {s:'JMFINANCIL.NS', d:'JMFINANCIL', sector:'Financial', mcap:14000},
+    {s:'JSFB.NS', d:'JSFB', sector:'Other', mcap:null},
+    {s:'JSLL.NS', d:'JSLL', sector:'Other', mcap:null},
+    {s:'JSWCEMENT.NS', d:'JSWCEMENT', sector:'Other', mcap:null},
+    {s:'JSWENERGY.NS', d:'JSWENERGY', sector:'Power', mcap:95000},
+    {s:'JSWINFRA.NS', d:'JSWINFRA', sector:'Infra', mcap:45000},
+    {s:'JTLIND.NS', d:'JTLIND', sector:'Other', mcap:null},
+    {s:'JUNIPER.NS', d:'JUNIPER', sector:'Other', mcap:null},
+    {s:'JWL.NS', d:'JWL', sector:'Cap Goods', mcap:18000},
+    {s:'JYOTHYLAB.NS', d:'JYOTHYLAB', sector:'FMCG', mcap:14000},
+    {s:'JYOTICNC.NS', d:'JYOTICNC', sector:'Other', mcap:null},
+    {s:'KAJARIACER.NS', d:'KAJARIACER', sector:'Consumer Durables', mcap:16000},
+    {s:'KARURVYSYA.NS', d:'KARURVYSYA', sector:'Banking', mcap:20000},
+    {s:'KEI.NS', d:'KEI', sector:'Electricals', mcap:28000},
+    {s:'KFINTECH.NS', d:'KFINTECH', sector:'Financial', mcap:14000},
+    {s:'KIMS.NS', d:'KIMS', sector:'Healthcare', mcap:28000},
+    {s:'KIOCL.NS', d:'KIOCL', sector:'Other', mcap:null},
+    {s:'KIRIINDUS.NS', d:'KIRIINDUS', sector:'Other', mcap:null},
+    {s:'KITEX.NS', d:'KITEX', sector:'Other', mcap:null},
+    {s:'KNRCON.NS', d:'KNRCON', sector:'Infra', mcap:10000},
+    {s:'KPIGREEN.NS', d:'KPIGREEN', sector:'Other', mcap:null},
+    {s:'KRBL.NS', d:'KRBL', sector:'Other', mcap:null},
+    {s:'KRN.NS', d:'KRN', sector:'Other', mcap:null},
+    {s:'KTKBANK.NS', d:'KTKBANK', sector:'Other', mcap:null},
+    {s:'LALPATHLAB.NS', d:'LALPATHLAB', sector:'Healthcare', mcap:22000},
+    {s:'LATENTVIEW.NS', d:'LATENTVIEW', sector:'IT', mcap:7000},
+    {s:'LEMONTREE.NS', d:'LEMONTREE', sector:'Consumer Services', mcap:11000},
+    {s:'LENSKART.NS', d:'LENSKART', sector:'Retail', mcap:65000},
+    {s:'LGEINDIA.NS', d:'LGEINDIA', sector:'Other', mcap:null},
+    {s:'LLOYDSENGG.NS', d:'LLOYDSENGG', sector:'Other', mcap:null},
+    {s:'LLOYDSENT.NS', d:'LLOYDSENT', sector:'Other', mcap:null},
+    {s:'LLOYDSME.NS', d:'LLOYDSME', sector:'Other', mcap:null},
+    {s:'LOTUSDEV.NS', d:'LOTUSDEV', sector:'Other', mcap:null},
+    {s:'LTF.NS', d:'LTF', sector:'Financial', mcap:40000},
+    {s:'LTFOODS.NS', d:'LTFOODS', sector:'FMCG', mcap:10000},
+    {s:'LTM.NS', d:'LTM', sector:'Other', mcap:null},
+    {s:'LUMAXTECH.NS', d:'LUMAXTECH', sector:'Other', mcap:null},
+    {s:'LXCHEM.NS', d:'LXCHEM', sector:'Other', mcap:null},
+    {s:'M&MFIN.NS', d:'M&MFIN', sector:'Financial', mcap:28000},
+    {s:'MAHABANK.NS', d:'MAHABANK', sector:'Other', mcap:null},
+    {s:'MAHLOG.NS', d:'MAHLOG', sector:'Other', mcap:null},
+    {s:'MAITHANALL.NS', d:'MAITHANALL', sector:'Other', mcap:null},
+    {s:'MANAPPURAM.NS', d:'MANAPPURAM', sector:'Financial', mcap:18000},
+    {s:'MANINDS.NS', d:'MANINDS', sector:'Other', mcap:null},
+    {s:'MANINFRA.NS', d:'MANINFRA', sector:'Other', mcap:null},
+    {s:'MARINE.NS', d:'MARINE', sector:'Other', mcap:null},
+    {s:'MARKSANS.NS', d:'MARKSANS', sector:'Other', mcap:null},
+    {s:'MAXHEALTH.NS', d:'MAXHEALTH', sector:'Healthcare', mcap:95000},
+    {s:'MAZDOCK.NS', d:'MAZDOCK', sector:'Defence', mcap:90000},
+    {s:'MBAPL.NS', d:'MBAPL', sector:'Other', mcap:null},
+    {s:'MBEL.NS', d:'MBEL', sector:'Other', mcap:null},
+    {s:'MEESHO.NS', d:'MEESHO', sector:'Other', mcap:null},
+    {s:'MFSL.NS', d:'MFSL', sector:'Insurance', mcap:28000},
+    {s:'MIDHANI.NS', d:'MIDHANI', sector:'Other', mcap:null},
+    {s:'MINDACORP.NS', d:'MINDACORP', sector:'Other', mcap:null},
+    {s:'MMTC.NS', d:'MMTC', sector:'Other', mcap:null},
+    {s:'MOIL.NS', d:'MOIL', sector:'Mining', mcap:7000},
+    {s:'MOSCHIP.NS', d:'MOSCHIP', sector:'Other', mcap:null},
+    {s:'MOTILALOFS.NS', d:'MOTILALOFS', sector:'Financial', mcap:35000},
+    {s:'MRPL.NS', d:'MRPL', sector:'Energy', mcap:28000},
+    {s:'MTARTECH.NS', d:'MTARTECH', sector:'Other', mcap:null},
+    {s:'MUFIN.NS', d:'MUFIN', sector:'Other', mcap:null},
+    {s:'MUTHOOTMF.NS', d:'MUTHOOTMF', sector:'Other', mcap:null},
+    {s:'NACLIND.NS', d:'NACLIND', sector:'Other', mcap:null},
+    {s:'NAVA.NS', d:'NAVA', sector:'Diversified', mcap:11000},
+    {s:'NAVNETEDUL.NS', d:'NAVNETEDUL', sector:'Other', mcap:null},
+    {s:'NAZARA.NS', d:'NAZARA', sector:'Media', mcap:11000},
+    {s:'NEPHROPLUS.NS', d:'NEPHROPLUS', sector:'Other', mcap:null},
+    {s:'NETWEB.NS', d:'NETWEB', sector:'Other', mcap:null},
+    {s:'NEWGEN.NS', d:'NEWGEN', sector:'Other', mcap:null},
+    {s:'NFL.NS', d:'NFL', sector:'Other', mcap:null},
+    {s:'NH.NS', d:'NH', sector:'Healthcare', mcap:28000},
+    {s:'NIACL.NS', d:'NIACL', sector:'Insurance', mcap:35000},
+    {s:'NITINSPIN.NS', d:'NITINSPIN', sector:'Other', mcap:null},
+    {s:'NIVABUPA.NS', d:'NIVABUPA', sector:'Insurance', mcap:18000},
+    {s:'NLCINDIA.NS', d:'NLCINDIA', sector:'Power', mcap:18000},
+    {s:'NOCIL.NS', d:'NOCIL', sector:'Other', mcap:null},
+    {s:'NORTHARC.NS', d:'NORTHARC', sector:'Other', mcap:null},
+    {s:'NRBBEARING.NS', d:'NRBBEARING', sector:'Other', mcap:null},
+    {s:'NTPCGREEN.NS', d:'NTPCGREEN', sector:'Renewables', mcap:95000},
+    {s:'NUVAMA.NS', d:'NUVAMA', sector:'Financial', mcap:18000},
+    {s:'NUVOCO.NS', d:'NUVOCO', sector:'Cement', mcap:11000},
+    {s:'OIL.NS', d:'OIL', sector:'Energy', mcap:55000},
+    {s:'OLECTRA.NS', d:'OLECTRA', sector:'Other', mcap:null},
+    {s:'ONESOURCE.NS', d:'ONESOURCE', sector:'Pharma', mcap:6000},
+    {s:'ORIENTCEM.NS', d:'ORIENTCEM', sector:'Other', mcap:null},
+    {s:'ORIENTELEC.NS', d:'ORIENTELEC', sector:'Other', mcap:null},
+    {s:'OSWALPUMPS.NS', d:'OSWALPUMPS', sector:'Other', mcap:null},
+    {s:'PACEDIGITK.NS', d:'PACEDIGITK', sector:'Other', mcap:null},
+    {s:'PANACEABIO.NS', d:'PANACEABIO', sector:'Other', mcap:null},
+    {s:'PARAGMILK.NS', d:'PARAGMILK', sector:'Other', mcap:null},
+    {s:'PARAS.NS', d:'PARAS', sector:'Other', mcap:null},
+    {s:'PARKHOSPS.NS', d:'PARKHOSPS', sector:'Other', mcap:null},
+    {s:'PARKHOTELS.NS', d:'PARKHOTELS', sector:'Other', mcap:null},
+    {s:'PATANJALI.NS', d:'PATANJALI', sector:'FMCG', mcap:45000},
+    {s:'PCBL.NS', d:'PCBL', sector:'Other', mcap:null},
+    {s:'PENIND.NS', d:'PENIND', sector:'Other', mcap:null},
+    {s:'PFOCUS.NS', d:'PFOCUS', sector:'Other', mcap:null},
+    {s:'PGEL.NS', d:'PGEL', sector:'Other', mcap:null},
+    {s:'PGINVIT.NS', d:'PGINVIT', sector:'Other', mcap:null},
+    {s:'PICCADIL.NS', d:'PICCADIL', sector:'Other', mcap:null},
+    {s:'PINELABS.NS', d:'PINELABS', sector:'Other', mcap:null},
+    {s:'PIRAMALFIN.NS', d:'PIRAMALFIN', sector:'Financial', mcap:28000},
+    {s:'PNCINFRA.NS', d:'PNCINFRA', sector:'Infra', mcap:11000},
+    {s:'PNGJL.NS', d:'PNGJL', sector:'Other', mcap:null},
+    {s:'POCL.NS', d:'POCL', sector:'Other', mcap:null},
+    {s:'POKARNA.NS', d:'POKARNA', sector:'Other', mcap:null},
+    {s:'POONAWALLA.NS', d:'POONAWALLA', sector:'Financial', mcap:28000},
+    {s:'POWERINDIA.NS', d:'POWERINDIA', sector:'Cap Goods', mcap:45000},
+    {s:'PPLPHARMA.NS', d:'PPLPHARMA', sector:'Pharma', mcap:28000},
+    {s:'PRAJIND.NS', d:'PRAJIND', sector:'Other', mcap:null},
+    {s:'PRAKASH.NS', d:'PRAKASH', sector:'Other', mcap:null},
+    {s:'PRECWIRE.NS', d:'PRECWIRE', sector:'Other', mcap:null},
+    {s:'PREMEXPLN.NS', d:'PREMEXPLN', sector:'Other', mcap:null},
+    {s:'PREMIERENE.NS', d:'PREMIERENE', sector:'Other', mcap:null},
+    {s:'PRICOLLTD.NS', d:'PRICOLLTD', sector:'Other', mcap:null},
+    {s:'PROTEAN.NS', d:'PROTEAN', sector:'Financial', mcap:5500},
+    {s:'PRSMJOHNSN.NS', d:'PRSMJOHNSN', sector:'Other', mcap:null},
+    {s:'PTC.NS', d:'PTC', sector:'Other', mcap:null},
+    {s:'PURVA.NS', d:'PURVA', sector:'Other', mcap:null},
+    {s:'PWL.NS', d:'PWL', sector:'Other', mcap:null},
+    {s:'QPOWER.NS', d:'QPOWER', sector:'Other', mcap:null},
+    {s:'QUESS.NS', d:'QUESS', sector:'Other', mcap:null},
+    {s:'RAIN.NS', d:'RAIN', sector:'Other', mcap:null},
+    {s:'RAJRATAN.NS', d:'RAJRATAN', sector:'Other', mcap:null},
+    {s:'RALLIS.NS', d:'RALLIS', sector:'Other', mcap:null},
+    {s:'RATEGAIN.NS', d:'RATEGAIN', sector:'Other', mcap:null},
+    {s:'RAYMONDLSL.NS', d:'RAYMONDLSL', sector:'Textiles', mcap:10000},
+    {s:'RAYMONDREL.NS', d:'RAYMONDREL', sector:'Other', mcap:null},
+    {s:'RBA.NS', d:'RBA', sector:'Other', mcap:null},
+    {s:'REDINGTON.NS', d:'REDINGTON', sector:'IT', mcap:18000},
+    {s:'REDTAPE.NS', d:'REDTAPE', sector:'Other', mcap:null},
+    {s:'REFEX.NS', d:'REFEX', sector:'Other', mcap:null},
+    {s:'RELIGARE.NS', d:'RELIGARE', sector:'Financial', mcap:8000},
+    {s:'RELINFRA.NS', d:'RELINFRA', sector:'Power', mcap:14000},
+    {s:'RELTD.NS', d:'RELTD', sector:'Other', mcap:null},
+    {s:'RESPONIND.NS', d:'RESPONIND', sector:'Other', mcap:null},
+    {s:'RHIM.NS', d:'RHIM', sector:'Other', mcap:null},
+    {s:'RITES.NS', d:'RITES', sector:'Infra', mcap:11000},
+    {s:'RKFORGE.NS', d:'RKFORGE', sector:'Other', mcap:null},
+    {s:'RMDRIP.NS', d:'RMDRIP', sector:'Other', mcap:null},
+    {s:'ROLEXRINGS.NS', d:'ROLEXRINGS', sector:'Other', mcap:null},
+    {s:'ROSSTECH.NS', d:'ROSSTECH', sector:'Other', mcap:null},
+    {s:'ROUTE.NS', d:'ROUTE', sector:'Other', mcap:null},
+    {s:'RUBICON.NS', d:'RUBICON', sector:'Other', mcap:null},
+    {s:'SAILIFE.NS', d:'SAILIFE', sector:'Other', mcap:null},
+    {s:'SAKSOFT.NS', d:'SAKSOFT', sector:'Other', mcap:null},
+    {s:'SAMBHV.NS', d:'SAMBHV', sector:'Other', mcap:null},
+    {s:'SAMHI.NS', d:'SAMHI', sector:'Other', mcap:null},
+    {s:'SAMMAANCAP.NS', d:'SAMMAANCAP', sector:'Financial', mcap:14000},
+    {s:'SANDHAR.NS', d:'SANDHAR', sector:'Other', mcap:null},
+    {s:'SANDUMA.NS', d:'SANDUMA', sector:'Other', mcap:null},
+    {s:'SANGHVIMOV.NS', d:'SANGHVIMOV', sector:'Other', mcap:null},
+    {s:'SANSERA.NS', d:'SANSERA', sector:'Other', mcap:null},
+    {s:'SARDAEN.NS', d:'SARDAEN', sector:'Other', mcap:null},
+    {s:'SBFC.NS', d:'SBFC', sector:'Financial', mcap:11000},
+    {s:'SBICARD.NS', d:'SBICARD', sector:'Financial', mcap:75000},
+    {s:'SCHNEIDER.NS', d:'SCHNEIDER', sector:'Other', mcap:null},
+    {s:'SCI.NS', d:'SCI', sector:'Logistics', mcap:18000},
+    {s:'SENCO.NS', d:'SENCO', sector:'Other', mcap:null},
+    {s:'SENORES.NS', d:'SENORES', sector:'Other', mcap:null},
+    {s:'SETL.NS', d:'SETL', sector:'Other', mcap:null},
+    {s:'SFL.NS', d:'SFL', sector:'Other', mcap:null},
+    {s:'SGFIN.NS', d:'SGFIN', sector:'Other', mcap:null},
+    {s:'SGMART.NS', d:'SGMART', sector:'Other', mcap:null},
+    {s:'SHAILY.NS', d:'SHAILY', sector:'Other', mcap:null},
+    {s:'SHAKTIPUMP.NS', d:'SHAKTIPUMP', sector:'Other', mcap:null},
+    {s:'SHARDACROP.NS', d:'SHARDACROP', sector:'Other', mcap:null},
+    {s:'SHAREINDIA.NS', d:'SHAREINDIA', sector:'Other', mcap:null},
+    {s:'SHILPAMED.NS', d:'SHILPAMED', sector:'Other', mcap:null},
+    {s:'SHK.NS', d:'SHK', sector:'Other', mcap:null},
+    {s:'SHREEJISPG.NS', d:'SHREEJISPG', sector:'Other', mcap:null},
+    {s:'SHRINGARMS.NS', d:'SHRINGARMS', sector:'Other', mcap:null},
+    {s:'SIGNATURE.NS', d:'SIGNATURE', sector:'Other', mcap:null},
+    {s:'SIRCA.NS', d:'SIRCA', sector:'Other', mcap:null},
+    {s:'SJVN.NS', d:'SJVN', sector:'Other', mcap:null},
+    {s:'SKIPPER.NS', d:'SKIPPER', sector:'Other', mcap:null},
+    {s:'SKYGOLD.NS', d:'SKYGOLD', sector:'Other', mcap:null},
+    {s:'SMSPHARMA.NS', d:'SMSPHARMA', sector:'Other', mcap:null},
+    {s:'SPANDANA.NS', d:'SPANDANA', sector:'Other', mcap:null},
+    {s:'SPARC.NS', d:'SPARC', sector:'Other', mcap:null},
+    {s:'STAR.NS', d:'STAR', sector:'Other', mcap:null},
+    {s:'STARCEMENT.NS', d:'STARCEMENT', sector:'Other', mcap:null},
+    {s:'STARHEALTH.NS', d:'STARHEALTH', sector:'Insurance', mcap:28000},
+    {s:'STLTECH.NS', d:'STLTECH', sector:'Other', mcap:null},
+    {s:'STYLEBAAZA.NS', d:'STYLEBAAZA', sector:'Other', mcap:null},
+    {s:'SUMICHEM.NS', d:'SUMICHEM', sector:'Other', mcap:null},
+    {s:'SURYAROSNI.NS', d:'SURYAROSNI', sector:'Other', mcap:null},
+    {s:'SUVEN.NS', d:'SUVEN', sector:'Pharma', mcap:14000},
+    {s:'SWANCORP.NS', d:'SWANCORP', sector:'Other', mcap:null},
+    {s:'SWIGGY.NS', d:'SWIGGY', sector:'E-commerce', mcap:85000},
+    {s:'SWSOLAR.NS', d:'SWSOLAR', sector:'Other', mcap:null},
+    {s:'TANLA.NS', d:'TANLA', sector:'IT', mcap:8000},
+    {s:'TARC.NS', d:'TARC', sector:'Other', mcap:null},
+    {s:'TARIL.NS', d:'TARIL', sector:'Other', mcap:null},
+    {s:'TATACAP.NS', d:'TATACAP', sector:'Financial', mcap:150000},
+    {s:'TATACOMM.NS', d:'TATACOMM', sector:'Telecom', mcap:45000},
+    {s:'TATAINVEST.NS', d:'TATAINVEST', sector:'Other', mcap:null},
+    {s:'TATATECH.NS', d:'TATATECH', sector:'IT', mcap:28000},
+    {s:'TDPOWERSYS.NS', d:'TDPOWERSYS', sector:'Other', mcap:null},
+    {s:'TECHNOE.NS', d:'TECHNOE', sector:'Other', mcap:null},
+    {s:'TEJASNET.NS', d:'TEJASNET', sector:'Other', mcap:null},
+    {s:'TENNIND.NS', d:'TENNIND', sector:'Other', mcap:null},
+    {s:'TEXRAIL.NS', d:'TEXRAIL', sector:'Other', mcap:null},
+    {s:'TFCILTD.NS', d:'TFCILTD', sector:'Other', mcap:null},
+    {s:'THELEELA.NS', d:'THELEELA', sector:'Other', mcap:null},
+    {s:'THYROCARE.NS', d:'THYROCARE', sector:'Other', mcap:null},
+    {s:'TI.NS', d:'TI', sector:'Other', mcap:null},
+    {s:'TIMETECHNO.NS', d:'TIMETECHNO', sector:'Other', mcap:null},
+    {s:'TIPSMUSIC.NS', d:'TIPSMUSIC', sector:'Other', mcap:null},
+    {s:'TIRUMALCHM.NS', d:'TIRUMALCHM', sector:'Other', mcap:null},
+    {s:'TITAGARH.NS', d:'TITAGARH', sector:'Cap Goods', mcap:14000},
+    {s:'TMB.NS', d:'TMB', sector:'Other', mcap:null},
+    {s:'TMCV.NS', d:'TMCV', sector:'Other', mcap:null},
+    {s:'TMPV.NS', d:'TMPV', sector:'Auto', mcap:350000},
+    {s:'TRANSRAILL.NS', d:'TRANSRAILL', sector:'Other', mcap:null},
+    {s:'TRITURBINE.NS', d:'TRITURBINE', sector:'Other', mcap:null},
+    {s:'TRIVENI.NS', d:'TRIVENI', sector:'Other', mcap:null},
+    {s:'TRUALT.NS', d:'TRUALT', sector:'Other', mcap:null},
+    {s:'TVSSCS.NS', d:'TVSSCS', sector:'Other', mcap:null},
+    {s:'UJJIVANSFB.NS', d:'UJJIVANSFB', sector:'Banking', mcap:8000},
+    {s:'URBANCO.NS', d:'URBANCO', sector:'Other', mcap:null},
+    {s:'USHAMART.NS', d:'USHAMART', sector:'Other', mcap:null},
+    {s:'UTLSOLAR.NS', d:'UTLSOLAR', sector:'Other', mcap:null},
+    {s:'VAIBHAVGBL.NS', d:'VAIBHAVGBL', sector:'Other', mcap:null},
+    {s:'VESUVIUS.NS', d:'VESUVIUS', sector:'Other', mcap:null},
+    {s:'VIKRAMSOLR.NS', d:'VIKRAMSOLR', sector:'Other', mcap:null},
+    {s:'VIMTALABS.NS', d:'VIMTALABS', sector:'Other', mcap:null},
+    {s:'VINCOFE.NS', d:'VINCOFE', sector:'Other', mcap:null},
+    {s:'VIPIND.NS', d:'VIPIND', sector:'Other', mcap:null},
+    {s:'VIYASH.NS', d:'VIYASH', sector:'Other', mcap:null},
+    {s:'VMM.NS', d:'VMM', sector:'Other', mcap:null},
+    {s:'VSTIND.NS', d:'VSTIND', sector:'Other', mcap:null},
+    {s:'VTL.NS', d:'VTL', sector:'Other', mcap:null},
+    {s:'WAAREEENER.NS', d:'WAAREEENER', sector:'Other', mcap:null},
+    {s:'WAAREERTL.NS', d:'WAAREERTL', sector:'Other', mcap:null},
+    {s:'WABAG.NS', d:'WABAG', sector:'Infra', mcap:7000},
+    {s:'WAKEFIT.NS', d:'WAKEFIT', sector:'Other', mcap:null},
+    {s:'WEBELSOLAR.NS', d:'WEBELSOLAR', sector:'Other', mcap:null},
+    {s:'WOCKPHARMA.NS', d:'WOCKPHARMA', sector:'Other', mcap:null},
+    {s:'YATHARTH.NS', d:'YATHARTH', sector:'Other', mcap:null},
+    {s:'YATRA.NS', d:'YATRA', sector:'Other', mcap:null},
+    {s:'ZAGGLE.NS', d:'ZAGGLE', sector:'Other', mcap:null},
+    {s:'ZENSARTECH.NS', d:'ZENSARTECH', sector:'Other', mcap:null},
+    {s:'ZENTEC.NS', d:'ZENTEC', sector:'Other', mcap:null},
+  ],
+  us: [
+    {s:'AAPL', d:'AAPL', sector:'Technology', mcap:3500},
+    {s:'MSFT', d:'MSFT', sector:'Technology', mcap:3100},
+    {s:'NVDA', d:'NVDA', sector:'Semiconductors', mcap:3300},
+    {s:'AMZN', d:'AMZN', sector:'Consumer Disc.', mcap:2000},
+    {s:'GOOGL', d:'GOOGL', sector:'Technology', mcap:2100},
+    {s:'META', d:'META', sector:'Technology', mcap:1400},
+    {s:'TSLA', d:'TSLA', sector:'Auto', mcap:900},
+    {s:'AVGO', d:'AVGO', sector:'Semiconductors', mcap:900},
+    {s:'LLY', d:'LLY', sector:'Pharma', mcap:750},
+    {s:'JPM', d:'JPM', sector:'Banking', mcap:650},
+    {s:'UNH', d:'UNH', sector:'Healthcare', mcap:480},
+    {s:'V', d:'V', sector:'Payments', mcap:550},
+    {s:'XOM', d:'XOM', sector:'Energy', mcap:480},
+    {s:'COST', d:'COST', sector:'Retail', mcap:400},
+    {s:'MA', d:'MA', sector:'Payments', mcap:470},
+    {s:'HD', d:'HD', sector:'Retail', mcap:400},
+    {s:'PG', d:'PG', sector:'FMCG', mcap:380},
+    {s:'WMT', d:'WMT', sector:'Retail', mcap:700},
+    {s:'MRK', d:'MRK', sector:'Pharma', mcap:250},
+    {s:'ABBV', d:'ABBV', sector:'Biotech', mcap:350},
+    {s:'CVX', d:'CVX', sector:'Energy', mcap:270},
+    {s:'KO', d:'KO', sector:'FMCG', mcap:290},
+    {s:'PEP', d:'PEP', sector:'FMCG', mcap:220},
+    {s:'NFLX', d:'NFLX', sector:'Media', mcap:350},
+    {s:'AMD', d:'AMD', sector:'Semiconductors', mcap:220},
+    {s:'CRM', d:'CRM', sector:'Software', mcap:260},
+    {s:'ADBE', d:'ADBE', sector:'Software', mcap:220},
+    {s:'ORCL', d:'ORCL', sector:'Software', mcap:450},
+    {s:'CSCO', d:'CSCO', sector:'Technology', mcap:220},
+    {s:'QCOM', d:'QCOM', sector:'Semiconductors', mcap:180},
+    {s:'MU', d:'MU', sector:'Semiconductors', mcap:140},
+    {s:'AMAT', d:'AMAT', sector:'Semiconductors', mcap:150},
+    {s:'INTU', d:'INTU', sector:'Software', mcap:180},
+    {s:'PANW', d:'PANW', sector:'Cybersecurity', mcap:120},
+    {s:'CRWD', d:'CRWD', sector:'Cybersecurity', mcap:90},
+    {s:'NOW', d:'NOW', sector:'Software', mcap:190},
+    {s:'PLTR', d:'PLTR', sector:'Software', mcap:180},
+    {s:'SNOW', d:'SNOW', sector:'Cloud', mcap:55},
+    {s:'ARM', d:'ARM', sector:'Semiconductors', mcap:140},
+    {s:'UBER', d:'UBER', sector:'Technology', mcap:150},
+    {s:'BAC', d:'BAC', sector:'Banking', mcap:320},
+    {s:'WFC', d:'WFC', sector:'Banking', mcap:240},
+    {s:'GS', d:'GS', sector:'Banking', mcap:180},
+    {s:'MS', d:'MS', sector:'Banking', mcap:190},
+    {s:'BLK', d:'BLK', sector:'Asset Mgmt', mcap:140},
+    {s:'JNJ', d:'JNJ', sector:'Healthcare', mcap:380},
+    {s:'AMGN', d:'AMGN', sector:'Biotech', mcap:160},
+    {s:'ISRG', d:'ISRG', sector:'MedTech', mcap:190},
+    {s:'CAT', d:'CAT', sector:'Industrials', mcap:190},
+    {s:'GE', d:'GE', sector:'Industrials', mcap:210},
+    {s:'AA', d:'AA', sector:'Metals', mcap:8},
+    {s:'AAOI', d:'AAOI', sector:'Semiconductors', mcap:2},
+    {s:'ABNB', d:'ABNB', sector:'Travel Tech', mcap:75},
+    {s:'ABT', d:'ABT', sector:'Healthcare', mcap:190},
+    {s:'ACMR', d:'ACMR', sector:'Semi Equipment', mcap:4},
+    {s:'ACN', d:'ACN', sector:'IT Services', mcap:180},
+    {s:'ADP', d:'ADP', sector:'Business Services', mcap:110},
+    {s:'ADSK', d:'ADSK', sector:'Software', mcap:55},
+    {s:'AEHR', d:'AEHR', sector:'Semi Equipment', mcap:0.5},
+    {s:'AEM', d:'AEM', sector:'Gold Mining', mcap:55},
+    {s:'AES', d:'AES', sector:'Utilities', mcap:15},
+    {s:'AFRM', d:'AFRM', sector:'Fintech', mcap:20},
+    {s:'AGX', d:'AGX', sector:'Industrials', mcap:3},
+    {s:'AI', d:'AI', sector:'AI Software', mcap:3},
+    {s:'AIRO', d:'AIRO', sector:'Aerospace/Drones', mcap:1},
+    {s:'ALAB', d:'ALAB', sector:'Semi/Datacenter', mcap:30},
+    {s:'ALGM', d:'ALGM', sector:'Semiconductors', mcap:6},
+    {s:'ALGN', d:'ALGN', sector:'Medtech', mcap:15},
+    {s:'ALLY', d:'ALLY', sector:'Banking', mcap:12},
+    {s:'ALSN', d:'ALSN', sector:'Industrials', mcap:7},
+    {s:'AMKR', d:'AMKR', sector:'Semi Packaging', mcap:9},
+    {s:'AMR', d:'AMR', sector:'Mining/Coal', mcap:3},
+    {s:'AMT', d:'AMT', sector:'REIT/Telecom', mcap:95},
+    {s:'ANET', d:'ANET', sector:'Networking/Datacenter', mcap:150},
+    {s:'ANF', d:'ANF', sector:'Retail', mcap:4},
+    {s:'APD', d:'APD', sector:'Chemicals', mcap:65},
+    {s:'APH', d:'APH', sector:'Electronics', mcap:110},
+    {s:'APLD', d:'APLD', sector:'Datacenter/AI', mcap:10},
+    {s:'APP', d:'APP', sector:'AdTech/Software', mcap:150},
+    {s:'APPS', d:'APPS', sector:'AdTech', mcap:1},
+    {s:'APTV', d:'APTV', sector:'Auto Anc.', mcap:15},
+    {s:'AR', d:'AR', sector:'Energy/Nat Gas', mcap:10},
+    {s:'ARQQ', d:'ARQQ', sector:'Quantum/Cyber', mcap:0.3},
+    {s:'ASML', d:'ASML', sector:'Semi Equipment', mcap:350},
+    {s:'AVAV', d:'AVAV', sector:'Defense/Drones', mcap:12},
+    {s:'AVY', d:'AVY', sector:'Materials', mcap:14},
+    {s:'AXON', d:'AXON', sector:'Defense Tech', mcap:50},
+    {s:'AXP', d:'AXP', sector:'Financial', mcap:200},
+    {s:'AXTI', d:'AXTI', sector:'Semi Materials', mcap:0.4},
+    {s:'AZN', d:'AZN', sector:'Pharma', mcap:230},
+    {s:'BA', d:'BA', sector:'Aerospace', mcap:140},
+    {s:'BABA', d:'BABA', sector:'E-commerce/Tech', mcap:230},
+    {s:'BALL', d:'BALL', sector:'Packaging', mcap:19},
+    {s:'BBAI', d:'BBAI', sector:'AI/Defense Software', mcap:1.5},
+    {s:'BCC', d:'BCC', sector:'Building Products', mcap:4},
+    {s:'BE', d:'BE', sector:'Fuel Cells/Energy', mcap:20},
+    {s:'BEAM', d:'BEAM', sector:'Biotech', mcap:4},
+    {s:'BIDU', d:'BIDU', sector:'Tech/AI', mcap:35},
+    {s:'BKNG', d:'BKNG', sector:'Travel', mcap:160},
+    {s:'BKR', d:'BKR', sector:'Energy Services', mcap:45},
+    {s:'BKSY', d:'BKSY', sector:'Satellite/Space', mcap:1},
+    {s:'BMI', d:'BMI', sector:'Industrials', mcap:9},
+    {s:'BMNR', d:'BMNR', sector:'Crypto Mining', mcap:3},
+    {s:'BNTX', d:'BNTX', sector:'Biotech/Pharma', mcap:28},
+    {s:'BRK-A', d:'BRK.A', sector:'Conglomerate', mcap:950},
+    {s:'BRK-B', d:'BRK.B', sector:'Conglomerate', mcap:950},
+    {s:'BROS', d:'BROS', sector:'Restaurants', mcap:8},
+    {s:'BSX', d:'BSX', sector:'Medtech', mcap:140},
+    {s:'BWXT', d:'BWXT', sector:'Nuclear/Defense', mcap:12},
+    {s:'BX', d:'BX', sector:'Asset Mgmt', mcap:160},
+    {s:'C', d:'C', sector:'Banking', mcap:140},
+    {s:'CARR', d:'CARR', sector:'Industrials/HVAC', mcap:50},
+    {s:'CAVA', d:'CAVA', sector:'Restaurants', mcap:7},
+    {s:'CC', d:'CC', sector:'Chemicals', mcap:2},
+    {s:'CCJ', d:'CCJ', sector:'Uranium/Nuclear', mcap:30},
+    {s:'CCL', d:'CCL', sector:'Cruise/Travel', mcap:35},
+    {s:'CDE', d:'CDE', sector:'Silver/Gold Mining', mcap:3},
+    {s:'CDNA', d:'CDNA', sector:'Healthcare Diagnostics', mcap:1.5},
+    {s:'CDNS', d:'CDNS', sector:'Semi Software', mcap:90},
+    {s:'CDW', d:'CDW', sector:'IT Reseller', mcap:25},
+    {s:'CEG', d:'CEG', sector:'Utilities/Nuclear', mcap:90},
+    {s:'CELH', d:'CELH', sector:'Consumer/Beverages', mcap:8},
+    {s:'CHKP', d:'CHKP', sector:'Cybersecurity', mcap:20},
+    {s:'CHTR', d:'CHTR', sector:'Telecom/Cable', mcap:45},
+    {s:'CHWY', d:'CHWY', sector:'E-commerce/Pet', mcap:10},
+    {s:'CIFR', d:'CIFR', sector:'Crypto/Datacenter', mcap:5},
+    {s:'CLF', d:'CLF', sector:'Steel', mcap:6},
+    {s:'CLOV', d:'CLOV', sector:'Healthcare Insurance', mcap:2},
+    {s:'CLS', d:'CLS', sector:'Electronics Mfg', mcap:15},
+    {s:'CLSK', d:'CLSK', sector:'Crypto Mining', mcap:5},
+    {s:'CMG', d:'CMG', sector:'Restaurants', mcap:65},
+    {s:'CNC', d:'CNC', sector:'Healthcare Insurance', mcap:15},
+    {s:'CNI', d:'CNI', sector:'Railways', mcap:65},
+    {s:'CNX', d:'CNX', sector:'Energy/Nat Gas', mcap:7},
+    {s:'COHR', d:'COHR', sector:'Semi/Optical', mcap:15},
+    {s:'COIN', d:'COIN', sector:'Crypto Exchange', mcap:60},
+    {s:'COO', d:'COO', sector:'Medtech', mcap:15},
+    {s:'CORZ', d:'CORZ', sector:'Crypto/Datacenter', mcap:8},
+    {s:'CPRT', d:'CPRT', sector:'Industrials/Auto Auctions', mcap:50},
+    {s:'CRCL', d:'CRCL', sector:'Fintech/Crypto', mcap:30},
+    {s:'CRDO', d:'CRDO', sector:'Semi/Datacenter', mcap:15},
+    {s:'CROX', d:'CROX', sector:'Consumer/Footwear', mcap:6},
+    {s:'CRSP', d:'CRSP', sector:'Biotech', mcap:5},
+    {s:'CRWV', d:'CRWV', sector:'AI Cloud/Datacenter', mcap:60},
+    {s:'CSW', d:'CSW', sector:'Industrials', mcap:6},
+    {s:'CTAS', d:'CTAS', sector:'Business Services', mcap:90},
+    {s:'CVNA', d:'CVNA', sector:'Auto Retail', mcap:60},
+    {s:'CVS', d:'CVS', sector:'Healthcare/Retail', mcap:85},
+    {s:'DAL', d:'DAL', sector:'Airlines', mcap:35},
+    {s:'DASH', d:'DASH', sector:'Delivery/Tech', mcap:90},
+    {s:'DD', d:'DD', sector:'Chemicals', mcap:35},
+    {s:'DDOG', d:'DDOG', sector:'Software/Cloud', mcap:45},
+    {s:'DE', d:'DE', sector:'Ag Equipment', mcap:130},
+    {s:'DECK', d:'DECK', sector:'Consumer/Footwear', mcap:20},
+    {s:'DEFT', d:'DEFT', sector:'Software (small)', mcap:1},
+    {s:'DELL', d:'DELL', sector:'Tech Hardware', mcap:90},
+    {s:'DFDV', d:'DFDV', sector:'Crypto/Fintech', mcap:1},
+    {s:'DHI', d:'DHI', sector:'Homebuilders', mcap:40},
+    {s:'DHR', d:'DHR', sector:'Healthcare/Industrials', mcap:150},
+    {s:'DIS', d:'DIS', sector:'Media', mcap:200},
+    {s:'DKNG', d:'DKNG', sector:'Gaming/Betting', mcap:20},
+    {s:'DLR', d:'DLR', sector:'REIT/Datacenter', mcap:55},
+    {s:'DLTR', d:'DLTR', sector:'Retail', mcap:20},
+    {s:'DOCN', d:'DOCN', sector:'Cloud Computing', mcap:3},
+    {s:'DOCS', d:'DOCS', sector:'Healthcare Tech', mcap:10},
+    {s:'DOCU', d:'DOCU', sector:'Software', mcap:13},
+    {s:'DOV', d:'DOV', sector:'Industrials', mcap:24},
+    {s:'DOW', d:'DOW', sector:'Chemicals', mcap:25},
+    {s:'DRI', d:'DRI', sector:'Restaurants', mcap:22},
+    {s:'DUOL', d:'DUOL', sector:'EdTech', mcap:15},
+    {s:'EBAY', d:'EBAY', sector:'E-commerce', mcap:35},
+    {s:'EL', d:'EL', sector:'Consumer/Cosmetics', mcap:35},
+    {s:'ELF', d:'ELF', sector:'Consumer/Cosmetics', mcap:7},
+    {s:'ENPH', d:'ENPH', sector:'Solar/Energy', mcap:10},
+    {s:'ENTG', d:'ENTG', sector:'Semi Materials', mcap:15},
+    {s:'EOSE', d:'EOSE', sector:'Battery Storage', mcap:3},
+    {s:'EQIX', d:'EQIX', sector:'REIT/Datacenter', mcap:75},
+    {s:'ESI', d:'ESI', sector:'Chemicals', mcap:6},
+    {s:'ESTC', d:'ESTC', sector:'Software/Search', mcap:10},
+    {s:'ET', d:'ET', sector:'Energy/Pipelines', mcap:65},
+    {s:'ETN', d:'ETN', sector:'Industrials/Electrical', mcap:140},
+    {s:'ETSY', d:'ETSY', sector:'E-commerce', mcap:6},
+    {s:'EXPE', d:'EXPE', sector:'Travel', mcap:20},
+    {s:'F', d:'F', sector:'Auto', mcap:45},
+    {s:'FANG', d:'FANG', sector:'Energy/Oil&Gas', mcap:40},
+    {s:'FAST', d:'FAST', sector:'Industrials/Distribution', mcap:45},
+    {s:'FCEL', d:'FCEL', sector:'Fuel Cells', mcap:0.3},
+    {s:'FCX', d:'FCX', sector:'Mining/Copper', mcap:55},
+    {s:'FDX', d:'FDX', sector:'Logistics', mcap:65},
+    {s:'FICO', d:'FICO', sector:'Financial/Analytics', mcap:40},
+    {s:'FIG', d:'FIG', sector:'Design Software', mcap:40},
+    {s:'FIX', d:'FIX', sector:'Industrials/HVAC', mcap:20},
+    {s:'FRPT', d:'FRPT', sector:'Consumer/Pet Food', mcap:8},
+    {s:'FRSH', d:'FRSH', sector:'Software/SaaS', mcap:4},
+    {s:'FSLR', d:'FSLR', sector:'Solar', mcap:20},
+    {s:'FSLY', d:'FSLY', sector:'Cloud/CDN', mcap:1.5},
+    {s:'FTNT', d:'FTNT', sector:'Cybersecurity', mcap:65},
+    {s:'FUTU', d:'FUTU', sector:'Fintech/Brokerage', mcap:15},
+    {s:'GDDY', d:'GDDY', sector:'Internet/Domains', mcap:20},
+    {s:'GEV', d:'GEV', sector:'Energy/Power Equipment', mcap:110},
+    {s:'GFS', d:'GFS', sector:'Semi Foundry', mcap:25},
+    {s:'GLW', d:'GLW', sector:'Materials/Fiber', mcap:50},
+    {s:'GM', d:'GM', sector:'Auto', mcap:50},
+    {s:'GNRC', d:'GNRC', sector:'Industrials/Generators', mcap:9},
+    {s:'GRAB', d:'GRAB', sector:'Tech/Ride-hailing', mcap:18},
+    {s:'GTLB', d:'GTLB', sector:'Software/DevOps', mcap:8},
+    {s:'HIFS', d:'HIFS', sector:'Banking (small)', mcap:0.7},
+    {s:'HIMS', d:'HIMS', sector:'Healthcare/Telehealth', mcap:10},
+    {s:'HIVE', d:'HIVE', sector:'Crypto Mining', mcap:1},
+    {s:'HNST', d:'HNST', sector:'Consumer', mcap:0.7},
+    {s:'HOLO', d:'HOLO', sector:'Tech (small)', mcap:0.1},
+    {s:'HON', d:'HON', sector:'Industrials', mcap:140},
+    {s:'HOOD', d:'HOOD', sector:'Fintech', mcap:90},
+    {s:'HPE', d:'HPE', sector:'Tech Hardware', mcap:30},
+    {s:'HRI', d:'HRI', sector:'Industrials/Equipment Rental', mcap:7},
+    {s:'HUBB', d:'HUBB', sector:'Industrials/Electrical', mcap:20},
+    {s:'HUBS', d:'HUBS', sector:'Software/CRM', mcap:30},
+    {s:'HUT', d:'HUT', sector:'Crypto/Datacenter', mcap:5},
+    {s:'IBKR', d:'IBKR', sector:'Brokerage/Fintech', mcap:90},
+    {s:'IBM', d:'IBM', sector:'Tech', mcap:250},
+    {s:'ICLR', d:'ICLR', sector:'Healthcare/CRO', mcap:18},
+    {s:'ILMN', d:'ILMN', sector:'Biotech/Genomics', mcap:15},
+    {s:'IMXI', d:'IMXI', sector:'Fintech/Remittance', mcap:0.5},
+    {s:'INTC', d:'INTC', sector:'Semiconductors', mcap:180},
+    {s:'IONQ', d:'IONQ', sector:'Quantum Computing', mcap:15},
+    {s:'IOT', d:'IOT', sector:'IoT/Software', mcap:25},
+    {s:'IREN', d:'IREN', sector:'Crypto/Datacenter', mcap:10},
+    {s:'IRM', d:'IRM', sector:'REIT/Data Mgmt', mcap:30},
+    {s:'JACK', d:'JACK', sector:'Restaurants', mcap:0.7},
+    {s:'JBLU', d:'JBLU', sector:'Airlines', mcap:2},
+    {s:'JD', d:'JD', sector:'E-commerce', mcap:50},
+    {s:'KBH', d:'KBH', sector:'Homebuilders', mcap:5},
+    {s:'KGC', d:'KGC', sector:'Gold Mining', mcap:20},
+    {s:'KLAC', d:'KLAC', sector:'Semi Equipment', mcap:130},
+    {s:'KTOS', d:'KTOS', sector:'Defense/Aerospace', mcap:10},
+    {s:'LAC', d:'LAC', sector:'Mining/Lithium', mcap:2},
+    {s:'LAES', d:'LAES', sector:'Semi/Security', mcap:0.3},
+    {s:'LEN', d:'LEN', sector:'Homebuilders', mcap:35},
+    {s:'LEU', d:'LEU', sector:'Nuclear/Uranium', mcap:5},
+    {s:'LIN', d:'LIN', sector:'Chemicals/Industrial Gas', mcap:220},
+    {s:'LITE', d:'LITE', sector:'Semi/Optical', mcap:15},
+    {s:'LKQ', d:'LKQ', sector:'Auto Parts', mcap:9},
+    {s:'LMND', d:'LMND', sector:'Insurtech', mcap:2},
+    {s:'LMT', d:'LMT', sector:'Defense/Aerospace', mcap:120},
+    {s:'LOW', d:'LOW', sector:'Retail', mcap:140},
+    {s:'LRCX', d:'LRCX', sector:'Semi Equipment', mcap:130},
+    {s:'LSCC', d:'LSCC', sector:'Semiconductors', mcap:8},
+    {s:'LULU', d:'LULU', sector:'Consumer/Apparel', mcap:30},
+    {s:'LUNR', d:'LUNR', sector:'Space', mcap:2},
+    {s:'LYFT', d:'LYFT', sector:'Ride-hailing', mcap:7},
+    {s:'MAR', d:'MAR', sector:'Hospitality', mcap:75},
+    {s:'MARA', d:'MARA', sector:'Crypto Mining', mcap:7},
+    {s:'MCD', d:'MCD', sector:'Restaurants', mcap:210},
+    {s:'MCHP', d:'MCHP', sector:'Semiconductors', mcap:35},
+    {s:'MCO', d:'MCO', sector:'Financial/Ratings', mcap:85},
+    {s:'MDA', d:'MDA', sector:'Space/Satellite', mcap:4},
+    {s:'MDB', d:'MDB', sector:'Software/Database', mcap:18},
+    {s:'MDGL', d:'MDGL', sector:'Biotech', mcap:10},
+    {s:'MDLZ', d:'MDLZ', sector:'FMCG', mcap:85},
+    {s:'MDT', d:'MDT', sector:'Medtech', mcap:110},
+    {s:'MELI', d:'MELI', sector:'E-commerce (LatAm)', mcap:100},
+    {s:'MMM', d:'MMM', sector:'Industrials', mcap:80},
+    {s:'MNDY', d:'MNDY', sector:'Software/SaaS', mcap:13},
+    {s:'MNST', d:'MNST', sector:'Consumer/Beverages', mcap:55},
+    {s:'MP', d:'MP', sector:'Rare Earth/Mining', mcap:12},
+    {s:'MPWR', d:'MPWR', sector:'Semiconductors', mcap:30},
+    {s:'MRNA', d:'MRNA', sector:'Biotech/Pharma', mcap:15},
+    {s:'MRVL', d:'MRVL', sector:'Semiconductors', mcap:75},
+    {s:'MSTR', d:'MSTR', sector:'Software/Bitcoin Treasury', mcap:90},
+    {s:'MTD', d:'MTD', sector:'Industrials/Instruments', mcap:25},
+    {s:'MTH', d:'MTH', sector:'Homebuilders', mcap:5},
+    {s:'MTRN', d:'MTRN', sector:'Materials', mcap:3},
+    {s:'MVST', d:'MVST', sector:'Battery Tech', mcap:1},
+    {s:'NBIS', d:'NBIS', sector:'AI Cloud/Datacenter', mcap:15},
+    {s:'NCLH', d:'NCLH', sector:'Cruise/Travel', mcap:10},
+    {s:'NDAQ', d:'NDAQ', sector:'Financial/Exchange', mcap:40},
+    {s:'NEE', d:'NEE', sector:'Utilities/Renewables', mcap:150},
+    {s:'NEM', d:'NEM', sector:'Gold Mining', mcap:65},
+    {s:'NET', d:'NET', sector:'Cybersecurity/Cloud', mcap:50},
+    {s:'NIO', d:'NIO', sector:'EV (China)', mcap:10},
+    {s:'NKE', d:'NKE', sector:'Consumer/Apparel', mcap:110},
+    {s:'NOK', d:'NOK', sector:'Telecom Equipment', mcap:30},
+    {s:'NVAX', d:'NVAX', sector:'Biotech/Vaccines', mcap:2},
+    {s:'NVO', d:'NVO', sector:'Pharma', mcap:350},
+    {s:'NVTS', d:'NVTS', sector:'Semiconductors', mcap:2},
+    {s:'NXPI', d:'NXPI', sector:'Semiconductors', mcap:55},
+    {s:'ODFL', d:'ODFL', sector:'Logistics/Trucking', mcap:40},
+    {s:'OKE', d:'OKE', sector:'Energy/Pipelines', mcap:50},
+    {s:'OKLO', d:'OKLO', sector:'Nuclear/SMR', mcap:10},
+    {s:'OKTA', d:'OKTA', sector:'Cybersecurity', mcap:15},
+    {s:'OLN', d:'OLN', sector:'Chemicals', mcap:3},
+    {s:'ON', d:'ON', sector:'Semiconductors', mcap:25},
+    {s:'ONDS', d:'ONDS', sector:'Drones/Wireless', mcap:1},
+    {s:'ONTO', d:'ONTO', sector:'Semi Equipment', mcap:10},
+    {s:'OPEN', d:'OPEN', sector:'Real Estate Tech', mcap:2},
+    {s:'OSCR', d:'OSCR', sector:'Healthcare Insurance', mcap:5},
+    {s:'OUST', d:'OUST', sector:'Lidar/Sensors', mcap:1},
+    {s:'PAAS', d:'PAAS', sector:'Silver Mining', mcap:10},
+    {s:'PATH', d:'PATH', sector:'Software/RPA/AI', mcap:7},
+    {s:'PAYX', d:'PAYX', sector:'Business Services', mcap:50},
+    {s:'PCG', d:'PCG', sector:'Utilities', mcap:45},
+    {s:'PD', d:'PD', sector:'Software', mcap:1.5},
+    {s:'PDD', d:'PDD', sector:'E-commerce (China)', mcap:180},
+    {s:'PFE', d:'PFE', sector:'Pharma', mcap:140},
+    {s:'PINS', d:'PINS', sector:'Social Media/Tech', mcap:25},
+    {s:'PL', d:'PL', sector:'Satellite/Space', mcap:3},
+    {s:'PLUG', d:'PLUG', sector:'Hydrogen/Fuel Cells', mcap:2},
+    {s:'POET', d:'POET', sector:'Semi/Optical (small)', mcap:1},
+    {s:'PRIM', d:'PRIM', sector:'Industrials/Infra', mcap:7},
+    {s:'PSTG', d:'PSTG', sector:'Tech/Data Storage', mcap:20},
+    {s:'PVH', d:'PVH', sector:'Apparel', mcap:6},
+    {s:'PWR', d:'PWR', sector:'Industrials/Infra', mcap:55},
+    {s:'PYPL', d:'PYPL', sector:'Fintech/Payments', mcap:70},
+    {s:'QBTS', d:'QBTS', sector:'Quantum Computing', mcap:3},
+    {s:'QMCO', d:'QMCO', sector:'Data Storage (small)', mcap:0.1},
+    {s:'QRVO', d:'QRVO', sector:'Semiconductors', mcap:9},
+    {s:'QS', d:'QS', sector:'Battery Tech/EV', mcap:4},
+    {s:'QUBT', d:'QUBT', sector:'Quantum Computing', mcap:1.5},
+    {s:'QUIK', d:'QUIK', sector:'Semiconductors (small)', mcap:0.1},
+    {s:'RACE', d:'RACE', sector:'Auto/Luxury', mcap:90},
+    {s:'RBLX', d:'RBLX', sector:'Gaming/Tech', mcap:45},
+    {s:'RCAT', d:'RCAT', sector:'Drones', mcap:1},
+    {s:'RDDT', d:'RDDT', sector:'Social Media/Tech', mcap:30},
+    {s:'RDW', d:'RDW', sector:'Space', mcap:3},
+    {s:'REAL', d:'REAL', sector:'E-commerce/Retail', mcap:1},
+    {s:'REGN', d:'REGN', sector:'Biotech', mcap:70},
+    {s:'RGTI', d:'RGTI', sector:'Quantum Computing', mcap:3},
+    {s:'RIOT', d:'RIOT', sector:'Crypto Mining', mcap:5},
+    {s:'RIVN', d:'RIVN', sector:'EV', mcap:15},
+    {s:'RKLB', d:'RKLB', sector:'Space', mcap:20},
+    {s:'RKT', d:'RKT', sector:'Fintech/Mortgage', mcap:35},
+    {s:'RMBS', d:'RMBS', sector:'Semi/IP', mcap:10},
+    {s:'ROG', d:'ROG', sector:'Materials/Electronics', mcap:2},
+    {s:'ROK', d:'ROK', sector:'Industrials/Automation', mcap:35},
+    {s:'ROKU', d:'ROKU', sector:'Media/Streaming Tech', mcap:13},
+    {s:'ROOT', d:'ROOT', sector:'Insurtech', mcap:2},
+    {s:'RR', d:'RR', sector:'Robotics (small)', mcap:0.3},
+    {s:'RRC', d:'RRC', sector:'Energy/Nat Gas', mcap:9},
+    {s:'RTX', d:'RTX', sector:'Defense/Aerospace', mcap:180},
+    {s:'RUM', d:'RUM', sector:'Media/Video', mcap:3},
+    {s:'RVTY', d:'RVTY', sector:'Healthcare/Life Sciences', mcap:15},
+    {s:'RXRX', d:'RXRX', sector:'Biotech/AI', mcap:3},
+    {s:'SANM', d:'SANM', sector:'Electronics Mfg', mcap:8},
+    {s:'SAP', d:'SAP', sector:'Enterprise Software', mcap:250},
+    {s:'SBUX', d:'SBUX', sector:'Restaurants', mcap:100},
+    {s:'SCHW', d:'SCHW', sector:'Financial/Brokerage', mcap:150},
+    {s:'SFM', d:'SFM', sector:'Retail/Grocery', mcap:13},
+    {s:'SG', d:'SG', sector:'Restaurants', mcap:1},
+    {s:'SHAK', d:'SHAK', sector:'Restaurants', mcap:4},
+    {s:'SHOP', d:'SHOP', sector:'E-commerce/Software', mcap:150},
+    {s:'SKHY', d:'SKHY', sector:'Semiconductors (Memory)', mcap:null}, /* Ticker identity unconfirmed — SK Hynix itself trades on the Korea Exchange (KRX:000660), not under this symbol. Kept per your list as-is; verify what this ticker actually maps to before trusting its data. */
+    {s:'SLGN', d:'SLGN', sector:'Packaging', mcap:7},
+    {s:'SMCI', d:'SMCI', sector:'Servers/Datacenter Hardware', mcap:25},
+    {s:'SMR', d:'SMR', sector:'Nuclear/SMR', mcap:4},
+    {s:'SNDK', d:'SNDK', sector:'Semi/Storage', mcap:20},
+    {s:'SNPS', d:'SNPS', sector:'Semi Software', mcap:90},
+    {s:'SOFI', d:'SOFI', sector:'Fintech', mcap:15},
+    {s:'SOLS', d:'SOLS', sector:'Energy Infra (small)', mcap:1},
+    {s:'SOUN', d:'SOUN', sector:'AI/Voice Tech', mcap:5},
+    {s:'SPCX', d:'SPCX', sector:'Space/AI', mcap:null}, /* SpaceX is NOT publicly traded — no real market cap exists. Kept per request; will likely show "no data" from Stooq since there's no public ticker for it. */
+    {s:'SPOT', d:'SPOT', sector:'Media/Streaming', mcap:140},
+    {s:'SRTS', d:'SRTS', sector:'Medtech (small)', mcap:0.1},
+    {s:'STX', d:'STX', sector:'Semi/Storage', mcap:35},
+    {s:'STZ', d:'STZ', sector:'Consumer/Beverages', mcap:30},
+    {s:'SUPV', d:'SUPV', sector:'Banking (Argentina)', mcap:1},
+    {s:'SWKS', d:'SWKS', sector:'Semiconductors', mcap:9},
+    {s:'SYM', d:'SYM', sector:'Robotics/Automation', mcap:20},
+    {s:'SYNA', d:'SYNA', sector:'Semiconductors', mcap:3},
+    {s:'T', d:'T', sector:'Telecom', mcap:180},
+    {s:'TE', d:'TE', sector:'Electronics', mcap:55},
+    {s:'TEAM', d:'TEAM', sector:'Software', mcap:50},
+    {s:'TEM', d:'TEM', sector:'Healthcare/AI', mcap:10},
+    {s:'TEN', d:'TEN', sector:'Shipping/Energy', mcap:1.5},
+    {s:'TER', d:'TER', sector:'Semi Equipment', mcap:20},
+    {s:'TGT', d:'TGT', sector:'Retail', mcap:45},
+    {s:'TKO', d:'TKO', sector:'Media/Entertainment', mcap:25},
+    {s:'TLN', d:'TLN', sector:'Utilities/Power', mcap:15},
+    {s:'TMDX', d:'TMDX', sector:'Medtech', mcap:5},
+    {s:'TMO', d:'TMO', sector:'Healthcare/Life Sciences', mcap:180},
+    {s:'TMUS', d:'TMUS', sector:'Telecom', mcap:250},
+    {s:'TOL', d:'TOL', sector:'Homebuilders', mcap:12},
+    {s:'TOST', d:'TOST', sector:'Fintech/POS Software', mcap:15},
+    {s:'TROO', d:'TROO', sector:'Media (small)', mcap:0.1},
+    {s:'TSCO', d:'TSCO', sector:'Retail', mcap:25},
+    {s:'TSEM', d:'TSEM', sector:'Semiconductors', mcap:5},
+    {s:'TSM', d:'TSM', sector:'Semi Foundry', mcap:900},
+    {s:'TSSI', d:'TSSI', sector:'Datacenter/IT Services (small)', mcap:1},
+    {s:'TTD', d:'TTD', sector:'AdTech', mcap:30},
+    {s:'TTWO', d:'TTWO', sector:'Gaming', mcap:30},
+    {s:'TWLO', d:'TWLO', sector:'Software/Communications', mcap:15},
+    {s:'TWST', d:'TWST', sector:'Biotech/Synthetic DNA', mcap:2},
+    {s:'TXN', d:'TXN', sector:'Semiconductors', mcap:170},
+    {s:'UAL', d:'UAL', sector:'Airlines', mcap:30},
+    {s:'UAMY', d:'UAMY', sector:'Mining (small)', mcap:0.3},
+    {s:'UAVS', d:'UAVS', sector:'Drones (small)', mcap:0.05},
+    {s:'UEC', d:'UEC', sector:'Uranium Mining', mcap:3},
+    {s:'ULTA', d:'ULTA', sector:'Retail/Cosmetics', mcap:20},
+    {s:'UMAC', d:'UMAC', sector:'Drones (small)', mcap:0.3},
+    {s:'UNP', d:'UNP', sector:'Railways', mcap:140},
+    {s:'UPST', d:'UPST', sector:'Fintech/AI Lending', mcap:7},
+    {s:'URBN', d:'URBN', sector:'Retail/Apparel', mcap:5},
+    {s:'UTHR', d:'UTHR', sector:'Biotech', mcap:13},
+    {s:'UUUU', d:'UUUU', sector:'Uranium Mining', mcap:2},
+    {s:'VALE', d:'VALE', sector:'Mining', mcap:45},
+    {s:'VECO', d:'VECO', sector:'Semi Equipment', mcap:2},
+    {s:'VEEV', d:'VEEV', sector:'Software/Healthcare', mcap:35},
+    {s:'VERI', d:'VERI', sector:'AI Software (small)', mcap:0.3},
+    {s:'VIAV', d:'VIAV', sector:'Semi/Optical', mcap:2},
+    {s:'VKTX', d:'VKTX', sector:'Biotech', mcap:5},
+    {s:'VPG', d:'VPG', sector:'Electronics (small)', mcap:0.4},
+    {s:'VRSK', d:'VRSK', sector:'Data/Analytics', mcap:35},
+    {s:'VRSN', d:'VRSN', sector:'Internet Infra', mcap:25},
+    {s:'VRT', d:'VRT', sector:'Datacenter Infra/Cooling', mcap:50},
+    {s:'VRTX', d:'VRTX', sector:'Biotech', mcap:120},
+    {s:'VST', d:'VST', sector:'Utilities/Power', mcap:55},
+    {s:'VZ', d:'VZ', sector:'Telecom', mcap:180},
+    {s:'WDAY', d:'WDAY', sector:'Software/HR Tech', mcap:65},
+    {s:'WDC', d:'WDC', sector:'Semi/Storage', mcap:30},
+    {s:'WDFC', d:'WDFC', sector:'Consumer Products', mcap:3},
+    {s:'WH', d:'WH', sector:'Hospitality', mcap:7},
+    {s:'WIMI', d:'WIMI', sector:'Tech (small)', mcap:0.1},
+    {s:'WKEY', d:'WKEY', sector:'Cybersecurity (small)', mcap:0.1},
+    {s:'WPM', d:'WPM', sector:'Mining Royalty', mcap:35},
+    {s:'WULF', d:'WULF', sector:'Crypto/Datacenter', mcap:4},
+    {s:'WYNN', d:'WYNN', sector:'Gaming/Casino', mcap:11},
+    {s:'XPEV', d:'XPEV', sector:'EV (China)', mcap:15},
+    {s:'XYZ', d:'XYZ', sector:'Fintech', mcap:40},
+    {s:'YOU', d:'YOU', sector:'Identity/Security Tech', mcap:5},
+    {s:'YUM', d:'YUM', sector:'Restaurants', mcap:38},
+    {s:'Z', d:'Z', sector:'Real Estate Tech', mcap:16},
+    {s:'ZETA', d:'ZETA', sector:'AdTech/Marketing Software', mcap:4},
+    {s:'ZM', d:'ZM', sector:'Software/Video', mcap:20},
+    {s:'ZS', d:'ZS', sector:'Cybersecurity', mcap:30},
+    {s:'SSNLF', d:'SAMSUNG', sector:'Semiconductors/Electronics', mcap:380},
+    {s:'SBGSF', d:'SOFTBANK GRP', sector:'Tech/Telecom Holding', mcap:120},
+
+  ],
+  etf: [
+    {s:'SPY',  d:'SPY',  g:'ETF',sector:'US Broad Market'},
+    {s:'QQQ',  d:'QQQ',  g:'ETF',sector:'US Tech/Growth'},
+    {s:'IWM',  d:'IWM',  g:'ETF',sector:'US Small Cap'},
+    {s:'VTI',  d:'VTI',  g:'ETF',sector:'US Total Market'},
+    {s:'VOO',  d:'VOO',  g:'ETF',sector:'S&P 500'},
+    {s:'DIA',  d:'DIA',  g:'ETF',sector:'Dow Jones'},
+    {s:'XLK',  d:'XLK',  g:'ETF',sector:'Technology'},
+    {s:'XLF',  d:'XLF',  g:'ETF',sector:'Financials'},
+    {s:'XLV',  d:'XLV',  g:'ETF',sector:'Healthcare'},
+    {s:'XLE',  d:'XLE',  g:'ETF',sector:'Energy'},
+    {s:'XLI',  d:'XLI',  g:'ETF',sector:'Industrials'},
+    {s:'XLY',  d:'XLY',  g:'ETF',sector:'Consumer Disc.'},
+    {s:'XLP',  d:'XLP',  g:'ETF',sector:'Consumer Staples'},
+    {s:'XLU',  d:'XLU',  g:'ETF',sector:'Utilities'},
+    {s:'XLRE', d:'XLRE', g:'ETF',sector:'Real Estate'},
+    {s:'XLB',  d:'XLB',  g:'ETF',sector:'Materials'},
+    {s:'ARKK', d:'ARKK', g:'ETF',sector:'Innovation'},
+    {s:'SOXX', d:'SOXX', g:'ETF',sector:'Semiconductors'},
+    {s:'TQQQ', d:'TQQQ', g:'ETF',sector:'3x Nasdaq'},
+    {s:'TLT',  d:'TLT',  g:'ETF',sector:'Long Bonds'},
+    {s:'HYG',  d:'HYG',  g:'ETF',sector:'High Yield'},
+    {s:'LQD',  d:'LQD',  g:'ETF',sector:'Corp Bonds'},
+    {s:'GLD',  d:'GLD',  g:'ETF',sector:'Gold'},
+    {s:'SLV',  d:'SLV',  g:'ETF',sector:'Silver'},
+    {s:'IAU',  d:'IAU',  g:'ETF',sector:'Gold'},
+    {s:'GDX',  d:'GDX',  g:'ETF',sector:'Gold Miners'},
+    {s:'USO',  d:'USO',  g:'ETF',sector:'Oil'},
+    {s:'EEM',  d:'EEM',  g:'ETF',sector:'Emerging Mkts'},
+    {s:'EWJ',  d:'EWJ',  g:'ETF',sector:'Japan'},
+    {s:'FXI',  d:'FXI',  g:'ETF',sector:'China'},
+    {s:'INDA', d:'INDA', g:'ETF',sector:'India'},
+    {s:'VGK',  d:'VGK',  g:'ETF',sector:'Europe'},
+    {s:'JEPI', d:'JEPI', g:'ETF',sector:'US Income'},
+    {s:'SCHD', d:'SCHD', g:'ETF',sector:'US Dividend'},
+    {s:'VNQ',  d:'VNQ',  g:'ETF',sector:'US REITs'},
+    {s:'TECL', d:'TECL', g:'ETF', sector:'3x Leveraged Tech'},
+    {s:'IGV', d:'IGV', g:'ETF', sector:'Software'},
+    {s:'XLC', d:'XLC', g:'ETF', sector:'Communication Services'},
+    {s:'URA', d:'URA', g:'ETF', sector:'Uranium/Nuclear'},
+    {s:'XRT', d:'XRT', g:'ETF', sector:'Retail'},
+    {s:'SIL', d:'SIL', g:'ETF', sector:'Silver Miners'},
+    {s:'XBI', d:'XBI', g:'ETF', sector:'Biotech'},
+    {s:'AIQ', d:'AIQ', g:'ETF', sector:'Artificial Intelligence'},
+    {s:'QQQM', d:'QQQM', g:'ETF', sector:'Nasdaq 100 (low-cost)'},
+    {s:'BOTZ', d:'BOTZ', g:'ETF', sector:'Robotics & AI'},
+    {s:'IJR', d:'IJR', g:'ETF', sector:'US Small Cap'},
+    {s:'MCHI', d:'MCHI', g:'ETF', sector:'China'},
+    {s:'EWY', d:'EWY', g:'ETF', sector:'South Korea'},
+    {s:'EWZ', d:'EWZ', g:'ETF', sector:'Brazil'},
+    {s:'EWW', d:'EWW', g:'ETF', sector:'Mexico'},
+    {s:'VWO', d:'VWO', g:'ETF', sector:'Emerging Markets'},
+    {s:'EWH', d:'EWH', g:'ETF', sector:'Hong Kong'},
+    {s:'EPOL', d:'EPOL', g:'ETF', sector:'Poland'},
+    {s:'GREK', d:'GREK', g:'ETF', sector:'Greece'},
+    {s:'ARGT', d:'ARGT', g:'ETF', sector:'Argentina'},
+    {s:'THD', d:'THD', g:'ETF', sector:'Thailand'},
+    {s:'KSA', d:'KSA', g:'ETF', sector:'Saudi Arabia'},
+    {s:'EPU', d:'EPU', g:'ETF', sector:'Peru'},
+    {s:'VEA', d:'VEA', g:'ETF', sector:'Developed Markets ex-US'},
+    {s:'UAE', d:'UAE', g:'ETF', sector:'United Arab Emirates'},
+    {s:'ECH', d:'ECH', g:'ETF', sector:'Chile'},
+    {s:'EWG', d:'EWG', g:'ETF', sector:'Germany'},
+    {s:'EWS', d:'EWS', g:'ETF', sector:'Singapore'},
+    {s:'EWI', d:'EWI', g:'ETF', sector:'Italy'},
+    {s:'AFK', d:'AFK', g:'ETF', sector:'Africa'},
+    {s:'EWN', d:'EWN', g:'ETF', sector:'Netherlands'},
+    {s:'EWQ', d:'EWQ', g:'ETF', sector:'France'},
+    {s:'EWP', d:'EWP', g:'ETF', sector:'Spain'},
+    {s:'EWT', d:'EWT', g:'ETF', sector:'Taiwan'},
+    {s:'EIS', d:'EIS', g:'ETF', sector:'Israel'},
+    {s:'EZA', d:'EZA', g:'ETF', sector:'South Africa'},
+    {s:'EWL', d:'EWL', g:'ETF', sector:'Switzerland'},
+    {s:'EWU', d:'EWU', g:'ETF', sector:'United Kingdom'},
+    {s:'VNM', d:'VNM', g:'ETF', sector:'Vietnam'},
+    {s:'IBIT', d:'IBIT', g:'ETF', sector:'Bitcoin (Spot)'},
+  ],
+};
+
+/* Derive cap tier (LC/MC/SC/Micro) automatically from market cap (Rs Crore).
+   Thresholds roughly follow SEBI/AMFI convention, with a 4th "Micro" tier
+   added below Small Cap to match the reference site's LC100/MC150/SC250/Micro250:
+   Large Cap  >= Rs 50,000 Cr
+   Mid Cap    >= Rs 15,000 Cr
+   Small Cap  >= Rs 5,000 Cr
+   Micro Cap  <  Rs 5,000 Cr
+   This keeps market cap as the single source of truth — edit the
+   `mcap` number on any stock above and its badge/filter tier updates automatically. */
+function capTierFromMcap(mcap){
+  if(mcap==null) return 'SC';
+  if(mcap>=50000) return 'LC';
+  if(mcap>=15000) return 'MC';
+  if(mcap>=5000) return 'SC';
+  return 'Mic';
+}
+UNI.india.forEach(def=>{ def.g = capTierFromMcap(def.mcap); });
+
+/* Same idea for US stocks, but in $ Billion (US convention, not Rs Crore):
+   Large Cap  >= $10B
+   Mid Cap    >= $2B
+   Small Cap  >= $0.3B ($300M)
+   Micro Cap  <  $0.3B */
+function capTierFromMcapUSD(mcap){
+  if(mcap==null) return 'SC';
+  if(mcap>=10) return 'LC';
+  if(mcap>=2) return 'MC';
+  if(mcap>=0.3) return 'SC';
+  return 'Mic';
+}
+UNI.us.forEach(def=>{ def.g = capTierFromMcapUSD(def.mcap); });
+
+/* Market cap filter — units and default differ by market:
+   India: Rs Crore, default 5,000
+   US:    $ Billion, default 150 */
+const MCAP_DEFAULTS = { india: 5000, us: 0 };
+let MIN_MCAP = MCAP_DEFAULTS.india;
+
+/* ══════════════════════════════════
+   GLOBAL STATE
+══════════════════════════════════ */
+let CUR = 'india';
+const SD  = {};           // symbol -> processed data (or null=failed, undefined=pending)
+const LOADED = {};        // market -> bool
+const REV = {};           // symbol -> 'Y'|'N'|'?'
+const NOTES = {};         // symbol -> string
+let SORT_C = 'rs', SORT_D = 'desc';
+let F_CAP='All', F_SCT='', F_EMA='', F_RSI='', F_PIV='';
+let SEARCH='', VISIBLE=CFG.INIT;
+let LOADING=false;
+
+/* ══════════════════════════════════
+   MATH
+══════════════════════════════════ */
+function ema(arr, p) {
+  if (!arr || arr.length < p) return null;
+  const k = 2/(p+1);
+  let e = arr.slice(0,p).reduce((a,b)=>a+b,0)/p;
+  for (let i=p;i<arr.length;i++) e=arr[i]*k+e*(1-k);
+  return e;
+}
+
+// Simple moving average of the LAST `p` values in arr. Unlike ema(), this
+// is a plain average — needed for Stage 2's "Price > SMA150" style rules,
+// which specifically call for SMA, not EMA.
+function sma(arr, p) {
+  if (!arr || arr.length < p) return null;
+  const slice = arr.slice(-p);
+  return slice.reduce((a,b)=>a+b,0) / p;
+}
+
+function rsi(closes, p=14) {
+  if (!closes||closes.length<p+1) return null;
+  let g=0,l=0;
+  for (let i=1;i<=p;i++){const d=closes[i]-closes[i-1];d>0?g+=d:l+=Math.abs(d)}
+  let ag=g/p, al=l/p;
+  for (let i=p+1;i<closes.length;i++){
+    const d=closes[i]-closes[i-1];
+    ag=(ag*(p-1)+Math.max(d,0))/p;
+    al=(al*(p-1)+Math.max(-d,0))/p;
+  }
+  if(!al) return 100;
+  return Math.round(100-100/(1+ag/al));
+}
+
+function pivots(h,l,c){
+  const pp=(h+l+c)/3;
+  return{pp,r1:2*pp-l,r2:pp+(h-l),s1:2*pp-h,s2:pp-(h-l)};
+}
+
+function pivZone(price,piv){
+  if(!piv) return '—';
+  const{pp,r1,r2,s1,s2}=piv;
+  if(price>=r2)         return 'R2+';
+  if(price>=r1)         return 'R1→R2';
+  if(price>=pp*1.003)   return 'PP→R1';
+  if(price>=pp*0.997)   return 'PP';
+  if(price>=s1)         return 'S1→PP';
+  if(price>=s2)         return 'S2→S1';
+  return '<S2';
+}
+
+function stage2(price,closes,e50,e200,h52,l52,wk,we20){
+  // No early-return here even for very short history — every criterion below
+  // already null-guards its own data requirement, so a young IPO stock still
+  // gets a full 7-row breakdown (correctly showing "fail" on whichever rules
+  // need more history than it has yet) instead of a blank tooltip.
+  const n=closes?closes.length:0;
+
+  const sma150     = n>=150 ? sma(closes,150) : null;
+  const sma150_20ago = n>=170 ? sma(closes.slice(0,-20),150) : null;
+  const ema200_10ago = n>=210 ? ema(closes.slice(0,-10),200) : null;
+
+  // Weekly Higher-High + Higher-Low over the last 8 completed weeks:
+  // compare the most recent week's high/low against the week 8 back.
+  let weeklyHHHL=false;
+  if(wk&&wk.highs&&wk.highs.length>=9){
+    const wn=wk.highs.length;
+    const latestH=wk.highs[wn-1], latestL=wk.lows[wn-1];
+    const pastH=wk.highs[wn-9], pastL=wk.lows[wn-9];
+    weeklyHHHL = latestH>pastH && latestL>pastL;
+  }
+
+  // #5 (RS Positive vs Nifty 500) is patched in by rankRS() after the full
+  // universe has loaded — a single stock can't rank itself vs the index
+  // until we know everyone else's returns too. Starts false, corrected shortly after.
+  const checks=[
+    {label:'Price > SMA 150',                    pass: sma150!=null && price>sma150},
+    {label:'SMA 150 Rising (vs 20 bars ago)',     pass: sma150!=null && sma150_20ago!=null && sma150>sma150_20ago},
+    {label:'EMA 50 > EMA 200',                    pass: e50!=null && e200!=null && e50>e200},
+    {label:'EMA 200 Rising (vs 10 bars ago)',     pass: e200!=null && ema200_10ago!=null && e200>ema200_10ago},
+    {label:'RS Positive vs Nifty 500',            pass: false},
+    {label:'Weekly HH+HL (last 8 weeks)',         pass: weeklyHHHL},
+    {label:'Price > Weekly EMA 20',               pass: we20!=null && price>we20},
+  ];
+  return{score:checks.filter(c=>c.pass).length,total:7,details:checks};
+}
+
+function squeeze(C,H,L){
+  const n=C.length; if(n<5) return 0;
+  const avg=C.reduce((a,b)=>a+b,0)/n;
+  const std=Math.sqrt(C.reduce((a,b)=>a+(b-avg)**2,0)/n);
+  const bbW=4*std/avg;
+  let atrS=0,atrN=0;
+  for(let i=1;i<n;i++){
+    const tr=Math.max(H[i]-L[i],Math.abs(H[i]-C[i-1]),Math.abs(L[i]-C[i-1]));
+    atrS+=tr;atrN++;
+  }
+  const kcW=atrN?3*(atrS/atrN)/avg:0;
+  return kcW?Math.max(0,Math.min(100,+((1-bbW/kcW)*100).toFixed(1))):0;
+}
+
+function weeklyResample(C,H,L,V,dates){
+  const wks=new Map();
+  dates.forEach((dt,i)=>{
+    if(!dt||C[i]==null) return;
+    const d=new Date(dt+'T00:00:00Z');
+    const dow=(d.getUTCDay()+6)%7;
+    const mon=new Date(d); mon.setUTCDate(d.getUTCDate()-dow);
+    const k=mon.toISOString().slice(0,10);
+    if(!wks.has(k)) wks.set(k,{h:H[i]||0,l:L[i]||Infinity,c:C[i],v:0});
+    const w=wks.get(k);
+    w.h=Math.max(w.h,H[i]||0);
+    w.l=Math.min(w.l,L[i]||Infinity);
+    w.c=C[i]; w.v+=V[i]||0;
+  });
+  const keys=[...wks.keys()].sort();
+  return{
+    closes:keys.map(k=>wks.get(k).c),
+    highs:keys.map(k=>wks.get(k).h),
+    lows:keys.map(k=>wks.get(k).l),
+    volumes:keys.map(k=>wks.get(k).v),
+  };
+}
+
+function breakout(closes,volumes){
+  const n=closes.length; if(n<55) return{gain:null,count:0,retrace:null};
+  const av=volumes.slice(-21,-1).filter(v=>v>0);
+  const avgV=av.length?av.reduce((a,b)=>a+b,0)/av.length:0;
+  let lastBO=-1,cnt=0;
+  for(let i=52;i<n-1;i++){
+    const ph=Math.max(...closes.slice(Math.max(0,i-52),i));
+    if(closes[i]>ph&&(volumes[i]||0)>avgV*1.5){cnt++;lastBO=i;}
+  }
+  if(lastBO<0) return{gain:null,count:cnt,retrace:null};
+  const curr=closes[n-1],peak=Math.max(...closes.slice(lastBO));
+  return{
+    gain:+((curr/closes[lastBO]-1)*100).toFixed(1),
+    count:cnt,
+    retrace:+((curr/peak-1)*100).toFixed(1),
+  };
+}
+
+function computeTech(C,H,L,V,dates,sym){
+  // Matches parseCSV's minimum — a 2-row stock (e.g. IPO'd a few days ago)
+  // is real data, not a failure. Every derived indicator below (RSI, EMA,
+  // Stage2, breakout, RS returns, etc.) already null-guards its own minimum
+  // history requirement, so this just needs enough for a basic price+change.
+  const n=C.length; if(n<2) return null;
+  const price=C[n-1], prev=C[n-2]||C[n-1];
+  const ch1d=+((price-prev)/prev*100).toFixed(2);
+
+  const e10=ema(C,10), e20=ema(C,20);
+  const e50=n>=50?ema(C,50):null;
+  const e150=n>=150?ema(C,150):null;
+  const e200=n>=200?ema(C,200):null;
+
+  let eu=0,ec=0;
+  [[e10,e20],[e20,e50],[e50,e150],[e150,e200],[price,e20]].forEach(([a,b])=>{
+    if(a&&b){ec++;if(a>b)eu++;}
+  });
+  const emaScr=ec?+(eu/ec).toFixed(2):0;
+
+  const rsi14=rsi(C,14);
+  const wk=weeklyResample(C,H,L,V,dates);
+  const wRsi=wk.closes.length>=15?rsi(wk.closes,14):null;
+
+  const todV=V[n-1]||0;
+  const vArr=V.slice(-21,-1).filter(v=>v>0);
+  const avgV=vArr.length?vArr.reduce((a,b)=>a+b,0)/vArr.length:0;
+  const vRatio=avgV>0?+(todV/avgV).toFixed(2):null;
+
+  const win=Math.min(n,252);
+  const h52=Math.max(...H.slice(-win));
+  const l52=Math.min(...L.slice(-win));
+  const h52d=+((price/h52-1)*100).toFixed(1);
+
+  let dpz='—',wpz='—';
+  if(n>=2) dpz=pivZone(price,pivots(H[n-2],L[n-2],C[n-2]));
+  const wn=wk.closes.length;
+  if(wn>=2) wpz=pivZone(price,pivots(wk.highs[wn-2],wk.lows[wn-2],wk.closes[wn-2]));
+
+  // Weekly volume ratio: latest completed week's volume vs avg of trailing 10 weeks
+  let wVolRatio=null;
+  if(wn>=11){
+    const latestWV=wk.volumes[wn-1];
+    const wVArr=wk.volumes.slice(-11,-1).filter(v=>v>0);
+    const wAvgV=wVArr.length?wVArr.reduce((a,b)=>a+b,0)/wVArr.length:0;
+    wVolRatio=wAvgV>0?+(latestWV/wAvgV).toFixed(2):null;
+  }
+
+  // Weekly EMA alignment: same blended-score approach as daily, but computed
+  // on weekly-resampled closes. A 50-week EMA sits right at the edge of what
+  // ~1 year of data can reliably support (50 weeks needed vs ~52-60 available,
+  // and often less for stocks with gaps/holidays) — so this uses only
+  // 10 and 20-week EMAs, both comfortably achievable even with a thin history.
+  const we10=ema(wk.closes,10), we20=ema(wk.closes,20);
+  let weu=0,wec=0;
+  [[we10,we20],[price,we10],[price,we20]].forEach(([a,b])=>{
+    if(a&&b){wec++;if(a>b)weu++;}
+  });
+  const weEmaScr=wec?+(weu/wec).toFixed(2):null;
+
+  const s2=stage2(price,C,e50,e200,h52,l52,wk,we20);
+  const sq=squeeze(C.slice(-20),H.slice(-20),L.slice(-20));
+  const bo=breakout(C,V);
+
+  const r3m=n>=63?+((price/C[Math.max(0,n-64)]-1)*100).toFixed(1):null;
+  const r6m=n>=127?+((price/C[Math.max(0,n-128)]-1)*100).toFixed(1):null;
+  const r12=n>=252?+((price/C[Math.max(0,n-253)]-1)*100).toFixed(1):null;
+
+  const currency=sym.endsWith('.NS')?'INR':'USD';
+
+  return{
+    sym,price,ch1d,volume:todV,avgV,vRatio,h52d,h52,l52,
+    rsi14,wRsi,e10,e20,e50,e150,e200,emaScr,
+    we10,we20,weEmaScr,
+    dpz,wpz,s2,sq,wVolRatio,
+    boGain:bo.gain,boCnt:bo.count,retrace:bo.retrace,
+    r3m,r6m,r12,rs:null,mrsRank:null,leadRS:null,rsTrend:null,
+    currency,earnDate:'—',
+  };
+}
+
+function rankRS(market){
+  const items=UNI[market].map(d=>SD[d.s]).filter(d=>d&&d.r3m!=null);
+  if(!items.length) return;
+  items.forEach(d=>{
+    d._rr=0.4*(d.r3m||0)+0.35*(d.r6m||d.r3m||0)+0.25*(d.r12||d.r6m||d.r3m||0);
+  });
+  const sorted=[...items].sort((a,b)=>a._rr-b._rr);
+  sorted.forEach((d,i)=>{
+    const p=Math.round((i+1)/sorted.length*100);
+    d.rs=p;d.mrsRank=p;d.leadRS=p>=70;
+    if(d.r3m!=null&&d.r6m!=null){
+      const rec=d.r3m-(d.r6m-d.r3m);
+      d.rsTrend=rec>5?'↑':rec<-5?'↓':'→';
+    } else d.rsTrend='→';
+
+    // Patch Stage 2 criterion #5 ("RS Positive vs Nifty 500") now that we
+    // know this stock's rank vs the rest of the loaded universe. We don't
+    // fetch a live index series, so "RS >= 50th percentile here" stands in
+    // as a practical proxy for "outperforming the benchmark".
+    if(d.s2&&d.s2.details&&d.s2.details[4]){
+      d.s2.details[4].pass = p>=50;
+      d.s2.score = d.s2.details.filter(c=>c.pass).length;
+    }
+  });
+}
+
+/* ══════════════════════════════════
+   API + STOOQ
+══════════════════════════════════ */
+function stooqTick(sym){
+  if(sym.endsWith('.NS')) return sym.toLowerCase();  // tcs.ns
+  return sym.toLowerCase()+'.us';                    // aapl.us
+}
+
+async function proxyFetch(url){
+  for(let i=0;i<CFG.PROXIES.length;i++){
+    if(i>0) await sleep(300+Math.random()*400); // small stagger before trying next proxy
+    const mk=CFG.PROXIES[i];
+    const pu=mk(url);
+    const ctrl=new AbortController();
+    const tid=setTimeout(()=>ctrl.abort(),CFG.TO);
+    try{
+      const res=await fetch(pu,{signal:ctrl.signal});
+      clearTimeout(tid);
+      if(res.ok){
+        const ct=(res.headers.get('content-type')||'').toLowerCase();
+        if(ct.includes('json')){
+          // allorigins might return JSON wrapper
+          const j=await res.json();
+          return j.contents||j; // allorigins wraps in .contents sometimes
+        }
+        return await res.text();
+      }
+    } catch(e){ clearTimeout(tid); }
+  }
+  return null;
+}
+
+function parseCSV(txt){
+  if(!txt||typeof txt!=='string') return null;
+  const t=txt.trim();
+  if(t.length<20||t.toLowerCase().includes('no data')||t.toLowerCase().startsWith('<')) return null;
+  const lines=t.split(/\r?\n/);
+  if(lines.length<3) return null;
+  const hdr=lines[0].toLowerCase();
+  if(!hdr.includes('date')||!hdr.includes('close')) return null;
+
+  const rows=[];
+  for(let i=1;i<lines.length;i++){
+    const pts=lines[i].split(',');
+    if(pts.length<5) continue;
+    const[date,open,high,low,close,vol]=pts;
+    const c=parseFloat(close);
+    if(!date||isNaN(c)||c<=0) continue;
+    rows.push({date:date.trim(),o:parseFloat(open)||c,h:parseFloat(high)||c,l:parseFloat(low)||c,c,v:parseInt(vol)||0});
+  }
+  // Minimum of 2 rows (not 20) — a stock that IPO'd 5 trading days ago is a
+  // real, successfully-fetched dataset, not a failure. It just won't have
+  // enough history for RSI/EMA/Stage2/etc, which all null-guard individually
+  // further down the pipeline. Rejecting it here would wrongly show "no data"
+  // for a stock that actually has valid price/volume to display.
+  if(rows.length<2) return null;
+  // Sort chronologically (oldest first) - Stooq returns newest first
+  rows.sort((a,b)=>a.date.localeCompare(b.date));
+  // Keep last ~300 daily rows (~1.2 years). Was bumped to 1300 (~5yr) to support
+  // a weekly EMA-200, but that's since been replaced with a 10/20/50-week blend
+  // that needs far less data — so back down to a lean, fast-to-parse window.
+  // 300 rows comfortably covers the 253-day lookback the 12-month RS return needs.
+  const d=rows.slice(-300);
+  return{
+    C:d.map(r=>r.c),H:d.map(r=>r.h),L:d.map(r=>r.l),
+    V:d.map(r=>r.v),dates:d.map(r=>r.date),
+  };
+}
+
+function sleep(ms){ return new Promise(r=>setTimeout(r,ms)); }
+
+/* ══════════════════════════════════
+   GOOGLE SHEETS DATA SOURCE (primary, if configured)
+   ────────────────────────────────────────────────
+   A published Google Sheet CSV is fetched DIRECTLY — no CORS proxy
+   needed at all, since Google's publish-to-web endpoint sets proper
+   cross-origin headers (unlike Stooq, which is why we needed proxies
+   for that source). This is fetched once per page load, then every
+   ticker looks itself up from the parsed result in-memory — instant,
+   no per-stock network requests, no rate-limit risk.
+   Falls back to Stooq+proxy automatically for any ticker not found
+   in the sheet (e.g. you add a new ticker before re-running the script).
+══════════════════════════════════ */
+let GSHEET_DATA=null;            // { 'RELIANCE.NS': {C:[],H:[],L:[],V:[],dates:[]}, ... }
+let GSHEET_LOAD_ATTEMPTED=false; // only try the network fetch once per page load
+
+async function loadGoogleSheetData(){
+  if(GSHEET_LOAD_ATTEMPTED) return;
+  GSHEET_LOAD_ATTEMPTED=true;
+  if(!CFG.GSHEET_CSV_URL){
+    console.log('Google Sheet URL not configured — using Stooq+proxy only.');
+    return;
+  }
+  // Timeout protection: a published Sheet with hundreds of thousands of
+  // rows can genuinely take a while — Google has to GENERATE the CSV export
+  // server-side (real, non-trivial time for a large sheet) before it even
+  // starts sending bytes, on top of downloading a file that can be 15-20+MB
+  // at full scale. 30s turned out to be too tight once the real dataset was
+  // fully loaded — bumped to 120s. Still must never hang forever, which is
+  // why this exists at all — see loadGoogleSheetData's history for why.
+  const GSHEET_TIMEOUT_MS = 120000;
+  const ctrl=new AbortController();
+  const tid=setTimeout(()=>ctrl.abort(),GSHEET_TIMEOUT_MS);
+  const fetchStart=performance.now();
+  try{
+    setGSheetStatus('checking');
+    console.log('Fetching Google Sheet CSV (this can take up to '+(GSHEET_TIMEOUT_MS/1000)+'s for a large sheet)...');
+    const res=await fetch(CFG.GSHEET_CSV_URL,{signal:ctrl.signal});
+    clearTimeout(tid);
+    const fetchMs=Math.round(performance.now()-fetchStart);
+    if(!res.ok){
+      console.warn('Google Sheet fetch returned HTTP', res.status, 'after', fetchMs, 'ms — falling back to Stooq+proxy for all tickers. Check that the "Data" tab is specifically published (File > Share > Publish to web) and the URL in CFG.GSHEET_CSV_URL matches exactly.');
+      setGSheetStatus('failed');
+      return;
+    }
+    console.log('Google Sheet responded OK after', fetchMs, 'ms — reading and parsing...');
+    const text=await res.text();
+    console.log('CSV size:', (text.length/1024/1024).toFixed(2), 'MB');
+    GSHEET_DATA=parseGSheetCSV(text);
+    const n=GSHEET_DATA?Object.keys(GSHEET_DATA).length:0;
+    console.log('Google Sheet data loaded:', n, 'tickers available.');
+    setGSheetStatus('ok', n);
+  } catch(e){
+    clearTimeout(tid);
+    const fetchMs=Math.round(performance.now()-fetchStart);
+    const reason = e.name==='AbortError' ? `timed out after ${GSHEET_TIMEOUT_MS/1000}s` : e.message;
+    console.warn('Google Sheet fetch failed:', reason, '(after', fetchMs, 'ms) — falling back to Stooq+proxy for all tickers.');
+    GSHEET_DATA=null;
+    setGSheetStatus('failed');
+  }
+}
+
+// Lightweight status hook so the UI can reflect what's happening with the
+// Google Sheet check without blocking anything — purely informational.
+function setGSheetStatus(state, count){
+  const el=document.getElementById('srcTag');
+  if(!el) return;
+  if(state==='ok') el.title = `Google Sheet data loaded: ${count} tickers available as the primary source.`;
+  if(state==='failed') el.title = 'Google Sheet unavailable or not configured — using Stooq.com directly for all tickers.';
+  if(state==='checking') el.title = 'Checking Google Sheet for cached data...';
+}
+
+function parseGSheetCSV(text){
+  if(!text||typeof text!=='string') return null;
+  const lines=text.trim().split(/\r?\n/);
+  if(lines.length<2) return null;
+
+  const grouped={};
+  for(let i=1;i<lines.length;i++){ // row 0 is the header
+    const pts=lines[i].split(',');
+    if(pts.length<7) continue;
+    const[ticker,date,o,h,l,c,v]=pts;
+    if(!ticker||!date) continue;
+    const cNum=parseFloat(c);
+    if(isNaN(cNum)) continue;
+    if(!grouped[ticker]) grouped[ticker]={C:[],H:[],L:[],V:[],dates:[]};
+    const g=grouped[ticker];
+    g.C.push(cNum);
+    g.H.push(parseFloat(h)||cNum);
+    g.L.push(parseFloat(l)||cNum);
+    g.V.push(parseInt(v)||0);
+    g.dates.push(date.trim());
+  }
+
+  // Defensive sort — Apps Script writes each ticker's rows in date order,
+  // but sort here anyway in case the sheet's ever edited/reordered manually.
+  Object.keys(grouped).forEach(t=>{
+    const g=grouped[t];
+    const idx=g.dates.map((_,i)=>i).sort((a,b)=>g.dates[a].localeCompare(g.dates[b]));
+    grouped[t]={
+      C:idx.map(i=>g.C[i]), H:idx.map(i=>g.H[i]), L:idx.map(i=>g.L[i]),
+      V:idx.map(i=>g.V[i]), dates:idx.map(i=>g.dates[i]),
+    };
+  });
+  return grouped;
+}
+
+async function fetchStock(def){
+  // 1) Try Google Sheets first, if configured and this ticker is covered
+  if(GSHEET_DATA && GSHEET_DATA[def.s]){
+    const gd=GSHEET_DATA[def.s];
+    if(gd.C.length>=2){
+      const tech=computeTech(gd.C,gd.H,gd.L,gd.V,gd.dates,def.s);
+      if(tech) return tech;
+    }
+  }
+
+  // 2) Fall back to Stooq via CORS proxy (original path — unchanged)
+  const tick=stooqTick(def.s);
+  const url=`${CFG.STOOQ}${encodeURIComponent(tick)}&i=d`;
+
+  for(let attempt=0; attempt<=CFG.RETRIES; attempt++){
+    if(attempt>0) await sleep(1500*attempt); // back off 1.5s, then 3s before retrying
+    const raw=await proxyFetch(url);
+    if(raw){
+      let csvText=raw;
+      if(typeof raw==='object'&&raw.contents) csvText=raw.contents;
+      const parsed=parseCSV(csvText);
+      if(parsed){
+        const tech=computeTech(parsed.C,parsed.H,parsed.L,parsed.V,parsed.dates,def.s);
+        if(tech) return tech;
+      }
+    }
+  }
+  return null; // failed after all proxies × all retry attempts
+}
+
+/* ══════════════════════════════════
+   CONCURRENCY
+══════════════════════════════════ */
+async function runConc(items,fn,conc,onDone){
+  let idx=0;
+  async function worker(){
+    while(idx<items.length){
+      const i=idx++;
+      await fn(items[i],i);
+      if(onDone) onDone(i+1,items.length);
+    }
+  }
+  await Promise.all(Array(Math.min(conc,items.length)).fill(null).map(worker));
+}
+
+/* ══════════════════════════════════
+   CACHE
+══════════════════════════════════ */
+const today=()=>new Date().toISOString().slice(0,10);
+const cKey=(m)=>`${CFG.VER}_${m}_${today()}`;
+
+function saveCache(market){
+  try{
+    const data={};
+    UNI[market].forEach(def=>{
+      const d=SD[def.s]; if(!d) return;
+      const{_rr,...rest}=d;  // strip temp computed fields
+      data[def.s]=rest;
+    });
+    localStorage.setItem(cKey(market),JSON.stringify(data));
+  } catch(e){console.warn('Cache save:',e.message)}
+}
+
+function loadCache(market){
+  try{
+    const raw=localStorage.getItem(cKey(market));
+    return raw?JSON.parse(raw):null;
+  } catch{return null}
+}
+
+/* ══════════════════════════════════
+   METRICS
+══════════════════════════════════ */
+const MDEF=[
+  {key:'a20',  label:'Above 20 EMA',  color:'gc'},
+  {key:'a200', label:'Above 200 EMA', color:'gc'},
+  {key:'rhi',  label:'RSI ≥ 60',      color:'rc'},
+  {key:'apiv', label:'Above D-Pivot', color:'gc'},
+  {key:'n52',  label:'Near 52W High', color:'rc'},
+  {key:'vexp', label:'Vol Expanding', color:'oc'},
+  {key:'bo',   label:'BO Last 10D',   color:'rc'},
+];
+
+function calcMetrics(market){
+  const items=UNI[market].map(d=>SD[d.s]).filter(Boolean);
+  const n=items.length; if(!n) return null;
+  return{
+    a20:  items.filter(d=>d.e20&&d.price>d.e20).length,
+    a200: items.filter(d=>d.e200&&d.price>d.e200).length,
+    rhi:  items.filter(d=>d.rsi14!=null&&d.rsi14>=60).length,
+    apiv: items.filter(d=>['PP→R1','R1→R2','R2+'].includes(d.dpz)).length,
+    n52:  items.filter(d=>d.h52d>=-10).length,
+    vexp: items.filter(d=>d.vRatio!=null&&d.vRatio>=1.5).length,
+    bo:   items.filter(d=>d.boGain!=null&&d.boCnt>0).length,
+    total:n,
+  };
+}
+
+/* ══════════════════════════════════
+   SECTOR BREADTH
+══════════════════════════════════ */
+let SECTOR_SORT_COL='count', SECTOR_SORT_DIR='desc';
+
+function calcSectorBreadth(market){
+  const bySector={};
+  UNI[market].forEach(def=>{
+    const d=SD[def.s];
+    if(!d) return; // only count stocks that have actually loaded
+    if(!bySector[def.sector]) bySector[def.sector]=[];
+    bySector[def.sector].push(d);
+  });
+
+  const rows=Object.keys(bySector).map(sector=>{
+    const items=bySector[sector];
+    const n=items.length;
+    const avg=arr=>arr.length?arr.reduce((a,b)=>a+b,0)/arr.length:null;
+    const pct=cnt=>n?Math.round(cnt/n*100):0;
+
+    const rsiVals=items.map(d=>d.rsi14).filter(v=>v!=null);
+    const volVals=items.map(d=>d.vRatio).filter(v=>v!=null);
+
+    return{
+      sector,
+      count: n,
+      avgRsi: avg(rsiVals),
+      rsiHi: pct(items.filter(d=>d.rsi14!=null&&d.rsi14>=60).length),
+      avgVol: avg(volVals),
+      abovePivot: pct(items.filter(d=>['PP→R1','R1→R2','R2+'].includes(d.dpz)).length),
+      near52h: pct(items.filter(d=>d.h52d>=-10).length),
+      bo10d: pct(items.filter(d=>d.boGain!=null&&d.boCnt>0).length),
+      rsPos: pct(items.filter(d=>d.rs!=null&&d.rs>=50).length),
+      above20ema: pct(items.filter(d=>d.e20&&d.price>d.e20).length),
+      above200ema: pct(items.filter(d=>d.e200&&d.price>d.e200).length),
+    };
+  });
+  return rows;
+}
+
+const SECTOR_COLS=[
+  {key:'sector',      label:'Sector',      fmt:v=>v},
+  {key:'count',       label:'Stocks #',    fmt:v=>v},
+  {key:'avgRsi',      label:'Avg RSI',     fmt:v=>v==null?'—':v.toFixed(1)},
+  {key:'rsiHi',       label:'RSI ≥60',     fmt:v=>pillFmt(v)},
+  {key:'avgVol',      label:'Avg Vol',     fmt:v=>v==null?'—':v.toFixed(2)+'x'},
+  {key:'abovePivot',  label:'> Pivot',     fmt:v=>pillFmt(v)},
+  {key:'near52h',     label:'52W High',    fmt:v=>pillFmt(v)},
+  {key:'bo10d',       label:'BO 10D',      fmt:v=>pillFmt(v)},
+  {key:'rsPos',       label:'RS+',         fmt:v=>pillFmt(v)},
+  {key:'above20ema',  label:'> 20EMA',     fmt:v=>pillFmt(v)},
+  {key:'above200ema', label:'> 200EMA',    fmt:v=>pillFmt(v)},
+];
+
+function pillFmt(pct){
+  const cls = pct>=50?'sb-hi':pct>=25?'sb-mid':'sb-lo';
+  return `<span class="sb-pill ${cls}">${pct}%</span>`;
+}
+
+function renderSectorBreadth(){
+  const rows=calcSectorBreadth(CUR);
+  const total=rows.reduce((a,r)=>a+r.count,0);
+  $('sectorModalSub').textContent = `${rows.length} sectors · ${total} stocks loaded · click any row to filter the main table to that sector`;
+
+  const fn=SECTOR_COLS.find(c=>c.key===SECTOR_SORT_COL);
+  rows.sort((a,b)=>{
+    const va=a[SECTOR_SORT_COL], vb=b[SECTOR_SORT_COL];
+    if(typeof va==='string') return SECTOR_SORT_DIR==='asc' ? va.localeCompare(vb) : vb.localeCompare(va);
+    const na=va??-Infinity, nb=vb??-Infinity;
+    return SECTOR_SORT_DIR==='asc' ? na-nb : nb-na;
+  });
+
+  $('sectorTableHead').innerHTML=SECTOR_COLS.map(c=>
+    `<th onclick="sortSectorTable('${c.key}')">${c.label}${SECTOR_SORT_COL===c.key?(SECTOR_SORT_DIR==='asc'?' ↑':' ↓'):''}</th>`
+  ).join('');
+
+  $('sectorTableBody').innerHTML=rows.map(r=>
+    `<tr class="sector-row" onclick="filterToSector('${escAttr(r.sector)}')">
+      ${SECTOR_COLS.map(c=>`<td>${c.fmt(r[c.key])}</td>`).join('')}
+    </tr>`
+  ).join('');
+}
+
+function sortSectorTable(col){
+  if(SECTOR_SORT_COL===col) SECTOR_SORT_DIR = SECTOR_SORT_DIR==='asc'?'desc':'asc';
+  else { SECTOR_SORT_COL=col; SECTOR_SORT_DIR = col==='sector' ? 'asc' : 'desc'; }
+  renderSectorBreadth();
+}
+
+function openSectorBreadth(){
+  renderSectorBreadth();
+  $('sectorModal').classList.add('open');
+}
+function closeSectorBreadth(){
+  $('sectorModal').classList.remove('open');
+}
+function filterToSector(sector){
+  $('sctFil').value=sector;
+  F_SCT=sector;
+  VISIBLE=CFG.INIT;
+  renderTable(CUR);
+  updateStatus();
+  closeSectorBreadth();
+  document.querySelector('.tbl-sec')?.scrollIntoView({behavior:'smooth',block:'start'});
+}
+
+function ringHTML(pct,color){
+  const C=106.8, off=+(C-(pct/100)*C).toFixed(1);
+  const clr={gc:'#16A34A',rc:'#DC2626',oc:'#D97706',lc:'#CBD5E1'}[color];
+  const bg ={gc:'#DCFCE7',rc:'#FEE2E2',oc:'#FEF3C7',lc:'#F1F5F9'}[color];
+  return `<div class="mring">
+    <svg width="44" height="44" viewBox="0 0 44 44">
+      <circle cx="22" cy="22" r="17" fill="none" stroke="${bg}" stroke-width="5"/>
+      <circle cx="22" cy="22" r="17" fill="none" stroke="${clr}" stroke-width="5"
+        stroke-dasharray="${C}" stroke-dashoffset="${off}"
+        stroke-linecap="round" transform="rotate(-90 22 22)"/>
+    </svg>
+    <div class="mring-txt" style="color:${clr}">${pct}%</div>
+  </div>`;
+}
+
+function renderMetrics(market){
+  const mx=calcMetrics(market);
+  $('mRow').innerHTML=MDEF.map(m=>{
+    if(!mx){
+      return `<div class="mcard lc">
+        <div class="skel-ring"></div>
+        <div class="minfo"><div class="mlabel">${m.label}</div>
+        <div class="mfrac loading">Loading…</div></div>
+      </div>`;
+    }
+    const cnt=mx[m.key], tot=mx.total;
+    const pct=tot?Math.round(cnt/tot*100):0;
+    return `<div class="mcard ${m.color}" data-tip="${cnt} of ${tot} stocks">
+      ${ringHTML(pct,m.color)}
+      <div class="minfo">
+        <div class="mlabel">${m.label}</div>
+        <div class="mfrac">${cnt} / ${tot}</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+/* ══════════════════════════════════
+   TABLE CELLS
+══════════════════════════════════ */
+const $=id=>document.getElementById(id);
+function escAttr(s){return String(s).replace(/&/g,'&amp;').replace(/'/g,'&#39;').replace(/"/g,'&quot;');}
+
+function fmtP(p,cur){
+  if(p==null) return '—';
+  const sym=cur==='INR'?'₹':'$';
+  return sym+p.toLocaleString('en-IN',{minimumFractionDigits:2,maximumFractionDigits:2});
+}
+function fmtCh(v){
+  if(v==null) return '<span class="vm">—</span>';
+  const c=v>0?'vg':v<0?'vr':'vm';
+  return `<span class="${c}">${v>0?'+':''}${v}%</span>`;
+}
+function rsiC(v){
+  if(v==null) return '<span class="vm">—</span>';
+  const c=v>=70?'vr':v>=55?'vg':v<=40?'vr':'';
+  return `<span class="${c}">${v}</span>`;
+}
+function vrC(r){
+  if(r==null) return '<span class="vm">—</span>';
+  const c=r>=2?'vg':r<0.7?'vr':'';
+  return `<span class="${c}">${r}x</span>`;
+}
+function pivC(z){
+  if(!z||z==='—') return '<span class="vm">—</span>';
+  const c=z.startsWith('R2')?'pr2':z.startsWith('R1')||z.includes('PP→R')?'pr1':z==='PP'?'ppp':z.includes('S1')?'ps1':'ps2';
+  return `<span class="${c}">${z}</span>`;
+}
+function h52C(v){
+  if(v==null) return '<span class="vm">—</span>';
+  const c=v>=-5?'vg':v>=-15?'vo':'vr';
+  return `<span class="${c}">${v}%</span>`;
+}
+function emaC(sc){
+  if(sc==null) return '<span class="vm">—</span>';
+  if(sc>=0.8) return '<span class="ema-b">▲ Bull</span>';
+  if(sc>=0.5) return '<span class="ema-p">◆ Part</span>';
+  return '<span class="ema-r">▼ Bear</span>';
+}
+// Individual period badges: one chip per EMA, green if price is above it,
+// red if below, muted gray if that period's EMA isn't available yet
+// (e.g. EMA200 on a stock with under 200 days of history).
+function emaBadgeRow(price, periods){
+  return `<div class="ema-badges">${periods.map(([label,val])=>{
+    const cls = val==null ? 'eb-m' : (price>val ? 'eb-g' : 'eb-r');
+    return `<span class="ema-badge ${cls}">${label}</span>`;
+  }).join('')}</div>`;
+}
+function s2C(s2){
+  if(!s2) return '<span class="vm">—</span>';
+  const{score,total,details}=s2;
+  let dots='';
+  for(let i=0;i<total;i++) dots+=`<div class="s2d ${i<score?'on':'off'}"></div>`;
+  let tooltip='';
+  if(details&&details.length){
+    tooltip=`<div class="s2-tooltip">
+      <div class="s2t-title">Stage 2 Setup Score (out of ${total}):</div>
+      ${details.map((d,i)=>`<div class="s2t-row ${d.pass?'pass':'fail'}"><span class="s2t-mark">${d.pass?'✓':'✕'}</span>${i+1}. ${d.label}</div>`).join('')}
+      <div class="s2t-foot">Hover the chip to see pass/fail per rule.</div>
+    </div>`;
+  }
+  return `<div class="s2w"><div class="s2ds">${dots}</div><span class="s2f">${score}/${total}</span>${tooltip}</div>`;
+}
+function sqC(v){
+  if(!v) return '<span class="vm">—</span>';
+  const cls=v>65?'sq-t':'sq-n';
+  return `<div class="sqb"><div class="sqf ${cls}" style="width:${Math.min(v,100)}%"></div></div>`;
+}
+function rsC(v){
+  if(v==null) return '<span class="rsbox rsna">—</span>';
+  const c=v>=80?'rsh':v>=50?'rsm':'rsl';
+  return `<span class="rsbox ${c}">${v}</span>`;
+}
+function ldC(v){
+  const cls=v?'ld-y':'ld-n';
+  return `<div style="display:flex;justify-content:center"><div class="ldot ${cls}"></div></div>`;
+}
+function rstC(v){
+  if(!v) return '<span class="vm">—</span>';
+  const c=v==='↑'?'vg':v==='↓'?'vr':'vm';
+  return `<span class="${c}">${v==='↑'?'↑ Up':v==='↓'?'↓ Down':'→ Flat'}</span>`;
+}
+function capB(cap){
+  const cls={LC:'blc',MC:'bmc',SC:'bsc',Mic:'bmic',ETF:'betf'}[cap]||'berr';
+  return `<span class="badge ${cls}">${cap||'—'}</span>`;
+}
+function revC(sym){
+  const st=REV[sym]||null;
+  const safe=escAttr(sym);
+  return `<div class="rev-g">
+    <div class="rev-b ${st==='Y'?'rb-y':'rb-off'}" onclick="setRev('${safe}','Y')">Y</div>
+    <div class="rev-b ${st==='N'?'rb-n':'rb-off'}" onclick="setRev('${safe}','N')">N</div>
+    <div class="rev-b ${st==='?'?'rb-q':'rb-off'}" onclick="setRev('${safe}','?')">?</div>
+  </div>`;
+}
+function boGC(v){
+  if(v==null) return '<span class="vm">—</span>';
+  return `<span class="${v>=0?'vg':'vr'}">${v>=0?'+':''}${v}%</span>`;
+}
+function retC(v){
+  if(v==null) return '<span class="vm">—</span>';
+  const c=v>=-5?'vg':v>=-15?'vo':'vr';
+  return `<span class="${c}">${v}%</span>`;
+}
+function bocC(c){
+  if(!c) return '<span class="vm">—</span>';
+  return `<span class="boc">${c} BO${c>1?'s':''}</span>`;
+}
+
+/* ══════════════════════════════════
+   ROW RENDERING
+══════════════════════════════════ */
+function skelRow(def,i){
+  const sk=n=>`<div class="skel sk-${n}"></div>`;
+  return `<tr id="r-${escAttr(def.s)}">
+    <td class="td-n">${i}</td><td>${revC(def.s)}</td>
+    <td>${capB(def.g)}</td>
+    <td><span class="ticker">${def.d}</span><br><span class="sec">${def.sector}</span></td>
+    ${Array(23).fill(0).map((_,j)=>`<td>${sk(j%3===0?'lg':j%2===0?'md':'sm')}</td>`).join('')}
+  </tr>`;
+}
+
+function fmtMcap(cr){
+  if(cr==null) return '';
+  if(cr>=100000) return `₹${(cr/100000).toFixed(2)}L Cr`;
+  return `₹${cr.toLocaleString('en-IN')} Cr`;
+}
+function fmtMcapUSD(bn){
+  if(bn==null) return '';
+  if(bn>=1000) return `$${(bn/1000).toFixed(2)}T`;
+  return `$${bn.toLocaleString('en-US')}B`;
+}
+function dataRow(def,d,i){
+  const flag=d.currency==='INR'?'🇮🇳':CUR==='etf'?'📊':'🇺🇸';
+  const cap=d.g||def.g;
+  const safeSym=escAttr(def.s);
+  const mcapText = def.mcap==null ? '' : (d.currency==='INR' ? fmtMcap(def.mcap) : fmtMcapUSD(def.mcap));
+  const mcapLine = mcapText ? `<br><span class="sec" style="color:var(--text3)">${mcapText}</span>` : '';
+  return `<tr id="r-${safeSym}">
+    <td class="td-n">${i}</td>
+    <td>${revC(def.s)}</td>
+    <td>${capB(cap)}</td>
+    <td><span class="ticker">${flag} ${def.d}</span><br><span class="sec">${def.sector}</span>${mcapLine}</td>
+    <td style="font-weight:600">${fmtP(d.price,d.currency)}</td>
+    <td>${fmtCh(d.ch1d)}</td>
+    <td>${rsiC(d.rsi14)}</td>
+    <td class="c-wrsi vm">${d.wRsi??'—'}</td>
+    <td class="c-vr">${vrC(d.vRatio)}</td>
+    <td class="c-wvol">${vrC(d.wVolRatio)}</td>
+    <td>${pivC(d.dpz)}</td>
+    <td class="c-wpiv">${pivC(d.wpz)}</td>
+    <td>${h52C(d.h52d)}</td>
+    <td class="c-ema">${emaBadgeRow(d.price,[['10',d.e10],['20',d.e20],['50',d.e50],['200',d.e200]])}</td>
+    <td class="c-wema">${emaBadgeRow(d.price,[['10',d.we10],['20',d.we20]])}</td>
+    <td>${boGC(d.boGain)}</td>
+    <td class="c-bocnt">${bocC(d.boCnt)}</td>
+    <td class="c-voldry">${vrC(d.vRatio)}</td>
+    <td class="c-retrace">${retC(d.retrace)}</td>
+    <td class="c-squeeze">${sqC(d.sq)}</td>
+    <td>${s2C(d.s2)}</td>
+    <td style="text-align:center">${rsC(d.rs)}</td>
+    <td class="c-mrsrank" style="text-align:center">${rsC(d.mrsRank)}</td>
+    <td>${d.leadRS!=null?ldC(d.leadRS):'<span class="vm">—</span>'}</td>
+    <td class="c-rstrend">${rstC(d.rsTrend)}</td>
+    <td class="c-earns vm" style="font-size:11px">${d.earnDate||'—'}</td>
+    <td class="c-notes"><input class="note-in" value="${NOTES[def.s]||''}" placeholder="Add note…"
+      onchange="NOTES['${safeSym}']=this.value"/></td>
+  </tr>`;
+}
+
+function errRow(def,i){
+  return `<tr id="r-${escAttr(def.s)}" class="erow">
+    <td class="td-n">${i}</td><td>${revC(def.s)}</td>
+    <td>${capB(def.g)}</td>
+    <td><span class="ticker">${def.d}</span><br><span class="sec">${def.sector}</span></td>
+    <td colspan="23" style="color:var(--text3);font-size:11px">
+      ⚠ No data — ticker may not be on Stooq, or proxy failed
+    </td>
+  </tr>`;
+}
+
+/* ══════════════════════════════════
+   FILTER + SORT
+══════════════════════════════════ */
+const SORT_FN={
+  price:d=>d?.price,ch1d:d=>d?.ch1d,rsi:d=>d?.rsi14,wrsi:d=>d?.wRsi,
+  vr:d=>d?.vRatio,wvol:d=>d?.wVolRatio,h52:d=>d?.h52d,ema:d=>d?.emaScr,wema:d=>d?.weEmaScr,
+  bog:d=>d?.boGain,boc:d=>d?.boCnt,ret:d=>d?.retrace,sq:d=>d?.sq,
+  s2:d=>d?.s2?.score,rs:d=>d?.rs,mrs:d=>d?.mrsRank,
+  ticker:(_,def)=>def.d, cap:(_,def)=>({LC:4,MC:3,SC:2,Mic:1,ETF:0}[def.g]),
+  rst:d=>({'↑':3,'→':2,'↓':1}[d?.rsTrend]||0),
+};
+
+function getRows(market){
+  let items=UNI[market].slice();
+  const q=SEARCH.toLowerCase().trim();
+  if(q) items=items.filter(def=>def.d.toLowerCase().includes(q)||def.sector.toLowerCase().includes(q));
+  if(F_SCT) items=items.filter(def=>def.sector===F_SCT);
+
+  // Market cap filter (India + US — both now have per-stock mcap data; ETF skipped, no mcap concept)
+  if((market==='india'||market==='us') && MIN_MCAP>0){
+    items=items.filter(def=>def.mcap==null || def.mcap>=MIN_MCAP);
+  }
+
+  const segCaps=['LC','MC','SC','Mic'];
+  if(segCaps.includes(F_CAP)){
+    items=items.filter(def=>{
+      const d=SD[def.s]; const cap=d?.g||def.g; return cap===F_CAP;
+    });
+  } else if(F_CAP!=='All'){
+    items=items.filter(def=>def.sector.toLowerCase().includes(F_CAP.toLowerCase()));
+  }
+
+  if(F_EMA==='bull') items=items.filter(def=>(SD[def.s]?.emaScr||0)>=0.8);
+  else if(F_EMA==='a20') items=items.filter(def=>{const d=SD[def.s];return d?.e20&&d.price>d.e20;});
+  else if(F_EMA==='a200') items=items.filter(def=>{const d=SD[def.s];return d?.e200&&d.price>d.e200;});
+
+  if(F_RSI==='ob') items=items.filter(def=>(SD[def.s]?.rsi14||0)>=70);
+  else if(F_RSI==='mid') items=items.filter(def=>{const r=SD[def.s]?.rsi14;return r!=null&&r>=50&&r<70;});
+  else if(F_RSI==='os') items=items.filter(def=>(SD[def.s]?.rsi14||100)<=40);
+
+  if(F_PIV==='above') items=items.filter(def=>['PP→R1','R1→R2','R2+'].includes(SD[def.s]?.dpz));
+  else if(F_PIV==='r1') items=items.filter(def=>['R1→R2','R2+'].includes(SD[def.s]?.dpz));
+  else if(F_PIV==='below') items=items.filter(def=>['S1→PP','S2→S1','<S2'].includes(SD[def.s]?.dpz));
+
+  const fn=SORT_FN[SORT_C];
+  if(fn){
+    items.sort((a,b)=>{
+      const va=fn(SD[a.s],a)??-Infinity, vb=fn(SD[b.s],b)??-Infinity;
+      return SORT_D==='desc'?(vb>va?1:-1):(va>vb?1:-1);
+    });
+  }
+  return items;
+}
+
+function renderTable(market){
+  const all=getRows(market);
+  const vis=all.slice(0,VISIBLE);
+  $('tBody').innerHTML=vis.map((def,i)=>{
+    const d=SD[def.s];
+    if(d===null)      return errRow(def,i+1);
+    if(d===undefined) return skelRow(def,i+1);
+    return dataRow(def,d,i+1);
+  }).join('');
+  const n=UNI[market].length;
+  $('vCnt').textContent=vis.length;
+  $('tCnt').textContent=n;
+  $('smLbl').textContent=`Showing ${vis.length} of ${n}`;
+}
+
+/* ══════════════════════════════════
+   SEGMENTS + SECTOR DROPDOWN
+══════════════════════════════════ */
+const SEGS={
+  india:['All','LC','MC','SC','Mic','IT','Banking','Pharma','Auto','Power'],
+  us:   ['All','LC','MC','Tech','Healthcare','Financial','Energy'],
+  etf:  ['All','US Equity','Sector','Bonds','Commodities','Intl'],
+};
+
+function buildSegs(market){
+  $('segGrp').innerHTML=SEGS[market].map((s,i)=>
+    `<button class="seg-btn ${i===0?'active':''}" onclick="onSeg(this,'${s}')">${s}</button>`
+  ).join('');
+}
+
+function buildSctDropdown(market){
+  const scts=[...new Set(UNI[market].map(d=>d.sector))].sort();
+  $('sctFil').innerHTML='<option value="">All Sectors</option>'+
+    scts.map(s=>`<option value="${s}">${s}</option>`).join('');
+}
+
+/* ══════════════════════════════════
+   PROGRESS
+══════════════════════════════════ */
+function showPrg(){$('prgSec').style.display='block'}
+function hidePrg(){$('prgSec').style.display='none'}
+function setPrg(done,total,lbl){
+  const pct=total?Math.round(done/total*100):0;
+  $('prgFill').style.width=pct+'%';
+  $('prgLbl').textContent=lbl||`Loading ${done}/${total}…`;
+  $('prgPct').textContent=pct+'%';
+}
+function setTag(mode){
+  const el=$('srcTag');
+  if(mode==='live'){
+    el.className='src-tag live';
+    const src = (GSHEET_DATA && Object.keys(GSHEET_DATA).length>0) ? 'Google Sheets + Stooq' : 'Stooq.com';
+    el.textContent=`⬤ Live (${src})`;
+  }
+  if(mode==='cached'){el.className='src-tag cached';  el.textContent=`⬤ Cached (${today()})`;}
+  if(mode==='check') {el.className='src-tag';         el.textContent='⬤ Checking…';}
+}
+
+/* ══════════════════════════════════
+   LOAD MARKET
+══════════════════════════════════ */
+async function loadMarket(market,force=false){
+  if(LOADING) return;
+  LOADING=true;
+  const rb=$('refBtn'); rb.classList.add('loading'); rb.innerHTML='<span class="spin">↻</span> Loading…';
+
+  const defs=UNI[market];
+
+  // Try cache
+  if(!force){
+    const cached=loadCache(market);
+    if(cached){
+      Object.assign(SD,cached);
+      LOADED[market]=true;
+      rankRS(market);
+      renderTable(market);
+      renderMetrics(market);
+      setTag('cached');
+      updateStatus();
+      updateRetryButton(market);
+      LOADING=false; rb.classList.remove('loading'); rb.innerHTML='↻ Refresh';
+      return;
+    }
+  }
+
+  setTag('live');
+  showPrg();
+  setPrg(0,defs.length,'Fetching stock data from Stooq…');
+  renderMetrics(market); // show skeletons
+  renderTable(market);   // show skeleton rows
+
+  let done=0;
+  await runConc(defs, async(def)=>{
+    const data=await fetchStock(def);
+    SD[def.s]=data; // null if failed
+    done++;
+    setPrg(done,defs.length,`${done}/${defs.length} — ${def.d}`);
+
+    // Live-update this row if visible
+    const el=document.getElementById('r-'+def.s);
+    if(el){
+      const rows=getRows(market);
+      const ri=rows.findIndex(d=>d.s===def.s);
+      if(ri>=0&&ri<VISIBLE){
+        el.outerHTML=data?dataRow(def,data,ri+1):errRow(def,ri+1);
+      }
+    }
+    // Update metrics every 8 stocks
+    if(done%8===0) renderMetrics(market);
+  }, CFG.CONC);
+
+  rankRS(market);
+  LOADED[market]=true;
+  renderTable(market);
+  renderMetrics(market);
+  updateStatus();
+  updateRetryButton(market);
+  saveCache(market);
+  hidePrg();
+  LOADING=false; rb.classList.remove('loading'); rb.innerHTML='↻ Refresh';
+  $('scanTime').textContent='Last scan: '+new Date().toLocaleString('en-GB');
+}
+
+function updateStatus(){
+  const rows=getRows(CUR);
+  $('vCnt').textContent=Math.min(VISIBLE,rows.length);
+  $('tCnt').textContent=UNI[CUR].length;
+  $('smLbl').textContent=`Showing ${Math.min(VISIBLE,rows.length)} of ${UNI[CUR].length}`;
+}
+
+function getFailedDefs(market){
+  return UNI[market].filter(def => SD[def.s]===null); // null = fetched but failed; undefined = never tried
+}
+
+function updateRetryButton(market){
+  const failed=getFailedDefs(market);
+  const btn=$('retryBtn');
+  if(failed.length>0){
+    btn.style.display='inline-flex';
+    $('retryCount').textContent=failed.length;
+  } else {
+    btn.style.display='none';
+  }
+}
+
+async function retryFailed(){
+  if(LOADING) return;
+  const failed=getFailedDefs(CUR);
+  if(!failed.length) return;
+  LOADING=true;
+  const btn=$('retryBtn');
+  btn.classList.add('loading'); btn.innerHTML='<span class="spin">↻</span> Retrying…';
+  showPrg();
+  setPrg(0,failed.length,`Retrying ${failed.length} failed stocks…`);
+
+  let done=0;
+  await runConc(failed, async(def)=>{
+    const data=await fetchStock(def);
+    SD[def.s]=data;
+    done++;
+    setPrg(done,failed.length,`Retry ${done}/${failed.length} — ${def.d}`);
+    const el=document.getElementById('r-'+def.s);
+    if(el){
+      const rows=getRows(CUR);
+      const ri=rows.findIndex(d=>d.s===def.s);
+      if(ri>=0&&ri<VISIBLE) el.outerHTML=data?dataRow(def,data,ri+1):errRow(def,ri+1);
+    }
+  }, Math.min(CFG.CONC,3)); // gentler concurrency for a retry pass — these already failed once
+
+  rankRS(CUR);
+  renderTable(CUR);
+  renderMetrics(CUR);
+  updateStatus();
+  updateRetryButton(CUR);
+  saveCache(CUR);
+  hidePrg();
+  LOADING=false; btn.classList.remove('loading'); btn.innerHTML='↻ Retry Failed (<span id="retryCount">0</span>)';
+  updateRetryButton(CUR); // refresh count text after innerHTML reset
+}
+
+/* ══════════════════════════════════
+   EVENT HANDLERS
+══════════════════════════════════ */
+function updateMcapUI(market){
+  const wrap=$('mcapWrap');
+  if(market==='etf'){
+    wrap.style.display='none';
+    MIN_MCAP=0; // no filtering on ETF tab
+    return;
+  }
+  wrap.style.display='flex';
+  MIN_MCAP=MCAP_DEFAULTS[market] ?? 0;
+  $('mcapFil').value=MIN_MCAP;
+  if(market==='us'){
+    $('mcapPrefix').textContent='Min Mkt Cap $';
+    $('mcapSuffix').textContent='B';
+  } else {
+    $('mcapPrefix').textContent='Min Mkt Cap ₹';
+    $('mcapSuffix').textContent='Cr';
+  }
+}
+
+function switchMkt(market){
+  if(market===CUR&&LOADED[market]) return;
+  CUR=market;VISIBLE=CFG.INIT;
+  F_CAP='All';F_SCT='';F_EMA='';F_RSI='';F_PIV='';
+  $('emaFil').value='';$('rsiFil').value='';$('pivFil').value='';
+  updateMcapUI(market);
+  $('retryBtn').style.display='none'; // reset — loadMarket() will show it again if this market has failures
+  ['india','us','etf'].forEach(m=>$('tab-'+m).classList.toggle('active',m===market));
+  const bnr={india:'🇮🇳 India (NSE) · Nifty 500',us:'🇺🇸 US Stocks · NYSE / NASDAQ',etf:'📊 ETFs · US, Intl & Commodity'};
+  $('bnrMkt').textContent=bnr[market];
+  buildSegs(market); buildSctDropdown(market);
+  loadMarket(market);
+}
+
+function onSeg(btn,val){
+  document.querySelectorAll('#segGrp .seg-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  F_CAP=val;renderTable(CUR);updateStatus();
+}
+function onSearch(){SEARCH=$('searchQ').value.trim();VISIBLE=CFG.INIT;renderTable(CUR);updateStatus();}
+function applyF(){
+  F_SCT=$('sctFil').value;F_EMA=$('emaFil').value;
+  F_RSI=$('rsiFil').value;F_PIV=$('pivFil').value;
+  MIN_MCAP=parseFloat($('mcapFil').value)||0;
+  VISIBLE=CFG.INIT;
+  renderTable(CUR);updateStatus();
+}
+function clrF(){
+  SEARCH='';F_CAP='All';F_SCT='';F_EMA='';F_RSI='';F_PIV='';
+  MIN_MCAP=MCAP_DEFAULTS[CUR] ?? 0;
+  $('searchQ').value='';$('sctFil').value='';$('emaFil').value='';
+  $('rsiFil').value='';$('pivFil').value='';$('mcapFil').value=MIN_MCAP;
+  document.querySelectorAll('#segGrp .seg-btn').forEach((b,i)=>b.classList.toggle('active',i===0));
+  VISIBLE=CFG.INIT;
+  renderTable(CUR);updateStatus();
+}
+function clrRev(){Object.keys(REV).forEach(k=>delete REV[k]);renderTable(CUR);}
+function setRev(sym,val){
+  REV[sym]=REV[sym]===val?null:val;
+  const el=document.getElementById('r-'+sym);
+  if(el){const g=el.querySelector('.rev-g');if(g) g.outerHTML=revC(sym);}
+}
+function showMore(){VISIBLE+=25;renderTable(CUR);updateStatus();}
+function forceRefresh(){
+  localStorage.removeItem(cKey(CUR));
+  LOADED[CUR]=false;
+  UNI[CUR].forEach(def=>delete SD[def.s]);
+  loadMarket(CUR,true);
+}
+function doCSV(){
+  const rows=getRows(CUR);
+  const hdr=['Ticker','Sector','Cap','MarketCapCr','Price','Currency','1D%','RSI','W-RSI','VolRatio','WVol','DPivot','WPivot','52WHigh%','EMAScore','WEMAScore','Stage2','BoGain%','BoCount','RS','MRSRank','LeadRS','RSTrend'];
+  const lines=rows.map(def=>{
+    const d=SD[def.s];
+    if(!d) return [def.d,def.sector,def.g,def.mcap??'','','','','','','','','','','','','','','','','','','',''].join(',');
+    return[def.d,def.sector,d.g||def.g,def.mcap??'',d.price,d.currency,d.ch1d,d.rsi14??'',d.wRsi??'',d.vRatio??'',d.wVolRatio??'',
+      d.dpz,d.wpz,d.h52d,d.emaScr??'',d.weEmaScr??'',d.s2?`${d.s2.score}/7`:'',d.boGain??'',d.boCnt??'',
+      d.rs??'',d.mrsRank??'',d.leadRS!=null?(d.leadRS?'Y':'N'):'',d.rsTrend??''].join(',');
+  });
+  const a=document.createElement('a');
+  a.href='data:text/csv;charset=utf-8,'+encodeURIComponent([hdr.join(','),...lines].join('\n'));
+  a.download=`ScreeningMantis_${CUR}_${today()}.csv`;
+  a.click();
+}
+
+/* ══════════════════════════════════
+   SORT HEADERS
+══════════════════════════════════ */
+document.addEventListener('DOMContentLoaded',()=>{
+  document.querySelectorAll('th[data-s]').forEach(th=>{
+    th.addEventListener('click',()=>{
+      const col=th.dataset.s;
+      if(SORT_C===col) SORT_D=SORT_D==='asc'?'desc':'asc';
+      else{SORT_C=col;SORT_D='desc';}
+      document.querySelectorAll('th[data-s]').forEach(h=>h.classList.remove('sa','sd'));
+      th.classList.add(SORT_D==='asc'?'sa':'sd');
+      renderTable(CUR);
+    });
+  });
+  $('colModal').addEventListener('click',e=>{if(e.target===$('colModal'))$('colModal').classList.remove('open');});
+  $('sectorModal').addEventListener('click',e=>{if(e.target===$('sectorModal'))closeSectorBreadth();});
+});
+
+/* ══════════════════════════════════
+   COLUMN VISIBILITY (Columns modal)
+   ────────────────────────────────
+   Each entry's `cls` matches both the CSS toggle class above (body.hide-X)
+   and the column's own .c-X class already present on its <th>/<td> cells.
+══════════════════════════════════ */
+const TOGGLEABLE_COLS=[
+  {cls:'wrsi',   label:'W-RSI'},
+  {cls:'vr',     label:'Vol Ratio'},
+  {cls:'wvol',   label:'W-VOL'},
+  {cls:'wpiv',   label:'W-Pivot'},
+  {cls:'ema',    label:'EMA Align'},
+  {cls:'wema',   label:'W-EMA'},
+  {cls:'bocnt',  label:'BO Count'},
+  {cls:'voldry', label:'Vol Dry'},
+  {cls:'retrace',label:'Retrace %'},
+  {cls:'squeeze',label:'Squeeze'},
+  {cls:'mrsrank',label:'MRS Rank'},
+  {cls:'rstrend',label:'RS Trend'},
+  {cls:'earns',  label:'Next Earnings'},
+  {cls:'notes',  label:'Notes'},
+];
+const COL_VIS_KEY='sm_col_visibility';
+
+function loadColVisibility(){
+  try{
+    const raw=localStorage.getItem(COL_VIS_KEY);
+    return raw?JSON.parse(raw):{};
+  } catch{ return {}; }
+}
+function saveColVisibility(vis){
+  try{ localStorage.setItem(COL_VIS_KEY,JSON.stringify(vis)); } catch(e){ console.warn('Could not save column visibility:',e.message); }
+}
+function applyColVisibility(){
+  const vis=loadColVisibility();
+  TOGGLEABLE_COLS.forEach(c=>{
+    const hidden = vis[c.cls]===false; // default: visible unless explicitly set false
+    document.body.classList.toggle('hide-'+c.cls, hidden);
+  });
+}
+function buildColModal(){
+  const vis=loadColVisibility();
+  $('colCheckGrid').innerHTML=TOGGLEABLE_COLS.map(c=>{
+    const checked = vis[c.cls]!==false; // default checked (visible)
+    return `<label class="modal-check">
+      <input type="checkbox" ${checked?'checked':''} onchange="toggleColumn('${c.cls}',this.checked)"/>
+      ${c.label}
+    </label>`;
+  }).join('');
+}
+function toggleColumn(cls,visible){
+  const vis=loadColVisibility();
+  vis[cls]=visible;
+  saveColVisibility(vis);
+  document.body.classList.toggle('hide-'+cls, !visible);
+}
+function resetColumnVisibility(){
+  saveColVisibility({}); // empty = everything defaults to visible
+  document.body.className=document.body.className.split(' ').filter(c=>!c.startsWith('hide-')).join(' ');
+  buildColModal();
+}
+
+/* ══════════════════════════════════
+   INIT
+══════════════════════════════════ */
+(async function init(){
+  applyColVisibility();
+  buildColModal();
+  buildSegs('india');
+  buildSctDropdown('india');
+  updateMcapUI('india');
+  renderMetrics('india'); // show skeleton cards
+  // Deliberately NOT awaited — a slow or hung Google Sheet fetch must never
+  // block the app from starting. It runs in the background; any ticker
+  // whose fetchStock() call happens before this resolves just uses Stooq
+  // instead (existing per-ticker fallback logic already handles this).
+  loadGoogleSheetData();
+  loadMarket('india');
+})();
+</script>
+</body>
+</html>
