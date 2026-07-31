@@ -427,7 +427,7 @@ body.breadth-collapsed .breadth-body{display:none}
 .c-wrsi,.c-wvol,.c-wpiv,.c-wema,.c-voldry,.c-retrace,.c-rstrend,.c-notes,
 .c-wcross,.c-wpattern,.c-monthly,.c-rs10w,.c-rsslope,.c-rshist,.c-slope200{display:table-cell}
 /* GROUP B — additionally force-hidden at ≤480px */
-.c-vr,.c-ema,.c-bocnt,.c-squeeze,.c-mrsrank,
+.c-vr,.c-ema,.c-bocnt,.c-squeeze,.c-mrsrank,.c-setup,
 .c-sector,.c-status,.c-xcross,.c-pattern,.c-consol,.c-rs21,.c-rs55{display:table-cell}
 
 /* User-controlled column toggles (via the Columns modal, saved to localStorage).
@@ -459,7 +459,8 @@ body.hide-rs21    .c-rs21,
 body.hide-rs55    .c-rs55,
 body.hide-rs10w   .c-rs10w,
 body.hide-rsslope .c-rsslope,
-body.hide-rshist  .c-rshist{display:none!important}
+body.hide-rshist  .c-rshist,
+body.hide-setup   .c-setup{display:none!important}
 
 /* ─── MODAL ───────────────────── */
 .overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.35);
@@ -497,17 +498,26 @@ body.hide-rshist  .c-rshist{display:none!important}
 .sb-mid{background:var(--orange-bg);color:var(--orange)}
 .sb-lo{background:var(--red-bg);color:var(--red)}
 
+/* ─── SETUP SCORE BADGE ───────── */
+.setup-badge{display:inline-flex;align-items:center;gap:3px;padding:2px 7px;border-radius:9px;
+  font-size:10px;font-weight:700;background:var(--green-bg);color:var(--green);
+  border:1px solid var(--green)}
+
 /* ─── TOOLTIP ─────────────────── */
+/* WHY a body-level fixed box instead of `::after` on the element itself:
+   the table lives inside .tbl-scroll, which is overflow:auto with a bounded
+   height. An absolutely-positioned pseudo-element is clipped by that
+   scrollport, so a tooltip on the sticky header row was cut off at the panel
+   edge and the first column's ran off-screen to the left — the text was there
+   but unreadable. A position:fixed node parented to <body> escapes every
+   ancestor's overflow and stacking context; showTip() then clamps it inside
+   the viewport, which is what keeps the leftmost and rightmost columns legible.
+   text-transform is reset because <th> is uppercased. */
 [data-tip]{position:relative}
-/* Wraps rather than nowrap: these explain what a column measures, and several
-   are a sentence or two — on one line they ran off the side of the screen and
-   the end of the explanation was unreadable. text-transform is reset because
-   <th> is uppercased and a tooltip inherits it. */
-[data-tip]:hover::after{content:attr(data-tip);position:absolute;bottom:calc(100%+6px);
-  left:50%;transform:translateX(-50%);background:#1E293B;color:var(--surface2);font-size:10px;
-  font-weight:500;white-space:normal;width:max-content;max-width:280px;line-height:1.45;
-  text-align:left;text-transform:none;letter-spacing:0;padding:5px 8px;border-radius:5px;
-  pointer-events:none;z-index:999}
+.tip-box{position:fixed;left:0;top:0;display:none;z-index:9999;
+  background:#1E293B;color:#F8FAFC;font-size:10.5px;font-weight:500;line-height:1.5;
+  white-space:normal;max-width:320px;text-align:left;text-transform:none;letter-spacing:0;
+  padding:6px 9px;border-radius:6px;pointer-events:none;box-shadow:0 6px 18px rgba(0,0,0,.30)}
 
 /* ─── RESPONSIVE ──────────────── */
 @media (max-width:1200px){
@@ -530,7 +540,7 @@ body.hide-rshist  .c-rshist{display:none!important}
 }
 @media (max-width:480px){
   .metrics-row{grid-template-columns:repeat(2,1fr)}
-  .c-vr,.c-ema,.c-bocnt,.c-squeeze,.c-mrsrank,
+  .c-vr,.c-ema,.c-bocnt,.c-squeeze,.c-mrsrank,.c-setup,
   .c-sector,.c-status,.c-xcross,.c-pattern,.c-consol,.c-rs21,.c-rs55{display:none!important}
   .search-bar input{width:80px}
 }
@@ -604,6 +614,7 @@ body.hide-rshist  .c-rshist{display:none!important}
     <div class="fsep"></div>
     <select class="fsel" id="sctFil" onchange="applyF()"><option value="">All Sectors</option></select>
     <button class="ref-btn" onclick="openSectorBreadth()" data-tip="See RSI, momentum, and breakout stats broken down by sector — click any row to filter the main table to just that sector">📊 Sector View</button>
+    <button class="ref-btn" id="sortDefBtn" onclick="resetSort()" data-tip="Return to the default Setup Score order: quality setups first (starred in the Setup column), strongest sectors first within each group, then each stock's own 55-day relative strength. Clicking any column header sorts by that column instead — clicking the same header a third time also brings you back here.">↕ Default (Setup Score)</button>
     <button class="ref-btn" onclick="openRSSettings()" data-tip="Set the benchmark ticker that RS / MRS Rank is measured against">⚙️ RS Settings</button>
     <button class="ref-btn" id="advBtn" onclick="openAdvFilters()" data-tip="Consolidation, 52W high proximity, breakout age, RSI, volume and EMA-crossover screens — each one switched on independently">⚙ Advanced Filters</button>
     <div class="fsep"></div>
@@ -691,23 +702,24 @@ body.hide-rshist  .c-rshist{display:none!important}
       <table id="stk-tbl">
         <thead id="tHead">
           <tr>
-            <th style="width:26px">#</th>
-            <th>Review</th>
-            <th data-s="cap">Cap<span class="sort-ico"></span></th>
-            <th data-s="ticker">Ticker<span class="sort-ico"></span></th>
+            <th style="width:26px" data-tip="Position in the list as it is currently sorted and filtered. It renumbers every time you sort or filter, so treat it as a place in the queue, not an ID for the stock.">#</th>
+            <th data-tip="Your own verdict on the stock — bull, bear or neutral. It is saved in this browser and drives the Review filter, so names you have already judged can be hidden.">Review</th>
+            <th data-s="cap" data-tip="Size bucket taken from market capitalisation: Large, Mid, Small or Micro. Larger companies generally move more slowly and are easier to buy or sell in quantity.">Cap<span class="sort-ico"></span></th>
+            <th data-s="ticker" data-tip="The exchange symbol, with the sector and market capitalisation printed underneath it. Sorting on this column puts the list in alphabetical order.">Ticker<span class="sort-ico"></span></th>
+            <th class="c-setup" data-s="setup" data-tip="A star marks a quality setup — all four of these are true at once: within 30% of its 52-week high, price above every moving average that could be calculated, positive relative strength against the benchmark, and a full Stage 2 uptrend score. These rows sort to the top by default.">Setup<span class="sort-ico"></span></th>
             <th class="c-sector" data-s="sector" data-tip="The sector this stock is classified under in the built-in universe. Sortable, so the table can be grouped by sector without using the sector filter.">Sector<span class="sort-ico"></span></th>
-            <th data-s="price">Price<span class="sort-ico"></span></th>
-            <th data-s="ch1d">1D%<span class="sort-ico"></span></th>
+            <th data-s="price" data-tip="The most recent closing price in the stock's own currency. It comes from the end-of-day data sheet, so it is yesterday's close, not a live quote.">Price<span class="sort-ico"></span></th>
+            <th data-s="ch1d" data-tip="How much the price moved on its latest trading day, as a percentage of the previous close. Green is up, red is down.">1D%<span class="sort-ico"></span></th>
             <th class="c-status" data-s="status" data-tip="One-glance verdict from the Stage 2 score: Stage 2 = at least 80% of the rules pass, Setup = at least half, Weak = below that.">Status<span class="sort-ico"></span></th>
-            <th data-s="rsi">RSI<span class="sort-ico"></span></th>
-            <th class="c-wrsi" data-s="wrsi">W-RSI<span class="sort-ico"></span></th>
-            <th class="c-vr" data-s="vr">Vol Ratio<span class="sort-ico"></span></th>
-            <th class="c-wvol" data-s="wvol">W-VOL<span class="sort-ico"></span></th>
-            <th data-s="dpiv">D-Pivot<span class="sort-ico"></span></th>
-            <th class="c-wpiv" data-s="wpiv">W-Pivot<span class="sort-ico"></span></th>
+            <th data-s="rsi" data-tip="14-day Relative Strength Index — a 0 to 100 momentum gauge. Above 60 means buyers have been in control recently; below 40 means sellers have.">RSI<span class="sort-ico"></span></th>
+            <th class="c-wrsi" data-s="wrsi" data-tip="The same 14-period momentum gauge measured on weekly bars, so it describes months rather than days and is much slower to change direction.">W-RSI<span class="sort-ico"></span></th>
+            <th class="c-vr" data-s="vr" data-tip="The latest day's traded volume divided by its own 20-day average. 2.0x means twice the usual number of shares changed hands — genuine interest rather than drift.">Vol Ratio<span class="sort-ico"></span></th>
+            <th class="c-wvol" data-s="wvol" data-tip="The same volume comparison on weekly bars: this week's volume against the recent weekly average, which smooths out one-day spikes.">W-VOL<span class="sort-ico"></span></th>
+            <th data-s="dpiv" data-tip="Where the price sits among the classic daily pivot levels, from below S2 (weakest) up to above R2 (strongest). Anything above the pivot point is the bullish half of the day's range.">D-Pivot<span class="sort-ico"></span></th>
+            <th class="c-wpiv" data-s="wpiv" data-tip="The same pivot zones calculated from weekly bars — a slower read on whether the stock is holding the strong side of its range.">W-Pivot<span class="sort-ico"></span></th>
             <th data-s="h52" data-tip="% below the highest high in the available window. The data source holds ~1 trading year (~250 bars), so in practice this is a ~50-week high, not a full 52. Shows — for stocks with under 120 bars of history.">52W High<span class="sort-ico"></span></th>
-            <th class="c-ema" data-s="ema">EMA Align<span class="sort-ico"></span></th>
-            <th class="c-wema" data-s="wema">W-EMA<span class="sort-ico"></span></th>
+            <th class="c-ema" data-s="ema" data-tip="How many of the 10, 20, 50 and 200-day moving averages the price is trading above, one badge each. All four green is the textbook shape of a healthy uptrend.">EMA Align<span class="sort-ico"></span></th>
+            <th class="c-wema" data-s="wema" data-tip="The same alignment check on the weekly chart: price against the 10-week and 20-week moving averages.">W-EMA<span class="sort-ico"></span></th>
             <!-- Label is written by syncXoverLabel() from CFG.XOVER, so changing
                  the pair in Advanced Filters renames the column instead of
                  leaving a stale hardcoded "10×20". -->
@@ -715,24 +727,24 @@ body.hide-rshist  .c-rshist{display:none!important}
             <th class="c-wcross" data-s="wxstate" data-tip="Same crossover, measured on weekly bars: the 10-week EMA against the 20-week EMA.">W-Cross<span class="sort-ico"></span></th>
             <th class="c-slope200" data-s="slope" data-tip="% change in the 200-day EMA over the last 20 bars — whether the long-term trend line itself is rising, flat or falling. Needs 220 bars of history.">200EMA Slope<span class="sort-ico"></span></th>
             <th class="c-pattern" data-s="pattern" data-tip="Candlestick pattern on the latest daily bar: Bull/Bear Engulf, Hammer or Doji. Blank when no pattern is present or the sheet has no Open column.">Pattern<span class="sort-ico"></span></th>
-            <th class="c-wpattern" data-s="wpattern" data-tip="The same candlestick read on the latest weekly bar.">W-Pattern<span class="sort-ico"></span></th>
+            <th class="c-wpattern" data-s="wpattern" data-tip="The same candlestick read on the latest weekly bar, which carries more weight than a single day's shape.">W-Pattern<span class="sort-ico"></span></th>
             <th class="c-consol" data-s="consol" data-tip="How many of the most recent days the close stayed inside the tightness threshold, and the full range of the lookback window as a % — a tight base reads as many days at a small %.">Consolidation<span class="sort-ico"></span></th>
             <th class="c-monthly" data-s="monthly" data-tip="Above where it traded ~6 months ago AND within 15% of the 52W high — a slow-timeframe trend filter.">Monthly Setup<span class="sort-ico"></span></th>
-            <th data-s="bog">BO Gain%<span class="sort-ico"></span></th>
-            <th class="c-bocnt" data-s="boc">BO Count<span class="sort-ico"></span></th>
+            <th data-s="bog" data-tip="Percentage gained since the most recent volume-backed break above a previous high. A large number means the move is already well advanced and a late entry is riskier.">BO Gain%<span class="sort-ico"></span></th>
+            <th class="c-bocnt" data-s="boc" data-tip="How many volume-backed breakouts occurred in the recent window. Several of them suggests steady accumulation rather than a single one-off pop.">BO Count<span class="sort-ico"></span></th>
             <th class="c-voldry" data-s="voldry" data-tip="20-day average volume below the 50-day average — volume drying up, which is what a healthy base looks like before a breakout.">Vol Dry<span class="sort-ico"></span></th>
-            <th class="c-retrace" data-s="ret">Retrace%<span class="sort-ico"></span></th>
-            <th class="c-squeeze" data-s="sq">Squeeze<span class="sort-ico"></span></th>
-            <th data-s="s2">Stage 2<span class="sort-ico"></span></th>
-            <th class="c-mrsrank" data-s="mrs" style="text-align:center">MRS Rank<span class="sort-ico"></span></th>
+            <th class="c-retrace" data-s="ret" data-tip="How far the price has slipped back from its breakout high, as a percentage of that move. Small pullbacks hold the gain; large ones hand it back.">Retrace%<span class="sort-ico"></span></th>
+            <th class="c-squeeze" data-s="sq" data-tip="How tight the recent trading range is compared with its own history. A tight squeeze means volatility has compressed, which often comes just before a fast move.">Squeeze<span class="sort-ico"></span></th>
+            <th data-s="s2" data-tip="Score on the Stage 2 uptrend checklist — price above the long moving averages, those averages stacked and rising, and price near its 52-week high. A full score is a confirmed uptrend.">Stage 2<span class="sort-ico"></span></th>
+            <th class="c-mrsrank" data-s="mrs" style="text-align:center" data-tip="This stock's 55-day excess return ranked against every other stock in the market, from 0 to 99. A rank of 90 means it outperformed 90% of the list.">MRS Rank<span class="sort-ico"></span></th>
             <th class="c-rs21" data-s="rs21" data-tip="21-day excess return over the benchmark, in percentage points. Positive = it beat the benchmark over the last month.">RS21<span class="sort-ico"></span></th>
             <th class="c-rs55" data-s="rs55" data-tip="55-day excess return over the benchmark, in percentage points. This is the leg MRS Rank is percentile-ranked on.">RS55<span class="sort-ico"></span></th>
             <th class="c-rs10w" data-s="rs10w" data-tip="10-week excess return over the benchmark, computed on weekly bars.">RS10W<span class="sort-ico"></span></th>
             <th class="c-rsslope" data-s="rsslope" data-tip="RS21 minus RS55 — whether relative strength is improving or decaying. Positive means the recent leg is stronger than the longer one.">RS Slope<span class="sort-ico"></span></th>
             <th class="c-rshist" data-s="rshist" data-tip="Last ~30 readings of the 21-day excess return, drawn as a sparkline. The grey line is zero — above it the stock was beating the benchmark.">RS Rank History<span class="sort-ico"></span></th>
-            <th style="text-align:center" data-tip="All three RS legs (21d, 55d, 10w) positive against the benchmark">Lead RS</th>
-            <th class="c-rstrend" data-s="rst">RS Trend<span class="sort-ico"></span></th>
-            <th class="c-notes">Notes</th>
+            <th style="text-align:center" data-tip="Lit up only when all three relative-strength legs — 21-day, 55-day and 10-week — are positive against the benchmark at the same time, i.e. broad outperformance rather than one good stretch.">Lead RS</th>
+            <th class="c-rstrend" data-s="rst" data-tip="Whether relative strength has been rising, flat or falling across the recent readings — the direction of the RS sparkline, summarised in a single word.">RS Trend<span class="sort-ico"></span></th>
+            <th class="c-notes" data-tip="A free-text note you can type against any stock. It is kept for this browsing session and is included in the Excel export.">Notes</th>
           </tr>
         </thead>
         <tbody id="tBody"></tbody>
@@ -2507,7 +2519,10 @@ function saveReviewRemote(sym, status){
 const NOTES = {};         // symbol -> string
 // 'rs' (the old blend's rank) is gone as a column and as a sort key; MRS Rank
 // is the same percentile and is what the table now opens sorted by.
-let SORT_C = 'mrs', SORT_D = 'desc';
+/* SORT_C empty = no explicit column sort, which is what selects the composite
+   Setup Score ordering in getRows(). Clicking a header sets it; clicking the
+   same header a third time (or the "Default (Setup Score)" button) clears it. */
+let SORT_C = '', SORT_D = 'desc';
 let F_CAP='All', F_SCT='', F_EMA='', F_RSI='', F_PIV='', F_REV='';
 let SEARCH='', VISIBLE=CFG.INIT;
 let LOADING=false;
@@ -3493,32 +3508,46 @@ function calcMetrics(market){
 ══════════════════════════════════ */
 let SECTOR_SORT_COL='count', SECTOR_SORT_DIR='desc';
 
+/* WHY this walks getRows() and not UNI:
+   the modal used to aggregate over UNI while skipping every stock without
+   computed data (`if(!d) return`). The table renders the whole filtered
+   universe including "no data" rows, so the two disagreed — 881 rows in the
+   table against 728 in the modal — and the panel also ignored every active
+   filter, so filtering the table to Banking still showed all sectors at full
+   size. Deriving from exactly the array the table renders makes the counts
+   match by construction and makes the panel follow the filters for free.
+   Rows without data are COUNTED but excluded from the averages, which is why
+   every metric can come back null and render as an em-dash. */
 function calcSectorBreadth(market){
+  const rows=getRows(market);
   const bySector={};
-  UNI[market].forEach(def=>{
-    const d=SD[def.s];
-    if(!d) return; // only count stocks that have actually loaded
-    if(!bySector[def.sector]) bySector[def.sector]=[];
-    bySector[def.sector].push(d);
+  rows.forEach(def=>{
+    const sec=def.sector||'—';
+    (bySector[sec]=bySector[sec]||[]).push(SD[def.s]||null);
   });
 
-  const rows=Object.keys(bySector).map(sector=>{
-    const items=bySector[sector];
-    const n=items.length;
+  const out=Object.keys(bySector).map(sector=>{
+    const all=bySector[sector];
+    const items=all.filter(d=>d);          // the subset that actually has numbers
+    const n=all.length, m=items.length;
     const avg=arr=>arr.length?arr.reduce((a,b)=>a+b,0)/arr.length:null;
-    const pct=cnt=>n?Math.round(cnt/n*100):0;
-
-    const rsiVals=items.map(d=>d.rsi14).filter(v=>v!=null);
-    const volVals=items.map(d=>d.vRatio).filter(v=>v!=null);
+    // Percentages are out of the rows that HAVE data. With none, the metric is
+    // genuinely unknown — null renders as "—" rather than a misleading 0%.
+    const pct=cnt=>m?Math.round(cnt/m*100):null;
+    const vals=k=>items.map(d=>d[k]).filter(v=>v!=null);
 
     return{
       sector,
-      count: n,
-      avgRsi: avg(rsiVals),
+      count: n,                 // every row the table is showing for this sector
+      noData: n-m,              // ...of which this many have nothing computed yet
+      setups: items.filter(isQualitySetup).length,
+      avgRsi: avg(vals('rsi14')),
+      avgCh: avg(vals('ch1d')),
+      advPct: pct(items.filter(d=>d.ch1d!=null&&d.ch1d>0).length),
       rsiHi: pct(items.filter(d=>d.rsi14!=null&&d.rsi14>=60).length),
-      avgVol: avg(volVals),
+      avgVol: avg(vals('vRatio')),
       abovePivot: pct(items.filter(d=>['PP→R1','R1→R2','R2+'].includes(d.dpz)).length),
-      near52h: pct(items.filter(d=>d.h52d>=-10).length),
+      near52h: pct(items.filter(d=>d.h52d!=null&&d.h52d>=-10).length),
       bo10d: pct(items.filter(d=>d.boGain!=null&&d.boCnt>0).length),
       // mrsRank, not the `rs` alias: `rs` exists only for backwards
       // compatibility and this is the last UI reference that still read it.
@@ -3527,13 +3556,19 @@ function calcSectorBreadth(market){
       above200ema: pct(items.filter(d=>d.e200&&d.price>d.e200).length),
     };
   });
-  return rows;
+  // `total` is the length of the very array the table renders, so the caller can
+  // assert sum(count) === total instead of hoping.
+  return {rows:out, total:rows.length, noData:out.reduce((a,r)=>a+r.noData,0)};
 }
 
 const SECTOR_COLS=[
   {key:'sector',      label:'Sector',      fmt:v=>v},
   {key:'count',       label:'Stocks #',    fmt:v=>v},
+  {key:'noData',      label:'No Data',     fmt:v=>v?`<span class="sb-pill sb-lo">${v}</span>`:'0'},
+  {key:'setups',      label:'Setups',      fmt:v=>v?`<span class="sb-pill sb-hi">${v}</span>`:'0'},
   {key:'avgRsi',      label:'Avg RSI',     fmt:v=>v==null?'—':v.toFixed(1)},
+  {key:'avgCh',       label:'Avg 1D%',     fmt:v=>v==null?'—':(v>=0?'+':'')+v.toFixed(2)+'%'},
+  {key:'advPct',      label:'Advancing',   fmt:v=>pillFmt(v)},
   {key:'rsiHi',       label:'RSI ≥60',     fmt:v=>pillFmt(v)},
   {key:'avgVol',      label:'Avg Vol',     fmt:v=>v==null?'—':v.toFixed(2)+'x'},
   {key:'abovePivot',  label:'> Pivot',     fmt:v=>pillFmt(v)},
@@ -3545,14 +3580,23 @@ const SECTOR_COLS=[
 ];
 
 function pillFmt(pct){
+  // null = the metric could not be computed (no row in this sector has data).
+  if(pct==null) return '<span class="vm">—</span>';
   const cls = pct>=50?'sb-hi':pct>=25?'sb-mid':'sb-lo';
   return `<span class="sb-pill ${cls}">${pct}%</span>`;
 }
 
 function renderSectorBreadth(){
-  const rows=calcSectorBreadth(CUR);
-  const total=rows.reduce((a,r)=>a+r.count,0);
-  $('sectorModalSub').textContent = `${rows.length} sectors · ${total} stocks loaded · click any row to filter the main table to that sector`;
+  const agg=calcSectorBreadth(CUR);
+  const rows=agg.rows;
+  $('sectorModalSub').innerHTML =
+    `${rows.length} sectors · <b>${agg.total}</b> stocks — exactly the rows the table is showing right now, with every active filter applied.` +
+    // Spelled out rather than hidden: a partially backfilled sheet otherwise
+    // looks like the averages are wrong instead of merely incomplete.
+    (agg.noData
+      ? ` <b>${agg.noData}</b> of them have no computed data yet, so they are counted here but contribute nothing to the averages (those show — where nothing could be measured).`
+      : ` All of them have computed data.`) +
+    ` Click any row to filter the main table to that sector.`;
 
   const fn=SECTOR_COLS.find(c=>c.key===SECTOR_SORT_COL);
   rows.sort((a,b)=>{
@@ -3587,8 +3631,11 @@ function closeSectorBreadth(){
   $('sectorModal').classList.remove('open');
 }
 function filterToSector(sector){
-  $('sctFil').value=sector;
   F_SCT=sector;
+  // The dropdown is the only visual record of this filter, so it is updated
+  // from the same value the state gets — guarded because the drilldown is also
+  // exercised headlessly, where the element does not exist.
+  const sel=$('sctFil'); if(sel) sel.value=sector;
   VISIBLE=CFG.INIT;
   renderTable(CUR);
   updateStatus();
@@ -3799,6 +3846,12 @@ function sparkC(hist){
     +`<polyline fill="none" stroke="var(--accent)" stroke-width="1.2" `
     +`stroke-linejoin="round" stroke-linecap="round" points="${pts}"/></svg>`;
 }
+/* Shown so the default ordering is explainable: the badge is exactly the test
+   that lifted the row to the top. */
+function setupC(d){
+  if(!d) return '<span class="vm">—</span>';
+  return isQualitySetup(d) ? '<span class="setup-badge">★ Setup</span>' : '<span class="vm">—</span>';
+}
 function capB(cap){
   const cls={LC:'blc',MC:'bmc',SC:'bsc',Mic:'bmic',ETF:'betf'}[cap]||'berr';
   return `<span class="badge ${cls}">${cap||'—'}</span>`;
@@ -3840,7 +3893,7 @@ function bocC(c){
    reason: without them a table loading with columns switched off renders
    skeleton rows WIDER than the data rows underneath, because only the data
    rows' cells get hidden. Length must equal (th count − 4). */
-const SKEL_COLS=['c-sector','','','c-status','','c-wrsi','c-vr','c-wvol','','c-wpiv','',
+const SKEL_COLS=['c-setup','c-sector','','','c-status','','c-wrsi','c-vr','c-wvol','','c-wpiv','',
   'c-ema','c-wema','c-xcross','c-wcross','c-slope200','c-pattern','c-wpattern','c-consol',
   'c-monthly','','c-bocnt','c-voldry','c-retrace','c-squeeze','','c-mrsrank','c-rs21',
   'c-rs55','c-rs10w','c-rsslope','c-rshist','','c-rstrend','c-notes'];
@@ -3876,6 +3929,7 @@ function dataRow(def,d,i){
     <td>${revC(def.s)}</td>
     <td>${capB(cap)}</td>
     <td><span class="ticker">${flag} ${def.d}</span><br><span class="sec">${def.sector}</span>${mcapLine}</td>
+    <td class="c-setup">${setupC(d)}</td>
     <td class="c-sector">${def.sector||'—'}</td>
     <td style="font-weight:600">${fmtP(d.price,d.currency)}</td>
     <td>${fmtCh(d.ch1d)}</td>
@@ -3920,7 +3974,7 @@ function errRow(def,i){
     <td class="td-n">${i}</td><td>${revC(def.s)}</td>
     <td>${capB(def.g)}</td>
     <td><span class="ticker">${def.d}</span><br><span class="sec">${def.sector}</span></td>
-    <td colspan="35" style="color:var(--text3);font-size:11px">
+    <td colspan="36" style="color:var(--text3);font-size:11px">
       ⚠ Not in this market's Google Sheet tab — re-run the Apps Script to backfill it
     </td>
   </tr>`;
@@ -4152,6 +4206,83 @@ function updateScanBanner(market){
 /* ══════════════════════════════════
    FILTER + SORT
 ══════════════════════════════════ */
+/* ══════════════════════════════════
+   SETUP SCORE — the default ordering
+   ─────────────────────────────────
+   No explicit column sort (SORT_C === '') means "put the interesting stocks on
+   top". Interesting is defined twice over: a per-row quality test, and a
+   per-sector strength score. Both are cheap, but neither is computed inside the
+   comparator — a comparator that scans the sector on every comparison is
+   O(n log n) scans of O(n) rows, which is visibly slow at ~900 rows. The row
+   keys are built once into a Map and the sector medians once into a lookup.
+══════════════════════════════════ */
+const SECTOR_STRENGTH_FLOOR=-1e9;   // finite, so plain subtraction in the comparator stays a number
+let SECTOR_STRENGTH={}, SECTOR_STRENGTH_MKT=null;
+
+function median(arr){
+  if(!arr || !arr.length) return null;
+  const a=arr.slice().sort((x,y)=>x-y), n=a.length;
+  return n%2 ? a[(n-1)/2] : (a[n/2-1]+a[n/2])/2;
+}
+
+/* All four conditions, no partial credit. Every one of them needs real data, so
+   a row missing any input fails rather than qualifying by accident. */
+function isQualitySetup(d){
+  if(!d) return false;
+  if(!(d.h52d!=null && d.h52d>=-30)) return false;              // within 30% of the 52W high
+  const emas=[d.e10,d.e20,d.e50,d.e100,d.e200].filter(v=>v!=null);
+  if(!emas.length || d.price==null) return false;               // no EMA at all = cannot qualify
+  if(!emas.every(v=>d.price>v)) return false;                   // above EVERY available EMA
+  if(!(d.rs21!=null && d.rs21>0)) return false;                 // positive relative strength
+  if(!(d.s2 && d.s2.total && d.s2.score===d.s2.total)) return false;  // full Stage 2
+  return true;
+}
+
+/* MEDIAN, not mean: one member up 300% would otherwise drag its whole sector to
+   the top of the table. Sectors with fewer than 3 rows carrying data are pinned
+   to the floor instead — a 1-stock "sector" is a sample, not a signal. */
+function computeSectorStrength(market){
+  const bySector={};
+  (UNI[market]||[]).forEach(def=>{
+    const d=SD[def.s];
+    if(!d || d.rs55==null) return;
+    (bySector[def.sector]=bySector[def.sector]||[]).push(d.rs55);
+  });
+  const out={};
+  Object.keys(bySector).forEach(sec=>{
+    const v=bySector[sec];
+    out[sec] = v.length>=3 ? median(v) : SECTOR_STRENGTH_FLOOR;
+  });
+  SECTOR_STRENGTH=out; SECTOR_STRENGTH_MKT=market;
+  return out;
+}
+function sectorStrength(market){
+  if(SECTOR_STRENGTH_MKT!==market) computeSectorStrength(market);
+  return SECTOR_STRENGTH;
+}
+
+/* Ordering: quality setups first, then by sector strength, then by the row's own
+   rs55. Rows with no computed data sort last whatever their sector does. */
+function sortBySetupScore(items,market){
+  const strength=sectorStrength(market);
+  const key=new Map();
+  items.forEach(def=>{
+    const d=SD[def.s];
+    key.set(def, d ? {
+      q: isQualitySetup(d)?1:0,
+      ss: strength[def.sector]??SECTOR_STRENGTH_FLOOR,
+      rs: d.rs55??SECTOR_STRENGTH_FLOOR,
+    } : null);
+  });
+  return items.sort((a,b)=>{
+    const ka=key.get(a), kb=key.get(b);
+    if(!ka && !kb) return 0;
+    if(!ka) return 1;
+    if(!kb) return -1;
+    return (kb.q-ka.q) || (kb.ss-ka.ss) || (kb.rs-ka.rs);
+  });
+}
+
 // Pivot zones in order of strength, for sorting. Must stay in step with
 // pivZone()'s return values.
 const PIV_RANK={'R2+':7,'R1→R2':6,'PP→R1':5,'PP':4,'S1→PP':3,'S2→S1':2,'<S2':1};
@@ -4189,6 +4320,8 @@ const SORT_FN={
   // The arrow keys are kept so a row rehydrated from an older cache still
   // sorts instead of collapsing to 0 and clumping at the bottom.
   rst:d=>({up:3,flat:2,down:1,'↑':3,'→':2,'↓':1}[d?.rsTrend]||0),
+  // Explicit sort on the Setup column: qualifies / does not / no data.
+  setup:d=>d?(isQualitySetup(d)?1:0):null,
 };
 
 function getRows(market){
@@ -4236,6 +4369,9 @@ function getRows(market){
       const va=fn(SD[a.s],a)??-Infinity, vb=fn(SD[b.s],b)??-Infinity;
       return SORT_D==='desc'?(vb>va?1:-1):(va>vb?1:-1);
     });
+  } else {
+    // No explicit column sort -> the composite default.
+    sortBySetupScore(items,market);
   }
   return items;
 }
@@ -4463,6 +4599,7 @@ async function loadMarket(market,force=false){
       setGSheetStatus(market);
       await fetchBenchmark(market);
       rankRS(market);
+      computeSectorStrength(market);   // medians move whenever the data does
       renderTable(market); renderMetrics(market);
       setTag('cached'); updateStatus(); updateScanBanner(market);
       LOADING=false; rb.classList.remove('loading'); rb.innerHTML='↻ Refresh';
@@ -4482,6 +4619,7 @@ async function loadMarket(market,force=false){
   GSHEET_DATA = GSHEET_BY_MARKET[market] || null;
 
   if(!GSHEET_DATA){
+    computeSectorStrength(market);     // nothing loaded: an empty, but current, lookup
     // One source means one failure mode: say plainly that the sheet is the
     // problem rather than showing 900 individual "no data" rows, which used to
     // look like 900 separate faults.
@@ -4512,6 +4650,7 @@ async function loadMarket(market,force=false){
 
   await fetchBenchmark(market);
   rankRS(market);
+  computeSectorStrength(market);       // medians move whenever the data does
   LOADED[market]=true;
   CACHE_SHOWN[market]=false;   // these numbers are fresh, whatever happens later
   renderTable(market); renderMetrics(market); updateStatus();
@@ -4576,6 +4715,7 @@ function updateMcapUI(market){
 function switchMkt(market){
   if(market===CUR&&LOADED[market]) return;
   CUR=market;VISIBLE=CFG.INIT;
+  computeSectorStrength(market);       // strengths are per-market, never carried over
   // Repoint the live sheet map at the market we're switching TO. Guarded: if a
   // load is still running, leave the pointer alone. loadMarket() below will
   // bail out on the same LOADING flag anyway, so repointing here would only
@@ -4663,6 +4803,7 @@ const EXPORT_COLS=[
   ['Name',        (def,d)=>def.d],
   ['Sector',      (def,d)=>def.sector],
   ['Cap',         (def,d)=>d?.g||def.g||''],
+  ['Setup',       (def,d)=>d?(isQualitySetup(d)?'Y':'N'):''],
   ['MarketCap',   (def,d)=>def.mcap??''],
   ['Currency',    (def,d)=>d?.currency??''],
   ['Price',       (def,d)=>d?.price??''],
@@ -4762,13 +4903,78 @@ function doCSV(){
 }
 
 /* ══════════════════════════════════
+   TOOLTIPS
+   ─────────────────────────────────
+   One reusable box parented to <body>, positioned with position:fixed. The CSS
+   note above explains why a ::after cannot work here: .tbl-scroll clips it.
+══════════════════════════════════ */
+let TIP_BOX=null;
+function tipBox(){
+  if(!TIP_BOX){
+    TIP_BOX=document.createElement('div');
+    TIP_BOX.className='tip-box';
+    document.body.appendChild(TIP_BOX);
+  }
+  return TIP_BOX;
+}
+function showTip(el){
+  const txt=el&&el.getAttribute&&el.getAttribute('data-tip');
+  if(!txt) return;
+  const b=tipBox();
+  b.textContent=txt;
+  b.style.display='block';
+  // Measure after the text is in, and before clamping — max-width means the
+  // rendered box can be narrower than 320px and centring on a guess is wrong.
+  const r=el.getBoundingClientRect(), t=b.getBoundingClientRect();
+  const vw=(typeof window!=='undefined'&&window.innerWidth)||1024;
+  const vh=(typeof window!=='undefined'&&window.innerHeight)||768;
+  // Clamped into the viewport: without this the first column's tooltip renders
+  // at a negative x and the last column's runs off the right edge.
+  const left=Math.max(8, Math.min(r.left+r.width/2-t.width/2, vw-t.width-8));
+  // Prefer above; the sticky header row sits at the very top of the scroll
+  // panel, where there is no room, so it flips below instead of being clipped.
+  let top=r.top-t.height-8;
+  if(top<8) top=Math.min(r.bottom+8, Math.max(8, vh-t.height-8));
+  b.style.left=left+'px';
+  b.style.top=top+'px';
+}
+function hideTip(){ if(TIP_BOX) TIP_BOX.style.display='none'; }
+function initTips(){
+  // Delegated, so tooltips keep working on rows rendered after page load.
+  document.addEventListener('mouseover',e=>{
+    const el=e.target&&e.target.closest&&e.target.closest('[data-tip]');
+    if(el) showTip(el);
+  });
+  document.addEventListener('mouseout',e=>{
+    const el=e.target&&e.target.closest&&e.target.closest('[data-tip]');
+    if(el) hideTip();
+  });
+  // Capture phase: .tbl-scroll's own scroll events do not bubble to window.
+  window.addEventListener('scroll',hideTip,true);
+}
+
+/* ══════════════════════════════════
    SORT HEADERS
 ══════════════════════════════════ */
+/* Back to the composite default. Reachable two ways on purpose: the explicit
+   "Default (Setup Score)" button in the filter bar (discoverable), and a third
+   click on whichever header is currently sorting (fast). Both are described in
+   that button's tooltip. */
+function resetSort(){
+  SORT_C=''; SORT_D='desc';
+  document.querySelectorAll('th[data-s]').forEach(h=>h.classList.remove('sa','sd'));
+  renderTable(CUR);
+}
+
 document.addEventListener('DOMContentLoaded',()=>{
+  initTips();
   document.querySelectorAll('th[data-s]').forEach(th=>{
     th.addEventListener('click',()=>{
       const col=th.dataset.s;
-      if(SORT_C===col) SORT_D=SORT_D==='asc'?'desc':'asc';
+      if(SORT_C===col){
+        if(SORT_D==='desc') SORT_D='asc';
+        else { resetSort(); return; }   // desc -> asc -> default
+      }
       else{SORT_C=col;SORT_D='desc';}
       document.querySelectorAll('th[data-s]').forEach(h=>h.classList.remove('sa','sd'));
       th.classList.add(SORT_D==='asc'?'sa':'sd');
@@ -4788,6 +4994,7 @@ document.addEventListener('DOMContentLoaded',()=>{
    and the column's own .c-X class already present on its <th>/<td> cells.
 ══════════════════════════════════ */
 const TOGGLEABLE_COLS=[
+  {cls:'setup',  label:'Setup'},
   {cls:'sector', label:'Sector'},
   {cls:'status', label:'Status'},
   {cls:'wrsi',   label:'W-RSI'},
