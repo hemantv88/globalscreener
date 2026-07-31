@@ -263,7 +263,7 @@ td:last-child{border-right:none}
 
 /* review bubbles */
 .rev-g{display:flex;gap:3px}
-.rev-b{width:20px;height:20px;border-radius:50%;font-size:10px;font-weight:700;
+.rev-b{width:20px;height:20px;border-radius:50%;font-size:11px;font-weight:700;
   display:flex;align-items:center;justify-content:center;cursor:pointer;
   border:1.5px solid transparent;transition:all .1s}
 .rb-y{background:var(--green-bg);color:var(--green);border-color:#86EFAC}
@@ -349,6 +349,61 @@ td:last-child{border-right:none}
 .boc{display:inline-flex;align-items:center;padding:2px 6px;border-radius:9px;
   font-size:10.5px;font-weight:600;background:var(--blue-bg);color:var(--blue);border:1px solid #BFDBFE}
 
+/* status badge (Stage 2 score, bucketed) */
+.stt{display:inline-flex;align-items:center;padding:2px 7px;border-radius:9px;
+  font-size:10px;font-weight:700;border:1px solid transparent;white-space:nowrap}
+.stt-s2{background:var(--green-bg);color:var(--green);border-color:#86EFAC}
+.stt-set{background:var(--blue-bg);color:var(--blue);border-color:#BFDBFE}
+.stt-wk{background:var(--bg);color:var(--text3);border-color:var(--border2)}
+
+/* candlestick / crossover chips */
+.chip{display:inline-flex;align-items:center;padding:1px 6px;border-radius:8px;
+  font-size:10px;font-weight:600;border:1px solid var(--border);color:var(--text2);background:var(--bg)}
+.chip.up{background:var(--green-bg);color:var(--green);border-color:#86EFAC}
+.chip.dn{background:var(--red-bg);color:var(--red);border-color:#FCA5A5}
+
+/* RS rank-history sparkline. Sized to sit inside a normal 6px-padded cell
+   without changing the row height. */
+.spark{display:block;overflow:visible}
+
+/* ─── MARKET BREADTH ──────────── */
+.breadth-sec{padding:10px 16px 0}
+.breadth-box{background:var(--surface);border:1.5px solid var(--border);
+  border-radius:var(--rl);box-shadow:var(--sh);overflow:hidden}
+.breadth-hd{display:flex;align-items:center;gap:8px;padding:8px 12px;cursor:pointer;
+  font-size:12px;font-weight:600;color:var(--text)}
+.breadth-hd:hover{background:var(--surface2)}
+.breadth-caret{color:var(--text3);font-size:10px;width:10px}
+.breadth-sum{font-weight:500;color:var(--text2);font-size:11.5px}
+.breadth-hd select{margin-left:auto}
+.breadth-body{padding:0 12px 12px}
+body.breadth-collapsed .breadth-body{display:none}
+.breadth-bar{display:flex;height:12px;border-radius:6px;overflow:hidden;background:var(--border)}
+.breadth-adv{background:var(--green);transition:width .25s}
+.breadth-dec{background:var(--red);transition:width .25s}
+.breadth-flat{background:var(--border2);transition:width .25s}
+.breadth-legend{display:flex;gap:14px;margin-top:6px;font-size:11px;color:var(--text2);flex-wrap:wrap}
+.breadth-legend b{font-weight:700}
+
+/* ─── SCAN STATUS BANNERS ─────── */
+.scan-banner{display:none;align-items:center;gap:8px;padding:7px 16px;
+  font-size:11.5px;font-weight:600}
+.scan-banner.show{display:flex}
+.scan-banner.warn{background:#FEF3C7;color:#92400E;border-bottom:1.5px solid #FCD34D}
+.scan-banner.err{background:var(--red-bg);color:#991B1B;border-bottom:1.5px solid #FCA5A5}
+
+/* ─── ADVANCED FILTERS MODAL ──── */
+.adv-modal{width:460px}
+.adv-row{display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid var(--border)}
+.adv-row:last-of-type{border-bottom:none}
+.adv-row > label.adv-name{display:flex;align-items:center;gap:6px;font-size:11.5px;
+  font-weight:600;color:var(--text);width:132px;flex-shrink:0;cursor:pointer;user-select:none}
+.adv-fields{display:flex;align-items:center;gap:6px;flex-wrap:wrap;font-size:10.5px;color:var(--text3)}
+.adv-fields input[type=number]{width:58px;padding:4px 6px;border-radius:6px;
+  border:1.5px solid var(--border2);font-size:11.5px;font-family:inherit;background:var(--surface);color:var(--text)}
+.adv-fields select{padding:4px 6px;border-radius:6px;border:1.5px solid var(--border2);
+  font-size:11.5px;background:var(--surface);color:var(--text)}
+
 /* notes */
 .note-in{border:none;background:transparent;outline:none;font-size:11px;
   color:var(--text2);width:85px;font-family:inherit}
@@ -367,10 +422,13 @@ td:last-child{border-right:none}
 .disc{font-size:10.5px;color:var(--text3);text-align:center;margin-top:2px}
 
 /* ─── COLUMN VISIBILITY ────────── */
-/* hide on ≤768px */
-.c-wrsi,.c-wvol,.c-wpiv,.c-wema,.c-voldry,.c-retrace,.c-rstrend,.c-notes{display:table-cell}
-/* hide on ≤480px — these are additionally hidden */
-.c-vr,.c-ema,.c-bocnt,.c-squeeze,.c-mrsrank{display:table-cell}
+/* GROUP A — force-hidden at ≤900px (the @media block below must list exactly
+   these, and TOGGLEABLE_COLS must list every class in both groups). */
+.c-wrsi,.c-wvol,.c-wpiv,.c-wema,.c-voldry,.c-retrace,.c-rstrend,.c-notes,
+.c-wcross,.c-wpattern,.c-monthly,.c-rs10w,.c-rsslope,.c-rshist,.c-slope200{display:table-cell}
+/* GROUP B — additionally force-hidden at ≤480px */
+.c-vr,.c-ema,.c-bocnt,.c-squeeze,.c-mrsrank,
+.c-sector,.c-status,.c-xcross,.c-pattern,.c-consol,.c-rs21,.c-rs55{display:table-cell}
 
 /* User-controlled column toggles (via the Columns modal, saved to localStorage).
    Adding e.g. "hide-wrsi" to <body> hides every cell tagged .c-wrsi — works
@@ -387,7 +445,21 @@ body.hide-retrace .c-retrace,
 body.hide-squeeze .c-squeeze,
 body.hide-mrsrank .c-mrsrank,
 body.hide-rstrend .c-rstrend,
-body.hide-notes   .c-notes{display:none!important}
+body.hide-notes   .c-notes,
+body.hide-sector  .c-sector,
+body.hide-status  .c-status,
+body.hide-xcross  .c-xcross,
+body.hide-wcross  .c-wcross,
+body.hide-slope200 .c-slope200,
+body.hide-pattern .c-pattern,
+body.hide-wpattern .c-wpattern,
+body.hide-consol  .c-consol,
+body.hide-monthly .c-monthly,
+body.hide-rs21    .c-rs21,
+body.hide-rs55    .c-rs55,
+body.hide-rs10w   .c-rs10w,
+body.hide-rsslope .c-rsslope,
+body.hide-rshist  .c-rshist{display:none!important}
 
 /* ─── MODAL ───────────────────── */
 .overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.35);
@@ -427,9 +499,14 @@ body.hide-notes   .c-notes{display:none!important}
 
 /* ─── TOOLTIP ─────────────────── */
 [data-tip]{position:relative}
+/* Wraps rather than nowrap: these explain what a column measures, and several
+   are a sentence or two — on one line they ran off the side of the screen and
+   the end of the explanation was unreadable. text-transform is reset because
+   <th> is uppercased and a tooltip inherits it. */
 [data-tip]:hover::after{content:attr(data-tip);position:absolute;bottom:calc(100%+6px);
   left:50%;transform:translateX(-50%);background:#1E293B;color:var(--surface2);font-size:10px;
-  font-weight:500;white-space:nowrap;padding:4px 8px;border-radius:5px;
+  font-weight:500;white-space:normal;width:max-content;max-width:280px;line-height:1.45;
+  text-align:left;text-transform:none;letter-spacing:0;padding:5px 8px;border-radius:5px;
   pointer-events:none;z-index:999}
 
 /* ─── RESPONSIVE ──────────────── */
@@ -438,7 +515,8 @@ body.hide-notes   .c-notes{display:none!important}
 }
 @media (max-width:900px){
   .metrics-row{grid-template-columns:repeat(4,1fr)}
-  .c-wrsi,.c-wvol,.c-wpiv,.c-wema,.c-voldry,.c-retrace,.c-rstrend,.c-notes{display:none!important}
+  .c-wrsi,.c-wvol,.c-wpiv,.c-wema,.c-voldry,.c-retrace,.c-rstrend,.c-notes,
+  .c-wcross,.c-wpattern,.c-monthly,.c-rs10w,.c-rsslope,.c-rshist,.c-slope200{display:none!important}
 }
 @media (max-width:768px){
   .metrics-row{grid-template-columns:repeat(2,1fr)}
@@ -452,7 +530,8 @@ body.hide-notes   .c-notes{display:none!important}
 }
 @media (max-width:480px){
   .metrics-row{grid-template-columns:repeat(2,1fr)}
-  .c-vr,.c-ema,.c-bocnt,.c-squeeze,.c-mrsrank{display:none!important}
+  .c-vr,.c-ema,.c-bocnt,.c-squeeze,.c-mrsrank,
+  .c-sector,.c-status,.c-xcross,.c-pattern,.c-consol,.c-rs21,.c-rs55{display:none!important}
   .search-bar input{width:80px}
 }
 </style>
@@ -504,6 +583,9 @@ body.hide-notes   .c-notes{display:none!important}
   <span class="src-tag" id="srcTag">⬤ Checking…</span>
 </div>
 
+<!-- SCAN STATUS BANNER — one element, two states (see updateScanBanner). -->
+<div class="scan-banner" id="scanBanner"><span id="scanBannerTxt"></span></div>
+
 <!-- PROGRESS -->
 <div id="prgSec">
   <div class="prg-track"><div class="prg-fill" id="prgFill"></div></div>
@@ -522,7 +604,8 @@ body.hide-notes   .c-notes{display:none!important}
     <div class="fsep"></div>
     <select class="fsel" id="sctFil" onchange="applyF()"><option value="">All Sectors</option></select>
     <button class="ref-btn" onclick="openSectorBreadth()" data-tip="See RSI, momentum, and breakout stats broken down by sector — click any row to filter the main table to just that sector">📊 Sector View</button>
-    <button class="ref-btn" onclick="openRSSettings()" data-tip="Configure how RS/MRS Rank is calculated — peer comparison or a real benchmark index, and the lookback weighting">⚙️ RS Settings</button>
+    <button class="ref-btn" onclick="openRSSettings()" data-tip="Set the benchmark ticker that RS / MRS Rank is measured against">⚙️ RS Settings</button>
+    <button class="ref-btn" id="advBtn" onclick="openAdvFilters()" data-tip="Consolidation, 52W high proximity, breakout age, RSI, volume and EMA-crossover screens — each one switched on independently">⚙ Advanced Filters</button>
     <div class="fsep"></div>
     <select class="fsel" id="emaFil" onchange="applyF()">
       <option value="">EMA Filter</option>
@@ -544,9 +627,9 @@ body.hide-notes   .c-notes{display:none!important}
     </select>
     <select class="fsel" id="revFil" onchange="applyF()">
       <option value="">Review: All</option>
-      <option value="Y">Review: Y</option>
-      <option value="N">Review: N</option>
-      <option value="?">Review: ?</option>
+      <option value="bull">Review: 🐂 Bullish</option>
+      <option value="bear">Review: 🐻 Bearish</option>
+      <option value="neutral">Review: ⚪ Neutral</option>
       <option value="none">Review: Unmarked</option>
     </select>
     <div class="fsep"></div>
@@ -560,6 +643,38 @@ body.hide-notes   .c-notes{display:none!important}
     <button class="ctag" onclick="clrRev()">✕ Clear Reviews</button>
     <button class="ref-btn" id="refBtn" onclick="forceRefresh()">↻ Refresh</button>
     <button class="csv-btn" id="csvBtn" onclick="doExport()" data-tip="Download everything currently filtered as an Excel file, with all columns included">⬇ Excel</button>
+  </div>
+</section>
+
+<!-- MARKET BREADTH -->
+<section class="breadth-sec">
+  <div class="breadth-box">
+    <div class="breadth-hd" onclick="toggleBreadth()">
+      <span class="breadth-caret" id="breadthCaret">▾</span>
+      <span>Market Breadth</span>
+      <span class="breadth-sum" id="breadthSum">—</span>
+      <!-- stopPropagation: the whole header row is the collapse toggle, so a
+           click on the select would otherwise also fold the panel shut. -->
+      <select class="fsel" id="breadthCap" onclick="event.stopPropagation()" onchange="renderBreadth()">
+        <option value="All">All caps</option>
+        <option value="LC">Large cap</option>
+        <option value="MC">Mid cap</option>
+        <option value="SC">Small cap</option>
+      </select>
+    </div>
+    <div class="breadth-body" id="breadthBody">
+      <div class="breadth-bar">
+        <div class="breadth-adv" id="breadthAdvBar" style="width:0%"></div>
+        <div class="breadth-flat" id="breadthFlatBar" style="width:0%"></div>
+        <div class="breadth-dec" id="breadthDecBar" style="width:0%"></div>
+      </div>
+      <div class="breadth-legend">
+        <span>▲ Advancing <b id="breadthAdvN">—</b></span>
+        <span>▼ Declining <b id="breadthDecN">—</b></span>
+        <span>● Unchanged <b id="breadthFlatN">—</b></span>
+        <span id="breadthRatio"></span>
+      </div>
+    </div>
   </div>
 </section>
 
@@ -580,8 +695,10 @@ body.hide-notes   .c-notes{display:none!important}
             <th>Review</th>
             <th data-s="cap">Cap<span class="sort-ico"></span></th>
             <th data-s="ticker">Ticker<span class="sort-ico"></span></th>
+            <th class="c-sector" data-s="sector" data-tip="The sector this stock is classified under in the built-in universe. Sortable, so the table can be grouped by sector without using the sector filter.">Sector<span class="sort-ico"></span></th>
             <th data-s="price">Price<span class="sort-ico"></span></th>
             <th data-s="ch1d">1D%<span class="sort-ico"></span></th>
+            <th class="c-status" data-s="status" data-tip="One-glance verdict from the Stage 2 score: Stage 2 = at least 80% of the rules pass, Setup = at least half, Weak = below that.">Status<span class="sort-ico"></span></th>
             <th data-s="rsi">RSI<span class="sort-ico"></span></th>
             <th class="c-wrsi" data-s="wrsi">W-RSI<span class="sort-ico"></span></th>
             <th class="c-vr" data-s="vr">Vol Ratio<span class="sort-ico"></span></th>
@@ -591,15 +708,29 @@ body.hide-notes   .c-notes{display:none!important}
             <th data-s="h52" data-tip="% below the highest high in the available window. The data source holds ~1 trading year (~250 bars), so in practice this is a ~50-week high, not a full 52. Shows — for stocks with under 120 bars of history.">52W High<span class="sort-ico"></span></th>
             <th class="c-ema" data-s="ema">EMA Align<span class="sort-ico"></span></th>
             <th class="c-wema" data-s="wema">W-EMA<span class="sort-ico"></span></th>
+            <!-- Label is written by syncXoverLabel() from CFG.XOVER, so changing
+                 the pair in Advanced Filters renames the column instead of
+                 leaving a stale hardcoded "10×20". -->
+            <th class="c-xcross" data-s="xstate" data-tip="Whether the fast EMA is above (bullish) or below (bearish) the slow EMA, and how many bars ago that crossover happened."><span id="thXoverLbl">EMA 10×20</span><span class="sort-ico"></span></th>
+            <th class="c-wcross" data-s="wxstate" data-tip="Same crossover, measured on weekly bars: the 10-week EMA against the 20-week EMA.">W-Cross<span class="sort-ico"></span></th>
+            <th class="c-slope200" data-s="slope" data-tip="% change in the 200-day EMA over the last 20 bars — whether the long-term trend line itself is rising, flat or falling. Needs 220 bars of history.">200EMA Slope<span class="sort-ico"></span></th>
+            <th class="c-pattern" data-s="pattern" data-tip="Candlestick pattern on the latest daily bar: Bull/Bear Engulf, Hammer or Doji. Blank when no pattern is present or the sheet has no Open column.">Pattern<span class="sort-ico"></span></th>
+            <th class="c-wpattern" data-s="wpattern" data-tip="The same candlestick read on the latest weekly bar.">W-Pattern<span class="sort-ico"></span></th>
+            <th class="c-consol" data-s="consol" data-tip="How many of the most recent days the close stayed inside the tightness threshold, and the full range of the lookback window as a % — a tight base reads as many days at a small %.">Consolidation<span class="sort-ico"></span></th>
+            <th class="c-monthly" data-s="monthly" data-tip="Above where it traded ~6 months ago AND within 15% of the 52W high — a slow-timeframe trend filter.">Monthly Setup<span class="sort-ico"></span></th>
             <th data-s="bog">BO Gain%<span class="sort-ico"></span></th>
             <th class="c-bocnt" data-s="boc">BO Count<span class="sort-ico"></span></th>
-            <th class="c-voldry" data-s="vr">Vol Dry<span class="sort-ico"></span></th>
+            <th class="c-voldry" data-s="voldry" data-tip="20-day average volume below the 50-day average — volume drying up, which is what a healthy base looks like before a breakout.">Vol Dry<span class="sort-ico"></span></th>
             <th class="c-retrace" data-s="ret">Retrace%<span class="sort-ico"></span></th>
             <th class="c-squeeze" data-s="sq">Squeeze<span class="sort-ico"></span></th>
             <th data-s="s2">Stage 2<span class="sort-ico"></span></th>
-            <th data-s="rs" style="text-align:center">RS<span class="sort-ico"></span></th>
             <th class="c-mrsrank" data-s="mrs" style="text-align:center">MRS Rank<span class="sort-ico"></span></th>
-            <th style="text-align:center" data-tip="RS percentile ≥ 70 and trending up">Lead RS</th>
+            <th class="c-rs21" data-s="rs21" data-tip="21-day excess return over the benchmark, in percentage points. Positive = it beat the benchmark over the last month.">RS21<span class="sort-ico"></span></th>
+            <th class="c-rs55" data-s="rs55" data-tip="55-day excess return over the benchmark, in percentage points. This is the leg MRS Rank is percentile-ranked on.">RS55<span class="sort-ico"></span></th>
+            <th class="c-rs10w" data-s="rs10w" data-tip="10-week excess return over the benchmark, computed on weekly bars.">RS10W<span class="sort-ico"></span></th>
+            <th class="c-rsslope" data-s="rsslope" data-tip="RS21 minus RS55 — whether relative strength is improving or decaying. Positive means the recent leg is stronger than the longer one.">RS Slope<span class="sort-ico"></span></th>
+            <th class="c-rshist" data-s="rshist" data-tip="Last ~30 readings of the 21-day excess return, drawn as a sparkline. The grey line is zero — above it the stock was beating the benchmark.">RS Rank History<span class="sort-ico"></span></th>
+            <th style="text-align:center" data-tip="All three RS legs (21d, 55d, 10w) positive against the benchmark">Lead RS</th>
             <th class="c-rstrend" data-s="rst">RS Trend<span class="sort-ico"></span></th>
             <th class="c-notes">Notes</th>
           </tr>
@@ -659,18 +790,6 @@ body.hide-notes   .c-notes{display:none!important}
     <h3>⚙️ RS Calculation Settings</h3>
     <p>Controls how the RS / MRS Rank columns and "Leading RS" are calculated. Changes apply to the tab you're currently viewing after clicking Apply.</p>
 
-    <div style="margin-top:14px">
-      <label style="font-size:11.5px;font-weight:600;color:var(--text2);display:block;margin-bottom:6px">Comparison mode</label>
-      <label class="modal-check" style="margin-bottom:4px">
-        <input type="radio" name="rsMode" value="peer" id="rsModePeer"/>
-        Peer percentile — rank vs. other stocks currently loaded (original behavior)
-      </label>
-      <label class="modal-check">
-        <input type="radio" name="rsMode" value="benchmark" id="rsModeBenchmark"/>
-        Real benchmark — rank by excess return over a specific index/ETF ticker
-      </label>
-    </div>
-
     <div style="margin-top:14px" id="rsBenchmarkRow">
       <label style="font-size:11.5px;font-weight:600;color:var(--text2);display:block;margin-bottom:6px">Benchmark ticker for the current tab (<span id="rsBenchMarketLabel"></span>)</label>
       <input type="text" id="rsBenchmarkInput" placeholder="e.g. NIFTYBEES.NS or SPY"
@@ -678,23 +797,77 @@ body.hide-notes   .c-notes{display:none!important}
       <p style="margin-top:4px;font-size:10.5px">Must be a valid ticker in the same format your screener already uses (India: SYMBOL.NS, US/ETF: plain symbol). Defaults: NIFTYBEES.NS (Nifty 50 ETF) for India, SPY for US/ETF — neither is an exact Nifty 500 tracker, since one isn't reliably available for free — pick any ticker you trust more if you have one.</p>
     </div>
 
-    <div style="margin-top:14px">
-      <label style="font-size:11.5px;font-weight:600;color:var(--text2);display:block;margin-bottom:6px">Lookback weighting (must total 100%)</label>
-      <div style="display:flex;gap:8px;align-items:center">
-        <div style="flex:1"><span style="font-size:10.5px;color:var(--text3)">3-Month</span>
-          <input type="number" id="rsW3m" min="0" max="100" oninput="updateRSWeightSum()" style="width:100%;padding:5px 8px;border-radius:6px;border:1.5px solid var(--border2);font-size:12px"/></div>
-        <div style="flex:1"><span style="font-size:10.5px;color:var(--text3)">6-Month</span>
-          <input type="number" id="rsW6m" min="0" max="100" oninput="updateRSWeightSum()" style="width:100%;padding:5px 8px;border-radius:6px;border:1.5px solid var(--border2);font-size:12px"/></div>
-        <div style="flex:1"><span style="font-size:10.5px;color:var(--text3)">12-Month</span>
-          <input type="number" id="rsW12m" min="0" max="100" oninput="updateRSWeightSum()" style="width:100%;padding:5px 8px;border-radius:6px;border:1.5px solid var(--border2);font-size:12px"/></div>
-      </div>
-      <p style="margin-top:4px;font-size:10.5px" id="rsWeightSum">Total: 100%</p>
-    </div>
-
     <div style="margin-top:16px;display:flex;gap:8px;justify-content:space-between;align-items:center">
       <button onclick="resetRSConfig()"
         style="padding:6px 12px;border-radius:8px;border:1.5px solid var(--border2);font-size:11.5px;font-weight:500;color:var(--text2);cursor:pointer">Reset to Default</button>
       <button onclick="applyRSConfig()"
+        style="padding:6px 14px;border-radius:8px;background:#1E293B;color:var(--surface2);font-size:12px;font-weight:600;cursor:pointer">Apply</button>
+    </div>
+  </div>
+</div>
+
+<!-- ADVANCED FILTERS MODAL -->
+<div class="overlay" id="advModal">
+  <div class="modal adv-modal">
+    <button class="modal-x" onclick="closeAdvFilters()">✕</button>
+    <h3>⚙ Advanced Filters</h3>
+    <p>Each filter applies only while its own box is ticked, so an unused row can never quietly narrow your results. Settings are remembered.</p>
+
+    <div style="margin-top:12px">
+      <div class="adv-row">
+        <label class="adv-name"><input type="checkbox" id="advConsolOn"/> Consolidation</label>
+        <div class="adv-fields">
+          lookback <input type="number" id="advConsolDays" min="2" max="120" step="1"/> d ·
+          max range <input type="number" id="advConsolRange" min="0.5" max="100" step="0.5"/> %
+        </div>
+      </div>
+      <div class="adv-row">
+        <label class="adv-name"><input type="checkbox" id="advH52On"/> 52W High</label>
+        <div class="adv-fields">
+          within <input type="number" id="advH52Max" min="0" max="100" step="1"/> % of the 52W high
+        </div>
+      </div>
+      <div class="adv-row">
+        <label class="adv-name"><input type="checkbox" id="advBoOn"/> Breakout gain</label>
+        <div class="adv-fields">
+          min gain <input type="number" id="advBoGain" step="1"/> % ·
+          within <input type="number" id="advBoDays" min="1" step="1"/> d of the breakout
+        </div>
+      </div>
+      <div class="adv-row">
+        <label class="adv-name"><input type="checkbox" id="advRsiOn"/> RSI</label>
+        <div class="adv-fields">
+          min RSI <input type="number" id="advRsiMin" min="0" max="100" step="1"/>
+        </div>
+      </div>
+      <div class="adv-row">
+        <label class="adv-name"><input type="checkbox" id="advVolOn"/> Vol ratio</label>
+        <div class="adv-fields">
+          min ratio <input type="number" id="advVolMin" min="0" step="0.1"/> x
+        </div>
+      </div>
+      <div class="adv-row">
+        <label class="adv-name"><input type="checkbox" id="advXOn"/> EMA cross</label>
+        <div class="adv-fields">
+          fast
+          <select id="advXFast">
+            <option value="5">5</option><option value="9">9</option><option value="10">10</option>
+            <option value="20">20</option><option value="50">50</option>
+          </select>
+          × slow
+          <select id="advXSlow">
+            <option value="20">20</option><option value="50">50</option><option value="100">100</option>
+          </select>
+          — keeps rows whose fast EMA is above the slow one
+        </div>
+      </div>
+    </div>
+    <p id="advXNote" style="font-size:10.5px;color:var(--text3)">Changing the EMA pair re-runs the whole scan for this market, because the crossover columns are computed from it.</p>
+
+    <div style="margin-top:16px;display:flex;gap:8px;justify-content:space-between;align-items:center">
+      <button onclick="resetAdvFilters()"
+        style="padding:6px 12px;border-radius:8px;border:1.5px solid var(--border2);font-size:11.5px;font-weight:500;color:var(--text2);cursor:pointer">Reset to defaults</button>
+      <button onclick="applyAdvFilters()"
         style="padding:6px 14px;border-radius:8px;background:#1E293B;color:var(--surface2);font-size:12px;font-weight:600;cursor:pointer">Apply</button>
     </div>
   </div>
@@ -769,7 +942,27 @@ const CFG = {
   // instead of "the sheet didn't load". One data source, one failure mode, one
   // clear message. CONC / TO / RETRIES went with it — with no per-ticker network
   // calls there is nothing left to rate-limit or retry.
-  VER:  'gs4',      // gs2 -> gs3: Stooq fallback removed, so a cache written when Stooq was
+  // ── EMA crossover pair used by computeTech()'s xState/xBars ──
+  // Kept in CFG rather than hardcoded because the fast/slow pair is the one
+  // thing a user actually wants to retune, and xFast/xSlow are reported back
+  // in the row so the UI can label the column with the periods in force
+  // instead of a hardcoded "10/20" that silently goes stale if this changes.
+  XOVER: {fast:10, slow:20},
+
+  // ── Consolidation detector ──
+  // lookback is a HARD CEILING on consolDays: the answer can never exceed the
+  // window we look at, so a stock flat for 6 months reports 20, not 120. That
+  // is deliberate — extending the window costs bars we do not have (see the
+  // ~250-bar data ceiling) and 20 days is the horizon a base-breakout setup
+  // actually cares about.
+  CONSOL: {lookback:20, maxRangePct:10},
+
+  VER:  'gs5',      // gs4 -> gs5: computeTech() returns a different SHAPE — r3m/r6m/r12 are
+                    // GONE and rs21/rs55/rs10w/pattern/sma*/xState/... are new. A gs4 cache
+                    // rehydrated into this build would restore rows with no rs21 (so RS ranks
+                    // silently blank) and with r3m still present (so nothing recomputes it).
+                    // Bumping the key orphans every gs4 cache, which is the point.
+                    // gs2 -> gs3: Stooq fallback removed, so a cache written when Stooq was
                     // still filling gaps could contain rows that can no longer be reproduced.
                     // gs1 -> gs2 was: India universe 736 -> 881, and h52/l52 now null below 120
                     // bars. computeTech()'s output shape changed, so gs1 caches must be orphaned.
@@ -2229,9 +2422,27 @@ let MIN_MCAP = MCAP_DEFAULTS.india;
 let CUR = 'india';
 const SD  = {};           // symbol -> processed data (or null=failed, undefined=pending)
 const LOADED = {};        // market -> bool
-const REV = {};           // symbol -> 'Y'|'N'|'?'
+const REV = {};           // symbol -> 'bull'|'bear'|'neutral'
 const REV_LS_KEY = 'sm_review_status';
 let REVIEWS_REMOTE_LOADED = false;
+
+/* Review marks used to be stored as 'Y'/'N'/'?'. Anything already saved —
+   in localStorage, or in the Google Sheet that syncs across devices — still
+   carries the old letters, so it is translated on the way in and written back
+   in the new form. Doing it at the boundary means exactly one representation
+   ('bull'/'bear'/'neutral') exists anywhere past this point; the alternative
+   was every comparison in the app having to know about both. */
+const REV_MIGRATION={Y:'bull',N:'bear','?':'neutral'};
+function migrateReviews(obj){
+  const out={};
+  if(!obj || typeof obj!=='object') return out;
+  Object.keys(obj).forEach(k=>{
+    const v=obj[k];
+    if(v==null) return;                       // an unmarked stock is simply absent
+    out[k]=REV_MIGRATION[v] || v;             // already-migrated values pass through
+  });
+  return out;
+}
 
 function saveReviewsLocal(){
   try{ localStorage.setItem(REV_LS_KEY, JSON.stringify(REV)); } catch(e){ /* storage full or disabled — fine, remote/memory still works */ }
@@ -2239,7 +2450,13 @@ function saveReviewsLocal(){
 function loadReviewsLocal(){
   try{
     const raw=localStorage.getItem(REV_LS_KEY);
-    if(raw) Object.assign(REV, JSON.parse(raw));
+    if(!raw) return;
+    const saved=JSON.parse(raw);
+    const migrated=migrateReviews(saved);
+    Object.assign(REV, migrated);
+    // Write the migrated form straight back, so the old letters disappear from
+    // storage on first load rather than being re-translated forever.
+    if(JSON.stringify(saved)!==JSON.stringify(migrated)) saveReviewsLocal();
   } catch(e){ /* ignore corrupt/missing data */ }
 }
 
@@ -2260,7 +2477,9 @@ async function loadReviewsRemote(){
     if(!res.ok){ console.warn('Reviews fetch returned', res.status, '— using local marks only.'); return; }
     const remote=await res.json();
     if(remote && typeof remote==='object'){
-      Object.assign(REV, remote); // remote is source of truth once loaded; merges over any local-only marks
+      // Migrated too: the Sheet holds whatever this browser (or another device
+      // running an older build) last wrote, which may still be Y/N/?.
+      Object.assign(REV, migrateReviews(remote)); // remote is source of truth once loaded; merges over any local-only marks
       saveReviewsLocal();
       renderTable(CUR);
       console.log('Loaded', Object.keys(remote).length, 'saved review marks from the Sheet.');
@@ -2286,7 +2505,9 @@ function saveReviewRemote(sym, status){
 }
 
 const NOTES = {};         // symbol -> string
-let SORT_C = 'rs', SORT_D = 'desc';
+// 'rs' (the old blend's rank) is gone as a column and as a sort key; MRS Rank
+// is the same percentile and is what the table now opens sorted by.
+let SORT_C = 'mrs', SORT_D = 'desc';
 let F_CAP='All', F_SCT='', F_EMA='', F_RSI='', F_PIV='', F_REV='';
 let SEARCH='', VISIBLE=CFG.INIT;
 let LOADING=false;
@@ -2342,40 +2563,47 @@ function pivZone(price,piv){
   return '<S2';
 }
 
-function stage2(price,closes,e50,e200,h52,l52,wk,we20){
-  // No early-return here even for very short history — every criterion below
-  // already null-guards its own data requirement, so a young IPO stock still
-  // gets a full 7-row breakdown (correctly showing "fail" on whichever rules
-  // need more history than it has yet) instead of a blank tooltip.
+/* Minervini trend template, 9 rules (was a 7-rule EMA-based approximation).
+   The template is defined on SIMPLE moving averages, not exponential — the old
+   version substituted EMA 50/200 for SMA 50/150/200, which is a different
+   (faster, noisier) test wearing the same name.
+
+   No early-return for short history: every criterion null-guards its own data
+   requirement, so a 20-bar IPO gets a full 9-row breakdown showing which rules
+   it simply cannot satisfy yet, instead of an empty tooltip that looks like a
+   fetch failure.
+
+   RULE 9 SUBSTITUTION, deliberate and kept from the old code: the textbook rule
+   is "price above the 40-week (≈50-week EMA) line". With a ~250-bar (≈50-week)
+   ceiling there are only ~50 weekly bars, so a 50-week EMA would be seeded on
+   its own entire history and would essentially equal a running mean — a number
+   with no trend information. Weekly EMA 20 is used instead. It is NOT the same
+   rule and the label says so. */
+function stage2(price,closes,h52,l52,we20,sma50,sma150,sma200){
   const n=closes?closes.length:0;
 
-  const sma150     = n>=150 ? sma(closes,150) : null;
-  const sma150_20ago = n>=170 ? sma(closes.slice(0,-20),150) : null;
-  const ema200_10ago = n>=210 ? ema(closes.slice(0,-10),200) : null;
+  // "Trending up for at least a month" = compare against the SMA 200 as it
+  // stood 20 bars ago, which needs 200+20 bars, not 200.
+  const sma200_20ago = n>=220 ? sma(closes.slice(0,-20),200) : null;
 
-  // Weekly Higher-High + Higher-Low over the last 8 completed weeks:
-  // compare the most recent week's high/low against the week 8 back.
-  let weeklyHHHL=false;
-  if(wk&&wk.highs&&wk.highs.length>=9){
-    const wn=wk.highs.length;
-    const latestH=wk.highs[wn-1], latestL=wk.lows[wn-1];
-    const pastH=wk.highs[wn-9], pastL=wk.lows[wn-9];
-    weeklyHHHL = latestH>pastH && latestL>pastL;
-  }
-
-  // #5 (RS Positive vs Nifty 500) is patched in by rankRS() after the full
-  // universe has loaded — a single stock can't rank itself vs the index
-  // until we know everyone else's returns too. Starts false, corrected shortly after.
+  // Rule 8 (RS vs benchmark) is patched in by rankRS() after the whole universe
+  // AND the benchmark series are loaded — a single stock cannot know its excess
+  // return over an index that has not been fetched yet. Starts false.
+  // If you reorder this array, update the details[7] index in rankRS().
   const checks=[
-    {label:'Price > SMA 150',                    pass: sma150!=null && price>sma150},
-    {label:'SMA 150 Rising (vs 20 bars ago)',     pass: sma150!=null && sma150_20ago!=null && sma150>sma150_20ago},
-    {label:'EMA 50 > EMA 200',                    pass: e50!=null && e200!=null && e50>e200},
-    {label:'EMA 200 Rising (vs 10 bars ago)',     pass: e200!=null && ema200_10ago!=null && e200>ema200_10ago},
-    {label:'RS Positive vs Nifty 500',            pass: false},
-    {label:'Weekly HH+HL (last 8 weeks)',         pass: weeklyHHHL},
-    {label:'Price > Weekly EMA 20',               pass: we20!=null && price>we20},
+    {label:'Price > SMA 150 and > SMA 200',       pass: sma150!=null && sma200!=null && price>sma150 && price>sma200},
+    {label:'SMA 150 > SMA 200',                   pass: sma150!=null && sma200!=null && sma150>sma200},
+    {label:'SMA 200 trending up ≥1 month',        pass: sma200!=null && sma200_20ago!=null && sma200>sma200_20ago},
+    {label:'SMA 50 > SMA 150 > SMA 200',          pass: sma50!=null && sma150!=null && sma200!=null && sma50>sma150 && sma150>sma200},
+    {label:'Price > SMA 50',                      pass: sma50!=null && price>sma50},
+    {label:'Price ≥ 30% above 52W low',           pass: l52!=null && l52>0 && price>=l52*1.3},
+    {label:'Price within 25% of 52W high',        pass: h52!=null && h52>0 && price>=h52*0.75},
+    {label:'RS positive vs benchmark',            pass: false},
+    {label:'Price > Weekly EMA 20 (≈40-week sub)',pass: we20!=null && price>we20},
   ];
-  return{score:checks.filter(c=>c.pass).length,total:7,details:checks};
+  // total is derived, never a literal: the old code hardcoded 7 here while the
+  // array length was the real answer, so adding a rule silently produced "8/7".
+  return{score:checks.filter(c=>c.pass).length,total:checks.length,details:checks};
 }
 
 function squeeze(C,H,L){
@@ -2392,7 +2620,12 @@ function squeeze(C,H,L){
   return kcW?Math.max(0,Math.min(100,+((1-bbW/kcW)*100).toFixed(1))):0;
 }
 
-function weeklyResample(C,H,L,V,dates){
+/* O is optional and LAST so the old 5-arg call sites keep working.
+   The weekly OPEN is the open of the first trading day of that week and must be
+   captured only when the bucket is created — take it on every row and you get
+   the week's LAST open, which turns every weekly candle into a same-day bar and
+   makes weekly engulfing patterns fire essentially at random. */
+function weeklyResample(C,H,L,V,dates,O){
   const wks=new Map();
   dates.forEach((dt,i)=>{
     if(!dt||C[i]==null) return;
@@ -2400,7 +2633,7 @@ function weeklyResample(C,H,L,V,dates){
     const dow=(d.getUTCDay()+6)%7;
     const mon=new Date(d); mon.setUTCDate(d.getUTCDate()-dow);
     const k=mon.toISOString().slice(0,10);
-    if(!wks.has(k)) wks.set(k,{h:H[i]||0,l:L[i]||Infinity,c:C[i],v:0});
+    if(!wks.has(k)) wks.set(k,{o:(O&&O[i]!=null)?O[i]:C[i],h:H[i]||0,l:L[i]||Infinity,c:C[i],v:0});
     const w=wks.get(k);
     w.h=Math.max(w.h,H[i]||0);
     w.l=Math.min(w.l,L[i]||Infinity);
@@ -2409,10 +2642,90 @@ function weeklyResample(C,H,L,V,dates){
   const keys=[...wks.keys()].sort();
   return{
     closes:keys.map(k=>wks.get(k).c),
+    opens:keys.map(k=>wks.get(k).o),
     highs:keys.map(k=>wks.get(k).h),
     lows:keys.map(k=>wks.get(k).l),
     volumes:keys.map(k=>wks.get(k).v),
   };
+}
+
+/* ── Building blocks for the new indicators ─────────────────────────────
+   Each of these returns null rather than 0 when it has too little history.
+   0 is a real, tradeable value for every one of them; using it as the
+   "no data" sentinel is how a 20-bar IPO ends up ranked mid-pack instead of
+   excluded. */
+
+/* Full EMA series aligned index-for-index with arr (null before the seed is
+   complete). Needed by xBars: asking "when did the cross flip" requires the
+   EMA at every past bar, and recomputing ema() per bar is O(n^2). */
+function emaSeries(arr,p){
+  const out=new Array(arr.length).fill(null);
+  if(!arr||arr.length<p) return out;
+  const k=2/(p+1);
+  let e=arr.slice(0,p).reduce((a,b)=>a+b,0)/p;
+  out[p-1]=e;
+  for(let i=p;i<arr.length;i++){ e=arr[i]*k+e*(1-k); out[i]=e; }
+  return out;
+}
+
+/* % change over the last N bars. Needs N+1 bars: the endpoints are
+   arr[len-1] and arr[len-1-N], so 21 bars can NOT produce a 21-bar change. */
+function pctChange(arr,N){
+  if(!arr||arr.length<N+1) return null;
+  const a=arr[arr.length-1-N], b=arr[arr.length-1];
+  if(!a||!isFinite(a)||!isFinite(b)) return null;
+  return (b/a-1)*100;
+}
+
+/* The last `count` values of the rolling N-bar % change, oldest -> newest.
+   Needs N+count bars. Used to build the RS sparkline history. */
+function pctChangeHist(arr,N,count){
+  if(!arr||arr.length<N+count) return null;
+  const out=[], n=arr.length;
+  for(let i=n-count;i<n;i++){
+    const a=arr[i-N];
+    if(!a||!isFinite(a)) return null;
+    out.push(+((arr[i]/a-1)*100).toFixed(2));
+  }
+  return out;
+}
+
+/* Single-bar candlestick classification against the PREVIOUS bar.
+   Engulfing is checked first because it is the stronger, two-bar signal and a
+   large engulfing bar frequently also satisfies the hammer geometry — checking
+   hammer first would hide every engulf behind it. Returns the FIRST match. */
+function candlePattern(o,h,l,c,po,pc){
+  if(![o,h,l,c,po,pc].every(v=>typeof v==='number'&&isFinite(v))) return null;
+  if(pc<po && c>o && c>=po && o<=pc) return 'Bull Engulf';
+  if(pc>po && c<o && c<=po && o>=pc) return 'Bear Engulf';
+  const rng=h-l;
+  if(rng<=0) return null;              // a bar with H===L has no geometry to read
+  const body=Math.abs(c-o);
+  const upper=h-Math.max(o,c), lower=Math.min(o,c)-l;
+  if(lower>=2*body && upper<=body && Math.min(o,c)>=l+rng*(2/3)) return 'Hammer';
+  if(body<=rng*0.1) return 'Doji';
+  return null;
+}
+
+/* How many of the most recent bars the close has stayed inside maxRangePct.
+   Grows the window backwards from the last bar until the range breaks the
+   threshold, capped at lookback. Returns {days,range} where range is the FULL
+   lookback-window range (that is the "how tight is this base" number), and
+   days is how far back the tightness actually holds. */
+function consolidation(closes,lookback,maxRangePct){
+  if(!closes||closes.length<lookback+1) return {days:null,range:null};
+  const w=closes.slice(-lookback);
+  const mn=Math.min(...w), mx=Math.max(...w);
+  if(!(mn>0)) return {days:null,range:null};
+  const range=+((mx-mn)/mn*100).toFixed(2);
+  let days=0;
+  for(let k=2;k<=lookback;k++){
+    const s=closes.slice(-k);
+    const a=Math.min(...s), b=Math.max(...s);
+    if(!(a>0)) break;
+    if((b-a)/a*100<=maxRangePct) days=k; else break;
+  }
+  return {days,range};
 }
 
 function breakout(closes,volumes){
@@ -2433,7 +2746,11 @@ function breakout(closes,volumes){
   };
 }
 
-function computeTech(C,H,L,V,dates,sym){
+/* O (daily opens) is the LAST parameter on purpose — see fetchStock's note.
+   When it is absent every open falls back to the close, which makes every bar
+   a zero-body doji; rather than emit a page full of bogus 'Doji' the pattern
+   fields null out entirely in that case. */
+function computeTech(C,H,L,V,dates,sym,O){
   // A 2-row stock (e.g. IPO'd a few days ago)
   // is real data, not a failure. Every derived indicator below (RSI, EMA,
   // Stage2, breakout, RS returns, etc.) already null-guards its own minimum
@@ -2444,8 +2761,44 @@ function computeTech(C,H,L,V,dates,sym){
 
   const e10=ema(C,10), e20=ema(C,20);
   const e50=n>=50?ema(C,50):null;
+  const e100=n>=100?ema(C,100):null;
   const e150=n>=150?ema(C,150):null;
   const e200=n>=200?ema(C,200):null;
+
+  // Simple moving averages. Stage 2 is defined on SMA, not EMA — see stage2().
+  const sma50=n>=50?sma(C,50):null;
+  const sma150=n>=150?sma(C,150):null;
+  const sma200=n>=200?sma(C,200):null;
+
+  /* 200-EMA slope over the last month. Needs 220 bars, NOT 200: the comparison
+     point is a 200-EMA computed on the series with the last 20 bars removed.
+     At 219 bars ema(C.slice(0,-20),200) has 199 values and returns null, so
+     this correctly reports null rather than quietly comparing against a
+     shorter-period EMA. 220 of a ~250-bar ceiling — it fits, but only just. */
+  const ema200_20ago = n>=220 ? ema(C.slice(0,-20),200) : null;
+  const slope200 = (e200!=null && ema200_20ago) ? +((e200/ema200_20ago-1)*100).toFixed(2) : null;
+  const slopeDir = slope200==null ? null : (Math.abs(slope200)<0.1 ? 'flat' : slope200>0 ? 'up' : 'down');
+
+  /* EMA crossover state and age. xBars counts bars SINCE the flip bar, so a
+     cross that happened on the latest bar reads 0. It is null when no flip
+     exists anywhere in the comparable window — "never crossed in 250 bars" and
+     "crossed 250 bars ago" are different facts and 250 would imply the latter. */
+  // xFast/xSlow are the PERIODS in force (10/20 by default), not the EMA
+  // values — they exist so the UI can label the column with the actual pair
+  // instead of a hardcoded "10/20" that goes stale when CFG.XOVER changes.
+  const XF=CFG.XOVER.fast, XS=CFG.XOVER.slow, XMAX=Math.max(XF,XS);
+  const xFastEma=n>=XF?ema(C,XF):null;
+  const xSlowEma=n>=XS?ema(C,XS):null;
+  const xState=(xFastEma!=null&&xSlowEma!=null)?(xFastEma>xSlowEma?'bull':'bear'):null;
+  let xBars=null;
+  if(n>=XMAX+2){
+    const fs=emaSeries(C,XF), ss=emaSeries(C,XS);
+    const st=[];
+    for(let i=XMAX-1;i<n;i++) st.push(fs[i]>ss[i]);
+    for(let i=st.length-1;i>0;i--){
+      if(st[i]!==st[i-1]){ xBars=(st.length-1)-i; break; }
+    }
+  }
 
   let eu=0,ec=0;
   [[e10,e20],[e20,e50],[e50,e150],[e150,e200],[price,e20]].forEach(([a,b])=>{
@@ -2454,7 +2807,7 @@ function computeTech(C,H,L,V,dates,sym){
   const emaScr=ec?+(eu/ec).toFixed(2):0;
 
   const rsi14=rsi(C,14);
-  const wk=weeklyResample(C,H,L,V,dates);
+  const wk=weeklyResample(C,H,L,V,dates,O);
   const wRsi=wk.closes.length>=15?rsi(wk.closes,14):null;
 
   const todV=V[n-1]||0;
@@ -2498,47 +2851,102 @@ function computeTech(C,H,L,V,dates,sym){
   // and often less for stocks with gaps/holidays) — so this uses only
   // 10 and 20-week EMAs, both comfortably achievable even with a thin history.
   const we10=ema(wk.closes,10), we20=ema(wk.closes,20);
+  // Same crossover rule as daily, on the weekly series. we20 needs 20 weekly
+  // bars ≈ 100 trading days, so this is null for anything younger.
+  const wxState=(we10!=null&&we20!=null)?(we10>we20?'bull':'bear'):null;
   let weu=0,wec=0;
   [[we10,we20],[price,we10],[price,we20]].forEach(([a,b])=>{
     if(a&&b){wec++;if(a>b)weu++;}
   });
   const weEmaScr=wec?+(weu/wec).toFixed(2):null;
 
-  const s2=stage2(price,C,e50,e200,h52,l52,wk,we20);
+  const s2=stage2(price,C,h52,l52,we20,sma50,sma150,sma200);
   const sq=squeeze(C.slice(-20),H.slice(-20),L.slice(-20));
   const bo=breakout(C,V);
 
-  const r3m=n>=63?+((price/C[Math.max(0,n-64)]-1)*100).toFixed(1):null;
-  const r6m=n>=127?+((price/C[Math.max(0,n-128)]-1)*100).toFixed(1):null;
-  const r12=n>=252?+((price/C[Math.max(0,n-253)]-1)*100).toFixed(1):null;
+  /* Candlestick patterns. hasO distinguishes "the sheet has no Open column"
+     from "the open happens to equal the close": without it, a missing-Open
+     sheet reports a perfect Doji on literally every bar of every stock. */
+  const hasO = Array.isArray(O) && O.length===n;
+  const pattern = (hasO && n>=2) ? candlePattern(O[n-1],H[n-1],L[n-1],C[n-1],O[n-2],C[n-2]) : null;
+  const wn2=wk.closes.length;
+  const wPattern = (hasO && wn2>=2)
+    ? candlePattern(wk.opens[wn2-1],wk.highs[wn2-1],wk.lows[wn2-1],wk.closes[wn2-1],wk.opens[wn2-2],wk.closes[wn2-2])
+    : null;
+
+  const cons=consolidation(C,CFG.CONSOL.lookback,CFG.CONSOL.maxRangePct);
+
+  /* Volume drying up: 20d average below 50d average. Both averages are taken
+     over the same trailing window, so the 20d is a SUBSET of the 50d — this is
+     "recent volume below the medium-term norm", not two independent samples. */
+  let volDry=null;
+  if(n>=50){
+    const a20=V.slice(-20), a50=V.slice(-50);
+    const m20=a20.reduce((a,b)=>a+(b||0),0)/20, m50=a50.reduce((a,b)=>a+(b||0),0)/50;
+    volDry = m50>0 ? m20<m50 : null;
+  }
+
+  /* Monthly setup: above where it traded ~6 months (126 trading days) ago AND
+     within 15% of the 52W high. Floored at 130 bars because h52 itself is null
+     below 120 — without that floor this would compare against a "52W high" that
+     is really a 6-week high. */
+  const monthlySetup = (n>=130 && h52!=null && h52>0 && C[n-1-126]>0)
+    ? (price>C[n-1-126] && price>=h52*0.85)
+    : null;
+
+  /* Raw own-return legs for RS. RS itself is benchmark-relative and CANNOT be
+     computed here — one stock in isolation has no benchmark — so computeTech
+     publishes only its own % changes and rankRS() subtracts the benchmark's.
+     This is the whole point of the rewrite: there is no code path that can emit
+     a raw return into a field named rs*. */
+  const pc21=pctChange(C,21);            // needs 22 bars
+  const pc55=pctChange(C,55);            // needs 56 bars
+  const pc10w=pctChange(wk.closes,10);   // needs 11 weekly bars ≈ 50 daily
+  const pcHist21=pctChangeHist(C,21,30); // needs 51 bars
 
   const currency=sym.endsWith('.NS')?'INR':'USD';
 
   return{
     sym,price,ch1d,volume:todV,avgV,vRatio,h52d,h52,l52,
-    rsi14,wRsi,e10,e20,e50,e150,e200,emaScr,
+    rsi14,wRsi,e10,e20,e50,e100,e150,e200,emaScr,
+    sma50,sma150,sma200,slope200,slopeDir,
+    xFast:XF,xSlow:XS,xFastEma,xSlowEma,xState,xBars,wxState,
+    pattern,wPattern,
+    consolDays:cons.days,consolRange:cons.range,volDry,monthlySetup,
     we10,we20,weEmaScr,
     dpz,wpz,s2,sq,wVolRatio,
     boGain:bo.gain,boCnt:bo.count,retrace:bo.retrace,
-    r3m,r6m,r12,rs:null,mrsRank:null,leadRS:null,rsTrend:null,
+    // Own returns (inputs to RS, never displayed as RS).
+    pc21,pc55,pc10w,pcHist21,
+    // Filled by rankRS() once the benchmark is known. null until then, and
+    // still null afterwards if the benchmark could not be fetched.
+    rs21:null,rs55:null,rs10w:null,rsSlope:null,rsTrend:null,rsHist:null,
+    rs:null,mrsRank:null,leadRS:null,
     currency,
   };
 }
 
 /* ══════════════════════════════════
-   RS (RELATIVE STRENGTH) CONFIGURATION
+   RS (RELATIVE STRENGTH)
    ────────────────────────────────────
-   Two modes:
-   - 'peer'      (default, original behavior): each stock's blended return
-                  is percentile-ranked against every OTHER stock currently
-                  loaded in the same tab. NOT actually "vs the index" despite
-                  the column label — this is peer-relative, not benchmark-relative.
-   - 'benchmark': fetches one real benchmark ticker (e.g. a Nifty 50 ETF, or
-                  SPY) and computes each stock's EXCESS return over that
-                  benchmark using the same weighted blend, THEN percentile-
-                  ranks those excess returns. This is true relative strength.
-   Weights (w3m/w6m/w12m) apply in both modes and should sum to 1 — enforced
-   by the settings UI, not assumed here.
+   RS_N(stock) = pctChange(stock,N) − pctChange(benchmark,N), in percentage
+   points. Nothing else. The old r3m/r6m/r12 weighted blend is gone, and so is
+   'peer' mode.
+
+   WHY PEER MODE WAS DELETED, not merely defaulted off: it percentile-ranked
+   each stock's RAW return against the other stocks that happened to be loaded,
+   and published the result in a column labelled "RS vs Nifty 500". In a broad
+   rally every stock scored well; in a broad selloff every stock scored badly;
+   the number never touched an index. Worse, the old benchmark path silently
+   FELL BACK to that same raw-return ranking whenever the benchmark ticker
+   failed to load — so the bug reappeared exactly when it was least visible.
+   The benchmark is now mandatory: no benchmark series, no RS. rs21/rs55/rs10w
+   go null and the UI shows a dash and a warning. A dash is a fact; a raw return
+   dressed as relative strength is not.
+
+   Alignment note: stock and benchmark % changes are each taken over their OWN
+   last N bars. Both come from the same market tab of the same sheet, so their
+   calendars are effectively identical; no date-by-date alignment is attempted.
 ══════════════════════════════════ */
 const RS_CFG_KEY='sm_rs_config';
 let RS_CONFIG={
@@ -2548,6 +2956,8 @@ let RS_CONFIG={
   // because no benchmark ticker could actually be fetched. That's now fixed:
   // NIFTYBEES.NS and SPY are pulled into the sheet as first-class benchmarks, so
   // the honest mode is finally the working one.
+  // 'mode' is retained ONLY so an old saved config deserialises without
+  // exploding; it is never read. See the note above on why peer mode is gone.
   mode:'benchmark',
   // HDFCSML250.NS = HDFC Nifty Smallcap 250 ETF — the default, as requested.
   // Worth understanding what this choice means: RS is measured as excess return
@@ -2560,8 +2970,10 @@ let RS_CONFIG={
   //   MONIFTY500.NS — Motilal Oswal Nifty 500 ETF (true broad-market Nifty 500)
   //   NIFTYBEES.NS  — Nippon Nifty 50 ETF (large caps; longest, most liquid history)
   benchmark:{india:'HDFCSML250.NS', us:'SPY', etf:'SPY'},
-  w3m:0.4, w6m:0.35, w12m:0.25,
-  v:'gs4',   // stamp — see loadRSConfig
+  // w3m/w6m/w12m deleted with the blend. loadRSConfig() purges any stored
+  // config carrying them via the version stamp below — leaving them in
+  // localStorage would rehydrate weights that nothing reads any more.
+  v:'gs5',   // stamp — see loadRSConfig. gs4 -> gs5: RS_CONFIG shape changed.
 };
 function loadRSConfig(){
   try{
@@ -2584,64 +2996,57 @@ function saveRSConfig(){
   try{ localStorage.setItem(RS_CFG_KEY, JSON.stringify(RS_CONFIG)); } catch(e){ /* non-fatal */ }
 }
 
-let BENCHMARK_DATA={}; // market -> {r3m,r6m,r12} | null (null = fetch failed or not in benchmark mode)
+/* market -> {sym,C,H,L,V,dates} | null.
+   Stores the benchmark's RAW CLOSE SERIES, not precomputed returns. The old
+   version cached {r3m,r6m,r12}, which meant RS could only ever be measured at
+   the three horizons someone had baked in; with the series in hand any N is a
+   subtraction away, and the weekly leg can be resampled from the same bars. */
+let BENCHMARK_DATA={};
+const BENCHMARK_FAILED={};
 
 async function fetchBenchmark(market){
   BENCHMARK_DATA[market]=null;
-  if(RS_CONFIG.mode!=='benchmark') return;
+  delete BENCHMARK_FAILED[market];
   const ticker=RS_CONFIG.benchmark[market];
-  if(!ticker) return;
-  const fakeDef={s:ticker, d:ticker};
-  const data=await fetchStock(fakeDef);
-  if(data && data.r3m!=null){
-    BENCHMARK_DATA[market]={r3m:data.r3m, r6m:data.r6m, r12:data.r12};
-  } else {
-    // Visible, not silent. A peer-percentile number displayed in a column
-    // labelled "RS" is indistinguishable from a real benchmark-relative one,
-    // which is precisely how the old "vs Nifty 500" mislabelling went unnoticed.
-    // Until the full RS rewrite lands, at least say so on screen.
-    BENCHMARK_FAILED[market]=ticker;
-    console.warn(`Benchmark ${ticker} could not be fetched for ${market} — RS is peer-relative for this load, NOT benchmark-relative.`);
-    const el=document.getElementById('bnrSub');
-    if(el && market===CUR) el.innerHTML=`&nbsp;·&nbsp;<span style="color:var(--red,#DC2626)">RS is peer-relative — benchmark ${ticker} unavailable</span>`;
+  const map=GSHEET_BY_MARKET[market];
+  const gd=ticker ? (map && map[ticker]) : null;
+  // 22 bars is the minimum that can produce ANY of the three RS legs (rs21).
+  // Below that the benchmark is present but useless, which is a failure.
+  if(gd && gd.C && gd.C.length>=22){
+    BENCHMARK_DATA[market]={sym:ticker,C:gd.C,H:gd.H,L:gd.L,V:gd.V,dates:gd.dates};
+    return;
   }
+  // Cache-hit path: the tab was never downloaded this session. The sym check
+  // matters — without it, switching the benchmark ticker would keep silently
+  // scoring against yesterday's index.
+  try{
+    const raw=localStorage.getItem(bKey(market));
+    if(raw){
+      const b=JSON.parse(raw);
+      if(b && b.sym===ticker && b.C && b.C.length>=22){ BENCHMARK_DATA[market]=b; return; }
+    }
+  }catch(e){ /* corrupt cache is a miss, not a crash */ }
+  // Visible, not silent — and now genuinely fatal for RS rather than a quiet
+  // downgrade to a raw return wearing the RS label.
+  BENCHMARK_FAILED[market]=ticker||'(none configured)';
+  console.warn(`Benchmark ${ticker} unavailable for ${market} — RS columns will be blank for this load.`);
+  const el=document.getElementById('bnrSub');
+  if(el && market===CUR) el.innerHTML=`&nbsp;·&nbsp;<span style="color:var(--red,#DC2626)">RS unavailable — benchmark ${ticker||'not set'} is not in the sheet</span>`;
 }
-const BENCHMARK_FAILED={};
 
-function blendedReturn(d){
-  return RS_CONFIG.w3m*(d.r3m||0) + RS_CONFIG.w6m*(d.r6m||d.r3m||0) + RS_CONFIG.w12m*(d.r12||d.r6m||d.r3m||0);
-}
-
+/* One setting, because there is only one thing left to decide: which series RS
+   is measured against. The peer-percentile radio and the 3m/6m/12m weight boxes
+   were deleted along with the blend they configured — a control that changes
+   nothing is worse than no control. */
 function openRSSettings(){
-  $('rsModePeer').checked = RS_CONFIG.mode==='peer';
-  $('rsModeBenchmark').checked = RS_CONFIG.mode==='benchmark';
   $('rsBenchMarketLabel').textContent = CUR;
   $('rsBenchmarkInput').value = RS_CONFIG.benchmark[CUR] || '';
-  $('rsW3m').value = Math.round(RS_CONFIG.w3m*100);
-  $('rsW6m').value = Math.round(RS_CONFIG.w6m*100);
-  $('rsW12m').value = Math.round(RS_CONFIG.w12m*100);
-  updateRSWeightSum();
   $('rsModal').classList.add('open');
 }
 function closeRSSettings(){ $('rsModal').classList.remove('open'); }
 
-function updateRSWeightSum(){
-  const sum=(parseFloat($('rsW3m').value)||0)+(parseFloat($('rsW6m').value)||0)+(parseFloat($('rsW12m').value)||0);
-  const el=$('rsWeightSum');
-  el.textContent=`Total: ${sum}%`;
-  el.style.color = sum===100 ? 'var(--text3)' : 'var(--red)';
-}
-
 async function applyRSConfig(){
-  const w3=parseFloat($('rsW3m').value)||0, w6=parseFloat($('rsW6m').value)||0, w12=parseFloat($('rsW12m').value)||0;
-  const sum=w3+w6+w12;
-  if(Math.abs(sum-100)>0.5){
-    alert(`Weights must total 100% (currently ${sum}%). Adjust before applying.`);
-    return;
-  }
-  RS_CONFIG.mode = $('rsModeBenchmark').checked ? 'benchmark' : 'peer';
   RS_CONFIG.benchmark[CUR] = $('rsBenchmarkInput').value.trim() || RS_CONFIG.benchmark[CUR];
-  RS_CONFIG.w3m=w3/100; RS_CONFIG.w6m=w6/100; RS_CONFIG.w12m=w12/100;
   saveRSConfig();
   closeRSSettings();
 
@@ -2654,37 +3059,63 @@ async function applyRSConfig(){
 }
 
 function resetRSConfig(){
-  RS_CONFIG={ mode:'peer', benchmark:{india:'NIFTYBEES.NS', us:'SPY', etf:'SPY'}, w3m:0.4, w6m:0.35, w12m:0.25 };
+  // Must carry the version stamp: a reset that writes an unstamped config makes
+  // loadRSConfig() discard it on the next page load, so "reset" would silently
+  // not persist.
+  RS_CONFIG={ mode:'benchmark', benchmark:{india:'HDFCSML250.NS', us:'SPY', etf:'SPY'}, v:'gs5' };
   saveRSConfig();
   openRSSettings(); // refresh the form to show the reset values
 }
 
+/* Turns each stock's own % changes into benchmark-relative RS, then percentile-
+   ranks rs55 across the loaded universe. Safe to call repeatedly (it is called
+   again after a settings change) — every field is recomputed from pc*, never
+   from a previous rs* value. */
 function rankRS(market){
-  const items=UNI[market].map(d=>SD[d.s]).filter(d=>d&&d.r3m!=null);
+  const items=UNI[market].map(d=>SD[d.s]).filter(Boolean);
   if(!items.length) return;
 
-  const bench=BENCHMARK_DATA[market];
-  const benchReturn = bench ? blendedReturn(bench) : null;
+  const b=BENCHMARK_DATA[market];
+  const bp21 = b ? pctChange(b.C,21) : null;
+  const bp55 = b ? pctChange(b.C,55) : null;
+  const bwk  = b ? weeklyResample(b.C,b.H,b.L,b.V,b.dates) : null;
+  const bp10w= bwk ? pctChange(bwk.closes,10) : null;
+  const bHist= b ? pctChangeHist(b.C,21,30) : null;
 
+  // No benchmark => every RS field stays null. There is deliberately no `else`
+  // branch here: the absence of a fallback IS the fix.
   items.forEach(d=>{
-    const own=blendedReturn(d);
-    d._rr = benchReturn!=null ? (own-benchReturn) : own; // excess-over-benchmark if available, else raw peer-relative
+    const ex=(own,bench)=> (own!=null && bench!=null) ? +(own-bench).toFixed(2) : null;
+    d.rs21 = ex(d.pc21,bp21);
+    d.rs55 = ex(d.pc55,bp55);
+    d.rs10w= ex(d.pc10w,bp10w);
+    d.rsSlope = (d.rs21!=null&&d.rs55!=null) ? +(d.rs21-d.rs55).toFixed(2) : null;
+    d.rsTrend = d.rsSlope==null ? null
+              : (Math.abs(d.rsSlope)<0.5 ? 'flat' : d.rsSlope>0 ? 'up' : 'down');
+    d.leadRS  = (d.rs21!=null&&d.rs55!=null&&d.rs10w!=null)
+              ? (d.rs21>0 && d.rs55>0 && d.rs10w>0) : null;
+    d.rsHist  = (bHist && d.pcHist21 && d.pcHist21.length===bHist.length)
+              ? d.pcHist21.map((v,i)=>+(v-bHist[i]).toFixed(2)) : null;
+    d.rs=null; d.mrsRank=null;
   });
-  const sorted=[...items].sort((a,b)=>a._rr-b._rr);
-  sorted.forEach((d,i)=>{
-    const p=Math.round((i+1)/sorted.length*100);
-    d.rs=p;d.mrsRank=p;d.leadRS=p>=70;
-    if(d.r3m!=null&&d.r6m!=null){
-      const rec=d.r3m-(d.r6m-d.r3m);
-      d.rsTrend=rec>5?'↑':rec<-5?'↓':'→';
-    } else d.rsTrend='→';
 
-    // Patch Stage 2 criterion #5 ("RS Positive vs Nifty 500") now that we
-    // know this stock's rank vs the rest of the loaded universe. We don't
-    // fetch a live index series, so "RS >= 50th percentile here" stands in
-    // as a practical proxy for "outperforming the benchmark".
-    if(d.s2&&d.s2.details&&d.s2.details[4]){
-      d.s2.details[4].pass = p>=50;
+  // Percentile rank (1-100) of rs55 across everything that HAS an rs55.
+  // Stocks with too little history are excluded from the ranking rather than
+  // ranked as if their missing return were zero — including them would push
+  // every genuine laggard up the table.
+  const ranked=items.filter(d=>d.rs55!=null).sort((a,b2)=>a.rs55-b2.rs55);
+  ranked.forEach((d,i)=>{
+    const p=Math.max(1,Math.round((i+1)/ranked.length*100));
+    d.mrsRank=p;
+    d.rs=p;   // legacy alias: the RS column and its sort still read `rs`
+  });
+
+  // Patch Stage 2 rule #8 ("RS positive vs benchmark") now that the benchmark
+  // is known. Index 7, not 4 — the rule list went from 7 rules to 9 and RS
+  // moved. An off-by-one here silently rewrites a DIFFERENT rule's pass flag.
+  items.forEach(d=>{
+    if(d.s2&&d.s2.details&&d.s2.details[7]){
+      d.s2.details[7].pass = d.rs21!=null && d.rs21>0;
       d.s2.score = d.s2.details.filter(c=>c.pass).length;
     }
   });
@@ -2842,6 +3273,7 @@ function setGSheetStatus(market){
   // missing when it was configured perfectly well and simply hadn't been used
   // yet. 'undefined' and 'unconfigured' are different states; they now read
   // differently.
+  updateScanBanner(market);
   if(st==='ok')                el.title=`${M}: Google Sheet loaded — ${n} tickers.`;
   else if(st==='loading')      el.title=`${M}: downloading the Google Sheet tab…`;
   else if(st==='failed')       el.title=`${M}: the Google Sheet tab could not be loaded or is empty. No data will be shown — there is no fallback source.`;
@@ -2903,9 +3335,15 @@ function parseGSheetCSV(text){
     const cNum=parseFloat(c);
     if(isNaN(cNum)) continue;
     const t=ticker.trim();
-    if(!grouped[t]) grouped[t]={C:[],H:[],L:[],V:[],dates:[]};
+    if(!grouped[t]) grouped[t]={C:[],O:[],H:[],L:[],V:[],dates:[]};
     const g=grouped[t];
     g.C.push(cNum);
+    // Open was parsed out of the row and thrown away for the whole life of this
+    // file. Candlestick patterns are impossible without it — every pattern rule
+    // is a statement about where the close sits RELATIVE TO THE OPEN. Falls back
+    // to the close (a zero-body bar) rather than NaN, so an Open-less sheet
+    // degrades to "no pattern" instead of poisoning the arithmetic.
+    g.O.push(parseFloat(o)||cNum);
     g.H.push(parseFloat(h)||cNum);
     g.L.push(parseFloat(l)||cNum);
     g.V.push(parseInt(v)||0);
@@ -2921,19 +3359,19 @@ function parseGSheetCSV(text){
     const g=grouped[t];
     const idx=g.dates.map((_,i)=>i).sort((a,b)=>
       g.dates[a]<g.dates[b] ? -1 : g.dates[a]>g.dates[b] ? 1 : a-b);
-    const C=[],H=[],L=[],V=[],dates=[];
+    const C=[],O=[],H=[],L=[],V=[],dates=[];
     let prev=null;
     idx.forEach(i=>{
       if(g.dates[i]===prev){ // duplicate day — keep the later-written row
-        C[C.length-1]=g.C[i]; H[H.length-1]=g.H[i];
+        C[C.length-1]=g.C[i]; O[O.length-1]=g.O[i]; H[H.length-1]=g.H[i];
         L[L.length-1]=g.L[i]; V[V.length-1]=g.V[i];
         return;
       }
       prev=g.dates[i];
-      C.push(g.C[i]); H.push(g.H[i]); L.push(g.L[i]);
+      C.push(g.C[i]); O.push(g.O[i]); H.push(g.H[i]); L.push(g.L[i]);
       V.push(g.V[i]); dates.push(g.dates[i]);
     });
-    grouped[t]={C,H,L,V,dates};
+    grouped[t]={C,O,H,L,V,dates};
   });
   return grouped;
 }
@@ -2951,11 +3389,35 @@ function parseGSheetCSV(text){
    there. Found live: 55 India tickers with 248 valid bars each had been stored
    as null. Taking the map as an argument makes each load immune to whatever
    the user clicks while it runs. */
+/* Bars since the most recent volume-confirmed breakout, or null if there isn't
+   one. The breakout RULE lives in breakout() and is mirrored here rather than
+   shared, because breakout() is reachable only from inside computeTech() and
+   computeTech()'s return shape is frozen — it publishes gain/count/retrace but
+   not the age, and the Advanced Filters "within N days of the breakout" screen
+   needs the age. Scans backwards and stops at the first hit, so the common case
+   (a recent breakout) costs a handful of comparisons, not a full re-scan.
+   IF YOU CHANGE breakout()'s CONDITION, CHANGE IT HERE TOO. */
+function boBarsSince(closes,volumes){
+  const n=closes.length; if(n<55) return null;
+  const av=volumes.slice(-21,-1).filter(v=>v>0);
+  const avgV=av.length?av.reduce((a,b)=>a+b,0)/av.length:0;
+  for(let i=n-2;i>=52;i--){
+    const ph=Math.max(...closes.slice(Math.max(0,i-52),i));
+    if(closes[i]>ph && (volumes[i]||0)>avgV*1.5) return (n-1)-i;
+  }
+  return null;
+}
+
 function fetchStock(def, data){
   const map = data || GSHEET_DATA;
   const gd = map && map[def.s];
   if(!gd || gd.C.length<2) return null;
-  return computeTech(gd.C,gd.H,gd.L,gd.V,gd.dates,def.s) || null;
+  // O is passed LAST, not spliced in after C, so that any caller (and every
+  // existing test) written against the old 6-arg signature still works and
+  // simply gets no candlestick patterns instead of silently mis-binding H to O.
+  const d = computeTech(gd.C,gd.H,gd.L,gd.V,gd.dates,def.s,gd.O) || null;
+  if(d) d.boAge = boBarsSince(gd.C,gd.V);
+  return d;
 }
 
 /* ══════════════════════════════════
@@ -2967,6 +3429,15 @@ function fetchStock(def, data){
 ══════════════════════════════════ */
 const today=()=>new Date().toISOString().slice(0,10);
 const cKey=(m)=>`${CFG.VER}_${m}_${today()}`;
+/* The benchmark's raw close series, cached alongside the market.
+   WHY THIS EXISTS: the cached-load path deliberately does NOT download the
+   market tab, so GSHEET_BY_MARKET is empty on a cache hit — and RS is now
+   mandatory-benchmark, so without this every cached load would show blank RS
+   columns. (The old code hid the same hole by silently falling back to a peer
+   ranking.) Re-downloading a multi-megabyte tab just to price one ETF would
+   throw away the entire point of the cache, so the series rides along with it.
+   Day-stamped and VER-stamped like cKey, so it can never go stale. */
+const bKey=(m)=>`${CFG.VER}_bench_${m}_${today()}`;
 
 function saveCache(market){
   try{
@@ -2977,6 +3448,8 @@ function saveCache(market){
       data[def.s]=rest;
     });
     localStorage.setItem(cKey(market),JSON.stringify(data));
+    const b=BENCHMARK_DATA[market];
+    if(b) localStorage.setItem(bKey(market),JSON.stringify(b));
   } catch(e){console.warn('Cache save:',e.message)}
 }
 
@@ -3047,7 +3520,9 @@ function calcSectorBreadth(market){
       abovePivot: pct(items.filter(d=>['PP→R1','R1→R2','R2+'].includes(d.dpz)).length),
       near52h: pct(items.filter(d=>d.h52d>=-10).length),
       bo10d: pct(items.filter(d=>d.boGain!=null&&d.boCnt>0).length),
-      rsPos: pct(items.filter(d=>d.rs!=null&&d.rs>=50).length),
+      // mrsRank, not the `rs` alias: `rs` exists only for backwards
+      // compatibility and this is the last UI reference that still read it.
+      rsPos: pct(items.filter(d=>d.mrsRank!=null&&d.mrsRank>=50).length),
       above20ema: pct(items.filter(d=>d.e20&&d.price>d.e20).length),
       above200ema: pct(items.filter(d=>d.e200&&d.price>d.e200).length),
     };
@@ -3238,23 +3713,109 @@ function ldC(v){
   const cls=v?'ld-y':'ld-n';
   return `<div style="display:flex;justify-content:center"><div class="ldot ${cls}"></div></div>`;
 }
+/* rsTrend is the words 'up'/'flat'/'down'. The arrow glyphs are still accepted
+   because a row rehydrated from a cache written by the previous build carries
+   them, and an unrecognised value here would render a bare dash on data that is
+   perfectly good. */
 function rstC(v){
   if(!v) return '<span class="vm">—</span>';
-  const c=v==='↑'?'vg':v==='↓'?'vr':'vm';
-  return `<span class="${c}">${v==='↑'?'↑ Up':v==='↓'?'↓ Down':'→ Flat'}</span>`;
+  const norm={'↑':'up','→':'flat','↓':'down'}[v]||v;
+  const c=norm==='up'?'vg':norm==='down'?'vr':'vm';
+  const lbl={up:'↑ Up',down:'↓ Down',flat:'→ Flat'}[norm];
+  if(!lbl) return '<span class="vm">—</span>';
+  return `<span class="${c}">${lbl}</span>`;
+}
+/* Stage 2 score, bucketed into a one-word verdict. Thresholds are fractions of
+   s2.total, never of a hardcoded rule count — the rule list has already grown
+   from 7 to 9 once. */
+function statusC(s2){
+  if(!s2||!s2.total) return '<span class="vm">—</span>';
+  const f=s2.score/s2.total;
+  if(f>=0.8) return '<span class="stt stt-s2">STAGE 2</span>';
+  if(f>=0.5) return '<span class="stt stt-set">SETUP</span>';
+  return '<span class="stt stt-wk">WEAK</span>';
+}
+// xFast/xSlow are the PERIODS in force; xFastEma/xSlowEma are the EMA values.
+// The chip therefore names the pair it actually used, per row.
+function xoverC(d){
+  if(!d||!d.xState) return '<span class="vm">—</span>';
+  const bull=d.xState==='bull';
+  const age=d.xBars==null?'':` · ${d.xBars}b`;
+  const pair=(d.xFast!=null&&d.xSlow!=null)?`${d.xFast}×${d.xSlow}`:'';
+  return `<span class="chip ${bull?'up':'dn'}" title="EMA ${pair}${d.xBars!=null?` crossed ${d.xBars} bar(s) ago`:''}">${bull?'▲ Bull':'▼ Bear'}${age}</span>`;
+}
+function wxC(v){
+  if(!v) return '<span class="vm">—</span>';
+  return `<span class="chip ${v==='bull'?'up':'dn'}">${v==='bull'?'▲ Bull':'▼ Bear'}</span>`;
+}
+function slopeC(d){
+  if(!d||d.slope200==null) return '<span class="vm">—</span>';
+  const dir=d.slopeDir||'flat';
+  const arrow={up:'↑',down:'↓',flat:'→'}[dir]||'→';
+  const c=dir==='up'?'vg':dir==='down'?'vr':'vm';
+  return `<span class="${c}">${arrow} ${d.slope200>0?'+':''}${d.slope200}%</span>`;
+}
+function patC(v){
+  if(!v) return '<span class="vm">—</span>';
+  const c=/^Bull/.test(v)?'up':/^Bear/.test(v)?'dn':'';
+  return `<span class="chip ${c}">${v}</span>`;
+}
+function consolC(d){
+  if(!d||d.consolDays==null||d.consolRange==null) return '<span class="vm">—</span>';
+  if(!d.consolDays) return '<span class="vm">0d</span>';
+  // Tight is good here: a long stretch inside a narrow range is a base.
+  const c=d.consolRange<=CFG.CONSOL.maxRangePct?'vg':'';
+  return `<span class="${c}">${d.consolDays}d / ${d.consolRange}%</span>`;
+}
+function boolC(v,yes,no){
+  if(v==null) return '<span class="vm">—</span>';
+  return v?`<span class="vg">${yes}</span>`:`<span class="vm">${no}</span>`;
+}
+function rsNumC(v){
+  if(v==null) return '<span class="vm">—</span>';
+  const c=v>0?'vg':v<0?'vr':'vm';
+  return `<span class="${c}">${v>0?'+':''}${v}</span>`;
+}
+/* RS rank history as an inline SVG sparkline — no charting library, and no
+   <canvas> either: a string of SVG can be built inside the same template
+   literal as the rest of the row, so it costs nothing per render and scales
+   with the user's zoom. The zero line matters more than the shape: above it the
+   stock was beating the benchmark, below it it wasn't. */
+function sparkC(hist){
+  if(!Array.isArray(hist) || hist.length<2) return '<span class="vm">—</span>';
+  const vals=hist.filter(v=>typeof v==='number'&&isFinite(v));
+  if(vals.length<2) return '<span class="vm">—</span>';
+  const W=54,H=16,P=1.5;
+  const mn=Math.min(...vals,0), mx=Math.max(...vals,0);
+  const span=(mx-mn)||1;
+  const y=v=>+(P+(H-2*P)*(1-(v-mn)/span)).toFixed(1);
+  const step=W/(vals.length-1);
+  const pts=vals.map((v,i)=>`${+(i*step).toFixed(1)},${y(v)}`).join(' ');
+  const z=y(0);
+  const last=vals[vals.length-1];
+  return `<svg class="spark" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" `
+    +`role="img" aria-label="RS history, latest ${last}">`
+    +`<line x1="0" y1="${z}" x2="${W}" y2="${z}" stroke="var(--border2)" stroke-width="1"/>`
+    +`<polyline fill="none" stroke="var(--accent)" stroke-width="1.2" `
+    +`stroke-linejoin="round" stroke-linecap="round" points="${pts}"/></svg>`;
 }
 function capB(cap){
   const cls={LC:'blc',MC:'bmc',SC:'bsc',Mic:'bmic',ETF:'betf'}[cap]||'berr';
   return `<span class="badge ${cls}">${cap||'—'}</span>`;
 }
+// Values are 'bull'/'bear'/'neutral'; anything older was translated by
+// migrateReviews() before it ever reached REV.
+const REV_BTNS=[
+  ['bull',   '🐂','rb-y','Bullish'],
+  ['bear',   '🐻','rb-n','Bearish'],
+  ['neutral','⚪','rb-q','Neutral'],
+];
 function revC(sym){
   const st=REV[sym]||null;
   const safe=escAttr(sym);
-  return `<div class="rev-g">
-    <div class="rev-b ${st==='Y'?'rb-y':'rb-off'}" onclick="setRev('${safe}','Y')">Y</div>
-    <div class="rev-b ${st==='N'?'rb-n':'rb-off'}" onclick="setRev('${safe}','N')">N</div>
-    <div class="rev-b ${st==='?'?'rb-q':'rb-off'}" onclick="setRev('${safe}','?')">?</div>
-  </div>`;
+  return `<div class="rev-g">${REV_BTNS.map(([val,ico,cls,lbl])=>
+    `<div class="rev-b ${st===val?cls:'rb-off'}" title="${lbl}" onclick="setRev('${safe}','${val}')">${ico}</div>`
+  ).join('')}</div>`;
 }
 function boGC(v){
   if(v==null) return '<span class="vm">—</span>';
@@ -3273,13 +3834,24 @@ function bocC(c){
 /* ══════════════════════════════════
    ROW RENDERING
 ══════════════════════════════════ */
+/* Every column AFTER the four that are always present (#, Review, Cap, Ticker),
+   in table order, tagged with its visibility class ('' where the column can't
+   be hidden). Skeleton cells carry the same .c-* classes as the real ones for a
+   reason: without them a table loading with columns switched off renders
+   skeleton rows WIDER than the data rows underneath, because only the data
+   rows' cells get hidden. Length must equal (th count − 4). */
+const SKEL_COLS=['c-sector','','','c-status','','c-wrsi','c-vr','c-wvol','','c-wpiv','',
+  'c-ema','c-wema','c-xcross','c-wcross','c-slope200','c-pattern','c-wpattern','c-consol',
+  'c-monthly','','c-bocnt','c-voldry','c-retrace','c-squeeze','','c-mrsrank','c-rs21',
+  'c-rs55','c-rs10w','c-rsslope','c-rshist','','c-rstrend','c-notes'];
+
 function skelRow(def,i){
   const sk=n=>`<div class="skel sk-${n}"></div>`;
   return `<tr id="r-${escAttr(def.s)}">
     <td class="td-n">${i}</td><td>${revC(def.s)}</td>
     <td>${capB(def.g)}</td>
     <td><span class="ticker">${def.d}</span><br><span class="sec">${def.sector}</span></td>
-    ${Array(22).fill(0).map((_,j)=>`<td>${sk(j%3===0?'lg':j%2===0?'md':'sm')}</td>`).join('')}
+    ${SKEL_COLS.map((cls,j)=>`<td class="${cls}">${sk(j%3===0?'lg':j%2===0?'md':'sm')}</td>`).join('')}
   </tr>`;
 }
 
@@ -3304,8 +3876,10 @@ function dataRow(def,d,i){
     <td>${revC(def.s)}</td>
     <td>${capB(cap)}</td>
     <td><span class="ticker">${flag} ${def.d}</span><br><span class="sec">${def.sector}</span>${mcapLine}</td>
+    <td class="c-sector">${def.sector||'—'}</td>
     <td style="font-weight:600">${fmtP(d.price,d.currency)}</td>
     <td>${fmtCh(d.ch1d)}</td>
+    <td class="c-status">${statusC(d.s2)}</td>
     <td>${rsiC(d.rsi14)}</td>
     <td class="c-wrsi vm">${d.wRsi??'—'}</td>
     <td class="c-vr">${vrC(d.vRatio)}</td>
@@ -3315,14 +3889,25 @@ function dataRow(def,d,i){
     <td>${h52C(d.h52d)}</td>
     <td class="c-ema">${emaBadgeRow(d.price,[['10',d.e10],['20',d.e20],['50',d.e50],['200',d.e200]])}</td>
     <td class="c-wema">${emaBadgeRow(d.price,[['10',d.we10],['20',d.we20]])}</td>
+    <td class="c-xcross">${xoverC(d)}</td>
+    <td class="c-wcross">${wxC(d.wxState)}</td>
+    <td class="c-slope200">${slopeC(d)}</td>
+    <td class="c-pattern">${patC(d.pattern)}</td>
+    <td class="c-wpattern">${patC(d.wPattern)}</td>
+    <td class="c-consol">${consolC(d)}</td>
+    <td class="c-monthly">${boolC(d.monthlySetup,'✓ Yes','✗ No')}</td>
     <td>${boGC(d.boGain)}</td>
     <td class="c-bocnt">${bocC(d.boCnt)}</td>
-    <td class="c-voldry">${vrC(d.vRatio)}</td>
+    <td class="c-voldry">${boolC(d.volDry,'✓ Dry','✗ No')}</td>
     <td class="c-retrace">${retC(d.retrace)}</td>
     <td class="c-squeeze">${sqC(d.sq)}</td>
     <td>${s2C(d.s2)}</td>
-    <td style="text-align:center">${rsC(d.rs)}</td>
     <td class="c-mrsrank" style="text-align:center">${rsC(d.mrsRank)}</td>
+    <td class="c-rs21">${rsNumC(d.rs21)}</td>
+    <td class="c-rs55">${rsNumC(d.rs55)}</td>
+    <td class="c-rs10w">${rsNumC(d.rs10w)}</td>
+    <td class="c-rsslope">${rsNumC(d.rsSlope)}</td>
+    <td class="c-rshist">${sparkC(d.rsHist)}</td>
     <td>${d.leadRS!=null?ldC(d.leadRS):'<span class="vm">—</span>'}</td>
     <td class="c-rstrend">${rstC(d.rsTrend)}</td>
     <td class="c-notes"><input class="note-in" value="${NOTES[def.s]||''}" placeholder="Add note…"
@@ -3335,22 +3920,275 @@ function errRow(def,i){
     <td class="td-n">${i}</td><td>${revC(def.s)}</td>
     <td>${capB(def.g)}</td>
     <td><span class="ticker">${def.d}</span><br><span class="sec">${def.sector}</span></td>
-    <td colspan="22" style="color:var(--text3);font-size:11px">
+    <td colspan="35" style="color:var(--text3);font-size:11px">
       ⚠ Not in this market's Google Sheet tab — re-run the Apps Script to backfill it
     </td>
   </tr>`;
 }
 
 /* ══════════════════════════════════
+   ADVANCED FILTERS
+   ─────────────────────────────────
+   Every filter is OFF by default and carries its own `on` flag. A number left
+   in a box does nothing until its checkbox is ticked — the alternative (a value
+   of 0 meaning "off") makes "min BO gain 0%", a perfectly sensible screen,
+   indistinguishable from "no screen".
+══════════════════════════════════ */
+const ADV_KEY='sm_adv_filters';
+const ADV_DEFAULTS={
+  consol:{on:false, days:20,   maxRange:10},
+  h52:   {on:false, maxAway:10},
+  bo:    {on:false, minGain:0, maxDays:30},
+  rsi:   {on:false, min:60},
+  vol:   {on:false, min:1.5},
+  xover: {on:false, fast:10,   slow:20},
+};
+const cloneAdv=o=>JSON.parse(JSON.stringify(o));
+let ADV=cloneAdv(ADV_DEFAULTS);
+
+function loadAdvFilters(){
+  try{
+    const raw=localStorage.getItem(ADV_KEY);
+    if(!raw) return;
+    const saved=JSON.parse(raw);
+    // Merge per-group rather than wholesale, so a config saved before a filter
+    // existed still gets that filter's defaults instead of `undefined`.
+    Object.keys(ADV_DEFAULTS).forEach(k=>{
+      if(saved && typeof saved[k]==='object') Object.assign(ADV[k], saved[k]);
+    });
+    // The saved EMA pair IS the crossover pair the columns are computed from.
+    if(ADV.xover.fast && ADV.xover.slow) CFG.XOVER={fast:+ADV.xover.fast, slow:+ADV.xover.slow};
+  } catch(e){ /* corrupt config: keep defaults */ }
+}
+function saveAdvFilters(){
+  try{ localStorage.setItem(ADV_KEY, JSON.stringify(ADV)); }
+  catch(e){ console.warn('Could not save advanced filters:', e.message); }
+}
+
+/* True if this row survives every ENABLED advanced filter. Split out of
+   getRows() so it can be exercised directly on a synthetic row. A row with no
+   data at all (a ticker missing from the sheet) is kept when nothing is on and
+   dropped as soon as any filter is, because it cannot be shown to pass. */
+function passesAdv(d){
+  const any=Object.keys(ADV).some(k=>ADV[k].on);
+  if(!any) return true;
+  if(!d) return false;
+  if(ADV.consol.on){
+    if(d.consolDays==null || d.consolRange==null) return false;
+    if(d.consolDays < +ADV.consol.days) return false;
+    if(d.consolRange > +ADV.consol.maxRange) return false;
+  }
+  if(ADV.h52.on){
+    // h52d is negative-or-zero: how far BELOW the high the price sits.
+    if(d.h52d==null || Math.abs(d.h52d) > +ADV.h52.maxAway) return false;
+  }
+  if(ADV.bo.on){
+    if(d.boGain==null || d.boGain < +ADV.bo.minGain) return false;
+    // boAge is absent (not null) on rows rehydrated from a cache written before
+    // it existed. "Not computed" must not be treated as "no breakout" — that
+    // would empty the table for anyone with a same-day cache.
+    if(d.boAge!==undefined && (d.boAge==null || d.boAge > +ADV.bo.maxDays)) return false;
+  }
+  if(ADV.rsi.on){
+    if(d.rsi14==null || d.rsi14 < +ADV.rsi.min) return false;
+  }
+  if(ADV.vol.on){
+    if(d.vRatio==null || d.vRatio < +ADV.vol.min) return false;
+  }
+  if(ADV.xover.on){
+    if(d.xState!=='bull') return false;
+  }
+  return true;
+}
+
+function openAdvFilters(){
+  $('advConsolOn').checked=ADV.consol.on;
+  $('advConsolDays').value=ADV.consol.days;
+  $('advConsolRange').value=ADV.consol.maxRange;
+  $('advH52On').checked=ADV.h52.on;
+  $('advH52Max').value=ADV.h52.maxAway;
+  $('advBoOn').checked=ADV.bo.on;
+  $('advBoGain').value=ADV.bo.minGain;
+  $('advBoDays').value=ADV.bo.maxDays;
+  $('advRsiOn').checked=ADV.rsi.on;
+  $('advRsiMin').value=ADV.rsi.min;
+  $('advVolOn').checked=ADV.vol.on;
+  $('advVolMin').value=ADV.vol.min;
+  $('advXOn').checked=ADV.xover.on;
+  $('advXFast').value=String(ADV.xover.fast);
+  $('advXSlow').value=String(ADV.xover.slow);
+  $('advModal').classList.add('open');
+}
+function closeAdvFilters(){ $('advModal').classList.remove('open'); }
+
+// num() keeps a blanked-out box from writing NaN into the config, which would
+// then compare false against everything and silently empty the table.
+function readAdvForm(){
+  const num=(id,fb)=>{ const v=parseFloat($(id).value); return isFinite(v)?v:fb; };
+  ADV.consol={on:$('advConsolOn').checked, days:num('advConsolDays',ADV_DEFAULTS.consol.days), maxRange:num('advConsolRange',ADV_DEFAULTS.consol.maxRange)};
+  ADV.h52   ={on:$('advH52On').checked,    maxAway:num('advH52Max',ADV_DEFAULTS.h52.maxAway)};
+  ADV.bo    ={on:$('advBoOn').checked,     minGain:num('advBoGain',ADV_DEFAULTS.bo.minGain), maxDays:num('advBoDays',ADV_DEFAULTS.bo.maxDays)};
+  ADV.rsi   ={on:$('advRsiOn').checked,    min:num('advRsiMin',ADV_DEFAULTS.rsi.min)};
+  ADV.vol   ={on:$('advVolOn').checked,    min:num('advVolMin',ADV_DEFAULTS.vol.min)};
+  ADV.xover ={on:$('advXOn').checked,      fast:num('advXFast',ADV_DEFAULTS.xover.fast), slow:num('advXSlow',ADV_DEFAULTS.xover.slow)};
+}
+
+function applyAdvFilters(){
+  const prev=CFG.XOVER.fast+'/'+CFG.XOVER.slow;
+  readAdvForm();
+  saveAdvFilters();
+  closeAdvFilters();
+  CFG.XOVER={fast:ADV.xover.fast, slow:ADV.xover.slow};
+  syncXoverLabel();
+  updateAdvBtn();
+  VISIBLE=CFG.INIT;
+  // xState/xBars come out of computeTech(), so a new pair is not a re-filter —
+  // it is a re-scan. forceRefresh() drops the cache and recomputes this market.
+  if(prev !== CFG.XOVER.fast+'/'+CFG.XOVER.slow){ forceRefresh(); return; }
+  renderTable(CUR); updateStatus();
+}
+
+function resetAdvFilters(){
+  ADV=cloneAdv(ADV_DEFAULTS);
+  saveAdvFilters();
+  const changed = CFG.XOVER.fast!==ADV.xover.fast || CFG.XOVER.slow!==ADV.xover.slow;
+  CFG.XOVER={fast:ADV.xover.fast, slow:ADV.xover.slow};
+  syncXoverLabel();
+  updateAdvBtn();
+  openAdvFilters();   // refresh the form to show the restored values
+  VISIBLE=CFG.INIT;
+  if(changed){ forceRefresh(); return; }
+  renderTable(CUR); updateStatus();
+}
+
+/* An advanced filter is invisible once the modal is closed — the toolbar button
+   is the only place that can say "your table is narrowed by something you set
+   three days ago", which is otherwise indistinguishable from missing data. */
+function updateAdvBtn(){
+  const b=$('advBtn'); if(!b) return;
+  const n=Object.keys(ADV).filter(k=>ADV[k].on).length;
+  b.innerHTML = n ? `⚙ Advanced Filters (${n})` : '⚙ Advanced Filters';
+  b.style.fontWeight = n ? '700' : '600';
+}
+
+// The EMA-cross column names the pair actually in force, so retuning CFG.XOVER
+// can't leave a header claiming "10×20" over 5×50 data.
+function syncXoverLabel(){
+  const el=$('thXoverLbl');
+  if(el) el.textContent=`EMA ${CFG.XOVER.fast}×${CFG.XOVER.slow}`;
+}
+
+/* ══════════════════════════════════
+   MARKET BREADTH
+══════════════════════════════════ */
+const BREADTH_KEY='sm_breadth_collapsed';
+/* Advancing / declining / unchanged from ch1d on the market currently loaded.
+   Cap filter uses the same "computed tier wins over the static one" rule as the
+   table's cap segments, so the two can't disagree. Rows still loading (undefined)
+   or missing from the sheet (null) are counted in neither column — they are not
+   unchanged, they are unknown. */
+function calcBreadth(market,cap){
+  let adv=0,dec=0,flat=0,known=0;
+  (UNI[market]||[]).forEach(def=>{
+    const d=SD[def.s];
+    if(!d || d.ch1d==null) return;
+    if(cap && cap!=='All' && ((d.g||def.g)!==cap)) return;
+    known++;
+    if(d.ch1d>0) adv++; else if(d.ch1d<0) dec++; else flat++;
+  });
+  return {adv,dec,flat,total:known};
+}
+function renderBreadth(){
+  const capEl=$('breadthCap');
+  const b=calcBreadth(CUR, capEl?capEl.value:'All');
+  const pct=n=>b.total?(n/b.total*100):0;
+  $('breadthAdvBar').style.width=pct(b.adv).toFixed(1)+'%';
+  $('breadthFlatBar').style.width=pct(b.flat).toFixed(1)+'%';
+  $('breadthDecBar').style.width=pct(b.dec).toFixed(1)+'%';
+  $('breadthAdvN').textContent=b.adv;
+  $('breadthDecN').textContent=b.dec;
+  $('breadthFlatN').textContent=b.flat;
+  $('breadthRatio').textContent = b.total
+    ? `A/D ${b.dec?(b.adv/b.dec).toFixed(2):'∞'} · ${Math.round(pct(b.adv))}% advancing of ${b.total}`
+    : 'No data yet';
+  $('breadthSum').textContent = b.total ? `▲ ${b.adv} · ▼ ${b.dec}` : '—';
+}
+function applyBreadthCollapsed(){
+  let c=false;
+  try{ c=localStorage.getItem(BREADTH_KEY)==='1'; }catch(e){}
+  document.body.classList.toggle('breadth-collapsed', c);
+  const car=$('breadthCaret'); if(car) car.textContent=c?'▸':'▾';
+}
+function toggleBreadth(){
+  let c=false;
+  try{ c=localStorage.getItem(BREADTH_KEY)==='1'; }catch(e){}
+  try{ localStorage.setItem(BREADTH_KEY, c?'0':'1'); }catch(e){}
+  applyBreadthCollapsed();
+}
+
+/* ══════════════════════════════════
+   SCAN STATUS BANNERS
+   ─────────────────────────────────
+   Driven entirely off GSHEET_STATUS (set by loadGoogleSheetData) and the
+   cached-load flag below — deliberately NOT a second status of its own, so the
+   banner cannot disagree with the source tag next to it.
+══════════════════════════════════ */
+const CACHE_SHOWN={};   // market -> true once a cached render has been painted
+function updateScanBanner(market){
+  const el=$('scanBanner'), txt=$('scanBannerTxt');
+  if(!el||!txt) return;
+  if(market && market!==CUR) return;
+  const st=GSHEET_STATUS[CUR];
+  el.classList.remove('warn','err','show');
+  if(st==='loading'){
+    el.classList.add('warn','show');
+    txt.textContent='🔄 Market scan in progress — downloading the '+CUR.toUpperCase()+' sheet.';
+  } else if((st==='failed'||st==='unconfigured') && CACHE_SHOWN[CUR]){
+    el.classList.add('err','show');
+    txt.textContent='⚠️ Showing previous scan data — the '+CUR.toUpperCase()+' sheet could not be loaded, so these numbers are from the last successful scan.';
+  }
+}
+
+/* ══════════════════════════════════
    FILTER + SORT
 ══════════════════════════════════ */
+// Pivot zones in order of strength, for sorting. Must stay in step with
+// pivZone()'s return values.
+const PIV_RANK={'R2+':7,'R1→R2':6,'PP→R1':5,'PP':4,'S1→PP':3,'S2→S1':2,'<S2':1};
 const SORT_FN={
   price:d=>d?.price,ch1d:d=>d?.ch1d,rsi:d=>d?.rsi14,wrsi:d=>d?.wRsi,
   vr:d=>d?.vRatio,wvol:d=>d?.wVolRatio,h52:d=>d?.h52d,ema:d=>d?.emaScr,wema:d=>d?.weEmaScr,
   bog:d=>d?.boGain,boc:d=>d?.boCnt,ret:d=>d?.retrace,sq:d=>d?.sq,
-  s2:d=>d?.s2?.score,rs:d=>d?.rs,mrs:d=>d?.mrsRank,
+  s2:d=>d?.s2?.score,mrs:d=>d?.mrsRank,
   ticker:(_,def)=>def.d, cap:(_,def)=>({LC:4,MC:3,SC:2,Mic:1,ETF:0}[def.g]),
-  rst:d=>({'↑':3,'→':2,'↓':1}[d?.rsTrend]||0),
+  /* BUG THIS FIXES: the D-Pivot and W-Pivot headers have carried data-s="dpiv"
+     and data-s="wpiv" since they were added, but SORT_FN never had those keys —
+     so clicking either header set SORT_C to a name nothing resolved, every row
+     evaluated to -Infinity, and the table "sorted" into an arbitrary order.
+     The zones are ordinal, so they rank rather than compare as strings ('<S2'
+     would otherwise sort above 'PP'). */
+  dpiv:d=>PIV_RANK[d?.dpz],
+  wpiv:d=>PIV_RANK[d?.wpz],
+  sector:(_,def)=>def.sector,
+  // Sort on the same fraction the badge is bucketed from, not on the raw score:
+  // a 6/9 and a 6/7 are not the same setup.
+  status:d=>d?.s2?.total?d.s2.score/d.s2.total:null,
+  // Bull sorts above bear, and within each the FRESHER cross first — xBars is
+  // negated so 0 bars ago (just flipped) outranks 40 bars ago.
+  xstate:d=>d?.xState?((d.xState==='bull'?1e6:0)-(d.xBars??999)):null,
+  wxstate:d=>d?.wxState==='bull'?1:d?.wxState==='bear'?0:null,
+  slope:d=>d?.slope200,
+  pattern:d=>d?.pattern,
+  wpattern:d=>d?.wPattern,
+  consol:d=>d?.consolDays,
+  monthly:d=>d?.monthlySetup==null?null:(d.monthlySetup?1:0),
+  voldry:d=>d?.volDry==null?null:(d.volDry?1:0),
+  rs21:d=>d?.rs21,rs55:d=>d?.rs55,rs10w:d=>d?.rs10w,rsslope:d=>d?.rsSlope,
+  rshist:d=>Array.isArray(d?.rsHist)&&d.rsHist.length?d.rsHist[d.rsHist.length-1]:null,
+  // rsTrend is now the words 'up'/'flat'/'down' (was the arrows ↑/→/↓).
+  // The arrow keys are kept so a row rehydrated from an older cache still
+  // sorts instead of collapsing to 0 and clumping at the bottom.
+  rst:d=>({up:3,flat:2,down:1,'↑':3,'→':2,'↓':1}[d?.rsTrend]||0),
 };
 
 function getRows(market){
@@ -3388,6 +4226,10 @@ function getRows(market){
   if(F_REV==='none') items=items.filter(def=>!REV[def.s]);
   else if(F_REV) items=items.filter(def=>REV[def.s]===F_REV);
 
+  // Last in the chain: the advanced screens are the most expensive per row and
+  // the most likely to be off entirely (passesAdv short-circuits in that case).
+  items=items.filter(def=>passesAdv(SD[def.s]));
+
   const fn=SORT_FN[SORT_C];
   if(fn){
     items.sort((a,b)=>{
@@ -3411,6 +4253,9 @@ function renderTable(market){
   $('vCnt').textContent=vis.length;
   $('tCnt').textContent=n;
   $('smLbl').textContent=`Showing ${vis.length} of ${n}`;
+  // Breadth is derived from the same SD the table just rendered, so it is
+  // refreshed here rather than from each of the half-dozen load call sites.
+  renderBreadth();
 }
 
 /* ══════════════════════════════════
@@ -3610,12 +4455,16 @@ async function loadMarket(market,force=false){
     if(cached){
       Object.assign(SD,cached);
       LOADED[market]=true;
+      // Remembered so updateScanBanner() can tell "sheet failed and the screen
+      // is empty" (already covered by setSheetError) apart from "sheet failed
+      // but you are looking at yesterday's numbers", which is the dangerous one.
+      CACHE_SHOWN[market]=true;
       GSHEET_DATA = GSHEET_BY_MARKET[market] || null;
       setGSheetStatus(market);
       await fetchBenchmark(market);
       rankRS(market);
       renderTable(market); renderMetrics(market);
-      setTag('cached'); updateStatus();
+      setTag('cached'); updateStatus(); updateScanBanner(market);
       LOADING=false; rb.classList.remove('loading'); rb.innerHTML='↻ Refresh';
       return;
     }
@@ -3664,8 +4513,10 @@ async function loadMarket(market,force=false){
   await fetchBenchmark(market);
   rankRS(market);
   LOADED[market]=true;
+  CACHE_SHOWN[market]=false;   // these numbers are fresh, whatever happens later
   renderTable(market); renderMetrics(market); updateStatus();
   saveCache(market);
+  updateScanBanner(market);
   hidePrg();
   LOADING=false; rb.classList.remove('loading'); rb.innerHTML='↻ Refresh';
   $('scanTime').textContent='Last scan: '+new Date().toLocaleString('en-GB');
@@ -3684,6 +4535,7 @@ function setSheetError(market){
   }
   const sub=$('bnrSub');
   if(sub) sub.innerHTML='&nbsp;·&nbsp;<span style="color:#DC2626">Google Sheet did not load — no data to show. See console.</span>';
+  updateScanBanner(market);
 }
 
 function updateStatus(){
@@ -3830,13 +4682,35 @@ const EXPORT_COLS=[
   ['EMA20',       (def,d)=>d?.e20??''],
   ['EMA50',       (def,d)=>d?.e50??''],
   ['EMA200',      (def,d)=>d?.e200??''],
+  ['SMA50',       (def,d)=>d?.sma50??''],
+  ['SMA150',      (def,d)=>d?.sma150??''],
+  ['SMA200',      (def,d)=>d?.sma200??''],
+  ['200EMA Slope%',(def,d)=>d?.slope200??''],
+  ['Slope Dir',   (def,d)=>d?.slopeDir??''],
+  ['EMA Cross',   (def,d)=>d?.xState?`${d.xFast}x${d.xSlow} ${d.xState}`:''],
+  ['EMA Cross Bars',(def,d)=>d?.xBars??''],
+  ['W-Cross',     (def,d)=>d?.wxState??''],
+  ['Pattern',     (def,d)=>d?.pattern??''],
+  ['W-Pattern',   (def,d)=>d?.wPattern??''],
+  ['Consol Days', (def,d)=>d?.consolDays??''],
+  ['Consol Range%',(def,d)=>d?.consolRange??''],
+  ['Vol Dry',     (def,d)=>d?.volDry!=null?(d.volDry?'Y':'N'):''],
+  ['Monthly Setup',(def,d)=>d?.monthlySetup!=null?(d.monthlySetup?'Y':'N'):''],
+  ['Status',      (def,d)=>d?.s2&&d.s2.total?(d.s2.score/d.s2.total>=0.8?'Stage 2':d.s2.score/d.s2.total>=0.5?'Setup':'Weak'):''],
   ['Stage2',      (def,d)=>d?.s2?`${d.s2.score}/${d.s2.total}`:''],
   ['BO Gain%',    (def,d)=>d?.boGain??''],
   ['BO Count',    (def,d)=>d?.boCnt??''],
+  ['BO Age (d)',  (def,d)=>d?.boAge??''],
   ['Retrace%',    (def,d)=>d?.retrace??''],
   ['Squeeze',     (def,d)=>d?.sq??''],
-  ['RS',          (def,d)=>d?.rs??''],
   ['MRS Rank',    (def,d)=>d?.mrsRank??''],
+  ['RS21',        (def,d)=>d?.rs21??''],
+  ['RS55',        (def,d)=>d?.rs55??''],
+  ['RS10W',       (def,d)=>d?.rs10w??''],
+  ['RS Slope',    (def,d)=>d?.rsSlope??''],
+  // The sparkline's underlying series, joined — a spreadsheet cell can hold the
+  // numbers even though it can't hold the drawing.
+  ['RS History',  (def,d)=>Array.isArray(d?.rsHist)?d.rsHist.join(' '):''],
   ['Lead RS',     (def,d)=>d?.leadRS!=null?(d.leadRS?'Y':'N'):''],
   ['RS Trend',    (def,d)=>d?.rsTrend??''],
   ['Review',      (def,d)=>REV[def.s]||''],
@@ -3904,6 +4778,7 @@ document.addEventListener('DOMContentLoaded',()=>{
   $('colModal').addEventListener('click',e=>{if(e.target===$('colModal'))$('colModal').classList.remove('open');});
   $('sectorModal').addEventListener('click',e=>{if(e.target===$('sectorModal'))closeSectorBreadth();});
   $('rsModal').addEventListener('click',e=>{if(e.target===$('rsModal'))closeRSSettings();});
+  $('advModal').addEventListener('click',e=>{if(e.target===$('advModal'))closeAdvFilters();});
 });
 
 /* ══════════════════════════════════
@@ -3913,17 +4788,31 @@ document.addEventListener('DOMContentLoaded',()=>{
    and the column's own .c-X class already present on its <th>/<td> cells.
 ══════════════════════════════════ */
 const TOGGLEABLE_COLS=[
+  {cls:'sector', label:'Sector'},
+  {cls:'status', label:'Status'},
   {cls:'wrsi',   label:'W-RSI'},
   {cls:'vr',     label:'Vol Ratio'},
   {cls:'wvol',   label:'W-VOL'},
   {cls:'wpiv',   label:'W-Pivot'},
   {cls:'ema',    label:'EMA Align'},
   {cls:'wema',   label:'W-EMA'},
+  {cls:'xcross', label:'EMA Cross'},
+  {cls:'wcross', label:'W-Cross'},
+  {cls:'slope200',label:'200EMA Slope'},
+  {cls:'pattern',label:'Pattern'},
+  {cls:'wpattern',label:'W-Pattern'},
+  {cls:'consol', label:'Consolidation'},
+  {cls:'monthly',label:'Monthly Setup'},
   {cls:'bocnt',  label:'BO Count'},
   {cls:'voldry', label:'Vol Dry'},
   {cls:'retrace',label:'Retrace %'},
   {cls:'squeeze',label:'Squeeze'},
   {cls:'mrsrank',label:'MRS Rank'},
+  {cls:'rs21',   label:'RS21'},
+  {cls:'rs55',   label:'RS55'},
+  {cls:'rs10w',  label:'RS10W'},
+  {cls:'rsslope',label:'RS Slope'},
+  {cls:'rshist', label:'RS Rank History'},
   {cls:'rstrend',label:'RS Trend'},
   {cls:'notes',  label:'Notes'},
 ];
@@ -3987,6 +4876,12 @@ function syncHeaderHeight(){
 (async function init(){
   loadReviewsLocal(); // instant, always available regardless of remote config
   loadRSConfig();
+  // Before anything renders: loadAdvFilters can change CFG.XOVER, which the
+  // indicator pass and the column header both read.
+  loadAdvFilters();
+  syncXoverLabel();
+  updateAdvBtn();
+  applyBreadthCollapsed();
   // Sync the theme button label with whatever the pre-paint script already applied.
   applyTheme(currentTheme());
   syncHeaderHeight();
