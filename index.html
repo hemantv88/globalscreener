@@ -2877,11 +2877,21 @@ function parseGSheetCSV(text){
 }
 
 /* Sheet lookup only — no network, no async, no fallback.
-   Returns computed indicators, or null if this ticker simply isn't in the
-   market's tab. Synchronous now, which is why loadMarket can run a plain loop
-   instead of a concurrency pool. */
-function fetchStock(def){
-  const gd = GSHEET_DATA && GSHEET_DATA[def.s];
+   Returns computed indicators, or null if this ticker simply isn't in the tab.
+
+   `data` is passed IN rather than read from the GSHEET_DATA global. That global
+   is a pointer to whichever market is currently on screen, and switchMkt()
+   repoints it the instant you click a tab. loadMarket()'s loop yields to the
+   browser every CFG.CHUNK stocks, so clicking another tab mid-load used to
+   swap the pointer out from under a loop that was still running — every
+   remaining ticker then looked up in the wrong map (or in null) and was
+   recorded as "no data", permanently, for stocks whose data was sitting right
+   there. Found live: 55 India tickers with 248 valid bars each had been stored
+   as null. Taking the map as an argument makes each load immune to whatever
+   the user clicks while it runs. */
+function fetchStock(def, data){
+  const map = data || GSHEET_DATA;
+  const gd = map && map[def.s];
   if(!gd || gd.C.length<2) return null;
   return computeTech(gd.C,gd.H,gd.L,gd.V,gd.dates,def.s) || null;
 }
@@ -3437,9 +3447,11 @@ async function loadMarket(market,force=false){
   }
 
   setPrg(0,defs.length,'Computing indicators…');
+  // Bind the map ONCE for this whole load — see fetchStock's note.
+  const sheetForThisLoad = GSHEET_BY_MARKET[market];
   let done=0;
   for(const def of defs){
-    SD[def.s]=fetchStock(def);
+    SD[def.s]=fetchStock(def, sheetForThisLoad);
     done++;
     if(done % CFG.CHUNK === 0 || done === defs.length){
       setPrg(done,defs.length,`Computing indicators ${done}/${defs.length}…`);
@@ -3513,10 +3525,11 @@ function updateMcapUI(market){
 function switchMkt(market){
   if(market===CUR&&LOADED[market]) return;
   CUR=market;VISIBLE=CFG.INIT;
-  // Repoint the live sheet map at the market we're switching TO before any
-  // fetching starts. Without this, fetchStock() would still be reading the
-  // previous market's ticker map.
-  GSHEET_DATA = GSHEET_BY_MARKET[market] || null;
+  // Repoint the live sheet map at the market we're switching TO. Guarded: if a
+  // load is still running, leave the pointer alone. loadMarket() below will
+  // bail out on the same LOADING flag anyway, so repointing here would only
+  // corrupt the in-flight load without starting a new one.
+  if(!LOADING) GSHEET_DATA = GSHEET_BY_MARKET[market] || null;
   setGSheetStatus(market);
   F_CAP='All';F_SCT='';F_EMA='';F_RSI='';F_PIV='';
   $('emaFil').value='';$('rsiFil').value='';$('pivFil').value='';
