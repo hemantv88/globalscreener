@@ -3,7 +3,12 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>ScreeningMantis – Indian & US Stock Screener</title>
+<title>GlobalScreener – India, US &amp; ETF Stock Screener</title>
+<!-- Inline SVG favicon as a data: URL. Deliberately not a separate .ico file:
+     this project is one self-contained HTML file with no build step, and an
+     external icon would be one more thing to upload and keep in sync. A globe,
+     matching the app name and the green accent already used throughout. -->
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22' fill='%23166534'/%3E%3Cg fill='none' stroke='%234ADE80' stroke-width='6'%3E%3Ccircle cx='50' cy='50' r='28'/%3E%3Cellipse cx='50' cy='50' rx='12' ry='28'/%3E%3Cpath d='M23 40h54M23 60h54'/%3E%3C/g%3E%3Cpath d='M32 62l11-13 9 8 15-19' fill='none' stroke='%23FFFFFF' stroke-width='7' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/>
 <style>
@@ -399,8 +404,12 @@ body.hide-notes   .c-notes{display:none!important}
 <!-- HEADER -->
 <header class="hdr">
   <a href="#" class="logo">
-    <div class="logo-ico">🦗</div>
-    <span class="logo-txt">Screening<span>Mantis</span></span>
+    <div class="logo-ico"><svg viewBox="0 0 100 100" width="20" height="20" aria-hidden="true">
+      <g fill="none" stroke="#fff" stroke-width="7">
+        <circle cx="50" cy="50" r="30"/><ellipse cx="50" cy="50" rx="13" ry="30"/>
+        <path d="M20 38h60M20 62h60"/>
+      </g></svg></div>
+    <span class="logo-txt">Global<span>Screener</span></span>
   </a>
   <div class="hdr-r">
     <div class="search-bar">
@@ -3474,6 +3483,33 @@ function updateStatus(){
 }
 
 
+/* RESTORED. This was collateral damage: when I removed the retry-button code I
+   deleted everything between two markers, and updateMcapUI happened to sit in
+   that range. init() calls it, so its absence threw a ReferenceError on the
+   very first line of startup — which is why the page rendered its static shell
+   and then did nothing at all. `node --check` cannot catch this: an undefined
+   function is a runtime error, not a syntax error, and the test harness stripped
+   init() out entirely so nothing ever called it. There is now a startup smoke
+   test that runs init() against a DOM stub precisely to catch this class of bug. */
+function updateMcapUI(market){
+  const wrap=$('mcapWrap');
+  if(market==='etf'){
+    wrap.style.display='none';
+    MIN_MCAP=0; // no filtering on ETF tab
+    return;
+  }
+  wrap.style.display='flex';
+  MIN_MCAP=MCAP_DEFAULTS[market] ?? 0;
+  $('mcapFil').value=MIN_MCAP;
+  if(market==='us'){
+    $('mcapPrefix').textContent='Min Mkt Cap $';
+    $('mcapSuffix').textContent='B';
+  } else {
+    $('mcapPrefix').textContent='Min Mkt Cap ₹';
+    $('mcapSuffix').textContent='Cr';
+  }
+}
+
 function switchMkt(market){
   if(market===CUR&&LOADED[market]) return;
   CUR=market;VISIBLE=CFG.INIT;
@@ -3561,7 +3597,7 @@ function doCSV(){
   });
   const a=document.createElement('a');
   a.href='data:text/csv;charset=utf-8,'+encodeURIComponent([hdr.join(','),...lines].join('\n'));
-  a.download=`ScreeningMantis_${CUR}_${today()}.csv`;
+  a.download=`GlobalScreener_${CUR}_${today()}.csv`;
   a.click();
 }
 
