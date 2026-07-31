@@ -149,14 +149,35 @@ input{font-family:inherit}
 .tbl-sec{padding:8px 16px 0}
 .tbl-wrap{background:var(--surface);border:1.5px solid var(--border);
   border-radius:var(--rl);overflow:hidden;box-shadow:var(--sh)}
-.tbl-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch}
+/* WHY overflow:auto on BOTH axes, and why the height is bounded.
+   ─────────────────────────────────────────────────────────────
+   This element used to be `overflow-x:auto` alone. Per the CSS overflow spec,
+   when one axis is not `visible` the other axis's computed `visible` becomes
+   `auto` — so this silently became a scroll container in BOTH directions
+   anyway, just an unbounded one. That matters because `position:sticky`
+   resolves against the nearest ancestor scroll container, NOT the viewport.
+   So `th{top:var(--hdr-h)}` stopped meaning "52px below the app bar" and
+   started meaning "52px below the top of this box", which is what let the
+   first data row render in the band above the header.
+   Making the container explicit and BOUNDED fixes it properly: the th now
+   sticks to the top of a real, intentional scroll panel (top:0, below), which
+   is deterministic across browsers and WebViews instead of depending on
+   ambiguous unbounded-scrollport behaviour. */
+.tbl-scroll{overflow:auto;-webkit-overflow-scrolling:touch;
+  max-height:calc(100vh - var(--hdr-h, 52px) - 24px);min-height:320px}
 .tbl-scroll::-webkit-scrollbar{height:5px}
 .tbl-scroll::-webkit-scrollbar-track{background:var(--bg)}
 .tbl-scroll::-webkit-scrollbar-thumb{background:var(--border2);border-radius:3px}
-table{width:100%;border-collapse:collapse;font-size:11.5px;white-space:nowrap}
-thead{position:sticky;top:52px;z-index:10}
+table{width:100%;border-collapse:separate;border-spacing:0;font-size:11.5px;white-space:nowrap}
 thead tr{background:#F8FAFC}
-th{padding:8px 9px;text-align:left;font-size:9.5px;font-weight:600;letter-spacing:.4px;
+/* top:0 — the scrollport is now .tbl-scroll (see above), so 0 means
+   "top of the table panel". Offsetting by --hdr-h here would push the header
+   down INSIDE the panel and re-open the exact gap the first row showed through.
+   Sticky stays on <th>, never on <thead>: <thead> sticky has long-standing
+   inconsistent support in constrained WebViews (e.g. Android's built-in
+   content:// file viewer, where this was first seen). */
+th{position:sticky;top:0;z-index:10;background:#F8FAFC;
+  padding:8px 9px;text-align:left;font-size:9.5px;font-weight:600;letter-spacing:.4px;
   color:var(--text2);text-transform:uppercase;border-bottom:2px solid var(--border);
   border-right:1px solid var(--border);cursor:pointer;user-select:none}
 th:last-child{border-right:none}
@@ -284,7 +305,7 @@ td:last-child{border-right:none}
 
 /* ─── COLUMN VISIBILITY ────────── */
 /* hide on ≤768px */
-.c-wrsi,.c-wvol,.c-wpiv,.c-wema,.c-voldry,.c-retrace,.c-rstrend,.c-earns,.c-notes{display:table-cell}
+.c-wrsi,.c-wvol,.c-wpiv,.c-wema,.c-voldry,.c-retrace,.c-rstrend,.c-notes{display:table-cell}
 /* hide on ≤480px — these are additionally hidden */
 .c-vr,.c-ema,.c-bocnt,.c-squeeze,.c-mrsrank{display:table-cell}
 
@@ -303,7 +324,6 @@ body.hide-retrace .c-retrace,
 body.hide-squeeze .c-squeeze,
 body.hide-mrsrank .c-mrsrank,
 body.hide-rstrend .c-rstrend,
-body.hide-earns   .c-earns,
 body.hide-notes   .c-notes{display:none!important}
 
 /* ─── MODAL ───────────────────── */
@@ -322,8 +342,11 @@ body.hide-notes   .c-notes{display:none!important}
 /* Sector Breadth — wider modal, holds a full data table */
 .sector-modal{width:920px;max-width:94vw;max-height:82vh;display:flex;flex-direction:column}
 .sector-table-wrap{margin-top:12px;overflow:auto;flex:1;border:1.5px solid var(--border);border-radius:var(--r)}
-.sector-table{width:100%;border-collapse:collapse;font-size:11px;white-space:nowrap}
-.sector-table thead{position:sticky;top:0;z-index:2;background:#F8FAFC}
+/* Same two fixes as the main table, for the same reasons: sticky belongs on
+   <th> not <thead>, and border-collapse:collapse is independently known to
+   break sticky cells in some browsers — separate+0 spacing avoids it. */
+.sector-table{width:100%;border-collapse:separate;border-spacing:0;font-size:11px;white-space:nowrap}
+.sector-table th{position:sticky;top:0;z-index:2;background:#F8FAFC}
 .sector-table th{padding:7px 9px;text-align:left;font-size:9.5px;font-weight:700;letter-spacing:.3px;
   color:var(--text2);text-transform:uppercase;border-bottom:2px solid var(--border);
   border-right:1px solid var(--border);cursor:pointer;user-select:none}
@@ -352,7 +375,7 @@ body.hide-notes   .c-notes{display:none!important}
 }
 @media (max-width:900px){
   .metrics-row{grid-template-columns:repeat(4,1fr)}
-  .c-wrsi,.c-wvol,.c-wpiv,.c-wema,.c-voldry,.c-retrace,.c-rstrend,.c-earns,.c-notes{display:none!important}
+  .c-wrsi,.c-wvol,.c-wpiv,.c-wema,.c-voldry,.c-retrace,.c-rstrend,.c-notes{display:none!important}
 }
 @media (max-width:768px){
   .metrics-row{grid-template-columns:repeat(2,1fr)}
@@ -406,7 +429,7 @@ body.hide-notes   .c-notes{display:none!important}
 <div class="banner">
   <span class="pulse"></span>
   <strong id="bnrMkt">India (NSE) · Nifty 500</strong>
-  <span id="bnrSub">&nbsp;·&nbsp; Stooq.com · End-of-Day · Client-side Technicals</span>
+  <span id="bnrSub">&nbsp;·&nbsp; Google Sheets · End-of-Day · Client-side Technicals</span>
   <span class="src-tag" id="srcTag">⬤ Checking…</span>
 </div>
 
@@ -428,6 +451,7 @@ body.hide-notes   .c-notes{display:none!important}
     <div class="fsep"></div>
     <select class="fsel" id="sctFil" onchange="applyF()"><option value="">All Sectors</option></select>
     <button class="ref-btn" onclick="openSectorBreadth()" data-tip="See RSI, momentum, and breakout stats broken down by sector — click any row to filter the main table to just that sector">📊 Sector View</button>
+    <button class="ref-btn" onclick="openRSSettings()" data-tip="Configure how RS/MRS Rank is calculated — peer comparison or a real benchmark index, and the lookback weighting">⚙️ RS Settings</button>
     <div class="fsep"></div>
     <select class="fsel" id="emaFil" onchange="applyF()">
       <option value="">EMA Filter</option>
@@ -447,6 +471,13 @@ body.hide-notes   .c-notes{display:none!important}
       <option value="r1">Above R1</option>
       <option value="below">Below PP</option>
     </select>
+    <select class="fsel" id="revFil" onchange="applyF()">
+      <option value="">Review: All</option>
+      <option value="Y">Review: Y</option>
+      <option value="N">Review: N</option>
+      <option value="?">Review: ?</option>
+      <option value="none">Review: Unmarked</option>
+    </select>
     <div class="fsep"></div>
     <div class="mcap-input" id="mcapWrap" data-tip="Only show stocks with market cap above this value. Approximate figures — edit anytime in the file.">
       <span class="mcap-label" id="mcapPrefix">Min Mkt Cap ₹</span>
@@ -457,7 +488,6 @@ body.hide-notes   .c-notes{display:none!important}
     <button class="ctag" onclick="clrF()">✕ Clear Filters</button>
     <button class="ctag" onclick="clrRev()">✕ Clear Reviews</button>
     <button class="ref-btn" id="refBtn" onclick="forceRefresh()">↻ Refresh</button>
-    <button class="ref-btn" id="retryBtn" onclick="retryFailed()" style="display:none;">↻ Retry Failed (<span id="retryCount">0</span>)</button>
     <button class="csv-btn" onclick="doCSV()">📊 CSV</button>
   </div>
 </section>
@@ -487,7 +517,7 @@ body.hide-notes   .c-notes{display:none!important}
             <th class="c-wvol" data-s="wvol">W-VOL<span class="sort-ico"></span></th>
             <th data-s="dpiv">D-Pivot<span class="sort-ico"></span></th>
             <th class="c-wpiv" data-s="wpiv">W-Pivot<span class="sort-ico"></span></th>
-            <th data-s="h52">52W High<span class="sort-ico"></span></th>
+            <th data-s="h52" data-tip="% below the highest high in the available window. The data source holds ~1 trading year (~250 bars), so in practice this is a ~50-week high, not a full 52. Shows — for stocks with under 120 bars of history.">52W High<span class="sort-ico"></span></th>
             <th class="c-ema" data-s="ema">EMA Align<span class="sort-ico"></span></th>
             <th class="c-wema" data-s="wema">W-EMA<span class="sort-ico"></span></th>
             <th data-s="bog">BO Gain%<span class="sort-ico"></span></th>
@@ -500,7 +530,6 @@ body.hide-notes   .c-notes{display:none!important}
             <th class="c-mrsrank" data-s="mrs" style="text-align:center">MRS Rank<span class="sort-ico"></span></th>
             <th style="text-align:center" data-tip="RS percentile ≥ 70 and trending up">Lead RS</th>
             <th class="c-rstrend" data-s="rst">RS Trend<span class="sort-ico"></span></th>
-            <th class="c-earns">Next Earn.</th>
             <th class="c-notes">Notes</th>
           </tr>
         </thead>
@@ -514,7 +543,7 @@ body.hide-notes   .c-notes{display:none!important}
 <div class="footer">
   <button class="sm-btn" onclick="showMore()">Show more ↓</button>
   <div class="sm-lbl" id="smLbl">Showing — of —</div>
-  <div class="disc">Data sourced from Stooq.com via CORS proxy. End-of-day data only. For informational purposes — not investment advice.</div>
+  <div class="disc">Data sourced from Google Finance via a published Google Sheet. End-of-day data only. For informational purposes — not investment advice.</div>
 </div>
 
 <!-- COLUMNS MODAL -->
@@ -553,33 +582,131 @@ body.hide-notes   .c-notes{display:none!important}
   </div>
 </div>
 
+<div class="overlay" id="rsModal">
+  <div class="modal">
+    <button class="modal-x" onclick="closeRSSettings()">✕</button>
+    <h3>⚙️ RS Calculation Settings</h3>
+    <p>Controls how the RS / MRS Rank columns and "Leading RS" are calculated. Changes apply to the tab you're currently viewing after clicking Apply.</p>
+
+    <div style="margin-top:14px">
+      <label style="font-size:11.5px;font-weight:600;color:var(--text2);display:block;margin-bottom:6px">Comparison mode</label>
+      <label class="modal-check" style="margin-bottom:4px">
+        <input type="radio" name="rsMode" value="peer" id="rsModePeer"/>
+        Peer percentile — rank vs. other stocks currently loaded (original behavior)
+      </label>
+      <label class="modal-check">
+        <input type="radio" name="rsMode" value="benchmark" id="rsModeBenchmark"/>
+        Real benchmark — rank by excess return over a specific index/ETF ticker
+      </label>
+    </div>
+
+    <div style="margin-top:14px" id="rsBenchmarkRow">
+      <label style="font-size:11.5px;font-weight:600;color:var(--text2);display:block;margin-bottom:6px">Benchmark ticker for the current tab (<span id="rsBenchMarketLabel"></span>)</label>
+      <input type="text" id="rsBenchmarkInput" placeholder="e.g. NIFTYBEES.NS or SPY"
+        style="width:100%;padding:6px 10px;border-radius:8px;border:1.5px solid var(--border2);font-size:12px;font-family:inherit"/>
+      <p style="margin-top:4px;font-size:10.5px">Must be a valid ticker in the same format your screener already uses (India: SYMBOL.NS, US/ETF: plain symbol). Defaults: NIFTYBEES.NS (Nifty 50 ETF) for India, SPY for US/ETF — neither is an exact Nifty 500 tracker, since one isn't reliably available for free — pick any ticker you trust more if you have one.</p>
+    </div>
+
+    <div style="margin-top:14px">
+      <label style="font-size:11.5px;font-weight:600;color:var(--text2);display:block;margin-bottom:6px">Lookback weighting (must total 100%)</label>
+      <div style="display:flex;gap:8px;align-items:center">
+        <div style="flex:1"><span style="font-size:10.5px;color:var(--text3)">3-Month</span>
+          <input type="number" id="rsW3m" min="0" max="100" oninput="updateRSWeightSum()" style="width:100%;padding:5px 8px;border-radius:6px;border:1.5px solid var(--border2);font-size:12px"/></div>
+        <div style="flex:1"><span style="font-size:10.5px;color:var(--text3)">6-Month</span>
+          <input type="number" id="rsW6m" min="0" max="100" oninput="updateRSWeightSum()" style="width:100%;padding:5px 8px;border-radius:6px;border:1.5px solid var(--border2);font-size:12px"/></div>
+        <div style="flex:1"><span style="font-size:10.5px;color:var(--text3)">12-Month</span>
+          <input type="number" id="rsW12m" min="0" max="100" oninput="updateRSWeightSum()" style="width:100%;padding:5px 8px;border-radius:6px;border:1.5px solid var(--border2);font-size:12px"/></div>
+      </div>
+      <p style="margin-top:4px;font-size:10.5px" id="rsWeightSum">Total: 100%</p>
+    </div>
+
+    <div style="margin-top:16px;display:flex;gap:8px;justify-content:space-between;align-items:center">
+      <button onclick="resetRSConfig()"
+        style="padding:6px 12px;border-radius:8px;border:1.5px solid var(--border2);font-size:11.5px;font-weight:500;color:var(--text2);cursor:pointer">Reset to Default</button>
+      <button onclick="applyRSConfig()"
+        style="padding:6px 14px;border-radius:8px;background:#1E293B;color:#F8FAFC;font-size:12px;font-weight:600;cursor:pointer">Apply</button>
+    </div>
+  </div>
+</div>
+
 <script>
 'use strict';
 /* ══════════════════════════════════
    CONFIG
 ══════════════════════════════════ */
 const CFG = {
-  // ── Google Sheets (published CSV) — PASTE YOUR URL HERE ──
-  // Once you've run the Apps Script and published the "Data" tab
-  // (File > Share > Publish to web > select "Data" sheet > CSV > Publish),
-  // paste that link below between the quotes. Leave blank ('') to skip
-  // this and use Stooq+proxies only (the old behavior).
-  // Example: 'https://docs.google.com/spreadsheets/d/e/2PACX-.../pub?output=csv'
-  GSHEET_CSV_URL: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSvb2f_1RZ0E9wKms9-bm7agqfylm1ifzt1oINqHA6hQ-V4Rfhk0Byws1_vHCkQ692zdd2qD88dtn_U/pub?gid=104279469&single=true&output=csv',
+  // ── Google Sheets (published CSV) — ONE URL PER MARKET ──
+  // The source workbook ("Globalscreener") is split into three tabs so the
+  // browser only ever downloads the market it's actually showing, instead of
+  // pulling the whole ~6.9 MB workbook up front. Each URL comes from
+  // File > Share > Publish to web > pick THAT SPECIFIC TAB > CSV > Publish.
+  // Leave any one blank ('') to skip the sheet for that market and use
+  // that market — it will simply show no data. The other markets are unaffected.
+  // Row format expected: Ticker,Date,Open,High,Low,Close,Volume
+  // with Date as DD/MM/YYYY (normalised to YYYY-MM-DD at parse time).
+  GSHEET_CSV_URLS: {
+    india: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQT391ILoECK80YpMc7MGbvLZYlXCT-8ZpNELFdbT1tE_zJV_78H308sL2Mp1HVJLG9XnWvW6uPY6XA/pub?gid=0&single=true&output=csv',
+    us:    'https://docs.google.com/spreadsheets/d/e/2PACX-1vQT391ILoECK80YpMc7MGbvLZYlXCT-8ZpNELFdbT1tE_zJV_78H308sL2Mp1HVJLG9XnWvW6uPY6XA/pub?gid=1946852214&single=true&output=csv',
+    etf:   'https://docs.google.com/spreadsheets/d/e/2PACX-1vQT391ILoECK80YpMc7MGbvLZYlXCT-8ZpNELFdbT1tE_zJV_78H308sL2Mp1HVJLG9XnWvW6uPY6XA/pub?gid=418929572&single=true&output=csv',
+  },
 
-  // allorigins encodes the full target URL; corsproxy passes it raw but we encode for safety
-  PROXIES: [
-    u => `https://api.allorigins.win/raw?url=${encodeURIComponent(u)}`,
-    u => `https://corsproxy.io/?${encodeURIComponent(u)}`,
-    u => `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(u)}`,
-  ],
-  STOOQ: 'https://stooq.com/q/d/l/?s=',
-  CONC: 4,          // parallel fetches — lowered from 8. Free CORS proxies rate-limit
-                    // aggressively; with 781 total stocks now in the universe, high
-                    // concurrency was triggering widespread transient failures.
-  TO:   18000,      // timeout ms
-  RETRIES: 2,       // extra attempts per stock if all proxies fail on the first pass
-  VER:  'sm9',      // bumped: India universe expanded from 271 to 736 stocks (user-provided liquid stocks list), ZOMATO->ETERNAL and AMARAJABAT->ARE&M ticker corrections applied
+  // Sanity check for the URLs above. A published-CSV gid is just a number —
+  // nothing stops the India slot from pointing at the US tab, and the symptom
+  // of that mistake ("no data" everywhere) looks identical to a dozen other
+  // problems. So after each tab parses we check that its tickers actually look
+  // like that market, and shout in plain English if they don't.
+  // India tickers end in .NS; US and ETF tickers never do.
+  MARKET_SHAPE: {
+    india: { test: t => t.endsWith('.NS'),  desc: 'NSE symbols ending in .NS' },
+    us:    { test: t => !t.endsWith('.NS'), desc: 'plain US symbols' },
+    etf:   { test: t => !t.endsWith('.NS'), desc: 'plain US-listed ETF symbols' },
+  },
+
+  // How long a market's CSV fetch is allowed to take before it's abandoned.
+  // Sized for ONE tab (~1/3 of a 6.9 MB workbook, so roughly 2-2.5 MB), not
+  // for the old single monolithic CSV that justified the previous 120s.
+  // Google still has to GENERATE the export server-side before sending bytes,
+  // so this isn't purely download time — but 45s is generous for this shape.
+  // Raised from 45s. MY MISTAKE: I sized 45s for "a third of a 6.9 MB workbook",
+  // but then we added 145 India stocks and 75 ETFs, so Data_India alone is now
+  // bigger than the entire workbook was when I picked that number. Google has to
+  // GENERATE the CSV export server-side before sending a single byte, and for a
+  // ~220,000-row tab that is genuinely slow. A 45s cap was aborting a fetch that
+  // was working fine, which is exactly the "tab unavailable" error you saw.
+  GSHEET_TO: 180000,
+
+  // How often the indicator loop yields back to the browser so the page stays
+  // responsive and the progress bar actually moves. With no network per ticker,
+  // computing ~900 stocks is pure CPU and would otherwise freeze the tab solid.
+  CHUNK: 40,
+
+  // ── Review status (Y/N/?) persistence — PASTE YOUR WEB APP URL HERE ──
+  // This is a DIFFERENT deployment than the CSV publish above — in Apps
+  // Script: Deploy > New deployment > type "Web app" > Execute as "Me" >
+  // Who has access "Anyone". Paste the resulting URL (ends in /exec) below.
+  // Leave blank to keep review marks browser-local only (old behavior —
+  // lost on reload, doesn't sync across devices).
+  REVIEWS_API_URL: '',
+
+  // ── Stooq + CORS proxies: REMOVED ──
+  // This used to fall back to Stooq.com through three free CORS proxies whenever
+  // the sheet didn't have a ticker. It has been deleted outright, deliberately.
+  // The proxies were the least reliable component in the whole system, and worse,
+  // the fallback was actively harmful: a market whose sheet failed would spend
+  // minutes grinding through ~900 doomed proxy requests while the UI showed a
+  // progress bar, so a simple wrong-URL problem presented as "slow and broken"
+  // instead of "the sheet didn't load". One data source, one failure mode, one
+  // clear message. CONC / TO / RETRIES went with it — with no per-ticker network
+  // calls there is nothing left to rate-limit or retry.
+  VER:  'gs4',      // gs2 -> gs3: Stooq fallback removed, so a cache written when Stooq was
+                    // still filling gaps could contain rows that can no longer be reproduced.
+                    // gs1 -> gs2 was: India universe 736 -> 881, and h52/l52 now null below 120
+                    // bars. computeTech()'s output shape changed, so gs1 caches must be orphaned.
+                    // (gs1 note kept for history) gs1 was bumped from sm9 because
+                    // sheet dates are now normalised DD/MM/YYYY -> YYYY-MM-DD
+                    // at parse time. Any sm9 cache was built from a lexicographically
+                    // MIS-SORTED series, so every indicator in it is wrong — it must not
+                    // survive this change. Bumping the key orphans it.
   INIT: 25,         // rows shown initially
 };
 
@@ -588,306 +715,69 @@ const CFG = {
 ══════════════════════════════════ */
 const UNI = {
   india: [
-    {s:'RELIANCE.NS', d:'RELIANCE', sector:'Energy', mcap:1900000},
-    {s:'TCS.NS', d:'TCS', sector:'IT', mcap:1300000},
-    {s:'HDFCBANK.NS', d:'HDFCBANK', sector:'Banking', mcap:1250000},
-    {s:'BHARTIARTL.NS', d:'BHARTIARTL', sector:'Telecom', mcap:950000},
-    {s:'ICICIBANK.NS', d:'ICICIBANK', sector:'Banking', mcap:850000},
-    {s:'INFY.NS', d:'INFY', sector:'IT', mcap:600000},
-    {s:'SBIN.NS', d:'SBIN', sector:'Banking', mcap:700000},
-    {s:'HINDUNILVR.NS', d:'HINDUNILVR', sector:'FMCG', mcap:550000},
-    {s:'ITC.NS', d:'ITC', sector:'FMCG', mcap:525000},
-    {s:'LT.NS', d:'LT', sector:'Cap Goods', mcap:480000},
-    {s:'KOTAKBANK.NS', d:'KOTAKBANK', sector:'Banking', mcap:370000},
-    {s:'AXISBANK.NS', d:'AXISBANK', sector:'Banking', mcap:350000},
-    {s:'BAJFINANCE.NS', d:'BAJFINANCE', sector:'NBFC', mcap:460000},
-    {s:'MARUTI.NS', d:'MARUTI', sector:'Auto', mcap:370000},
-    {s:'NTPC.NS', d:'NTPC', sector:'Power', mcap:330000},
-    {s:'POWERGRID.NS', d:'POWERGRID', sector:'Power', mcap:280000},
-    {s:'ULTRACEMCO.NS', d:'ULTRACEMCO', sector:'Cement', mcap:290000},
-    {s:'TITAN.NS', d:'TITAN', sector:'Consumer', mcap:300000},
-    {s:'ASIANPAINT.NS', d:'ASIANPAINT', sector:'Paints', mcap:230000},
-    {s:'TECHM.NS', d:'TECHM', sector:'IT', mcap:145000},
-    {s:'SUNPHARMA.NS', d:'SUNPHARMA', sector:'Pharma', mcap:400000},
-    {s:'WIPRO.NS', d:'WIPRO', sector:'IT', mcap:270000},
-    {s:'HCLTECH.NS', d:'HCLTECH', sector:'IT', mcap:430000},
-    {s:'NESTLEIND.NS', d:'NESTLEIND', sector:'FMCG', mcap:230000},
-    {s:'TATAMOTORS.NS', d:'TATAMOTORS', sector:'Auto', mcap:270000},
-    {s:'M&M.NS', d:'M&M', sector:'Auto', mcap:350000},
-    {s:'ADANIENT.NS', d:'ADANIENT', sector:'Diversified', mcap:280000},
-    {s:'ADANIPORTS.NS', d:'ADANIPORTS', sector:'Logistics', mcap:260000},
-    {s:'COALINDIA.NS', d:'COALINDIA', sector:'Mining', mcap:250000},
-    {s:'JSWSTEEL.NS', d:'JSWSTEEL', sector:'Metals', mcap:230000},
-    {s:'TATASTEEL.NS', d:'TATASTEEL', sector:'Metals', mcap:190000},
-    {s:'ONGC.NS', d:'ONGC', sector:'Energy', mcap:330000},
-    {s:'GRASIM.NS', d:'GRASIM', sector:'Cement', mcap:170000},
-    {s:'DIVISLAB.NS', d:'DIVISLAB', sector:'Pharma', mcap:160000},
-    {s:'CIPLA.NS', d:'CIPLA', sector:'Pharma', mcap:120000},
-    {s:'DRREDDY.NS', d:'DRREDDY', sector:'Pharma', mcap:105000},
-    {s:'BPCL.NS', d:'BPCL', sector:'Energy', mcap:110000},
-    {s:'APOLLOHOSP.NS', d:'APOLLOHOSP', sector:'Healthcare', mcap:90000},
-    {s:'EICHERMOT.NS', d:'EICHERMOT', sector:'Auto', mcap:110000},
-    {s:'BAJAJFINSV.NS', d:'BAJAJFINSV', sector:'Financial', mcap:270000},
-    {s:'HINDALCO.NS', d:'HINDALCO', sector:'Metals', mcap:150000},
-    {s:'INDUSINDBK.NS', d:'INDUSINDBK', sector:'Banking', mcap:85000},
-    {s:'TATACONSUM.NS', d:'TATACONSUM', sector:'FMCG', mcap:85000},
-    {s:'BRITANNIA.NS', d:'BRITANNIA', sector:'FMCG', mcap:130000},
-    {s:'HAVELLS.NS', d:'HAVELLS', sector:'Electricals', mcap:95000},
-    {s:'PIDILITIND.NS', d:'PIDILITIND', sector:'Chemicals', mcap:150000},
-    {s:'GODREJCP.NS', d:'GODREJCP', sector:'FMCG', mcap:115000},
-    {s:'MARICO.NS', d:'MARICO', sector:'FMCG', mcap:85000},
-    {s:'COLPAL.NS', d:'COLPAL', sector:'FMCG', mcap:65000},
-    {s:'HAL.NS', d:'HAL', sector:'Defence', mcap:330000},
-    {s:'BEL.NS', d:'BEL', sector:'Defence', mcap:230000},
-    {s:'LICI.NS', d:'LICI', sector:'Insurance', mcap:600000},
-    {s:'DMART.NS', d:'DMART', sector:'Retail', mcap:270000},
-    {s:'ADANIGREEN.NS', d:'ADANIGREEN', sector:'Renewables', mcap:185000},
-    {s:'ADANIPOWER.NS', d:'ADANIPOWER', sector:'Power', mcap:190000},
-    {s:'VEDL.NS', d:'VEDL', sector:'Metals', mcap:180000},
-    {s:'IOC.NS', d:'IOC', sector:'Energy', mcap:200000},
-    {s:'BAJAJ-AUTO.NS', d:'BAJAJ-AUTO', sector:'Auto', mcap:250000},
-    {s:'TRENT.NS', d:'TRENT', sector:'Retail', mcap:280000},
-    {s:'SHREECEM.NS', d:'SHREECEM', sector:'Cement', mcap:110000},
-    {s:'SBILIFE.NS', d:'SBILIFE', sector:'Insurance', mcap:150000},
-    {s:'HDFCLIFE.NS', d:'HDFCLIFE', sector:'Insurance', mcap:140000},
-    {s:'ICICIPRULI.NS', d:'ICICIPRULI', sector:'Insurance', mcap:85000},
-    {s:'ICICIGI.NS', d:'ICICIGI', sector:'Insurance', mcap:95000},
-    {s:'AMBUJACEM.NS', d:'AMBUJACEM', sector:'Cement', mcap:135000},
-    {s:'DABUR.NS', d:'DABUR', sector:'FMCG', mcap:95000},
-    {s:'SIEMENS.NS', d:'SIEMENS', sector:'Cap Goods', mcap:120000},
-    {s:'ABB.NS', d:'ABB', sector:'Cap Goods', mcap:110000},
-    {s:'PNB.NS', d:'PNB', sector:'Banking', mcap:110000},
-    {s:'BANKBARODA.NS', d:'BANKBARODA', sector:'Banking', mcap:130000},
-    {s:'CANBK.NS', d:'CANBK', sector:'Banking', mcap:90000},
-    {s:'UNIONBANK.NS', d:'UNIONBANK', sector:'Banking', mcap:85000},
-    {s:'JIOFIN.NS', d:'JIOFIN', sector:'Financial', mcap:200000},
-    {s:'IRFC.NS', d:'IRFC', sector:'Financial', mcap:180000},
-    {s:'PFC.NS', d:'PFC', sector:'Financial', mcap:140000},
-    {s:'RECLTD.NS', d:'RECLTD', sector:'Financial', mcap:135000},
-    {s:'GAIL.NS', d:'GAIL', sector:'Energy', mcap:110000},
-    {s:'NHPC.NS', d:'NHPC', sector:'Power', mcap:100000},
-    {s:'TORNTPOWER.NS', d:'TORNTPOWER', sector:'Power', mcap:85000},
-    {s:'TATAPOWER.NS', d:'TATAPOWER', sector:'Power', mcap:120000},
-    {s:'INDIGO.NS', d:'INDIGO', sector:'Aviation', mcap:200000},
-    {s:'VBL.NS', d:'VBL', sector:'FMCG', mcap:180000},
-    {s:'UNITDSPR.NS', d:'UNITDSPR', sector:'FMCG', mcap:120000},
-    {s:'HEROMOTOCO.NS', d:'HEROMOTOCO', sector:'Auto', mcap:90000},
-    {s:'TVSMOTOR.NS', d:'TVSMOTOR', sector:'Auto', mcap:130000},
-    {s:'BOSCHLTD.NS', d:'BOSCHLTD', sector:'Auto Anc.', mcap:90000},
-    {s:'MOTHERSON.NS', d:'MOTHERSON', sector:'Auto Anc.', mcap:85000},
-    {s:'BHARATFORG.NS', d:'BHARATFORG', sector:'Auto Anc.', mcap:55000},
-    {s:'ASHOKLEY.NS', d:'ASHOKLEY', sector:'Auto', mcap:55000},
-    {s:'CUMMINSIND.NS', d:'CUMMINSIND', sector:'Cap Goods', mcap:55000},
-    {s:'POLYCAB.NS', d:'POLYCAB', sector:'Electricals', mcap:90000},
-    {s:'VOLTAS.NS', d:'VOLTAS', sector:'Consumer Durables', mcap:55000},
-    {s:'DIXON.NS', d:'DIXON', sector:'Electronics', mcap:80000},
-    {s:'LTIM.NS', d:'LTIM', sector:'IT', mcap:150000},
-    {s:'OFSS.NS', d:'OFSS', sector:'IT', mcap:65000},
-    {s:'DLF.NS', d:'DLF', sector:'Realty', mcap:200000},
-    {s:'DALBHARAT.NS', d:'DALBHARAT', sector:'Cement', mcap:35000},
-    {s:'PERSISTENT.NS', d:'PERSISTENT', sector:'IT', mcap:75000},
-    {s:'COFORGE.NS', d:'COFORGE', sector:'IT', mcap:50000},
-    {s:'LTTS.NS', d:'LTTS', sector:'IT', mcap:40000},
-    {s:'MPHASIS.NS', d:'MPHASIS', sector:'IT', mcap:45000},
-    {s:'KPITTECH.NS', d:'KPITTECH', sector:'IT', mcap:35000},
-    {s:'TATAELXSI.NS', d:'TATAELXSI', sector:'IT', mcap:35000},
-    {s:'CAMS.NS', d:'CAMS', sector:'Financial', mcap:20000},
-    {s:'CDSL.NS', d:'CDSL', sector:'Financial', mcap:25000},
-    {s:'MCX.NS', d:'MCX', sector:'Financial', mcap:25000},
-    {s:'ANGELONE.NS', d:'ANGELONE', sector:'Financial', mcap:18000},
-    {s:'IEX.NS', d:'IEX', sector:'Financial', mcap:18000},
-    {s:'BSE.NS', d:'BSE', sector:'Financial', mcap:55000},
-    {s:'MUTHOOTFIN.NS', d:'MUTHOOTFIN', sector:'NBFC', mcap:75000},
-    {s:'CHOLAFIN.NS', d:'CHOLAFIN', sector:'NBFC', mcap:115000},
-    {s:'SHRIRAMFIN.NS', d:'SHRIRAMFIN', sector:'NBFC', mcap:110000},
-    {s:'LICHSGFIN.NS', d:'LICHSGFIN', sector:'Financial', mcap:40000},
-    {s:'PNBHOUSING.NS', d:'PNBHOUSING', sector:'Financial', mcap:20000},
-    {s:'AUBANK.NS', d:'AUBANK', sector:'Banking', mcap:45000},
-    {s:'BANDHANBNK.NS', d:'BANDHANBNK', sector:'Banking', mcap:35000},
-    {s:'FEDERALBNK.NS', d:'FEDERALBNK', sector:'Banking', mcap:50000},
-    {s:'IDFCFIRSTB.NS', d:'IDFCFIRSTB', sector:'Banking', mcap:55000},
-    {s:'YESBANK.NS', d:'YESBANK', sector:'Banking', mcap:55000},
-    {s:'GODREJPROP.NS', d:'GODREJPROP', sector:'Realty', mcap:75000},
-    {s:'OBEROIRLTY.NS', d:'OBEROIRLTY', sector:'Realty', mcap:60000},
-    {s:'PRESTIGE.NS', d:'PRESTIGE', sector:'Realty', mcap:55000},
-    {s:'PHOENIXLTD.NS', d:'PHOENIXLTD', sector:'Realty', mcap:45000},
-    {s:'LODHA.NS', d:'LODHA', sector:'Realty', mcap:110000},
-    {s:'GMRAIRPORT.NS', d:'GMRAIRPORT', sector:'Infra', mcap:75000},
-    {s:'IRCTC.NS', d:'IRCTC', sector:'Travel', mcap:65000},
-    {s:'RVNL.NS', d:'RVNL', sector:'Infra', mcap:85000},
-    {s:'IRB.NS', d:'IRB', sector:'Infra', mcap:28000},
-    {s:'NBCC.NS', d:'NBCC', sector:'Infra', mcap:18000},
-    {s:'KEC.NS', d:'KEC', sector:'Cap Goods', mcap:20000},
-    {s:'THERMAX.NS', d:'THERMAX', sector:'Cap Goods', mcap:35000},
-    {s:'BHEL.NS', d:'BHEL', sector:'Cap Goods', mcap:85000},
-    {s:'HINDZINC.NS', d:'HINDZINC', sector:'Metals', mcap:140000},
-    {s:'NMDC.NS', d:'NMDC', sector:'Metals', mcap:65000},
-    {s:'NATIONALUM.NS', d:'NATIONALUM', sector:'Metals', mcap:35000},
-    {s:'JINDALSTEL.NS', d:'JINDALSTEL', sector:'Metals', mcap:95000},
-    {s:'SAIL.NS', d:'SAIL', sector:'Metals', mcap:60000},
-    {s:'APLAPOLLO.NS', d:'APLAPOLLO', sector:'Metals', mcap:45000},
-    {s:'JSL.NS', d:'JSL', sector:'Metals', mcap:45000},
-    {s:'RATNAMANI.NS', d:'RATNAMANI', sector:'Metals', mcap:22000},
-    {s:'GLAND.NS', d:'GLAND', sector:'Pharma', mcap:28000},
-    {s:'LUPIN.NS', d:'LUPIN', sector:'Pharma', mcap:90000},
-    {s:'ALKEM.NS', d:'ALKEM', sector:'Pharma', mcap:45000},
-    {s:'AUROPHARMA.NS', d:'AUROPHARMA', sector:'Pharma', mcap:85000},
-    {s:'TORNTPHARM.NS', d:'TORNTPHARM', sector:'Pharma', mcap:110000},
-    {s:'GLENMARK.NS', d:'GLENMARK', sector:'Pharma', mcap:45000},
-    {s:'ZYDUSLIFE.NS', d:'ZYDUSLIFE', sector:'Pharma', mcap:130000},
-    {s:'BIOCON.NS', d:'BIOCON', sector:'Pharma', mcap:35000},
-    {s:'MANKIND.NS', d:'MANKIND', sector:'Pharma', mcap:90000},
-    {s:'LAURUSLABS.NS', d:'LAURUSLABS', sector:'Pharma', mcap:35000},
-    {s:'IPCALAB.NS', d:'IPCALAB', sector:'Pharma', mcap:28000},
-    {s:'ABBOTINDIA.NS', d:'ABBOTINDIA', sector:'Pharma', mcap:55000},
-    {s:'SANOFI.NS', d:'SANOFI', sector:'Pharma', mcap:35000},
-    {s:'NATCOPHARM.NS', d:'NATCOPHARM', sector:'Pharma', mcap:20000},
-    {s:'AJANTPHARM.NS', d:'AJANTPHARM', sector:'Pharma', mcap:28000},
-    {s:'ASTRAL.NS', d:'ASTRAL', sector:'Pipes', mcap:45000},
-    {s:'SUPREMEIND.NS', d:'SUPREMEIND', sector:'Pipes', mcap:55000},
-    {s:'SYNGENE.NS', d:'SYNGENE', sector:'Pharma/Biotech', mcap:22000},
-    {s:'GRANULES.NS', d:'GRANULES', sector:'Pharma', mcap:14000},
-    {s:'APARINDS.NS', d:'APARINDS', sector:'Auto Anc.', mcap:20000},
-    {s:'SONACOMS.NS', d:'SONACOMS', sector:'Auto Anc.', mcap:30000},
-    {s:'UNOMINDA.NS', d:'UNOMINDA', sector:'Auto Anc.', mcap:35000},
-    {s:'ENDURANCE.NS', d:'ENDURANCE', sector:'Auto Anc.', mcap:28000},
-    {s:'EXIDEIND.NS', d:'EXIDEIND', sector:'Auto Anc.', mcap:35000},
-    {s:'TIINDIA.NS', d:'TIINDIA', sector:'Auto Anc.', mcap:55000},
-    {s:'BALKRISIND.NS', d:'BALKRISIND', sector:'Tyres', mcap:45000},
-    {s:'MRF.NS', d:'MRF', sector:'Tyres', mcap:28000},
-    {s:'CEATLTD.NS', d:'CEATLTD', sector:'Tyres', mcap:15000},
-    {s:'ESCORTS.NS', d:'ESCORTS', sector:'Auto', mcap:40000},
-    {s:'SKFINDIA.NS', d:'SKFINDIA', sector:'Cap Goods', mcap:22000},
-    {s:'TIMKEN.NS', d:'TIMKEN', sector:'Cap Goods', mcap:22000},
-    {s:'SCHAEFFLER.NS', d:'SCHAEFFLER', sector:'Auto Anc.', mcap:35000},
-    {s:'GRINDWELL.NS', d:'GRINDWELL', sector:'Abrasives', mcap:18000},
-    {s:'HONAUT.NS', d:'HONAUT', sector:'Cap Goods', mcap:35000},
-    {s:'AIAENG.NS', d:'AIAENG', sector:'Cap Goods', mcap:28000},
-    {s:'KIRLOSENG.NS', d:'KIRLOSENG', sector:'Cap Goods', mcap:14000},
-    {s:'ELGIEQUIP.NS', d:'ELGIEQUIP', sector:'Cap Goods', mcap:11000},
-    {s:'CGPOWER.NS', d:'CGPOWER', sector:'Cap Goods', mcap:85000},
-    {s:'HITACHI.NS', d:'HITACHI', sector:'Cap Goods', mcap:45000},
-    {s:'KAYNES.NS', d:'KAYNES', sector:'Electronics', mcap:28000},
-    {s:'SYRMA.NS', d:'SYRMA', sector:'Electronics', mcap:14000},
-    {s:'AMBER.NS', d:'AMBER', sector:'Electronics', mcap:28000},
-    {s:'VGUARD.NS', d:'VGUARD', sector:'Consumer Durables', mcap:18000},
-    {s:'WHIRLPOOL.NS', d:'WHIRLPOOL', sector:'Consumer Durables', mcap:18000},
-    {s:'BLUESTARCO.NS', d:'BLUESTARCO', sector:'Consumer Durables', mcap:35000},
-    {s:'KALYANKJIL.NS', d:'KALYANKJIL', sector:'Jewellery', mcap:45000},
-    {s:'CROMPTON.NS', d:'CROMPTON', sector:'Consumer Durables', mcap:18000},
-    {s:'JUBLFOOD.NS', d:'JUBLFOOD', sector:'Consumer Services', mcap:30000},
-    {s:'UBL.NS', d:'UBL', sector:'FMCG', mcap:45000},
-    {s:'RADICO.NS', d:'RADICO', sector:'FMCG', mcap:28000},
-    {s:'EMAMILTD.NS', d:'EMAMILTD', sector:'FMCG', mcap:22000},
-    {s:'GILLETTE.NS', d:'GILLETTE', sector:'FMCG', mcap:18000},
-    {s:'NAUKRI.NS', d:'NAUKRI', sector:'Internet', mcap:85000},
-    {s:'INDIAMART.NS', d:'INDIAMART', sector:'Internet', mcap:18000},
-    {s:'NYKAA.NS', d:'NYKAA', sector:'E-commerce', mcap:55000},
-    {s:'POLICYBZR.NS', d:'POLICYBZR', sector:'Fintech', mcap:65000},
-    {s:'SRF.NS', d:'SRF', sector:'Chemicals', mcap:90000},
-    {s:'PIIND.NS', d:'PIIND', sector:'Agrochem', mcap:65000},
-    {s:'UPL.NS', d:'UPL', sector:'Agrochem', mcap:45000},
-    {s:'DEEPAKNTR.NS', d:'DEEPAKNTR', sector:'Chemicals', mcap:28000},
-    {s:'AARTIIND.NS', d:'AARTIIND', sector:'Chemicals', mcap:18000},
-    {s:'NAVINFLUOR.NS', d:'NAVINFLUOR', sector:'Chemicals', mcap:14000},
-    {s:'TATACHEM.NS', d:'TATACHEM', sector:'Chemicals', mcap:22000},
-    {s:'CHAMBLFERT.NS', d:'CHAMBLFERT', sector:'Fertilizers', mcap:18000},
-    {s:'COROMANDEL.NS', d:'COROMANDEL', sector:'Fertilizers', mcap:35000},
-    {s:'BERGEPAINT.NS', d:'BERGEPAINT', sector:'Paints', mcap:45000},
-    {s:'KANSAINER.NS', d:'KANSAINER', sector:'Paints', mcap:18000},
-    {s:'AKZOINDIA.NS', d:'AKZOINDIA', sector:'Paints', mcap:14000},
-    {s:'PAGEIND.NS', d:'PAGEIND', sector:'Textiles', mcap:45000},
-    {s:'KPRMILL.NS', d:'KPRMILL', sector:'Textiles', mcap:28000},
-    {s:'RAYMOND.NS', d:'RAYMOND', sector:'Textiles', mcap:10000},
-    {s:'ABFRL.NS', d:'ABFRL', sector:'Retail', mcap:14000},
-    {s:'RAMCOCEM.NS', d:'RAMCOCEM', sector:'Cement', mcap:22000},
-    {s:'JKCEMENT.NS', d:'JKCEMENT', sector:'Cement', mcap:28000},
-    {s:'SUNTV.NS', d:'SUNTV', sector:'Media', mcap:22000},
-    {s:'IGL.NS', d:'IGL', sector:'Gas', mcap:18000},
-    {s:'MGL.NS', d:'MGL', sector:'Gas', mcap:14000},
-    {s:'ATGL.NS', d:'ATGL', sector:'Gas', mcap:45000},
-    {s:'PETRONET.NS', d:'PETRONET', sector:'Gas', mcap:35000},
-    {s:'CONCOR.NS', d:'CONCOR', sector:'Logistics', mcap:35000},
-    {s:'DELHIVERY.NS', d:'DELHIVERY', sector:'Logistics', mcap:35000},
-    {s:'BLUEDART.NS', d:'BLUEDART', sector:'Logistics', mcap:18000},
-    {s:'HDFCAMC.NS', d:'HDFCAMC', sector:'Financial', mcap:85000},
-    {s:'NAM-INDIA.NS', d:'NAM-INDIA', sector:'Financial', mcap:28000},
-    {s:'UTIAMC.NS', d:'UTIAMC', sector:'Financial', mcap:14000},
-    {s:'ABSLAMC.NS', d:'ABSLAMC', sector:'Financial', mcap:14000},
-    {s:'CRISIL.NS', d:'CRISIL', sector:'Financial', mcap:35000},
-    {s:'IRCON.NS', d:'IRCON', sector:'Infra', mcap:14000},
-    {s:'HUDCO.NS', d:'HUDCO', sector:'Financial', mcap:45000},
-    {s:'PAYTM.NS', d:'PAYTM', sector:'Fintech', mcap:35000},
-    {s:'SUPRAJIT.NS', d:'SUPRAJIT', sector:'Auto Anc.', mcap:5500},
-    {s:'SONATSOFTW.NS', d:'SONATSOFTW', sector:'IT', mcap:8500},
-    {s:'POLYMED.NS', d:'POLYMED', sector:'Healthcare', mcap:14000},
-    {s:'HINDCOPPER.NS', d:'HINDCOPPER', sector:'Metals', mcap:14000},
-    {s:'RELAXO.NS', d:'RELAXO', sector:'Footwear', mcap:9500},
-    {s:'WELCORP.NS', d:'WELCORP', sector:'Metals', mcap:13000},
-    {s:'GNFC.NS', d:'GNFC', sector:'Fertilizers', mcap:14000},
-    {s:'RCF.NS', d:'RCF', sector:'Fertilizers', mcap:7000},
-    {s:'GSFC.NS', d:'GSFC', sector:'Fertilizers', mcap:7000},
-    {s:'INDIGOPNTS.NS', d:'INDIGOPNTS', sector:'Paints', mcap:7000},
-    {s:'CENTURYPLY.NS', d:'CENTURYPLY', sector:'Consumer Durables', mcap:7000},
-    {s:'TRIDENT.NS', d:'TRIDENT', sector:'Textiles', mcap:14000},
-    {s:'VARDHMAN.NS', d:'VARDHMAN', sector:'Textiles', mcap:14000},
-    {s:'WELSPUNLIV.NS', d:'WELSPUNLIV', sector:'Textiles', mcap:14000},
-    {s:'VMART.NS', d:'VMART', sector:'Retail', mcap:7000},
-    {s:'SHOPERSTOP.NS', d:'SHOPERSTOP', sector:'Retail', mcap:5000},
-    {s:'HEIDELBERG.NS', d:'HEIDELBERG', sector:'Cement', mcap:7000},
-    {s:'INDIACEM.NS', d:'INDIACEM', sector:'Cement', mcap:7000},
-    {s:'ZEEL.NS', d:'ZEEL', sector:'Media', mcap:10000},
-    {s:'PVRINOX.NS', d:'PVRINOX', sector:'Media', mcap:10000},
-    {s:'NETWORK18.NS', d:'NETWORK18', sector:'Media', mcap:5000},
-    {s:'BALRAMCHIN.NS', d:'BALRAMCHIN', sector:'Sugar', mcap:10000},
-    {s:'EIDPARRY.NS', d:'EIDPARRY', sector:'Sugar/Agri', mcap:14000},
-    {s:'GUJGASLTD.NS', d:'GUJGASLTD', sector:'Gas', mcap:10000},
-    {s:'TCI.NS', d:'TCI', sector:'Logistics', mcap:7000},
-    {s:'VRLLOG.NS', d:'VRLLOG', sector:'Logistics', mcap:5000},
-    {s:'IFCI.NS', d:'IFCI', sector:'Financial', mcap:7000},
-    {s:'RBLBANK.NS', d:'RBLBANK', sector:'Banking', mcap:12000},
-    {s:'SOUTHBANK.NS', d:'SOUTHBANK', sector:'Banking', mcap:7000},
-    {s:'JKTYRE.NS', d:'JKTYRE', sector:'Tyres', mcap:7000},
-    {s:'JUSTDIAL.NS', d:'JUSTDIAL', sector:'Internet', mcap:10000},
-    {s:'CARTRADE.NS', d:'CARTRADE', sector:'Internet', mcap:7000},
-    {s:'EASEMYTRIP.NS', d:'EASEMYTRIP', sector:'Travel', mcap:5500},
-    {s:'WESTLIFE.NS', d:'WESTLIFE', sector:'Consumer Services', mcap:10000},
-    {s:'DEVYANI.NS', d:'DEVYANI', sector:'Consumer Services', mcap:14000},
-    {s:'SAPPHIRE.NS', d:'SAPPHIRE', sector:'Consumer Services', mcap:7000},
-    {s:'HONASA.NS', d:'HONASA', sector:'FMCG', mcap:10000},
-    {s:'NCC.NS', d:'NCC', sector:'Infra', mcap:14000},
-    {s:'RAILTEL.NS', d:'RAILTEL', sector:'Infra', mcap:7000},
     {s:'360ONE.NS', d:'360ONE', sector:'Financial', mcap:35000},
+    {s:'3MINDIA.NS', d:'3MINDIA', sector:'Diversified', mcap:null},
     {s:'AADHARHFC.NS', d:'AADHARHFC', sector:'Financial', mcap:15000},
+    {s:'AARTIDRUGS.NS', d:'AARTIDRUGS', sector:'Healthcare', mcap:null},
+    {s:'AARTIIND.NS', d:'AARTIIND', sector:'Chemicals', mcap:18000},
     {s:'AARTIPHARM.NS', d:'AARTIPHARM', sector:'Other', mcap:null},
     {s:'AAVAS.NS', d:'AAVAS', sector:'Financial', mcap:16000},
+    {s:'ABB.NS', d:'ABB', sector:'Cap Goods', mcap:110000},
+    {s:'ABBOTINDIA.NS', d:'ABBOTINDIA', sector:'Pharma', mcap:55000},
     {s:'ABCAPITAL.NS', d:'ABCAPITAL', sector:'Financial', mcap:55000},
     {s:'ABDL.NS', d:'ABDL', sector:'Other', mcap:null},
+    {s:'ABFRL.NS', d:'ABFRL', sector:'Retail', mcap:14000},
     {s:'ABLBL.NS', d:'ABLBL', sector:'Other', mcap:null},
     {s:'ABREL.NS', d:'ABREL', sector:'Other', mcap:null},
+    {s:'ABSLAMC.NS', d:'ABSLAMC', sector:'Financial', mcap:14000},
+    {s:'ACC.NS', d:'ACC', sector:'Cement', mcap:null},
     {s:'ACE.NS', d:'ACE', sector:'Cap Goods', mcap:18000},
+    {s:'ACI.NS', d:'ACI', sector:'Chemicals', mcap:null},
     {s:'ACMESOLAR.NS', d:'ACMESOLAR', sector:'Other', mcap:null},
     {s:'ACUTAAS.NS', d:'ACUTAAS', sector:'Other', mcap:null},
     {s:'ADANIENSOL.NS', d:'ADANIENSOL', sector:'Power', mcap:135000},
+    {s:'ADANIENT.NS', d:'ADANIENT', sector:'Diversified', mcap:280000},
+    {s:'ADANIGREEN.NS', d:'ADANIGREEN', sector:'Renewables', mcap:185000},
+    {s:'ADANIPORTS.NS', d:'ADANIPORTS', sector:'Logistics', mcap:260000},
+    {s:'ADANIPOWER.NS', d:'ADANIPOWER', sector:'Power', mcap:190000},
     {s:'ADFFOODS.NS', d:'ADFFOODS', sector:'Other', mcap:null},
+    {s:'ADVENZYMES.NS', d:'ADVENZYMES', sector:'Healthcare', mcap:null},
     {s:'AEGISLOG.NS', d:'AEGISLOG', sector:'Energy', mcap:28000},
     {s:'AEGISVOPAK.NS', d:'AEGISVOPAK', sector:'Other', mcap:null},
     {s:'AEQUS.NS', d:'AEQUS', sector:'Other', mcap:null},
     {s:'AEROFLEX.NS', d:'AEROFLEX', sector:'Other', mcap:null},
     {s:'AETHER.NS', d:'AETHER', sector:'Other', mcap:null},
     {s:'AFCONS.NS', d:'AFCONS', sector:'Infra', mcap:18000},
+    {s:'AFFLE.NS', d:'AFFLE', sector:'IT', mcap:null},
+    {s:'AGARWALEYE.NS', d:'AGARWALEYE', sector:'Healthcare', mcap:null},
     {s:'AGIIL.NS', d:'AGIIL', sector:'Other', mcap:null},
+    {s:'AHLUCONT.NS', d:'AHLUCONT', sector:'Infra', mcap:null},
+    {s:'AIAENG.NS', d:'AIAENG', sector:'Cap Goods', mcap:28000},
     {s:'AIIL.NS', d:'AIIL', sector:'Other', mcap:null},
+    {s:'AJANTPHARM.NS', d:'AJANTPHARM', sector:'Pharma', mcap:28000},
     {s:'AJMERA.NS', d:'AJMERA', sector:'Other', mcap:null},
     {s:'AKUMS.NS', d:'AKUMS', sector:'Other', mcap:null},
+    {s:'AKZOINDIA.NS', d:'AKZOINDIA', sector:'Paints', mcap:14000},
     {s:'ALEMBICLTD.NS', d:'ALEMBICLTD', sector:'Pharma', mcap:5500},
+    {s:'ALIVUS.NS', d:'ALIVUS', sector:'Healthcare', mcap:null},
+    {s:'ALKEM.NS', d:'ALKEM', sector:'Pharma', mcap:45000},
+    {s:'ALKYLAMINE.NS', d:'ALKYLAMINE', sector:'Chemicals', mcap:null},
+    {s:'ALOKINDS.NS', d:'ALOKINDS', sector:'Textiles', mcap:null},
+    {s:'AMBER.NS', d:'AMBER', sector:'Electronics', mcap:28000},
+    {s:'AMBUJACEM.NS', d:'AMBUJACEM', sector:'Cement', mcap:135000},
     {s:'ANANDRATHI.NS', d:'ANANDRATHI', sector:'Financial', mcap:18000},
     {s:'ANANTRAJ.NS', d:'ANANTRAJ', sector:'Realty', mcap:28000},
+    {s:'ANGELONE.NS', d:'ANGELONE', sector:'Financial', mcap:18000},
     {s:'ANTELOPUS.NS', d:'ANTELOPUS', sector:'Other', mcap:null},
     {s:'ANTHEM.NS', d:'ANTHEM', sector:'Other', mcap:null},
+    {s:'ANUP.NS', d:'ANUP', sector:'Cap Goods', mcap:null},
     {s:'ANURAS.NS', d:'ANURAS', sector:'Other', mcap:null},
+    {s:'APARINDS.NS', d:'APARINDS', sector:'Auto Anc.', mcap:20000},
     {s:'APEX.NS', d:'APEX', sector:'Other', mcap:null},
+    {s:'APLAPOLLO.NS', d:'APLAPOLLO', sector:'Metals', mcap:45000},
+    {s:'APLLTD.NS', d:'APLLTD', sector:'Healthcare', mcap:null},
     {s:'APOLLO.NS', d:'APOLLO', sector:'Other', mcap:null},
+    {s:'APOLLOHOSP.NS', d:'APOLLOHOSP', sector:'Healthcare', mcap:90000},
     {s:'APOLLOTYRE.NS', d:'APOLLOTYRE', sector:'Tyres', mcap:28000},
     {s:'APTUS.NS', d:'APTUS', sector:'Financial', mcap:16000},
     {s:'ARE&M.NS', d:'ARE&M', sector:'Auto Anc.', mcap:18000},
@@ -896,174 +786,336 @@ const UNI = {
     {s:'ARTEMISMED.NS', d:'ARTEMISMED', sector:'Other', mcap:null},
     {s:'ARVIND.NS', d:'ARVIND', sector:'Textiles', mcap:7000},
     {s:'ARVINDFASN.NS', d:'ARVINDFASN', sector:'Other', mcap:null},
+    {s:'ASAHIINDIA.NS', d:'ASAHIINDIA', sector:'Auto Anc.', mcap:null},
     {s:'ASHAPURMIN.NS', d:'ASHAPURMIN', sector:'Other', mcap:null},
     {s:'ASHIANA.NS', d:'ASHIANA', sector:'Other', mcap:null},
     {s:'ASHOKA.NS', d:'ASHOKA', sector:'Other', mcap:null},
+    {s:'ASHOKLEY.NS', d:'ASHOKLEY', sector:'Auto', mcap:55000},
+    {s:'ASIANPAINT.NS', d:'ASIANPAINT', sector:'Paints', mcap:230000},
+    {s:'ASKAUTOLTD.NS', d:'ASKAUTOLTD', sector:'Auto Anc.', mcap:null},
     {s:'ASTERDM.NS', d:'ASTERDM', sector:'Healthcare', mcap:28000},
+    {s:'ASTRAL.NS', d:'ASTRAL', sector:'Pipes', mcap:45000},
     {s:'ASTRAMICRO.NS', d:'ASTRAMICRO', sector:'Other', mcap:null},
+    {s:'ATGL.NS', d:'ATGL', sector:'Gas', mcap:45000},
     {s:'ATHERENERG.NS', d:'ATHERENERG', sector:'Auto', mcap:14000},
+    {s:'ATLANTAELE.NS', d:'ATLANTAELE', sector:'Cap Goods', mcap:null},
+    {s:'ATUL.NS', d:'ATUL', sector:'Chemicals', mcap:null},
+    {s:'AUBANK.NS', d:'AUBANK', sector:'Banking', mcap:45000},
     {s:'AURIONPRO.NS', d:'AURIONPRO', sector:'Other', mcap:null},
+    {s:'AUROPHARMA.NS', d:'AUROPHARMA', sector:'Pharma', mcap:85000},
     {s:'AVALON.NS', d:'AVALON', sector:'Other', mcap:null},
     {s:'AVANTEL.NS', d:'AVANTEL', sector:'Other', mcap:null},
     {s:'AVANTIFEED.NS', d:'AVANTIFEED', sector:'Other', mcap:null},
+    {s:'AVL.NS', d:'AVL', sector:'Consumer Services', mcap:null},
     {s:'AWFIS.NS', d:'AWFIS', sector:'Realty', mcap:5500},
     {s:'AWL.NS', d:'AWL', sector:'FMCG', mcap:40000},
+    {s:'AXISBANK.NS', d:'AXISBANK', sector:'Banking', mcap:350000},
+    {s:'AXISCADES.NS', d:'AXISCADES', sector:'Cap Goods', mcap:null},
     {s:'AZAD.NS', d:'AZAD', sector:'Other', mcap:null},
+    {s:'BAJAJ-AUTO.NS', d:'BAJAJ-AUTO', sector:'Auto', mcap:250000},
     {s:'BAJAJCON.NS', d:'BAJAJCON', sector:'Other', mcap:null},
     {s:'BAJAJELEC.NS', d:'BAJAJELEC', sector:'Other', mcap:null},
+    {s:'BAJAJFINSV.NS', d:'BAJAJFINSV', sector:'Financial', mcap:270000},
     {s:'BAJAJHFL.NS', d:'BAJAJHFL', sector:'Financial', mcap:95000},
+    {s:'BAJAJHLDNG.NS', d:'BAJAJHLDNG', sector:'Financial', mcap:null},
+    {s:'BAJFINANCE.NS', d:'BAJFINANCE', sector:'NBFC', mcap:460000},
     {s:'BALAMINES.NS', d:'BALAMINES', sector:'Other', mcap:null},
+    {s:'BALKRISIND.NS', d:'BALKRISIND', sector:'Tyres', mcap:45000},
+    {s:'BALRAMCHIN.NS', d:'BALRAMCHIN', sector:'Sugar', mcap:10000},
     {s:'BALUFORGE.NS', d:'BALUFORGE', sector:'Other', mcap:null},
     {s:'BANCOINDIA.NS', d:'BANCOINDIA', sector:'Other', mcap:null},
+    {s:'BANDHANBNK.NS', d:'BANDHANBNK', sector:'Banking', mcap:35000},
+    {s:'BANKBARODA.NS', d:'BANKBARODA', sector:'Banking', mcap:130000},
     {s:'BANKINDIA.NS', d:'BANKINDIA', sector:'Banking', mcap:55000},
+    {s:'BATAINDIA.NS', d:'BATAINDIA', sector:'Consumer Durables', mcap:null},
+    {s:'BAYERCROP.NS', d:'BAYERCROP', sector:'Chemicals', mcap:null},
     {s:'BBOX.NS', d:'BBOX', sector:'Other', mcap:null},
+    {s:'BBTC.NS', d:'BBTC', sector:'FMCG', mcap:null},
     {s:'BDL.NS', d:'BDL', sector:'Defence', mcap:45000},
     {s:'BECTORFOOD.NS', d:'BECTORFOOD', sector:'Other', mcap:null},
+    {s:'BEL.NS', d:'BEL', sector:'Defence', mcap:230000},
     {s:'BELRISE.NS', d:'BELRISE', sector:'Other', mcap:null},
     {s:'BEML.NS', d:'BEML', sector:'Cap Goods', mcap:18000},
     {s:'BEPL.NS', d:'BEPL', sector:'Other', mcap:null},
+    {s:'BERGEPAINT.NS', d:'BERGEPAINT', sector:'Paints', mcap:45000},
+    {s:'BHARATFORG.NS', d:'BHARATFORG', sector:'Auto Anc.', mcap:55000},
+    {s:'BHARTIARTL.NS', d:'BHARTIARTL', sector:'Telecom', mcap:950000},
     {s:'BHARTIHEXA.NS', d:'BHARTIHEXA', sector:'Other', mcap:null},
+    {s:'BHEL.NS', d:'BHEL', sector:'Cap Goods', mcap:85000},
+    {s:'BIKAJI.NS', d:'BIKAJI', sector:'FMCG', mcap:null},
+    {s:'BIOCON.NS', d:'BIOCON', sector:'Pharma', mcap:35000},
+    {s:'BIRLACORPN.NS', d:'BIRLACORPN', sector:'Cement', mcap:null},
     {s:'BLACKBUCK.NS', d:'BLACKBUCK', sector:'Other', mcap:null},
     {s:'BLISSGVS.NS', d:'BLISSGVS', sector:'Other', mcap:null},
     {s:'BLS.NS', d:'BLS', sector:'Consumer Services', mcap:14000},
+    {s:'BLUEDART.NS', d:'BLUEDART', sector:'Logistics', mcap:18000},
     {s:'BLUEJET.NS', d:'BLUEJET', sector:'Other', mcap:null},
+    {s:'BLUESTARCO.NS', d:'BLUESTARCO', sector:'Consumer Durables', mcap:35000},
     {s:'BLUESTONE.NS', d:'BLUESTONE', sector:'Other', mcap:null},
     {s:'BOMDYEING.NS', d:'BOMDYEING', sector:'Other', mcap:null},
     {s:'BORORENEW.NS', d:'BORORENEW', sector:'Other', mcap:null},
+    {s:'BOSCHLTD.NS', d:'BOSCHLTD', sector:'Auto Anc.', mcap:90000},
+    {s:'BPCL.NS', d:'BPCL', sector:'Energy', mcap:110000},
     {s:'BRIGADE.NS', d:'BRIGADE', sector:'Realty', mcap:28000},
     {s:'BRIGHOTEL.NS', d:'BRIGHOTEL', sector:'Other', mcap:null},
+    {s:'BRITANNIA.NS', d:'BRITANNIA', sector:'FMCG', mcap:130000},
+    {s:'BSE.NS', d:'BSE', sector:'Financial', mcap:55000},
     {s:'BSOFT.NS', d:'BSOFT', sector:'Other', mcap:null},
     {s:'CAMLINFINE.NS', d:'CAMLINFINE', sector:'Other', mcap:null},
     {s:'CAMPUS.NS', d:'CAMPUS', sector:'Other', mcap:null},
+    {s:'CAMS.NS', d:'CAMS', sector:'Financial', mcap:20000},
+    {s:'CANBK.NS', d:'CANBK', sector:'Banking', mcap:90000},
     {s:'CANFINHOME.NS', d:'CANFINHOME', sector:'Financial', mcap:10000},
     {s:'CANHLIFE.NS', d:'CANHLIFE', sector:'Other', mcap:null},
     {s:'CANTABIL.NS', d:'CANTABIL', sector:'Other', mcap:null},
     {s:'CAPACITE.NS', d:'CAPACITE', sector:'Other', mcap:null},
     {s:'CAPILLARY.NS', d:'CAPILLARY', sector:'Other', mcap:null},
+    {s:'CAPLIPOINT.NS', d:'CAPLIPOINT', sector:'Healthcare', mcap:null},
     {s:'CARBORUNIV.NS', d:'CARBORUNIV', sector:'Other', mcap:null},
+    {s:'CARTRADE.NS', d:'CARTRADE', sector:'Internet', mcap:7000},
     {s:'CASTROLIND.NS', d:'CASTROLIND', sector:'Chemicals', mcap:16000},
+    {s:'CCAVENUE.NS', d:'CCAVENUE', sector:'Financial', mcap:null},
     {s:'CCL.NS', d:'CCL', sector:'FMCG', mcap:10000},
+    {s:'CDSL.NS', d:'CDSL', sector:'Financial', mcap:25000},
+    {s:'CEATLTD.NS', d:'CEATLTD', sector:'Tyres', mcap:15000},
     {s:'CEIGALL.NS', d:'CEIGALL', sector:'Other', mcap:null},
+    {s:'CELLO.NS', d:'CELLO', sector:'Consumer Durables', mcap:null},
     {s:'CEMPRO.NS', d:'CEMPRO', sector:'Other', mcap:null},
+    {s:'CENTRALBK.NS', d:'CENTRALBK', sector:'Financial', mcap:null},
+    {s:'CENTURYPLY.NS', d:'CENTURYPLY', sector:'Consumer Durables', mcap:7000},
+    {s:'CERA.NS', d:'CERA', sector:'Consumer Durables', mcap:null},
     {s:'CESC.NS', d:'CESC', sector:'Power', mcap:20000},
     {s:'CGCL.NS', d:'CGCL', sector:'Financial', mcap:7000},
+    {s:'CGPOWER.NS', d:'CGPOWER', sector:'Cap Goods', mcap:85000},
+    {s:'CHALET.NS', d:'CHALET', sector:'Consumer Services', mcap:null},
+    {s:'CHAMBLFERT.NS', d:'CHAMBLFERT', sector:'Fertilizers', mcap:18000},
     {s:'CHEMPLASTS.NS', d:'CHEMPLASTS', sector:'Other', mcap:null},
     {s:'CHENNPETRO.NS', d:'CHENNPETRO', sector:'Other', mcap:null},
     {s:'CHOICEIN.NS', d:'CHOICEIN', sector:'Other', mcap:null},
+    {s:'CHOLAFIN.NS', d:'CHOLAFIN', sector:'NBFC', mcap:115000},
     {s:'CHOLAHLDNG.NS', d:'CHOLAHLDNG', sector:'Financial', mcap:55000},
     {s:'CIEINDIA.NS', d:'CIEINDIA', sector:'Other', mcap:null},
+    {s:'CIPLA.NS', d:'CIPLA', sector:'Pharma', mcap:120000},
     {s:'CLEAN.NS', d:'CLEAN', sector:'Other', mcap:null},
     {s:'CMSINFO.NS', d:'CMSINFO', sector:'Other', mcap:null},
+    {s:'COALINDIA.NS', d:'COALINDIA', sector:'Mining', mcap:250000},
     {s:'COCHINSHIP.NS', d:'COCHINSHIP', sector:'Defence', mcap:40000},
+    {s:'COFORGE.NS', d:'COFORGE', sector:'IT', mcap:50000},
     {s:'COHANCE.NS', d:'COHANCE', sector:'Other', mcap:null},
+    {s:'COLPAL.NS', d:'COLPAL', sector:'FMCG', mcap:65000},
+    {s:'CONCOR.NS', d:'CONCOR', sector:'Logistics', mcap:35000},
     {s:'CONCORDBIO.NS', d:'CONCORDBIO', sector:'Pharma', mcap:18000},
+    {s:'COROMANDEL.NS', d:'COROMANDEL', sector:'Fertilizers', mcap:35000},
+    {s:'CORONA.NS', d:'CORONA', sector:'Healthcare', mcap:null},
+    {s:'CPPLUS.NS', d:'CPPLUS', sector:'Cap Goods', mcap:null},
+    {s:'CRAFTSMAN.NS', d:'CRAFTSMAN', sector:'Auto Anc.', mcap:null},
     {s:'CRAMC.NS', d:'CRAMC', sector:'Other', mcap:null},
     {s:'CREDITACC.NS', d:'CREDITACC', sector:'Financial', mcap:14000},
+    {s:'CRISIL.NS', d:'CRISIL', sector:'Financial', mcap:35000},
     {s:'CRIZAC.NS', d:'CRIZAC', sector:'Other', mcap:null},
+    {s:'CROMPTON.NS', d:'CROMPTON', sector:'Consumer Durables', mcap:18000},
     {s:'CSBBANK.NS', d:'CSBBANK', sector:'Banking', mcap:7000},
     {s:'CUB.NS', d:'CUB', sector:'Banking', mcap:14000},
+    {s:'CUMMINSIND.NS', d:'CUMMINSIND', sector:'Cap Goods', mcap:55000},
     {s:'CUPID.NS', d:'CUPID', sector:'Other', mcap:null},
     {s:'CYIENT.NS', d:'CYIENT', sector:'IT', mcap:14000},
     {s:'CYIENTDLM.NS', d:'CYIENTDLM', sector:'Other', mcap:null},
+    {s:'DABUR.NS', d:'DABUR', sector:'FMCG', mcap:95000},
+    {s:'DALBHARAT.NS', d:'DALBHARAT', sector:'Cement', mcap:35000},
     {s:'DATAMATICS.NS', d:'DATAMATICS', sector:'Other', mcap:null},
     {s:'DATAPATTNS.NS', d:'DATAPATTNS', sector:'Other', mcap:null},
     {s:'DBL.NS', d:'DBL', sector:'Other', mcap:null},
     {s:'DBREALTY.NS', d:'DBREALTY', sector:'Realty', mcap:10000},
     {s:'DCAL.NS', d:'DCAL', sector:'Other', mcap:null},
     {s:'DCBBANK.NS', d:'DCBBANK', sector:'Other', mcap:null},
+    {s:'DCMSHRIRAM.NS', d:'DCMSHRIRAM', sector:'Diversified', mcap:null},
     {s:'DCXINDIA.NS', d:'DCXINDIA', sector:'Other', mcap:null},
     {s:'DEEPAKFERT.NS', d:'DEEPAKFERT', sector:'Other', mcap:null},
+    {s:'DEEPAKNTR.NS', d:'DEEPAKNTR', sector:'Chemicals', mcap:28000},
+    {s:'DELHIVERY.NS', d:'DELHIVERY', sector:'Logistics', mcap:35000},
+    {s:'DEVYANI.NS', d:'DEVYANI', sector:'Consumer Services', mcap:14000},
     {s:'DIACABS.NS', d:'DIACABS', sector:'Other', mcap:null},
+    {s:'DIVISLAB.NS', d:'DIVISLAB', sector:'Pharma', mcap:160000},
+    {s:'DIXON.NS', d:'DIXON', sector:'Electronics', mcap:80000},
+    {s:'DLF.NS', d:'DLF', sector:'Realty', mcap:200000},
+    {s:'DMART.NS', d:'DMART', sector:'Retail', mcap:270000},
+    {s:'DOMS.NS', d:'DOMS', sector:'FMCG', mcap:null},
     {s:'DREDGECORP.NS', d:'DREDGECORP', sector:'Other', mcap:null},
+    {s:'DRREDDY.NS', d:'DRREDDY', sector:'Pharma', mcap:105000},
+    {s:'DYNAMATECH.NS', d:'DYNAMATECH', sector:'Cap Goods', mcap:null},
     {s:'E2E.NS', d:'E2E', sector:'Other', mcap:null},
+    {s:'EASEMYTRIP.NS', d:'EASEMYTRIP', sector:'Travel', mcap:5500},
     {s:'EBGNG.NS', d:'EBGNG', sector:'Other', mcap:null},
+    {s:'ECLERX.NS', d:'ECLERX', sector:'Other', mcap:null},
     {s:'EDELWEISS.NS', d:'EDELWEISS', sector:'Other', mcap:null},
     {s:'EFCIL.NS', d:'EFCIL', sector:'Other', mcap:null},
+    {s:'EICHERMOT.NS', d:'EICHERMOT', sector:'Auto', mcap:110000},
+    {s:'EIDPARRY.NS', d:'EIDPARRY', sector:'Sugar/Agri', mcap:14000},
     {s:'EIEL.NS', d:'EIEL', sector:'Other', mcap:null},
     {s:'EIHOTEL.NS', d:'EIHOTEL', sector:'Consumer Services', mcap:28000},
     {s:'ELECON.NS', d:'ELECON', sector:'Other', mcap:null},
     {s:'ELECTCAST.NS', d:'ELECTCAST', sector:'Other', mcap:null},
+    {s:'ELGIEQUIP.NS', d:'ELGIEQUIP', sector:'Cap Goods', mcap:11000},
     {s:'ELLEN.NS', d:'ELLEN', sector:'Other', mcap:null},
+    {s:'EMAMILTD.NS', d:'EMAMILTD', sector:'FMCG', mcap:22000},
     {s:'EMBDL.NS', d:'EMBDL', sector:'Other', mcap:null},
+    {s:'EMCURE.NS', d:'EMCURE', sector:'Healthcare', mcap:null},
     {s:'EMIL.NS', d:'EMIL', sector:'Other', mcap:null},
     {s:'EMMVEE.NS', d:'EMMVEE', sector:'Other', mcap:null},
+    {s:'ENDURANCE.NS', d:'ENDURANCE', sector:'Auto Anc.', mcap:28000},
     {s:'ENGINERSIN.NS', d:'ENGINERSIN', sector:'Other', mcap:null},
     {s:'ENRIN.NS', d:'ENRIN', sector:'Other', mcap:null},
+    {s:'ENTERO.NS', d:'ENTERO', sector:'Consumer Services', mcap:null},
     {s:'EPACK.NS', d:'EPACK', sector:'Other', mcap:null},
     {s:'EPL.NS', d:'EPL', sector:'Other', mcap:null},
     {s:'EQUITASBNK.NS', d:'EQUITASBNK', sector:'Banking', mcap:7000},
+    {s:'ERIS.NS', d:'ERIS', sector:'Healthcare', mcap:null},
+    {s:'ESCORTS.NS', d:'ESCORTS', sector:'Auto', mcap:40000},
     {s:'ETERNAL.NS', d:'ETERNAL', sector:'Other', mcap:null},
+    {s:'ETHOSLTD.NS', d:'ETHOSLTD', sector:'Consumer Durables', mcap:null},
+    {s:'EUREKAFORB.NS', d:'EUREKAFORB', sector:'Consumer Durables', mcap:null},
     {s:'EUROPRATIK.NS', d:'EUROPRATIK', sector:'Other', mcap:null},
+    {s:'EXIDEIND.NS', d:'EXIDEIND', sector:'Auto Anc.', mcap:35000},
+    {s:'FACT.NS', d:'FACT', sector:'Chemicals', mcap:null},
+    {s:'FEDERALBNK.NS', d:'FEDERALBNK', sector:'Banking', mcap:50000},
     {s:'FEDFINA.NS', d:'FEDFINA', sector:'Other', mcap:null},
+    {s:'FIEMIND.NS', d:'FIEMIND', sector:'Auto Anc.', mcap:null},
     {s:'FINCABLES.NS', d:'FINCABLES', sector:'Other', mcap:null},
     {s:'FINPIPE.NS', d:'FINPIPE', sector:'Other', mcap:null},
     {s:'FIRSTCRY.NS', d:'FIRSTCRY', sector:'E-commerce', mcap:18000},
     {s:'FIVESTAR.NS', d:'FIVESTAR', sector:'Financial', mcap:28000},
+    {s:'FLUOROCHEM.NS', d:'FLUOROCHEM', sector:'Chemicals', mcap:null},
+    {s:'FORCEMOT.NS', d:'FORCEMOT', sector:'Auto Anc.', mcap:null},
     {s:'FORTIS.NS', d:'FORTIS', sector:'Healthcare', mcap:45000},
     {s:'FSL.NS', d:'FSL', sector:'Other', mcap:null},
     {s:'FUSION.NS', d:'FUSION', sector:'Other', mcap:null},
     {s:'GABRIEL.NS', d:'GABRIEL', sector:'Other', mcap:null},
     {s:'GAEL.NS', d:'GAEL', sector:'Other', mcap:null},
+    {s:'GAIL.NS', d:'GAIL', sector:'Energy', mcap:110000},
+    {s:'GALLANTT.NS', d:'GALLANTT', sector:'Cap Goods', mcap:null},
     {s:'GATEWAY.NS', d:'GATEWAY', sector:'Other', mcap:null},
     {s:'GENUSPOWER.NS', d:'GENUSPOWER', sector:'Other', mcap:null},
     {s:'GESHIP.NS', d:'GESHIP', sector:'Logistics', mcap:14000},
+    {s:'GHCL.NS', d:'GHCL', sector:'Chemicals', mcap:null},
     {s:'GICRE.NS', d:'GICRE', sector:'Insurance', mcap:45000},
+    {s:'GILLETTE.NS', d:'GILLETTE', sector:'FMCG', mcap:18000},
     {s:'GIPCL.NS', d:'GIPCL', sector:'Other', mcap:null},
     {s:'GKENERGY.NS', d:'GKENERGY', sector:'Other', mcap:null},
+    {s:'GLAND.NS', d:'GLAND', sector:'Pharma', mcap:28000},
+    {s:'GLAXO.NS', d:'GLAXO', sector:'Healthcare', mcap:null},
+    {s:'GLENMARK.NS', d:'GLENMARK', sector:'Pharma', mcap:45000},
     {s:'GMDCLTD.NS', d:'GMDCLTD', sector:'Mining', mcap:10000},
+    {s:'GMMPFAUDLR.NS', d:'GMMPFAUDLR', sector:'Cap Goods', mcap:null},
+    {s:'GMRAIRPORT.NS', d:'GMRAIRPORT', sector:'Infra', mcap:75000},
     {s:'GMRP&UI.NS', d:'GMRP&UI', sector:'Infra', mcap:5500},
+    {s:'GNFC.NS', d:'GNFC', sector:'Fertilizers', mcap:14000},
     {s:'GODFRYPHLP.NS', d:'GODFRYPHLP', sector:'Other', mcap:null},
     {s:'GODIGIT.NS', d:'GODIGIT', sector:'Insurance', mcap:28000},
     {s:'GODREJAGRO.NS', d:'GODREJAGRO', sector:'FMCG', mcap:18000},
+    {s:'GODREJCP.NS', d:'GODREJCP', sector:'FMCG', mcap:115000},
+    {s:'GODREJIND.NS', d:'GODREJIND', sector:'Diversified', mcap:null},
+    {s:'GODREJPROP.NS', d:'GODREJPROP', sector:'Realty', mcap:75000},
     {s:'GOKEX.NS', d:'GOKEX', sector:'Other', mcap:null},
     {s:'GOKULAGRO.NS', d:'GOKULAGRO', sector:'Other', mcap:null},
     {s:'GOLDIAM.NS', d:'GOLDIAM', sector:'Other', mcap:null},
     {s:'GPIL.NS', d:'GPIL', sector:'Other', mcap:null},
     {s:'GPPL.NS', d:'GPPL', sector:'Other', mcap:null},
+    {s:'GRANULES.NS', d:'GRANULES', sector:'Pharma', mcap:14000},
     {s:'GRAPHITE.NS', d:'GRAPHITE', sector:'Other', mcap:null},
+    {s:'GRASIM.NS', d:'GRASIM', sector:'Cement', mcap:170000},
+    {s:'GRAVITA.NS', d:'GRAVITA', sector:'Metals', mcap:null},
     {s:'GREAVESCOT.NS', d:'GREAVESCOT', sector:'Other', mcap:null},
+    {s:'GRINDWELL.NS', d:'GRINDWELL', sector:'Abrasives', mcap:18000},
     {s:'GRMOVER.NS', d:'GRMOVER', sector:'Other', mcap:null},
     {s:'GROWW.NS', d:'GROWW', sector:'Financial', mcap:60000},
     {s:'GRSE.NS', d:'GRSE', sector:'Defence', mcap:28000},
+    {s:'GRWRHITECH.NS', d:'GRWRHITECH', sector:'Cap Goods', mcap:null},
+    {s:'GSFC.NS', d:'GSFC', sector:'Fertilizers', mcap:7000},
+    {s:'GUJGASLTD.NS', d:'GUJGASLTD', sector:'Gas', mcap:10000},
     {s:'GVPIL.NS', d:'GVPIL', sector:'Other', mcap:null},
     {s:'GVT&D.NS', d:'GVT&D', sector:'Cap Goods', mcap:18000},
+    {s:'HAL.NS', d:'HAL', sector:'Defence', mcap:330000},
     {s:'HAPPSTMNDS.NS', d:'HAPPSTMNDS', sector:'Other', mcap:null},
+    {s:'HAVELLS.NS', d:'HAVELLS', sector:'Electricals', mcap:95000},
     {s:'HBLENGINE.NS', d:'HBLENGINE', sector:'Other', mcap:null},
+    {s:'HCC.NS', d:'HCC', sector:'Infra', mcap:null},
+    {s:'HCG.NS', d:'HCG', sector:'Healthcare', mcap:null},
+    {s:'HCLTECH.NS', d:'HCLTECH', sector:'IT', mcap:430000},
     {s:'HDBFS.NS', d:'HDBFS', sector:'Financial', mcap:65000},
+    {s:'HDFCAMC.NS', d:'HDFCAMC', sector:'Financial', mcap:85000},
+    {s:'HDFCBANK.NS', d:'HDFCBANK', sector:'Banking', mcap:1250000},
+    {s:'HDFCLIFE.NS', d:'HDFCLIFE', sector:'Insurance', mcap:140000},
     {s:'HEG.NS', d:'HEG', sector:'Other', mcap:null},
+    {s:'HEIDELBERG.NS', d:'HEIDELBERG', sector:'Cement', mcap:7000},
     {s:'HEMIPROP.NS', d:'HEMIPROP', sector:'Other', mcap:null},
     {s:'HERITGFOOD.NS', d:'HERITGFOOD', sector:'Other', mcap:null},
+    {s:'HEROMOTOCO.NS', d:'HEROMOTOCO', sector:'Auto', mcap:90000},
     {s:'HEXT.NS', d:'HEXT', sector:'Other', mcap:null},
     {s:'HFCL.NS', d:'HFCL', sector:'Telecom', mcap:18000},
     {s:'HGINFRA.NS', d:'HGINFRA', sector:'Other', mcap:null},
     {s:'HIKAL.NS', d:'HIKAL', sector:'Other', mcap:null},
+    {s:'HINDALCO.NS', d:'HINDALCO', sector:'Metals', mcap:150000},
+    {s:'HINDCOPPER.NS', d:'HINDCOPPER', sector:'Metals', mcap:14000},
     {s:'HINDPETRO.NS', d:'HINDPETRO', sector:'Energy', mcap:85000},
+    {s:'HINDUNILVR.NS', d:'HINDUNILVR', sector:'FMCG', mcap:550000},
+    {s:'HINDZINC.NS', d:'HINDZINC', sector:'Metals', mcap:140000},
+    {s:'HITACHI.NS', d:'HITACHI', sector:'Cap Goods', mcap:45000},
     {s:'HOMEFIRST.NS', d:'HOMEFIRST', sector:'Financial', mcap:11000},
+    {s:'HONASA.NS', d:'HONASA', sector:'FMCG', mcap:10000},
+    {s:'HONAUT.NS', d:'HONAUT', sector:'Cap Goods', mcap:35000},
     {s:'HPL.NS', d:'HPL', sector:'Other', mcap:null},
     {s:'HSCL.NS', d:'HSCL', sector:'Other', mcap:null},
     {s:'HUBTOWN.NS', d:'HUBTOWN', sector:'Other', mcap:null},
+    {s:'HUDCO.NS', d:'HUDCO', sector:'Financial', mcap:45000},
     {s:'HYUNDAI.NS', d:'HYUNDAI', sector:'Auto', mcap:150000},
     {s:'ICICIAMC.NS', d:'ICICIAMC', sector:'Financial', mcap:95000},
+    {s:'ICICIBANK.NS', d:'ICICIBANK', sector:'Banking', mcap:850000},
+    {s:'ICICIGI.NS', d:'ICICIGI', sector:'Insurance', mcap:95000},
+    {s:'ICICIPRULI.NS', d:'ICICIPRULI', sector:'Insurance', mcap:85000},
     {s:'ICIL.NS', d:'ICIL', sector:'Other', mcap:null},
     {s:'IDBI.NS', d:'IDBI', sector:'Banking', mcap:90000},
+    {s:'IDEA.NS', d:'IDEA', sector:'Telecom', mcap:null},
+    {s:'IDFCFIRSTB.NS', d:'IDFCFIRSTB', sector:'Banking', mcap:55000},
+    {s:'IEX.NS', d:'IEX', sector:'Financial', mcap:18000},
+    {s:'IFBIND.NS', d:'IFBIND', sector:'Consumer Durables', mcap:null},
+    {s:'IFCI.NS', d:'IFCI', sector:'Financial', mcap:7000},
     {s:'IGIL.NS', d:'IGIL', sector:'Other', mcap:null},
+    {s:'IGL.NS', d:'IGL', sector:'Gas', mcap:18000},
     {s:'IIFL.NS', d:'IIFL', sector:'Financial', mcap:18000},
     {s:'IIFLCAPS.NS', d:'IIFLCAPS', sector:'Other', mcap:null},
+    {s:'IKS.NS', d:'IKS', sector:'IT', mcap:null},
     {s:'IMFA.NS', d:'IMFA', sector:'Other', mcap:null},
     {s:'INDGN.NS', d:'INDGN', sector:'Chemicals', mcap:5500},
     {s:'INDHOTEL.NS', d:'INDHOTEL', sector:'Consumer Services', mcap:95000},
+    {s:'INDIACEM.NS', d:'INDIACEM', sector:'Cement', mcap:7000},
+    {s:'INDIAGLYCO.NS', d:'INDIAGLYCO', sector:'FMCG', mcap:null},
+    {s:'INDIAMART.NS', d:'INDIAMART', sector:'Internet', mcap:18000},
     {s:'INDIANB.NS', d:'INDIANB', sector:'Banking', mcap:75000},
+    {s:'INDIASHLTR.NS', d:'INDIASHLTR', sector:'Financial', mcap:null},
+    {s:'INDIGO.NS', d:'INDIGO', sector:'Aviation', mcap:200000},
+    {s:'INDIGOPNTS.NS', d:'INDIGOPNTS', sector:'Paints', mcap:7000},
     {s:'INDOTHAI.NS', d:'INDOTHAI', sector:'Other', mcap:null},
     {s:'INDRAMEDCO.NS', d:'INDRAMEDCO', sector:'Other', mcap:null},
+    {s:'INDUSINDBK.NS', d:'INDUSINDBK', sector:'Banking', mcap:85000},
     {s:'INDUSTOWER.NS', d:'INDUSTOWER', sector:'Telecom', mcap:85000},
     {s:'INFOBEAN.NS', d:'INFOBEAN', sector:'Other', mcap:null},
+    {s:'INFY.NS', d:'INFY', sector:'IT', mcap:600000},
     {s:'INOXGREEN.NS', d:'INOXGREEN', sector:'Other', mcap:null},
+    {s:'INOXINDIA.NS', d:'INOXINDIA', sector:'Cap Goods', mcap:null},
     {s:'INOXWIND.NS', d:'INOXWIND', sector:'Renewables', mcap:30000},
     {s:'INTELLECT.NS', d:'INTELLECT', sector:'Other', mcap:null},
+    {s:'IOB.NS', d:'IOB', sector:'Financial', mcap:null},
+    {s:'IOC.NS', d:'IOC', sector:'Energy', mcap:200000},
     {s:'IOLCP.NS', d:'IOLCP', sector:'Other', mcap:null},
     {s:'IONEXCHANG.NS', d:'IONEXCHANG', sector:'Other', mcap:null},
+    {s:'IPCALAB.NS', d:'IPCALAB', sector:'Pharma', mcap:28000},
+    {s:'IRB.NS', d:'IRB', sector:'Infra', mcap:28000},
     {s:'IRBINVIT.NS', d:'IRBINVIT', sector:'Other', mcap:null},
+    {s:'IRCON.NS', d:'IRCON', sector:'Infra', mcap:14000},
+    {s:'IRCTC.NS', d:'IRCTC', sector:'Travel', mcap:65000},
     {s:'IREDA.NS', d:'IREDA', sector:'Financial', mcap:40000},
+    {s:'IRFC.NS', d:'IRFC', sector:'Financial', mcap:180000},
+    {s:'ITC.NS', d:'ITC', sector:'FMCG', mcap:525000},
     {s:'ITCHOTELS.NS', d:'ITCHOTELS', sector:'Consumer Services', mcap:45000},
     {s:'ITDC.NS', d:'ITDC', sector:'Other', mcap:null},
     {s:'ITI.NS', d:'ITI', sector:'Other', mcap:null},
@@ -1078,143 +1130,259 @@ const UNI = {
     {s:'JBMA.NS', d:'JBMA', sector:'Auto Anc.', mcap:18000},
     {s:'JINDALPOLY.NS', d:'JINDALPOLY', sector:'Other', mcap:null},
     {s:'JINDALSAW.NS', d:'JINDALSAW', sector:'Other', mcap:null},
+    {s:'JINDALSTEL.NS', d:'JINDALSTEL', sector:'Metals', mcap:95000},
+    {s:'JIOFIN.NS', d:'JIOFIN', sector:'Financial', mcap:200000},
+    {s:'JKCEMENT.NS', d:'JKCEMENT', sector:'Cement', mcap:28000},
+    {s:'JKLAKSHMI.NS', d:'JKLAKSHMI', sector:'Cement', mcap:null},
     {s:'JKPAPER.NS', d:'JKPAPER', sector:'Other', mcap:null},
+    {s:'JKTYRE.NS', d:'JKTYRE', sector:'Tyres', mcap:7000},
+    {s:'JLHL.NS', d:'JLHL', sector:'Healthcare', mcap:null},
     {s:'JMFINANCIL.NS', d:'JMFINANCIL', sector:'Financial', mcap:14000},
+    {s:'JPPOWER.NS', d:'JPPOWER', sector:'Power', mcap:null},
     {s:'JSFB.NS', d:'JSFB', sector:'Other', mcap:null},
+    {s:'JSL.NS', d:'JSL', sector:'Metals', mcap:45000},
     {s:'JSLL.NS', d:'JSLL', sector:'Other', mcap:null},
     {s:'JSWCEMENT.NS', d:'JSWCEMENT', sector:'Other', mcap:null},
+    {s:'JSWDULUX.NS', d:'JSWDULUX', sector:'Consumer Durables', mcap:null},
     {s:'JSWENERGY.NS', d:'JSWENERGY', sector:'Power', mcap:95000},
     {s:'JSWINFRA.NS', d:'JSWINFRA', sector:'Infra', mcap:45000},
+    {s:'JSWSTEEL.NS', d:'JSWSTEEL', sector:'Metals', mcap:230000},
     {s:'JTLIND.NS', d:'JTLIND', sector:'Other', mcap:null},
+    {s:'JUBLFOOD.NS', d:'JUBLFOOD', sector:'Consumer Services', mcap:30000},
+    {s:'JUBLINGREA.NS', d:'JUBLINGREA', sector:'Chemicals', mcap:null},
+    {s:'JUBLPHARMA.NS', d:'JUBLPHARMA', sector:'Healthcare', mcap:null},
     {s:'JUNIPER.NS', d:'JUNIPER', sector:'Other', mcap:null},
+    {s:'JUSTDIAL.NS', d:'JUSTDIAL', sector:'Internet', mcap:10000},
     {s:'JWL.NS', d:'JWL', sector:'Cap Goods', mcap:18000},
     {s:'JYOTHYLAB.NS', d:'JYOTHYLAB', sector:'FMCG', mcap:14000},
     {s:'JYOTICNC.NS', d:'JYOTICNC', sector:'Other', mcap:null},
     {s:'KAJARIACER.NS', d:'KAJARIACER', sector:'Consumer Durables', mcap:16000},
+    {s:'KALYANKJIL.NS', d:'KALYANKJIL', sector:'Jewellery', mcap:45000},
+    {s:'KANSAINER.NS', d:'KANSAINER', sector:'Paints', mcap:18000},
     {s:'KARURVYSYA.NS', d:'KARURVYSYA', sector:'Banking', mcap:20000},
+    {s:'KAYNES.NS', d:'KAYNES', sector:'Electronics', mcap:28000},
+    {s:'KEC.NS', d:'KEC', sector:'Cap Goods', mcap:20000},
     {s:'KEI.NS', d:'KEI', sector:'Electricals', mcap:28000},
     {s:'KFINTECH.NS', d:'KFINTECH', sector:'Financial', mcap:14000},
     {s:'KIMS.NS', d:'KIMS', sector:'Healthcare', mcap:28000},
     {s:'KIOCL.NS', d:'KIOCL', sector:'Other', mcap:null},
     {s:'KIRIINDUS.NS', d:'KIRIINDUS', sector:'Other', mcap:null},
+    {s:'KIRLOSBROS.NS', d:'KIRLOSBROS', sector:'Cap Goods', mcap:null},
+    {s:'KIRLOSENG.NS', d:'KIRLOSENG', sector:'Cap Goods', mcap:14000},
+    {s:'KIRLPNU.NS', d:'KIRLPNU', sector:'Cap Goods', mcap:null},
     {s:'KITEX.NS', d:'KITEX', sector:'Other', mcap:null},
     {s:'KNRCON.NS', d:'KNRCON', sector:'Infra', mcap:10000},
+    {s:'KOTAKBANK.NS', d:'KOTAKBANK', sector:'Banking', mcap:370000},
     {s:'KPIGREEN.NS', d:'KPIGREEN', sector:'Other', mcap:null},
+    {s:'KPIL.NS', d:'KPIL', sector:'Infra', mcap:null},
+    {s:'KPITTECH.NS', d:'KPITTECH', sector:'IT', mcap:35000},
+    {s:'KPRMILL.NS', d:'KPRMILL', sector:'Textiles', mcap:28000},
     {s:'KRBL.NS', d:'KRBL', sector:'Other', mcap:null},
     {s:'KRN.NS', d:'KRN', sector:'Other', mcap:null},
+    {s:'KSB.NS', d:'KSB', sector:'Cap Goods', mcap:null},
+    {s:'KSCL.NS', d:'KSCL', sector:'FMCG', mcap:null},
     {s:'KTKBANK.NS', d:'KTKBANK', sector:'Other', mcap:null},
     {s:'LALPATHLAB.NS', d:'LALPATHLAB', sector:'Healthcare', mcap:22000},
     {s:'LATENTVIEW.NS', d:'LATENTVIEW', sector:'IT', mcap:7000},
+    {s:'LAURUSLABS.NS', d:'LAURUSLABS', sector:'Pharma', mcap:35000},
     {s:'LEMONTREE.NS', d:'LEMONTREE', sector:'Consumer Services', mcap:11000},
     {s:'LENSKART.NS', d:'LENSKART', sector:'Retail', mcap:65000},
     {s:'LGEINDIA.NS', d:'LGEINDIA', sector:'Other', mcap:null},
+    {s:'LICHSGFIN.NS', d:'LICHSGFIN', sector:'Financial', mcap:40000},
+    {s:'LICI.NS', d:'LICI', sector:'Insurance', mcap:600000},
+    {s:'LINDEINDIA.NS', d:'LINDEINDIA', sector:'Chemicals', mcap:null},
     {s:'LLOYDSENGG.NS', d:'LLOYDSENGG', sector:'Other', mcap:null},
     {s:'LLOYDSENT.NS', d:'LLOYDSENT', sector:'Other', mcap:null},
     {s:'LLOYDSME.NS', d:'LLOYDSME', sector:'Other', mcap:null},
+    {s:'LODHA.NS', d:'LODHA', sector:'Realty', mcap:110000},
     {s:'LOTUSDEV.NS', d:'LOTUSDEV', sector:'Other', mcap:null},
+    {s:'LT.NS', d:'LT', sector:'Cap Goods', mcap:480000},
     {s:'LTF.NS', d:'LTF', sector:'Financial', mcap:40000},
     {s:'LTFOODS.NS', d:'LTFOODS', sector:'FMCG', mcap:10000},
+    {s:'LTIM.NS', d:'LTIM', sector:'IT', mcap:150000},
     {s:'LTM.NS', d:'LTM', sector:'Other', mcap:null},
+    {s:'LTTS.NS', d:'LTTS', sector:'IT', mcap:40000},
     {s:'LUMAXTECH.NS', d:'LUMAXTECH', sector:'Other', mcap:null},
+    {s:'LUPIN.NS', d:'LUPIN', sector:'Pharma', mcap:90000},
     {s:'LXCHEM.NS', d:'LXCHEM', sector:'Other', mcap:null},
+    {s:'M&M.NS', d:'M&M', sector:'Auto', mcap:350000},
     {s:'M&MFIN.NS', d:'M&MFIN', sector:'Financial', mcap:28000},
     {s:'MAHABANK.NS', d:'MAHABANK', sector:'Other', mcap:null},
     {s:'MAHLOG.NS', d:'MAHLOG', sector:'Other', mcap:null},
+    {s:'MAHSCOOTER.NS', d:'MAHSCOOTER', sector:'Financial', mcap:null},
+    {s:'MAHSEAMLES.NS', d:'MAHSEAMLES', sector:'Cap Goods', mcap:null},
     {s:'MAITHANALL.NS', d:'MAITHANALL', sector:'Other', mcap:null},
     {s:'MANAPPURAM.NS', d:'MANAPPURAM', sector:'Financial', mcap:18000},
     {s:'MANINDS.NS', d:'MANINDS', sector:'Other', mcap:null},
     {s:'MANINFRA.NS', d:'MANINFRA', sector:'Other', mcap:null},
+    {s:'MANKIND.NS', d:'MANKIND', sector:'Pharma', mcap:90000},
+    {s:'MANORAMA.NS', d:'MANORAMA', sector:'FMCG', mcap:null},
+    {s:'MANYAVAR.NS', d:'MANYAVAR', sector:'Consumer Services', mcap:null},
+    {s:'MAPMYINDIA.NS', d:'MAPMYINDIA', sector:'IT', mcap:null},
+    {s:'MARICO.NS', d:'MARICO', sector:'FMCG', mcap:85000},
     {s:'MARINE.NS', d:'MARINE', sector:'Other', mcap:null},
     {s:'MARKSANS.NS', d:'MARKSANS', sector:'Other', mcap:null},
+    {s:'MARUTI.NS', d:'MARUTI', sector:'Auto', mcap:370000},
+    {s:'MASTEK.NS', d:'MASTEK', sector:'IT', mcap:null},
     {s:'MAXHEALTH.NS', d:'MAXHEALTH', sector:'Healthcare', mcap:95000},
     {s:'MAZDOCK.NS', d:'MAZDOCK', sector:'Defence', mcap:90000},
     {s:'MBAPL.NS', d:'MBAPL', sector:'Other', mcap:null},
     {s:'MBEL.NS', d:'MBEL', sector:'Other', mcap:null},
+    {s:'MCX.NS', d:'MCX', sector:'Financial', mcap:25000},
+    {s:'MEDANTA.NS', d:'MEDANTA', sector:'Healthcare', mcap:null},
+    {s:'MEDPLUS.NS', d:'MEDPLUS', sector:'Consumer Services', mcap:null},
     {s:'MEESHO.NS', d:'MEESHO', sector:'Other', mcap:null},
+    {s:'METROPOLIS.NS', d:'METROPOLIS', sector:'Healthcare', mcap:null},
     {s:'MFSL.NS', d:'MFSL', sector:'Insurance', mcap:28000},
+    {s:'MGL.NS', d:'MGL', sector:'Gas', mcap:14000},
     {s:'MIDHANI.NS', d:'MIDHANI', sector:'Other', mcap:null},
     {s:'MINDACORP.NS', d:'MINDACORP', sector:'Other', mcap:null},
     {s:'MMTC.NS', d:'MMTC', sector:'Other', mcap:null},
     {s:'MOIL.NS', d:'MOIL', sector:'Mining', mcap:7000},
     {s:'MOSCHIP.NS', d:'MOSCHIP', sector:'Other', mcap:null},
+    {s:'MOTHERSON.NS', d:'MOTHERSON', sector:'Auto Anc.', mcap:85000},
     {s:'MOTILALOFS.NS', d:'MOTILALOFS', sector:'Financial', mcap:35000},
+    {s:'MPHASIS.NS', d:'MPHASIS', sector:'IT', mcap:45000},
+    {s:'MRF.NS', d:'MRF', sector:'Tyres', mcap:28000},
     {s:'MRPL.NS', d:'MRPL', sector:'Energy', mcap:28000},
+    {s:'MSTCLTD.NS', d:'MSTCLTD', sector:'Other', mcap:null},
+    {s:'MSUMI.NS', d:'MSUMI', sector:'Auto Anc.', mcap:null},
     {s:'MTARTECH.NS', d:'MTARTECH', sector:'Other', mcap:null},
     {s:'MUFIN.NS', d:'MUFIN', sector:'Other', mcap:null},
+    {s:'MUTHOOTFIN.NS', d:'MUTHOOTFIN', sector:'NBFC', mcap:75000},
     {s:'MUTHOOTMF.NS', d:'MUTHOOTMF', sector:'Other', mcap:null},
     {s:'NACLIND.NS', d:'NACLIND', sector:'Other', mcap:null},
+    {s:'NAM-INDIA.NS', d:'NAM-INDIA', sector:'Financial', mcap:28000},
+    {s:'NATCOPHARM.NS', d:'NATCOPHARM', sector:'Pharma', mcap:20000},
+    {s:'NATIONALUM.NS', d:'NATIONALUM', sector:'Metals', mcap:35000},
+    {s:'NAUKRI.NS', d:'NAUKRI', sector:'Internet', mcap:85000},
     {s:'NAVA.NS', d:'NAVA', sector:'Diversified', mcap:11000},
+    {s:'NAVINFLUOR.NS', d:'NAVINFLUOR', sector:'Chemicals', mcap:14000},
     {s:'NAVNETEDUL.NS', d:'NAVNETEDUL', sector:'Other', mcap:null},
     {s:'NAZARA.NS', d:'NAZARA', sector:'Media', mcap:11000},
+    {s:'NBCC.NS', d:'NBCC', sector:'Infra', mcap:18000},
+    {s:'NCC.NS', d:'NCC', sector:'Infra', mcap:14000},
+    {s:'NEOGEN.NS', d:'NEOGEN', sector:'Chemicals', mcap:null},
     {s:'NEPHROPLUS.NS', d:'NEPHROPLUS', sector:'Other', mcap:null},
+    {s:'NESCO.NS', d:'NESCO', sector:'Other', mcap:null},
+    {s:'NESTLEIND.NS', d:'NESTLEIND', sector:'FMCG', mcap:230000},
     {s:'NETWEB.NS', d:'NETWEB', sector:'Other', mcap:null},
+    {s:'NETWORK18.NS', d:'NETWORK18', sector:'Media', mcap:5000},
+    {s:'NEULANDLAB.NS', d:'NEULANDLAB', sector:'Healthcare', mcap:null},
     {s:'NEWGEN.NS', d:'NEWGEN', sector:'Other', mcap:null},
     {s:'NFL.NS', d:'NFL', sector:'Other', mcap:null},
     {s:'NH.NS', d:'NH', sector:'Healthcare', mcap:28000},
+    {s:'NHPC.NS', d:'NHPC', sector:'Power', mcap:100000},
     {s:'NIACL.NS', d:'NIACL', sector:'Insurance', mcap:35000},
     {s:'NITINSPIN.NS', d:'NITINSPIN', sector:'Other', mcap:null},
     {s:'NIVABUPA.NS', d:'NIVABUPA', sector:'Insurance', mcap:18000},
     {s:'NLCINDIA.NS', d:'NLCINDIA', sector:'Power', mcap:18000},
+    {s:'NMDC.NS', d:'NMDC', sector:'Metals', mcap:65000},
     {s:'NOCIL.NS', d:'NOCIL', sector:'Other', mcap:null},
     {s:'NORTHARC.NS', d:'NORTHARC', sector:'Other', mcap:null},
     {s:'NRBBEARING.NS', d:'NRBBEARING', sector:'Other', mcap:null},
+    {s:'NSLNISP.NS', d:'NSLNISP', sector:'Metals', mcap:null},
+    {s:'NTPC.NS', d:'NTPC', sector:'Power', mcap:330000},
     {s:'NTPCGREEN.NS', d:'NTPCGREEN', sector:'Renewables', mcap:95000},
     {s:'NUVAMA.NS', d:'NUVAMA', sector:'Financial', mcap:18000},
     {s:'NUVOCO.NS', d:'NUVOCO', sector:'Cement', mcap:11000},
+    {s:'NYKAA.NS', d:'NYKAA', sector:'E-commerce', mcap:55000},
+    {s:'OBEROIRLTY.NS', d:'OBEROIRLTY', sector:'Realty', mcap:60000},
+    {s:'OFSS.NS', d:'OFSS', sector:'IT', mcap:65000},
     {s:'OIL.NS', d:'OIL', sector:'Energy', mcap:55000},
+    {s:'OLAELEC.NS', d:'OLAELEC', sector:'Auto Anc.', mcap:null},
     {s:'OLECTRA.NS', d:'OLECTRA', sector:'Other', mcap:null},
     {s:'ONESOURCE.NS', d:'ONESOURCE', sector:'Pharma', mcap:6000},
+    {s:'ONGC.NS', d:'ONGC', sector:'Energy', mcap:330000},
+    {s:'OPTIEMUS.NS', d:'OPTIEMUS', sector:'Telecom', mcap:null},
     {s:'ORIENTCEM.NS', d:'ORIENTCEM', sector:'Other', mcap:null},
     {s:'ORIENTELEC.NS', d:'ORIENTELEC', sector:'Other', mcap:null},
+    {s:'ORKLAINDIA.NS', d:'ORKLAINDIA', sector:'FMCG', mcap:null},
     {s:'OSWALPUMPS.NS', d:'OSWALPUMPS', sector:'Other', mcap:null},
     {s:'PACEDIGITK.NS', d:'PACEDIGITK', sector:'Other', mcap:null},
+    {s:'PAGEIND.NS', d:'PAGEIND', sector:'Textiles', mcap:45000},
     {s:'PANACEABIO.NS', d:'PANACEABIO', sector:'Other', mcap:null},
+    {s:'PARADEEP.NS', d:'PARADEEP', sector:'Chemicals', mcap:null},
     {s:'PARAGMILK.NS', d:'PARAGMILK', sector:'Other', mcap:null},
     {s:'PARAS.NS', d:'PARAS', sector:'Other', mcap:null},
     {s:'PARKHOSPS.NS', d:'PARKHOSPS', sector:'Other', mcap:null},
     {s:'PARKHOTELS.NS', d:'PARKHOTELS', sector:'Other', mcap:null},
     {s:'PATANJALI.NS', d:'PATANJALI', sector:'FMCG', mcap:45000},
+    {s:'PAYTM.NS', d:'PAYTM', sector:'Fintech', mcap:35000},
     {s:'PCBL.NS', d:'PCBL', sector:'Other', mcap:null},
+    {s:'PCJEWELLER.NS', d:'PCJEWELLER', sector:'Consumer Durables', mcap:null},
     {s:'PENIND.NS', d:'PENIND', sector:'Other', mcap:null},
+    {s:'PERSISTENT.NS', d:'PERSISTENT', sector:'IT', mcap:75000},
+    {s:'PETRONET.NS', d:'PETRONET', sector:'Gas', mcap:35000},
+    {s:'PFC.NS', d:'PFC', sector:'Financial', mcap:140000},
+    {s:'PFIZER.NS', d:'PFIZER', sector:'Healthcare', mcap:null},
     {s:'PFOCUS.NS', d:'PFOCUS', sector:'Other', mcap:null},
     {s:'PGEL.NS', d:'PGEL', sector:'Other', mcap:null},
+    {s:'PGIL.NS', d:'PGIL', sector:'Textiles', mcap:null},
     {s:'PGINVIT.NS', d:'PGINVIT', sector:'Other', mcap:null},
+    {s:'PHOENIXLTD.NS', d:'PHOENIXLTD', sector:'Realty', mcap:45000},
     {s:'PICCADIL.NS', d:'PICCADIL', sector:'Other', mcap:null},
+    {s:'PIDILITIND.NS', d:'PIDILITIND', sector:'Chemicals', mcap:150000},
+    {s:'PIIND.NS', d:'PIIND', sector:'Agrochem', mcap:65000},
     {s:'PINELABS.NS', d:'PINELABS', sector:'Other', mcap:null},
     {s:'PIRAMALFIN.NS', d:'PIRAMALFIN', sector:'Financial', mcap:28000},
+    {s:'PNB.NS', d:'PNB', sector:'Banking', mcap:110000},
+    {s:'PNBHOUSING.NS', d:'PNBHOUSING', sector:'Financial', mcap:20000},
     {s:'PNCINFRA.NS', d:'PNCINFRA', sector:'Infra', mcap:11000},
     {s:'PNGJL.NS', d:'PNGJL', sector:'Other', mcap:null},
     {s:'POCL.NS', d:'POCL', sector:'Other', mcap:null},
     {s:'POKARNA.NS', d:'POKARNA', sector:'Other', mcap:null},
+    {s:'POLICYBZR.NS', d:'POLICYBZR', sector:'Fintech', mcap:65000},
+    {s:'POLYCAB.NS', d:'POLYCAB', sector:'Electricals', mcap:90000},
+    {s:'POLYMED.NS', d:'POLYMED', sector:'Healthcare', mcap:14000},
     {s:'POONAWALLA.NS', d:'POONAWALLA', sector:'Financial', mcap:28000},
+    {s:'POWERGRID.NS', d:'POWERGRID', sector:'Power', mcap:280000},
     {s:'POWERINDIA.NS', d:'POWERINDIA', sector:'Cap Goods', mcap:45000},
+    {s:'POWERMECH.NS', d:'POWERMECH', sector:'Infra', mcap:null},
     {s:'PPLPHARMA.NS', d:'PPLPHARMA', sector:'Pharma', mcap:28000},
     {s:'PRAJIND.NS', d:'PRAJIND', sector:'Other', mcap:null},
     {s:'PRAKASH.NS', d:'PRAKASH', sector:'Other', mcap:null},
     {s:'PRECWIRE.NS', d:'PRECWIRE', sector:'Other', mcap:null},
     {s:'PREMEXPLN.NS', d:'PREMEXPLN', sector:'Other', mcap:null},
     {s:'PREMIERENE.NS', d:'PREMIERENE', sector:'Other', mcap:null},
+    {s:'PRESTIGE.NS', d:'PRESTIGE', sector:'Realty', mcap:55000},
     {s:'PRICOLLTD.NS', d:'PRICOLLTD', sector:'Other', mcap:null},
+    {s:'PRIVISCL.NS', d:'PRIVISCL', sector:'Chemicals', mcap:null},
     {s:'PROTEAN.NS', d:'PROTEAN', sector:'Financial', mcap:5500},
     {s:'PRSMJOHNSN.NS', d:'PRSMJOHNSN', sector:'Other', mcap:null},
+    {s:'PRUDENT.NS', d:'PRUDENT', sector:'Financial', mcap:null},
     {s:'PTC.NS', d:'PTC', sector:'Other', mcap:null},
+    {s:'PTCIL.NS', d:'PTCIL', sector:'Cap Goods', mcap:null},
     {s:'PURVA.NS', d:'PURVA', sector:'Other', mcap:null},
+    {s:'PVRINOX.NS', d:'PVRINOX', sector:'Media', mcap:10000},
     {s:'PWL.NS', d:'PWL', sector:'Other', mcap:null},
     {s:'QPOWER.NS', d:'QPOWER', sector:'Other', mcap:null},
     {s:'QUESS.NS', d:'QUESS', sector:'Other', mcap:null},
+    {s:'RADICO.NS', d:'RADICO', sector:'FMCG', mcap:28000},
+    {s:'RAILTEL.NS', d:'RAILTEL', sector:'Infra', mcap:7000},
     {s:'RAIN.NS', d:'RAIN', sector:'Other', mcap:null},
+    {s:'RAINBOW.NS', d:'RAINBOW', sector:'Healthcare', mcap:null},
     {s:'RAJRATAN.NS', d:'RAJRATAN', sector:'Other', mcap:null},
     {s:'RALLIS.NS', d:'RALLIS', sector:'Other', mcap:null},
+    {s:'RAMCOCEM.NS', d:'RAMCOCEM', sector:'Cement', mcap:22000},
     {s:'RATEGAIN.NS', d:'RATEGAIN', sector:'Other', mcap:null},
+    {s:'RATNAMANI.NS', d:'RATNAMANI', sector:'Metals', mcap:22000},
+    {s:'RAYMOND.NS', d:'RAYMOND', sector:'Textiles', mcap:10000},
     {s:'RAYMONDLSL.NS', d:'RAYMONDLSL', sector:'Textiles', mcap:10000},
     {s:'RAYMONDREL.NS', d:'RAYMONDREL', sector:'Other', mcap:null},
     {s:'RBA.NS', d:'RBA', sector:'Other', mcap:null},
+    {s:'RBLBANK.NS', d:'RBLBANK', sector:'Banking', mcap:12000},
+    {s:'RCF.NS', d:'RCF', sector:'Fertilizers', mcap:7000},
+    {s:'RECLTD.NS', d:'RECLTD', sector:'Financial', mcap:135000},
     {s:'REDINGTON.NS', d:'REDINGTON', sector:'IT', mcap:18000},
     {s:'REDTAPE.NS', d:'REDTAPE', sector:'Other', mcap:null},
     {s:'REFEX.NS', d:'REFEX', sector:'Other', mcap:null},
+    {s:'RELAXO.NS', d:'RELAXO', sector:'Footwear', mcap:9500},
+    {s:'RELIANCE.NS', d:'RELIANCE', sector:'Energy', mcap:1900000},
     {s:'RELIGARE.NS', d:'RELIGARE', sector:'Financial', mcap:8000},
     {s:'RELINFRA.NS', d:'RELINFRA', sector:'Power', mcap:14000},
     {s:'RELTD.NS', d:'RELTD', sector:'Other', mcap:null},
+    {s:'RENUKA.NS', d:'RENUKA', sector:'FMCG', mcap:null},
     {s:'RESPONIND.NS', d:'RESPONIND', sector:'Other', mcap:null},
     {s:'RHIM.NS', d:'RHIM', sector:'Other', mcap:null},
     {s:'RITES.NS', d:'RITES', sector:'Infra', mcap:11000},
@@ -1223,7 +1391,16 @@ const UNI = {
     {s:'ROLEXRINGS.NS', d:'ROLEXRINGS', sector:'Other', mcap:null},
     {s:'ROSSTECH.NS', d:'ROSSTECH', sector:'Other', mcap:null},
     {s:'ROUTE.NS', d:'ROUTE', sector:'Other', mcap:null},
+    {s:'RPOWER.NS', d:'RPOWER', sector:'Power', mcap:null},
+    {s:'RRKABEL.NS', d:'RRKABEL', sector:'Cap Goods', mcap:null},
+    {s:'RTNINDIA.NS', d:'RTNINDIA', sector:'Consumer Services', mcap:null},
+    {s:'RTNPOWER.NS', d:'RTNPOWER', sector:'Power', mcap:null},
     {s:'RUBICON.NS', d:'RUBICON', sector:'Other', mcap:null},
+    {s:'RVNL.NS', d:'RVNL', sector:'Infra', mcap:85000},
+    {s:'SAATVIKGL.NS', d:'SAATVIKGL', sector:'Cap Goods', mcap:null},
+    {s:'SAFARI.NS', d:'SAFARI', sector:'Consumer Durables', mcap:null},
+    {s:'SAGILITY.NS', d:'SAGILITY', sector:'IT', mcap:null},
+    {s:'SAIL.NS', d:'SAIL', sector:'Metals', mcap:60000},
     {s:'SAILIFE.NS', d:'SAILIFE', sector:'Other', mcap:null},
     {s:'SAKSOFT.NS', d:'SAKSOFT', sector:'Other', mcap:null},
     {s:'SAMBHV.NS', d:'SAMBHV', sector:'Other', mcap:null},
@@ -1232,10 +1409,17 @@ const UNI = {
     {s:'SANDHAR.NS', d:'SANDHAR', sector:'Other', mcap:null},
     {s:'SANDUMA.NS', d:'SANDUMA', sector:'Other', mcap:null},
     {s:'SANGHVIMOV.NS', d:'SANGHVIMOV', sector:'Other', mcap:null},
+    {s:'SANOFI.NS', d:'SANOFI', sector:'Pharma', mcap:35000},
+    {s:'SANOFICONR.NS', d:'SANOFICONR', sector:'Healthcare', mcap:null},
     {s:'SANSERA.NS', d:'SANSERA', sector:'Other', mcap:null},
+    {s:'SAPPHIRE.NS', d:'SAPPHIRE', sector:'Consumer Services', mcap:7000},
     {s:'SARDAEN.NS', d:'SARDAEN', sector:'Other', mcap:null},
+    {s:'SAREGAMA.NS', d:'SAREGAMA', sector:'Media', mcap:null},
     {s:'SBFC.NS', d:'SBFC', sector:'Financial', mcap:11000},
     {s:'SBICARD.NS', d:'SBICARD', sector:'Financial', mcap:75000},
+    {s:'SBILIFE.NS', d:'SBILIFE', sector:'Insurance', mcap:150000},
+    {s:'SBIN.NS', d:'SBIN', sector:'Banking', mcap:700000},
+    {s:'SCHAEFFLER.NS', d:'SCHAEFFLER', sector:'Auto Anc.', mcap:35000},
     {s:'SCHNEIDER.NS', d:'SCHNEIDER', sector:'Other', mcap:null},
     {s:'SCI.NS', d:'SCI', sector:'Logistics', mcap:18000},
     {s:'SENCO.NS', d:'SENCO', sector:'Other', mcap:null},
@@ -1250,67 +1434,143 @@ const UNI = {
     {s:'SHAREINDIA.NS', d:'SHAREINDIA', sector:'Other', mcap:null},
     {s:'SHILPAMED.NS', d:'SHILPAMED', sector:'Other', mcap:null},
     {s:'SHK.NS', d:'SHK', sector:'Other', mcap:null},
+    {s:'SHOPERSTOP.NS', d:'SHOPERSTOP', sector:'Retail', mcap:5000},
+    {s:'SHREECEM.NS', d:'SHREECEM', sector:'Cement', mcap:110000},
     {s:'SHREEJISPG.NS', d:'SHREEJISPG', sector:'Other', mcap:null},
     {s:'SHRINGARMS.NS', d:'SHRINGARMS', sector:'Other', mcap:null},
+    {s:'SHRIPISTON.NS', d:'SHRIPISTON', sector:'Auto Anc.', mcap:null},
+    {s:'SHRIRAMFIN.NS', d:'SHRIRAMFIN', sector:'NBFC', mcap:110000},
+    {s:'SHYAMMETL.NS', d:'SHYAMMETL', sector:'Cap Goods', mcap:null},
+    {s:'SIEMENS.NS', d:'SIEMENS', sector:'Cap Goods', mcap:120000},
     {s:'SIGNATURE.NS', d:'SIGNATURE', sector:'Other', mcap:null},
     {s:'SIRCA.NS', d:'SIRCA', sector:'Other', mcap:null},
     {s:'SJVN.NS', d:'SJVN', sector:'Other', mcap:null},
+    {s:'SKFINDIA.NS', d:'SKFINDIA', sector:'Cap Goods', mcap:22000},
+    {s:'SKFINDUS.NS', d:'SKFINDUS', sector:'Cap Goods', mcap:null},
     {s:'SKIPPER.NS', d:'SKIPPER', sector:'Other', mcap:null},
     {s:'SKYGOLD.NS', d:'SKYGOLD', sector:'Other', mcap:null},
+    {s:'SMARTWORKS.NS', d:'SMARTWORKS', sector:'Other', mcap:null},
+    {s:'SMLMAH.NS', d:'SMLMAH', sector:'Cap Goods', mcap:null},
     {s:'SMSPHARMA.NS', d:'SMSPHARMA', sector:'Other', mcap:null},
+    {s:'SOBHA.NS', d:'SOBHA', sector:'Realty', mcap:null},
+    {s:'SOLARINDS.NS', d:'SOLARINDS', sector:'Chemicals', mcap:null},
+    {s:'SONACOMS.NS', d:'SONACOMS', sector:'Auto Anc.', mcap:30000},
+    {s:'SONATSOFTW.NS', d:'SONATSOFTW', sector:'IT', mcap:8500},
+    {s:'SOUTHBANK.NS', d:'SOUTHBANK', sector:'Banking', mcap:7000},
     {s:'SPANDANA.NS', d:'SPANDANA', sector:'Other', mcap:null},
     {s:'SPARC.NS', d:'SPARC', sector:'Other', mcap:null},
+    {s:'SPLPETRO.NS', d:'SPLPETRO', sector:'Chemicals', mcap:null},
+    {s:'SRF.NS', d:'SRF', sector:'Chemicals', mcap:90000},
     {s:'STAR.NS', d:'STAR', sector:'Other', mcap:null},
     {s:'STARCEMENT.NS', d:'STARCEMENT', sector:'Other', mcap:null},
     {s:'STARHEALTH.NS', d:'STARHEALTH', sector:'Insurance', mcap:28000},
     {s:'STLTECH.NS', d:'STLTECH', sector:'Other', mcap:null},
+    {s:'STYL.NS', d:'STYL', sector:'Financial', mcap:null},
     {s:'STYLEBAAZA.NS', d:'STYLEBAAZA', sector:'Other', mcap:null},
+    {s:'STYRENIX.NS', d:'STYRENIX', sector:'Chemicals', mcap:null},
+    {s:'SUBROS.NS', d:'SUBROS', sector:'Cap Goods', mcap:null},
+    {s:'SUDARSCHEM.NS', d:'SUDARSCHEM', sector:'Chemicals', mcap:null},
+    {s:'SUDEEPPHRM.NS', d:'SUDEEPPHRM', sector:'Chemicals', mcap:null},
     {s:'SUMICHEM.NS', d:'SUMICHEM', sector:'Other', mcap:null},
+    {s:'SUNDARMFIN.NS', d:'SUNDARMFIN', sector:'Financial', mcap:null},
+    {s:'SUNPHARMA.NS', d:'SUNPHARMA', sector:'Pharma', mcap:400000},
+    {s:'SUNTECK.NS', d:'SUNTECK', sector:'Realty', mcap:null},
+    {s:'SUNTV.NS', d:'SUNTV', sector:'Media', mcap:22000},
+    {s:'SUPRAJIT.NS', d:'SUPRAJIT', sector:'Auto Anc.', mcap:5500},
+    {s:'SUPREMEIND.NS', d:'SUPREMEIND', sector:'Pipes', mcap:55000},
+    {s:'SUPRIYA.NS', d:'SUPRIYA', sector:'Healthcare', mcap:null},
     {s:'SURYAROSNI.NS', d:'SURYAROSNI', sector:'Other', mcap:null},
     {s:'SUVEN.NS', d:'SUVEN', sector:'Pharma', mcap:14000},
+    {s:'SUZLON.NS', d:'SUZLON', sector:'Cap Goods', mcap:null},
     {s:'SWANCORP.NS', d:'SWANCORP', sector:'Other', mcap:null},
     {s:'SWIGGY.NS', d:'SWIGGY', sector:'E-commerce', mcap:85000},
     {s:'SWSOLAR.NS', d:'SWSOLAR', sector:'Other', mcap:null},
+    {s:'SYNGENE.NS', d:'SYNGENE', sector:'Pharma/Biotech', mcap:22000},
+    {s:'SYRMA.NS', d:'SYRMA', sector:'Electronics', mcap:14000},
     {s:'TANLA.NS', d:'TANLA', sector:'IT', mcap:8000},
     {s:'TARC.NS', d:'TARC', sector:'Other', mcap:null},
     {s:'TARIL.NS', d:'TARIL', sector:'Other', mcap:null},
     {s:'TATACAP.NS', d:'TATACAP', sector:'Financial', mcap:150000},
+    {s:'TATACHEM.NS', d:'TATACHEM', sector:'Chemicals', mcap:22000},
     {s:'TATACOMM.NS', d:'TATACOMM', sector:'Telecom', mcap:45000},
+    {s:'TATACONSUM.NS', d:'TATACONSUM', sector:'FMCG', mcap:85000},
+    {s:'TATAELXSI.NS', d:'TATAELXSI', sector:'IT', mcap:35000},
     {s:'TATAINVEST.NS', d:'TATAINVEST', sector:'Other', mcap:null},
+    {s:'TATAMOTORS.NS', d:'TATAMOTORS', sector:'Auto', mcap:270000},
+    {s:'TATAPOWER.NS', d:'TATAPOWER', sector:'Power', mcap:120000},
+    {s:'TATASTEEL.NS', d:'TATASTEEL', sector:'Metals', mcap:190000},
     {s:'TATATECH.NS', d:'TATATECH', sector:'IT', mcap:28000},
+    {s:'TBOTEK.NS', d:'TBOTEK', sector:'Consumer Services', mcap:null},
+    {s:'TCI.NS', d:'TCI', sector:'Logistics', mcap:7000},
+    {s:'TCS.NS', d:'TCS', sector:'IT', mcap:1300000},
     {s:'TDPOWERSYS.NS', d:'TDPOWERSYS', sector:'Other', mcap:null},
+    {s:'TECHM.NS', d:'TECHM', sector:'IT', mcap:145000},
     {s:'TECHNOE.NS', d:'TECHNOE', sector:'Other', mcap:null},
+    {s:'TEGA.NS', d:'TEGA', sector:'Cap Goods', mcap:null},
     {s:'TEJASNET.NS', d:'TEJASNET', sector:'Other', mcap:null},
     {s:'TENNIND.NS', d:'TENNIND', sector:'Other', mcap:null},
     {s:'TEXRAIL.NS', d:'TEXRAIL', sector:'Other', mcap:null},
     {s:'TFCILTD.NS', d:'TFCILTD', sector:'Other', mcap:null},
+    {s:'THANGAMAYL.NS', d:'THANGAMAYL', sector:'Consumer Durables', mcap:null},
     {s:'THELEELA.NS', d:'THELEELA', sector:'Other', mcap:null},
+    {s:'THERMAX.NS', d:'THERMAX', sector:'Cap Goods', mcap:35000},
+    {s:'THOMASCOOK.NS', d:'THOMASCOOK', sector:'Consumer Services', mcap:null},
     {s:'THYROCARE.NS', d:'THYROCARE', sector:'Other', mcap:null},
     {s:'TI.NS', d:'TI', sector:'Other', mcap:null},
+    {s:'TIINDIA.NS', d:'TIINDIA', sector:'Auto Anc.', mcap:55000},
     {s:'TIMETECHNO.NS', d:'TIMETECHNO', sector:'Other', mcap:null},
+    {s:'TIMKEN.NS', d:'TIMKEN', sector:'Cap Goods', mcap:22000},
     {s:'TIPSMUSIC.NS', d:'TIPSMUSIC', sector:'Other', mcap:null},
     {s:'TIRUMALCHM.NS', d:'TIRUMALCHM', sector:'Other', mcap:null},
     {s:'TITAGARH.NS', d:'TITAGARH', sector:'Cap Goods', mcap:14000},
+    {s:'TITAN.NS', d:'TITAN', sector:'Consumer', mcap:300000},
     {s:'TMB.NS', d:'TMB', sector:'Other', mcap:null},
     {s:'TMCV.NS', d:'TMCV', sector:'Other', mcap:null},
     {s:'TMPV.NS', d:'TMPV', sector:'Auto', mcap:350000},
+    {s:'TORNTPHARM.NS', d:'TORNTPHARM', sector:'Pharma', mcap:110000},
+    {s:'TORNTPOWER.NS', d:'TORNTPOWER', sector:'Power', mcap:85000},
     {s:'TRANSRAILL.NS', d:'TRANSRAILL', sector:'Other', mcap:null},
+    {s:'TRAVELFOOD.NS', d:'TRAVELFOOD', sector:'Consumer Services', mcap:null},
+    {s:'TRENT.NS', d:'TRENT', sector:'Retail', mcap:280000},
+    {s:'TRIDENT.NS', d:'TRIDENT', sector:'Textiles', mcap:14000},
     {s:'TRITURBINE.NS', d:'TRITURBINE', sector:'Other', mcap:null},
     {s:'TRIVENI.NS', d:'TRIVENI', sector:'Other', mcap:null},
     {s:'TRUALT.NS', d:'TRUALT', sector:'Other', mcap:null},
+    {s:'TSFINV.NS', d:'TSFINV', sector:'Financial', mcap:null},
+    {s:'TTML.NS', d:'TTML', sector:'Telecom', mcap:null},
+    {s:'TVSMOTOR.NS', d:'TVSMOTOR', sector:'Auto', mcap:130000},
     {s:'TVSSCS.NS', d:'TVSSCS', sector:'Other', mcap:null},
+    {s:'UBL.NS', d:'UBL', sector:'FMCG', mcap:45000},
+    {s:'UCOBANK.NS', d:'UCOBANK', sector:'Financial', mcap:null},
     {s:'UJJIVANSFB.NS', d:'UJJIVANSFB', sector:'Banking', mcap:8000},
+    {s:'ULTRACEMCO.NS', d:'ULTRACEMCO', sector:'Cement', mcap:290000},
+    {s:'UNIONBANK.NS', d:'UNIONBANK', sector:'Banking', mcap:85000},
+    {s:'UNITDSPR.NS', d:'UNITDSPR', sector:'FMCG', mcap:120000},
+    {s:'UNOMINDA.NS', d:'UNOMINDA', sector:'Auto Anc.', mcap:35000},
+    {s:'UPL.NS', d:'UPL', sector:'Agrochem', mcap:45000},
     {s:'URBANCO.NS', d:'URBANCO', sector:'Other', mcap:null},
     {s:'USHAMART.NS', d:'USHAMART', sector:'Other', mcap:null},
+    {s:'UTIAMC.NS', d:'UTIAMC', sector:'Financial', mcap:14000},
     {s:'UTLSOLAR.NS', d:'UTLSOLAR', sector:'Other', mcap:null},
+    {s:'V2RETAIL.NS', d:'V2RETAIL', sector:'Consumer Services', mcap:null},
     {s:'VAIBHAVGBL.NS', d:'VAIBHAVGBL', sector:'Other', mcap:null},
+    {s:'VARDHMAN.NS', d:'VARDHMAN', sector:'Textiles', mcap:14000},
+    {s:'VARROC.NS', d:'VARROC', sector:'Auto Anc.', mcap:null},
+    {s:'VBL.NS', d:'VBL', sector:'FMCG', mcap:180000},
+    {s:'VEDL.NS', d:'VEDL', sector:'Metals', mcap:180000},
     {s:'VESUVIUS.NS', d:'VESUVIUS', sector:'Other', mcap:null},
+    {s:'VGUARD.NS', d:'VGUARD', sector:'Consumer Durables', mcap:18000},
+    {s:'VIJAYA.NS', d:'VIJAYA', sector:'Healthcare', mcap:null},
     {s:'VIKRAMSOLR.NS', d:'VIKRAMSOLR', sector:'Other', mcap:null},
     {s:'VIMTALABS.NS', d:'VIMTALABS', sector:'Other', mcap:null},
     {s:'VINCOFE.NS', d:'VINCOFE', sector:'Other', mcap:null},
     {s:'VIPIND.NS', d:'VIPIND', sector:'Other', mcap:null},
     {s:'VIYASH.NS', d:'VIYASH', sector:'Other', mcap:null},
+    {s:'VMART.NS', d:'VMART', sector:'Retail', mcap:7000},
     {s:'VMM.NS', d:'VMM', sector:'Other', mcap:null},
+    {s:'VOLTAMP.NS', d:'VOLTAMP', sector:'Cap Goods', mcap:null},
+    {s:'VOLTAS.NS', d:'VOLTAS', sector:'Consumer Durables', mcap:55000},
+    {s:'VRLLOG.NS', d:'VRLLOG', sector:'Logistics', mcap:5000},
     {s:'VSTIND.NS', d:'VSTIND', sector:'Other', mcap:null},
     {s:'VTL.NS', d:'VTL', sector:'Other', mcap:null},
     {s:'WAAREEENER.NS', d:'WAAREEENER', sector:'Other', mcap:null},
@@ -1318,12 +1578,24 @@ const UNI = {
     {s:'WABAG.NS', d:'WABAG', sector:'Infra', mcap:7000},
     {s:'WAKEFIT.NS', d:'WAKEFIT', sector:'Other', mcap:null},
     {s:'WEBELSOLAR.NS', d:'WEBELSOLAR', sector:'Other', mcap:null},
+    {s:'WELCORP.NS', d:'WELCORP', sector:'Metals', mcap:13000},
+    {s:'WELENT.NS', d:'WELENT', sector:'Infra', mcap:null},
+    {s:'WELSPUNLIV.NS', d:'WELSPUNLIV', sector:'Textiles', mcap:14000},
+    {s:'WESTLIFE.NS', d:'WESTLIFE', sector:'Consumer Services', mcap:10000},
+    {s:'WEWORK.NS', d:'WEWORK', sector:'Other', mcap:null},
+    {s:'WHIRLPOOL.NS', d:'WHIRLPOOL', sector:'Consumer Durables', mcap:18000},
+    {s:'WIPRO.NS', d:'WIPRO', sector:'IT', mcap:270000},
     {s:'WOCKPHARMA.NS', d:'WOCKPHARMA', sector:'Other', mcap:null},
     {s:'YATHARTH.NS', d:'YATHARTH', sector:'Other', mcap:null},
     {s:'YATRA.NS', d:'YATRA', sector:'Other', mcap:null},
+    {s:'YESBANK.NS', d:'YESBANK', sector:'Banking', mcap:55000},
     {s:'ZAGGLE.NS', d:'ZAGGLE', sector:'Other', mcap:null},
+    {s:'ZEEL.NS', d:'ZEEL', sector:'Media', mcap:10000},
     {s:'ZENSARTECH.NS', d:'ZENSARTECH', sector:'Other', mcap:null},
     {s:'ZENTEC.NS', d:'ZENTEC', sector:'Other', mcap:null},
+    {s:'ZFCVINDIA.NS', d:'ZFCVINDIA', sector:'Auto Anc.', mcap:null},
+    {s:'ZYDUSLIFE.NS', d:'ZYDUSLIFE', sector:'Pharma', mcap:130000},
+    {s:'ZYDUSWELL.NS', d:'ZYDUSWELL', sector:'FMCG', mcap:null},
   ],
   us: [
     {s:'AAPL', d:'AAPL', sector:'Technology', mcap:3500},
@@ -1685,7 +1957,7 @@ const UNI = {
     {s:'SOFI', d:'SOFI', sector:'Fintech', mcap:15},
     {s:'SOLS', d:'SOLS', sector:'Energy Infra (small)', mcap:1},
     {s:'SOUN', d:'SOUN', sector:'AI/Voice Tech', mcap:5},
-    {s:'SPCX', d:'SPCX', sector:'Space/AI', mcap:null}, /* SpaceX is NOT publicly traded — no real market cap exists. Kept per request; will likely show "no data" from Stooq since there's no public ticker for it. */
+    {s:'SPCX', d:'SPCX', sector:'Space/AI', mcap:null}, /* SpaceX is NOT publicly traded — no real market cap exists and no exchange ticker exists either, so this row can never populate. */
     {s:'SPOT', d:'SPOT', sector:'Media/Streaming', mcap:140},
     {s:'SRTS', d:'SRTS', sector:'Medtech (small)', mcap:0.1},
     {s:'STX', d:'STX', sector:'Semi/Storage', mcap:35},
@@ -1887,9 +2159,64 @@ let CUR = 'india';
 const SD  = {};           // symbol -> processed data (or null=failed, undefined=pending)
 const LOADED = {};        // market -> bool
 const REV = {};           // symbol -> 'Y'|'N'|'?'
+const REV_LS_KEY = 'sm_review_status';
+let REVIEWS_REMOTE_LOADED = false;
+
+function saveReviewsLocal(){
+  try{ localStorage.setItem(REV_LS_KEY, JSON.stringify(REV)); } catch(e){ /* storage full or disabled — fine, remote/memory still works */ }
+}
+function loadReviewsLocal(){
+  try{
+    const raw=localStorage.getItem(REV_LS_KEY);
+    if(raw) Object.assign(REV, JSON.parse(raw));
+  } catch(e){ /* ignore corrupt/missing data */ }
+}
+
+// Pulls saved review marks from the Google Sheet (if configured), so they
+// sync across browsers/devices rather than being stuck to one localStorage.
+// Non-blocking, same pattern as loadGoogleSheetData — never holds up the
+// rest of the app, and localStorage already gives an instant local view
+// while this loads in the background.
+async function loadReviewsRemote(){
+  if(REVIEWS_REMOTE_LOADED) return;
+  REVIEWS_REMOTE_LOADED=true;
+  if(!CFG.REVIEWS_API_URL) return;
+  const ctrl=new AbortController();
+  const tid=setTimeout(()=>ctrl.abort(),20000);
+  try{
+    const res=await fetch(CFG.REVIEWS_API_URL+'?action=getReviews',{signal:ctrl.signal});
+    clearTimeout(tid);
+    if(!res.ok){ console.warn('Reviews fetch returned', res.status, '— using local marks only.'); return; }
+    const remote=await res.json();
+    if(remote && typeof remote==='object'){
+      Object.assign(REV, remote); // remote is source of truth once loaded; merges over any local-only marks
+      saveReviewsLocal();
+      renderTable(CUR);
+      console.log('Loaded', Object.keys(remote).length, 'saved review marks from the Sheet.');
+    }
+  } catch(e){
+    clearTimeout(tid);
+    console.warn('Reviews fetch failed:', e.name==='AbortError'?'timed out':e.message, '— using local marks only.');
+  }
+}
+
+// Fire-and-forget save to the Sheet — the UI already updated optimistically
+// (see setRev), so a slow or failed save doesn't block anything visually.
+function saveReviewRemote(sym, status){
+  if(!CFG.REVIEWS_API_URL) return;
+  fetch(CFG.REVIEWS_API_URL, {
+    method:'POST',
+    headers:{'Content-Type':'text/plain'}, // deliberately text/plain, not application/json —
+                                             // keeps this a "simple request" so the browser
+                                             // skips a CORS preflight OPTIONS call, which Apps
+                                             // Script Web Apps don't handle
+    body: JSON.stringify({ticker:sym, status:status})
+  }).catch(e=>console.warn('Could not save review mark to Sheet (kept locally):', e.message));
+}
+
 const NOTES = {};         // symbol -> string
 let SORT_C = 'rs', SORT_D = 'desc';
-let F_CAP='All', F_SCT='', F_EMA='', F_RSI='', F_PIV='';
+let F_CAP='All', F_SCT='', F_EMA='', F_RSI='', F_PIV='', F_REV='';
 let SEARCH='', VISIBLE=CFG.INIT;
 let LOADING=false;
 
@@ -2036,7 +2363,7 @@ function breakout(closes,volumes){
 }
 
 function computeTech(C,H,L,V,dates,sym){
-  // Matches parseCSV's minimum — a 2-row stock (e.g. IPO'd a few days ago)
+  // A 2-row stock (e.g. IPO'd a few days ago)
   // is real data, not a failure. Every derived indicator below (RSI, EMA,
   // Stage2, breakout, RS returns, etc.) already null-guards its own minimum
   // history requirement, so this just needs enough for a basic price+change.
@@ -2064,10 +2391,21 @@ function computeTech(C,H,L,V,dates,sym){
   const avgV=vArr.length?vArr.reduce((a,b)=>a+b,0)/vArr.length:0;
   const vRatio=avgV>0?+(todV/avgV).toFixed(2):null;
 
+  /* 52-week high/low.
+     `Math.min(n,252)` means this silently degrades to "highest high in whatever
+     history exists" — so a stock that IPO'd 20 days ago was reporting a 20-day
+     high in a column labelled 52W, and "Near 52W High" would flag it as a
+     breakout candidate on 4 weeks of data. That's not a shorter window, it's a
+     wrong number. Verified in the harness: a 20-bar series returned h52=115.46.
+     Floor it at 120 bars (~6 months) — below that the figure is too far from
+     "52 week" to print, so it nulls out and the cell shows an honest dash.
+     NOTE even at the full window this is ~250 bars, not 252, because the sheet
+     holds ~1 trading year. It is a ~50-week high. The <th> tooltip says so. */
+  const H52_MIN_BARS=120;
   const win=Math.min(n,252);
-  const h52=Math.max(...H.slice(-win));
-  const l52=Math.min(...L.slice(-win));
-  const h52d=+((price/h52-1)*100).toFixed(1);
+  const h52 = n>=H52_MIN_BARS ? Math.max(...H.slice(-win)) : null;
+  const l52 = n>=H52_MIN_BARS ? Math.min(...L.slice(-win)) : null;
+  const h52d = h52 ? +((price/h52-1)*100).toFixed(1) : null;
 
   let dpz='—',wpz='—';
   if(n>=2) dpz=pivZone(price,pivots(H[n-2],L[n-2],C[n-2]));
@@ -2112,15 +2450,154 @@ function computeTech(C,H,L,V,dates,sym){
     dpz,wpz,s2,sq,wVolRatio,
     boGain:bo.gain,boCnt:bo.count,retrace:bo.retrace,
     r3m,r6m,r12,rs:null,mrsRank:null,leadRS:null,rsTrend:null,
-    currency,earnDate:'—',
+    currency,
   };
+}
+
+/* ══════════════════════════════════
+   RS (RELATIVE STRENGTH) CONFIGURATION
+   ────────────────────────────────────
+   Two modes:
+   - 'peer'      (default, original behavior): each stock's blended return
+                  is percentile-ranked against every OTHER stock currently
+                  loaded in the same tab. NOT actually "vs the index" despite
+                  the column label — this is peer-relative, not benchmark-relative.
+   - 'benchmark': fetches one real benchmark ticker (e.g. a Nifty 50 ETF, or
+                  SPY) and computes each stock's EXCESS return over that
+                  benchmark using the same weighted blend, THEN percentile-
+                  ranks those excess returns. This is true relative strength.
+   Weights (w3m/w6m/w12m) apply in both modes and should sum to 1 — enforced
+   by the settings UI, not assumed here.
+══════════════════════════════════ */
+const RS_CFG_KEY='sm_rs_config';
+let RS_CONFIG={
+  // Default flipped from 'peer' to 'benchmark'. 'peer' ranked each stock against
+  // the other stocks currently loaded while the UI label claimed "vs Nifty 500" —
+  // it was never comparing against an index at all. It stayed the default only
+  // because no benchmark ticker could actually be fetched. That's now fixed:
+  // NIFTYBEES.NS and SPY are pulled into the sheet as first-class benchmarks, so
+  // the honest mode is finally the working one.
+  mode:'benchmark',
+  // HDFCSML250.NS = HDFC Nifty Smallcap 250 ETF — the default, as requested.
+  // Worth understanding what this choice means: RS is measured as excess return
+  // over the benchmark, so benchmarking against SMALLCAPS sets a high bar during
+  // a small-cap rally (most of your universe will read as weak) and a low bar
+  // when small caps sell off. That's the correct comparison if the question you
+  // are asking is "which small caps are leading their own peer group", and the
+  // wrong one if you mean "which stocks are beating the broad market".
+  // Both alternatives are fetched and selectable in the RS Settings modal:
+  //   MONIFTY500.NS — Motilal Oswal Nifty 500 ETF (true broad-market Nifty 500)
+  //   NIFTYBEES.NS  — Nippon Nifty 50 ETF (large caps; longest, most liquid history)
+  benchmark:{india:'HDFCSML250.NS', us:'SPY', etf:'SPY'},
+  w3m:0.4, w6m:0.35, w12m:0.25,
+  v:'gs4',   // stamp — see loadRSConfig
+};
+function loadRSConfig(){
+  try{
+    const raw=localStorage.getItem(RS_CFG_KEY);
+    if(!raw) return;
+    const saved=JSON.parse(raw);
+    // Discard a config saved by an older build. Without this, a browser that
+    // used this page before today rehydrates mode:'peer' and the old benchmark
+    // map straight over the defaults above — so the fix ships but silently does
+    // nothing for exactly the people who already use the tool.
+    if(saved.v!==RS_CONFIG.v){
+      console.log('RS settings from an older version discarded; using current defaults.');
+      localStorage.removeItem(RS_CFG_KEY);
+      return;
+    }
+    Object.assign(RS_CONFIG, saved);
+  } catch(e){ /* keep defaults on any corruption */ }
+}
+function saveRSConfig(){
+  try{ localStorage.setItem(RS_CFG_KEY, JSON.stringify(RS_CONFIG)); } catch(e){ /* non-fatal */ }
+}
+
+let BENCHMARK_DATA={}; // market -> {r3m,r6m,r12} | null (null = fetch failed or not in benchmark mode)
+
+async function fetchBenchmark(market){
+  BENCHMARK_DATA[market]=null;
+  if(RS_CONFIG.mode!=='benchmark') return;
+  const ticker=RS_CONFIG.benchmark[market];
+  if(!ticker) return;
+  const fakeDef={s:ticker, d:ticker};
+  const data=await fetchStock(fakeDef);
+  if(data && data.r3m!=null){
+    BENCHMARK_DATA[market]={r3m:data.r3m, r6m:data.r6m, r12:data.r12};
+  } else {
+    // Visible, not silent. A peer-percentile number displayed in a column
+    // labelled "RS" is indistinguishable from a real benchmark-relative one,
+    // which is precisely how the old "vs Nifty 500" mislabelling went unnoticed.
+    // Until the full RS rewrite lands, at least say so on screen.
+    BENCHMARK_FAILED[market]=ticker;
+    console.warn(`Benchmark ${ticker} could not be fetched for ${market} — RS is peer-relative for this load, NOT benchmark-relative.`);
+    const el=document.getElementById('bnrSub');
+    if(el && market===CUR) el.innerHTML=`&nbsp;·&nbsp;<span style="color:var(--red,#DC2626)">RS is peer-relative — benchmark ${ticker} unavailable</span>`;
+  }
+}
+const BENCHMARK_FAILED={};
+
+function blendedReturn(d){
+  return RS_CONFIG.w3m*(d.r3m||0) + RS_CONFIG.w6m*(d.r6m||d.r3m||0) + RS_CONFIG.w12m*(d.r12||d.r6m||d.r3m||0);
+}
+
+function openRSSettings(){
+  $('rsModePeer').checked = RS_CONFIG.mode==='peer';
+  $('rsModeBenchmark').checked = RS_CONFIG.mode==='benchmark';
+  $('rsBenchMarketLabel').textContent = CUR;
+  $('rsBenchmarkInput').value = RS_CONFIG.benchmark[CUR] || '';
+  $('rsW3m').value = Math.round(RS_CONFIG.w3m*100);
+  $('rsW6m').value = Math.round(RS_CONFIG.w6m*100);
+  $('rsW12m').value = Math.round(RS_CONFIG.w12m*100);
+  updateRSWeightSum();
+  $('rsModal').classList.add('open');
+}
+function closeRSSettings(){ $('rsModal').classList.remove('open'); }
+
+function updateRSWeightSum(){
+  const sum=(parseFloat($('rsW3m').value)||0)+(parseFloat($('rsW6m').value)||0)+(parseFloat($('rsW12m').value)||0);
+  const el=$('rsWeightSum');
+  el.textContent=`Total: ${sum}%`;
+  el.style.color = sum===100 ? 'var(--text3)' : 'var(--red)';
+}
+
+async function applyRSConfig(){
+  const w3=parseFloat($('rsW3m').value)||0, w6=parseFloat($('rsW6m').value)||0, w12=parseFloat($('rsW12m').value)||0;
+  const sum=w3+w6+w12;
+  if(Math.abs(sum-100)>0.5){
+    alert(`Weights must total 100% (currently ${sum}%). Adjust before applying.`);
+    return;
+  }
+  RS_CONFIG.mode = $('rsModeBenchmark').checked ? 'benchmark' : 'peer';
+  RS_CONFIG.benchmark[CUR] = $('rsBenchmarkInput').value.trim() || RS_CONFIG.benchmark[CUR];
+  RS_CONFIG.w3m=w3/100; RS_CONFIG.w6m=w6/100; RS_CONFIG.w12m=w12/100;
+  saveRSConfig();
+  closeRSSettings();
+
+  // Re-rank immediately using whatever data is already loaded for this tab —
+  // fetches the benchmark ticker fresh if benchmark mode was just turned on.
+  await fetchBenchmark(CUR);
+  rankRS(CUR);
+  renderTable(CUR);
+  updateStatus();
+}
+
+function resetRSConfig(){
+  RS_CONFIG={ mode:'peer', benchmark:{india:'NIFTYBEES.NS', us:'SPY', etf:'SPY'}, w3m:0.4, w6m:0.35, w12m:0.25 };
+  saveRSConfig();
+  openRSSettings(); // refresh the form to show the reset values
 }
 
 function rankRS(market){
   const items=UNI[market].map(d=>SD[d.s]).filter(d=>d&&d.r3m!=null);
   if(!items.length) return;
+
+  const bench=BENCHMARK_DATA[market];
+  const benchReturn = bench ? blendedReturn(bench) : null;
+
   items.forEach(d=>{
-    d._rr=0.4*(d.r3m||0)+0.35*(d.r6m||d.r3m||0)+0.25*(d.r12||d.r6m||d.r3m||0);
+    const own=blendedReturn(d);
+    d._rr = benchReturn!=null ? (own-benchReturn) : own; // excess-over-benchmark if available, else raw peer-relative
   });
   const sorted=[...items].sort((a,b)=>a._rr-b._rr);
   sorted.forEach((d,i)=>{
@@ -2143,145 +2620,199 @@ function rankRS(market){
 }
 
 /* ══════════════════════════════════
-   API + STOOQ
+   HELPERS
 ══════════════════════════════════ */
-function stooqTick(sym){
-  if(sym.endsWith('.NS')) return sym.toLowerCase();  // tcs.ns
-  return sym.toLowerCase()+'.us';                    // aapl.us
-}
-
-async function proxyFetch(url){
-  for(let i=0;i<CFG.PROXIES.length;i++){
-    if(i>0) await sleep(300+Math.random()*400); // small stagger before trying next proxy
-    const mk=CFG.PROXIES[i];
-    const pu=mk(url);
-    const ctrl=new AbortController();
-    const tid=setTimeout(()=>ctrl.abort(),CFG.TO);
-    try{
-      const res=await fetch(pu,{signal:ctrl.signal});
-      clearTimeout(tid);
-      if(res.ok){
-        const ct=(res.headers.get('content-type')||'').toLowerCase();
-        if(ct.includes('json')){
-          // allorigins might return JSON wrapper
-          const j=await res.json();
-          return j.contents||j; // allorigins wraps in .contents sometimes
-        }
-        return await res.text();
-      }
-    } catch(e){ clearTimeout(tid); }
-  }
-  return null;
-}
-
-function parseCSV(txt){
-  if(!txt||typeof txt!=='string') return null;
-  const t=txt.trim();
-  if(t.length<20||t.toLowerCase().includes('no data')||t.toLowerCase().startsWith('<')) return null;
-  const lines=t.split(/\r?\n/);
-  if(lines.length<3) return null;
-  const hdr=lines[0].toLowerCase();
-  if(!hdr.includes('date')||!hdr.includes('close')) return null;
-
-  const rows=[];
-  for(let i=1;i<lines.length;i++){
-    const pts=lines[i].split(',');
-    if(pts.length<5) continue;
-    const[date,open,high,low,close,vol]=pts;
-    const c=parseFloat(close);
-    if(!date||isNaN(c)||c<=0) continue;
-    rows.push({date:date.trim(),o:parseFloat(open)||c,h:parseFloat(high)||c,l:parseFloat(low)||c,c,v:parseInt(vol)||0});
-  }
-  // Minimum of 2 rows (not 20) — a stock that IPO'd 5 trading days ago is a
-  // real, successfully-fetched dataset, not a failure. It just won't have
-  // enough history for RSI/EMA/Stage2/etc, which all null-guard individually
-  // further down the pipeline. Rejecting it here would wrongly show "no data"
-  // for a stock that actually has valid price/volume to display.
-  if(rows.length<2) return null;
-  // Sort chronologically (oldest first) - Stooq returns newest first
-  rows.sort((a,b)=>a.date.localeCompare(b.date));
-  // Keep last ~300 daily rows (~1.2 years). Was bumped to 1300 (~5yr) to support
-  // a weekly EMA-200, but that's since been replaced with a 10/20/50-week blend
-  // that needs far less data — so back down to a lean, fast-to-parse window.
-  // 300 rows comfortably covers the 253-day lookback the 12-month RS return needs.
-  const d=rows.slice(-300);
-  return{
-    C:d.map(r=>r.c),H:d.map(r=>r.h),L:d.map(r=>r.l),
-    V:d.map(r=>r.v),dates:d.map(r=>r.date),
-  };
-}
-
-function sleep(ms){ return new Promise(r=>setTimeout(r,ms)); }
-
 /* ══════════════════════════════════
-   GOOGLE SHEETS DATA SOURCE (primary, if configured)
-   ────────────────────────────────────────────────
+   GOOGLE SHEETS DATA SOURCE (primary, if configured) — PER MARKET
+   ──────────────────────────────────────────────────────────────
    A published Google Sheet CSV is fetched DIRECTLY — no CORS proxy
    needed at all, since Google's publish-to-web endpoint sets proper
-   cross-origin headers (unlike Stooq, which is why we needed proxies
-   for that source). This is fetched once per page load, then every
-   ticker looks itself up from the parsed result in-memory — instant,
-   no per-stock network requests, no rate-limit risk.
-   Falls back to Stooq+proxy automatically for any ticker not found
-   in the sheet (e.g. you add a new ticker before re-running the script).
-══════════════════════════════════ */
-let GSHEET_DATA=null;            // { 'RELIANCE.NS': {C:[],H:[],L:[],V:[],dates:[]}, ... }
-let GSHEET_LOAD_ATTEMPTED=false; // only try the network fetch once per page load
+   cross-origin headers. Every ticker then looks itself up from the parsed
+   result in-memory — instant, no per-stock network requests, no rate limits.
+   This is now the ONLY data source; the Stooq/CORS-proxy fallback was removed.
 
-async function loadGoogleSheetData(){
-  if(GSHEET_LOAD_ATTEMPTED) return;
-  GSHEET_LOAD_ATTEMPTED=true;
-  if(!CFG.GSHEET_CSV_URL){
-    console.log('Google Sheet URL not configured — using Stooq+proxy only.');
-    return;
-  }
-  // Timeout protection: a published Sheet with hundreds of thousands of
-  // rows can genuinely take a while — Google has to GENERATE the CSV export
-  // server-side (real, non-trivial time for a large sheet) before it even
-  // starts sending bytes, on top of downloading a file that can be 15-20+MB
-  // at full scale. 30s turned out to be too tight once the real dataset was
-  // fully loaded — bumped to 120s. Still must never hang forever, which is
-  // why this exists at all — see loadGoogleSheetData's history for why.
-  const GSHEET_TIMEOUT_MS = 120000;
-  const ctrl=new AbortController();
-  const tid=setTimeout(()=>ctrl.abort(),GSHEET_TIMEOUT_MS);
-  const fetchStart=performance.now();
-  try{
-    setGSheetStatus('checking');
-    console.log('Fetching Google Sheet CSV (this can take up to '+(GSHEET_TIMEOUT_MS/1000)+'s for a large sheet)...');
-    const res=await fetch(CFG.GSHEET_CSV_URL,{signal:ctrl.signal});
-    clearTimeout(tid);
-    const fetchMs=Math.round(performance.now()-fetchStart);
-    if(!res.ok){
-      console.warn('Google Sheet fetch returned HTTP', res.status, 'after', fetchMs, 'ms — falling back to Stooq+proxy for all tickers. Check that the "Data" tab is specifically published (File > Share > Publish to web) and the URL in CFG.GSHEET_CSV_URL matches exactly.');
-      setGSheetStatus('failed');
-      return;
+   WHAT CHANGED: this used to be ONE monolithic CSV covering all three
+   markets, fetched unconditionally at page load. It's now three tabs,
+   one per market, each fetched LAZILY the first time that market is
+   opened. Opening India no longer downloads US and ETF data the user
+   may never look at. Each market's result is cached in memory for the
+   rest of the session and each has its own independent status — one
+   tab failing to publish doesn't take the other two down with it.
+
+   A ticker not present in its market's tab (e.g. added to the HTML before the
+   Apps Script was re-run) shows as "not in the sheet" — there is no fallback.
+   Run sync-universe.py, then re-run the Apps Script, to backfill it.
+══════════════════════════════════ */
+const SHEET_COVERAGE={};     // market -> {missing,extra,thin} — readable from the console
+const GSHEET_BY_MARKET={};   // market -> { 'RELIANCE.NS': {C,H,L,V,dates}, ... } | null
+const GSHEET_STATUS={};      // market -> 'unconfigured'|'loading'|'ok'|'failed'
+const GSHEET_PROMISE={};     // market -> in-flight/settled promise (shared, never rejects)
+let GSHEET_DATA=null;        // pointer to the ACTIVE market's map — what fetchStock() reads
+
+/* Returns a promise that ALWAYS resolves (never rejects) once this market's
+   sheet attempt has finished, successfully or not. Cached, so concurrent
+   callers and repeated tab switches share a single network request. */
+function loadGoogleSheetData(market){
+  if(GSHEET_PROMISE[market]) return GSHEET_PROMISE[market];
+  GSHEET_PROMISE[market]=(async()=>{
+    const url=CFG.GSHEET_CSV_URLS && CFG.GSHEET_CSV_URLS[market];
+    if(!url){
+      GSHEET_STATUS[market]='unconfigured';
+      GSHEET_BY_MARKET[market]=null;
+      console.warn(`[${market}] No Google Sheet URL configured — this market cannot load any data.`);
+      setGSheetStatus(market);
+      return null;
     }
-    console.log('Google Sheet responded OK after', fetchMs, 'ms — reading and parsing...');
-    const text=await res.text();
-    console.log('CSV size:', (text.length/1024/1024).toFixed(2), 'MB');
-    GSHEET_DATA=parseGSheetCSV(text);
-    const n=GSHEET_DATA?Object.keys(GSHEET_DATA).length:0;
-    console.log('Google Sheet data loaded:', n, 'tickers available.');
-    setGSheetStatus('ok', n);
-  } catch(e){
-    clearTimeout(tid);
-    const fetchMs=Math.round(performance.now()-fetchStart);
-    const reason = e.name==='AbortError' ? `timed out after ${GSHEET_TIMEOUT_MS/1000}s` : e.message;
-    console.warn('Google Sheet fetch failed:', reason, '(after', fetchMs, 'ms) — falling back to Stooq+proxy for all tickers.');
-    GSHEET_DATA=null;
-    setGSheetStatus('failed');
-  }
+    GSHEET_STATUS[market]='loading';
+    setGSheetStatus(market);
+    const ctrl=new AbortController();
+    const tid=setTimeout(()=>ctrl.abort(),CFG.GSHEET_TO);
+    const t0=performance.now();
+    try{
+      console.log(`[${market}] Fetching sheet CSV (timeout ${CFG.GSHEET_TO/1000}s)...`);
+      const res=await fetch(url,{signal:ctrl.signal});
+      clearTimeout(tid);
+      const ms=Math.round(performance.now()-t0);
+      if(!res.ok){
+        console.warn(`[${market}] Sheet fetch returned HTTP ${res.status} after ${ms}ms — this market will show no data. Check that THIS tab specifically is published (File > Share > Publish to web > pick the tab > CSV) and that the gid in CFG.GSHEET_CSV_URLS.${market} matches.`);
+        GSHEET_STATUS[market]='failed'; GSHEET_BY_MARKET[market]=null;
+        setGSheetStatus(market);
+        return null;
+      }
+      const text=await res.text();
+      const parsed=parseGSheetCSV(text);
+      const n=parsed?Object.keys(parsed).length:0;
+      GSHEET_BY_MARKET[market]=n?parsed:null;
+      GSHEET_STATUS[market]=n?'ok':'failed';
+      console.log(`[${market}] Sheet OK in ${ms}ms — ${(text.length/1024/1024).toFixed(2)} MB, ${n} tickers.`);
+      if(!n) console.warn(`[${market}] Sheet fetched fine but parsed to 0 tickers — the tab is probably empty, or its columns aren't Ticker,Date,Open,High,Low,Close,Volume.`);
+      // Late arrival still helps: if the bounded race in loadMarket() already
+      // gave up and moved on, repoint the live pointer here so every ticker
+      // fetched from this moment onward sees the data.
+      if(market===CUR) GSHEET_DATA=GSHEET_BY_MARKET[market];
+      verifyMarketShape(market);
+      reportSheetCoverage(market);
+      setGSheetStatus(market);
+      return GSHEET_BY_MARKET[market];
+    } catch(e){
+      clearTimeout(tid);
+      const ms=Math.round(performance.now()-t0);
+      const reason = e.name==='AbortError' ? `timed out after ${CFG.GSHEET_TO/1000}s` : e.message;
+      console.warn(`[${market}] Sheet fetch failed: ${reason} (after ${ms}ms) — this market will show no data.`);
+      GSHEET_STATUS[market]='failed'; GSHEET_BY_MARKET[market]=null;
+      setGSheetStatus(market);
+      return null;
+    }
+  })();
+  return GSHEET_PROMISE[market];
 }
 
-// Lightweight status hook so the UI can reflect what's happening with the
-// Google Sheet check without blocking anything — purely informational.
-function setGSheetStatus(state, count){
+/* Did this market's URL actually fetch this market's tab?
+   ───────────────────────────────────────────────────────
+   Published-CSV URLs are distinguished only by a `gid` number, and gid 0 is
+   simply "whichever sheet was created first" — not necessarily Data_India.
+   Point a slot at the wrong tab and every ticker misses, which presents as a
+   totally generic "no data everywhere". This turns that into a specific,
+   actionable message instead of a debugging session. */
+function verifyMarketShape(market){
+  const data=GSHEET_BY_MARKET[market];
+  const shape=CFG.MARKET_SHAPE && CFG.MARKET_SHAPE[market];
+  if(!data || !shape) return;
+  const tickers=Object.keys(data);
+  if(!tickers.length) return;
+  const good=tickers.filter(shape.test).length;
+  const pct=Math.round(good/tickers.length*100);
+  if(pct>=80) return;                       // normal; a few odd names are fine
+  SHEET_MISROUTED[market]=true;
+  const msg=`[${market}] WRONG TAB? Expected ${shape.desc}, but only ${pct}% of the `
+    + `${tickers.length} tickers in this CSV look like that. `
+    + `CFG.GSHEET_CSV_URLS.${market} is probably pointing at a different tab of the `
+    + `workbook. Open the Sheet, click the Data_${market==='india'?'India':market.toUpperCase()} `
+    + `tab, and copy the gid=NNN number out of your browser's address bar.`;
+  console.error(msg);
   const el=document.getElementById('srcTag');
-  if(!el) return;
-  if(state==='ok') el.title = `Google Sheet data loaded: ${count} tickers available as the primary source.`;
-  if(state==='failed') el.title = 'Google Sheet unavailable or not configured — using Stooq.com directly for all tickers.';
-  if(state==='checking') el.title = 'Checking Google Sheet for cached data...';
+  if(el && market===CUR){ el.className='src-tag'; el.textContent='⬤ Wrong sheet tab?'; el.title=msg; }
+}
+const SHEET_MISROUTED={};
+
+/* Ticker coverage diagnostic — reports, per market, exactly which tickers in
+   the HTML universe are absent from that market's tab and which tickers exist
+   in the tab but not in the HTML. Console-only and non-destructive: it never
+   adds or drops a ticker, it just tells you what to reconcile by hand. */
+function reportSheetCoverage(market){
+  const data=GSHEET_BY_MARKET[market];
+  if(!data || !UNI[market]) return;
+  const inSheet=new Set(Object.keys(data));
+  const inHtml=new Set(UNI[market].map(d=>d.s));
+  const missing=[...inHtml].filter(t=>!inSheet.has(t)).sort();
+  const extra=[...inSheet].filter(t=>!inHtml.has(t)).sort();
+  const thin=[...inHtml].filter(t=>inSheet.has(t)&&data[t].C.length<50)
+                        .map(t=>`${t}(${data[t].C.length})`).sort();
+  console.groupCollapsed(`[${market}] Sheet coverage — HTML ${inHtml.size} / sheet ${inSheet.size} · missing ${missing.length} · sheet-only ${extra.length} · thin ${thin.length}`);
+  console.log('MISSING from sheet (HTML has them, tab does not):', missing.length?missing.join(', '):'none');
+  console.log('SHEET-ONLY (tab has them, HTML does not):', extra.length?extra.join(', '):'none');
+  console.log('THIN history (<50 bars in sheet):', thin.length?thin.join(', '):'none');
+  console.groupEnd();
+  SHEET_COVERAGE[market]={missing,extra,thin};
+}
+
+// Lightweight status hook so the UI can reflect what's happening with each
+// market's sheet without blocking anything — purely informational.
+function setGSheetStatus(market){
+  const el=document.getElementById('srcTag');
+  if(!el || market!==CUR) return;
+  const st=GSHEET_STATUS[market];
+  const n=GSHEET_BY_MARKET[market]?Object.keys(GSHEET_BY_MARKET[market]).length:0;
+  const M=market.toUpperCase();
+  // BUG THIS FIXES: the final `else` used to say "no Google Sheet URL configured".
+  // But GSHEET_STATUS[market] is *undefined* until that market's fetch actually
+  // starts, and switchMkt() calls this the instant you click a tab — before
+  // loadMarket() runs. So switching to US or ETF always claimed the URL was
+  // missing when it was configured perfectly well and simply hadn't been used
+  // yet. 'undefined' and 'unconfigured' are different states; they now read
+  // differently.
+  if(st==='ok')                el.title=`${M}: Google Sheet loaded — ${n} tickers.`;
+  else if(st==='loading')      el.title=`${M}: downloading the Google Sheet tab…`;
+  else if(st==='failed')       el.title=`${M}: the Google Sheet tab could not be loaded or is empty. No data will be shown — there is no fallback source.`;
+  else if(st==='unconfigured') el.title=`${M}: no Google Sheet URL is set for this market in CFG.GSHEET_CSV_URLS.`;
+  else                         el.title=`${M}: not loaded yet — open this tab to fetch it.`;
+}
+
+/* Normalise a sheet date cell to ISO 'YYYY-MM-DD'.
+   ───────────────────────────────────────────────
+   The sheet writes DD/MM/YYYY. TWO separate things downstream break on that
+   raw string, and both are fixed by normalising once, here, at the boundary:
+
+   1. SORTING. The old code sorted with `localeCompare` on the raw string.
+      On DD/MM/YYYY that's lexicographic, not chronological — '01/09/2025'
+      sorts BEFORE '23/07/2025' because it compares '0' vs '2' in the first
+      character. So a correctly-ordered series arriving from the sheet was
+      actively SCRAMBLED into day-of-month order. Every single indicator
+      downstream (RSI, EMA, SMA, pivots, Stage 2, breakout, 52W, returns)
+      is computed off that ordering, so all of them were wrong.
+
+   2. WEEKLY RESAMPLING. weeklyResample() does `new Date(dt+'T00:00:00Z')`.
+      Given '23/07/2025' that produces '23/07/2025T00:00:00Z' -> Invalid Date,
+      so `mon.toISOString()` throws and the whole weekly leg dies. That kills
+      weekly EMA 10/20 and the Stage 2 criterion that depends on them.
+
+   Returns null for anything unparseable so the row can be skipped rather
+   than silently poisoning the series with a garbage sort key. */
+function normDate(raw){
+  if(!raw) return null;
+  const s=String(raw).trim();
+  if(!s) return null;
+  // Already ISO (or ISO-ish, e.g. a datetime) — take the date part.
+  let m=s.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if(m) return `${m[1]}-${m[2]}-${m[3]}`;
+  // DD/MM/YYYY or D/M/YYYY, optionally with a trailing time component.
+  m=s.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})/);
+  if(m){
+    const d=+m[1], mo=+m[2], y=+m[3];
+    if(mo<1||mo>12||d<1||d>31) return null;
+    return `${y}-${String(mo).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+  }
+  return null;
 }
 
 function parseGSheetCSV(text){
@@ -2290,79 +2821,65 @@ function parseGSheetCSV(text){
   if(lines.length<2) return null;
 
   const grouped={};
+  let badDates=0;
   for(let i=1;i<lines.length;i++){ // row 0 is the header
     const pts=lines[i].split(',');
     if(pts.length<7) continue;
     const[ticker,date,o,h,l,c,v]=pts;
     if(!ticker||!date) continue;
+    const iso=normDate(date);
+    if(!iso){ badDates++; continue; }
     const cNum=parseFloat(c);
     if(isNaN(cNum)) continue;
-    if(!grouped[ticker]) grouped[ticker]={C:[],H:[],L:[],V:[],dates:[]};
-    const g=grouped[ticker];
+    const t=ticker.trim();
+    if(!grouped[t]) grouped[t]={C:[],H:[],L:[],V:[],dates:[]};
+    const g=grouped[t];
     g.C.push(cNum);
     g.H.push(parseFloat(h)||cNum);
     g.L.push(parseFloat(l)||cNum);
     g.V.push(parseInt(v)||0);
-    g.dates.push(date.trim());
+    g.dates.push(iso);   // ISO from here on — never the raw DD/MM/YYYY
   }
+  if(badDates) console.warn(`parseGSheetCSV: skipped ${badDates} row(s) with an unparseable date.`);
 
-  // Defensive sort — Apps Script writes each ticker's rows in date order,
-  // but sort here anyway in case the sheet's ever edited/reordered manually.
+  // Sort chronologically. Now safe as a plain string compare BECAUSE the dates
+  // are ISO — 'YYYY-MM-DD' is the one format where lexicographic order and
+  // chronological order coincide. Also de-duplicates on date, so a sheet that
+  // ever double-writes a day can't corrupt the series.
   Object.keys(grouped).forEach(t=>{
     const g=grouped[t];
-    const idx=g.dates.map((_,i)=>i).sort((a,b)=>g.dates[a].localeCompare(g.dates[b]));
-    grouped[t]={
-      C:idx.map(i=>g.C[i]), H:idx.map(i=>g.H[i]), L:idx.map(i=>g.L[i]),
-      V:idx.map(i=>g.V[i]), dates:idx.map(i=>g.dates[i]),
-    };
+    const idx=g.dates.map((_,i)=>i).sort((a,b)=>
+      g.dates[a]<g.dates[b] ? -1 : g.dates[a]>g.dates[b] ? 1 : a-b);
+    const C=[],H=[],L=[],V=[],dates=[];
+    let prev=null;
+    idx.forEach(i=>{
+      if(g.dates[i]===prev){ // duplicate day — keep the later-written row
+        C[C.length-1]=g.C[i]; H[H.length-1]=g.H[i];
+        L[L.length-1]=g.L[i]; V[V.length-1]=g.V[i];
+        return;
+      }
+      prev=g.dates[i];
+      C.push(g.C[i]); H.push(g.H[i]); L.push(g.L[i]);
+      V.push(g.V[i]); dates.push(g.dates[i]);
+    });
+    grouped[t]={C,H,L,V,dates};
   });
   return grouped;
 }
 
-async function fetchStock(def){
-  // 1) Try Google Sheets first, if configured and this ticker is covered
-  if(GSHEET_DATA && GSHEET_DATA[def.s]){
-    const gd=GSHEET_DATA[def.s];
-    if(gd.C.length>=2){
-      const tech=computeTech(gd.C,gd.H,gd.L,gd.V,gd.dates,def.s);
-      if(tech) return tech;
-    }
-  }
-
-  // 2) Fall back to Stooq via CORS proxy (original path — unchanged)
-  const tick=stooqTick(def.s);
-  const url=`${CFG.STOOQ}${encodeURIComponent(tick)}&i=d`;
-
-  for(let attempt=0; attempt<=CFG.RETRIES; attempt++){
-    if(attempt>0) await sleep(1500*attempt); // back off 1.5s, then 3s before retrying
-    const raw=await proxyFetch(url);
-    if(raw){
-      let csvText=raw;
-      if(typeof raw==='object'&&raw.contents) csvText=raw.contents;
-      const parsed=parseCSV(csvText);
-      if(parsed){
-        const tech=computeTech(parsed.C,parsed.H,parsed.L,parsed.V,parsed.dates,def.s);
-        if(tech) return tech;
-      }
-    }
-  }
-  return null; // failed after all proxies × all retry attempts
+/* Sheet lookup only — no network, no async, no fallback.
+   Returns computed indicators, or null if this ticker simply isn't in the
+   market's tab. Synchronous now, which is why loadMarket can run a plain loop
+   instead of a concurrency pool. */
+function fetchStock(def){
+  const gd = GSHEET_DATA && GSHEET_DATA[def.s];
+  if(!gd || gd.C.length<2) return null;
+  return computeTech(gd.C,gd.H,gd.L,gd.V,gd.dates,def.s) || null;
 }
 
 /* ══════════════════════════════════
    CONCURRENCY
 ══════════════════════════════════ */
-async function runConc(items,fn,conc,onDone){
-  let idx=0;
-  async function worker(){
-    while(idx<items.length){
-      const i=idx++;
-      await fn(items[i],i);
-      if(onDone) onDone(i+1,items.length);
-    }
-  }
-  await Promise.all(Array(Math.min(conc,items.length)).fill(null).map(worker));
-}
 
 /* ══════════════════════════════════
    CACHE
@@ -2681,7 +3198,7 @@ function skelRow(def,i){
     <td class="td-n">${i}</td><td>${revC(def.s)}</td>
     <td>${capB(def.g)}</td>
     <td><span class="ticker">${def.d}</span><br><span class="sec">${def.sector}</span></td>
-    ${Array(23).fill(0).map((_,j)=>`<td>${sk(j%3===0?'lg':j%2===0?'md':'sm')}</td>`).join('')}
+    ${Array(22).fill(0).map((_,j)=>`<td>${sk(j%3===0?'lg':j%2===0?'md':'sm')}</td>`).join('')}
   </tr>`;
 }
 
@@ -2727,7 +3244,6 @@ function dataRow(def,d,i){
     <td class="c-mrsrank" style="text-align:center">${rsC(d.mrsRank)}</td>
     <td>${d.leadRS!=null?ldC(d.leadRS):'<span class="vm">—</span>'}</td>
     <td class="c-rstrend">${rstC(d.rsTrend)}</td>
-    <td class="c-earns vm" style="font-size:11px">${d.earnDate||'—'}</td>
     <td class="c-notes"><input class="note-in" value="${NOTES[def.s]||''}" placeholder="Add note…"
       onchange="NOTES['${safeSym}']=this.value"/></td>
   </tr>`;
@@ -2738,8 +3254,8 @@ function errRow(def,i){
     <td class="td-n">${i}</td><td>${revC(def.s)}</td>
     <td>${capB(def.g)}</td>
     <td><span class="ticker">${def.d}</span><br><span class="sec">${def.sector}</span></td>
-    <td colspan="23" style="color:var(--text3);font-size:11px">
-      ⚠ No data — ticker may not be on Stooq, or proxy failed
+    <td colspan="22" style="color:var(--text3);font-size:11px">
+      ⚠ Not in this market's Google Sheet tab — re-run the Apps Script to backfill it
     </td>
   </tr>`;
 }
@@ -2787,6 +3303,9 @@ function getRows(market){
   if(F_PIV==='above') items=items.filter(def=>['PP→R1','R1→R2','R2+'].includes(SD[def.s]?.dpz));
   else if(F_PIV==='r1') items=items.filter(def=>['R1→R2','R2+'].includes(SD[def.s]?.dpz));
   else if(F_PIV==='below') items=items.filter(def=>['S1→PP','S2→S1','<S2'].includes(SD[def.s]?.dpz));
+
+  if(F_REV==='none') items=items.filter(def=>!REV[def.s]);
+  else if(F_REV) items=items.filter(def=>REV[def.s]===F_REV);
 
   const fn=SORT_FN[SORT_C];
   if(fn){
@@ -2849,7 +3368,10 @@ function setTag(mode){
   const el=$('srcTag');
   if(mode==='live'){
     el.className='src-tag live';
-    const src = (GSHEET_DATA && Object.keys(GSHEET_DATA).length>0) ? 'Google Sheets + Stooq' : 'Stooq.com';
+    const st=GSHEET_STATUS[CUR];
+    const src = (GSHEET_DATA && Object.keys(GSHEET_DATA).length>0) ? 'Google Sheets'
+              : st==='loading' ? 'Downloading sheet…'
+              : 'Google Sheets';
     el.textContent=`⬤ Live (${src})`;
   }
   if(mode==='cached'){el.className='src-tag cached';  el.textContent=`⬤ Cached (${today()})`;}
@@ -2863,21 +3385,19 @@ async function loadMarket(market,force=false){
   if(LOADING) return;
   LOADING=true;
   const rb=$('refBtn'); rb.classList.add('loading'); rb.innerHTML='<span class="spin">↻</span> Loading…';
-
   const defs=UNI[market];
 
-  // Try cache
   if(!force){
     const cached=loadCache(market);
     if(cached){
       Object.assign(SD,cached);
       LOADED[market]=true;
+      GSHEET_DATA = GSHEET_BY_MARKET[market] || null;
+      setGSheetStatus(market);
+      await fetchBenchmark(market);
       rankRS(market);
-      renderTable(market);
-      renderMetrics(market);
-      setTag('cached');
-      updateStatus();
-      updateRetryButton(market);
+      renderTable(market); renderMetrics(market);
+      setTag('cached'); updateStatus();
       LOADING=false; rb.classList.remove('loading'); rb.innerHTML='↻ Refresh';
       return;
     }
@@ -2885,40 +3405,65 @@ async function loadMarket(market,force=false){
 
   setTag('live');
   showPrg();
-  setPrg(0,defs.length,'Fetching stock data from Stooq…');
-  renderMetrics(market); // show skeletons
-  renderTable(market);   // show skeleton rows
+  renderMetrics(market); renderTable(market);   // skeletons paint first
 
+  // FULL await, no race. There is no fallback to start early any more, so
+  // there is nothing to gain by proceeding without the data — and a lot to
+  // lose, since every ticker would miss and report "no data".
+  setPrg(0,defs.length,'Downloading '+market.toUpperCase()+' data from Google Sheets… (large tab, can take a minute)');
+  await loadGoogleSheetData(market);
+  GSHEET_DATA = GSHEET_BY_MARKET[market] || null;
+
+  if(!GSHEET_DATA){
+    // One source means one failure mode: say plainly that the sheet is the
+    // problem rather than showing 900 individual "no data" rows, which used to
+    // look like 900 separate faults.
+    defs.forEach(d=>{ SD[d.s]=null; });
+    LOADED[market]=true;
+    renderTable(market); renderMetrics(market); updateStatus();
+    hidePrg();
+    setSheetError(market);
+    LOADING=false; rb.classList.remove('loading'); rb.innerHTML='↻ Refresh';
+    return;
+  }
+
+  setPrg(0,defs.length,'Computing indicators…');
   let done=0;
-  await runConc(defs, async(def)=>{
-    const data=await fetchStock(def);
-    SD[def.s]=data; // null if failed
+  for(const def of defs){
+    SD[def.s]=fetchStock(def);
     done++;
-    setPrg(done,defs.length,`${done}/${defs.length} — ${def.d}`);
-
-    // Live-update this row if visible
-    const el=document.getElementById('r-'+def.s);
-    if(el){
-      const rows=getRows(market);
-      const ri=rows.findIndex(d=>d.s===def.s);
-      if(ri>=0&&ri<VISIBLE){
-        el.outerHTML=data?dataRow(def,data,ri+1):errRow(def,ri+1);
-      }
+    if(done % CFG.CHUNK === 0 || done === defs.length){
+      setPrg(done,defs.length,`Computing indicators ${done}/${defs.length}…`);
+      renderMetrics(market);
+      // Hand control back so the browser can repaint. Without this the whole
+      // loop runs in one task and the tab appears frozen until it finishes.
+      await new Promise(r=>setTimeout(r,0));
     }
-    // Update metrics every 8 stocks
-    if(done%8===0) renderMetrics(market);
-  }, CFG.CONC);
+  }
 
+  await fetchBenchmark(market);
   rankRS(market);
   LOADED[market]=true;
-  renderTable(market);
-  renderMetrics(market);
-  updateStatus();
-  updateRetryButton(market);
+  renderTable(market); renderMetrics(market); updateStatus();
   saveCache(market);
   hidePrg();
   LOADING=false; rb.classList.remove('loading'); rb.innerHTML='↻ Refresh';
   $('scanTime').textContent='Last scan: '+new Date().toLocaleString('en-GB');
+}
+
+/* Plain-English failure banner. The old code had no equivalent — a failed sheet
+   silently degraded to a fallback and the user saw a slow grind, not a cause. */
+function setSheetError(market){
+  const el=$('srcTag');
+  if(el){
+    el.className='src-tag';
+    el.textContent='⬤ Sheet unavailable';
+    el.title=`Could not load the ${market.toUpperCase()} tab of the Google Sheet. `
+      +`Nothing is shown because there is no longer a fallback data source. `
+      +`Check the browser console for the exact reason.`;
+  }
+  const sub=$('bnrSub');
+  if(sub) sub.innerHTML='&nbsp;·&nbsp;<span style="color:#DC2626">Google Sheet did not load — no data to show. See console.</span>';
 }
 
 function updateStatus(){
@@ -2928,85 +3473,18 @@ function updateStatus(){
   $('smLbl').textContent=`Showing ${Math.min(VISIBLE,rows.length)} of ${UNI[CUR].length}`;
 }
 
-function getFailedDefs(market){
-  return UNI[market].filter(def => SD[def.s]===null); // null = fetched but failed; undefined = never tried
-}
-
-function updateRetryButton(market){
-  const failed=getFailedDefs(market);
-  const btn=$('retryBtn');
-  if(failed.length>0){
-    btn.style.display='inline-flex';
-    $('retryCount').textContent=failed.length;
-  } else {
-    btn.style.display='none';
-  }
-}
-
-async function retryFailed(){
-  if(LOADING) return;
-  const failed=getFailedDefs(CUR);
-  if(!failed.length) return;
-  LOADING=true;
-  const btn=$('retryBtn');
-  btn.classList.add('loading'); btn.innerHTML='<span class="spin">↻</span> Retrying…';
-  showPrg();
-  setPrg(0,failed.length,`Retrying ${failed.length} failed stocks…`);
-
-  let done=0;
-  await runConc(failed, async(def)=>{
-    const data=await fetchStock(def);
-    SD[def.s]=data;
-    done++;
-    setPrg(done,failed.length,`Retry ${done}/${failed.length} — ${def.d}`);
-    const el=document.getElementById('r-'+def.s);
-    if(el){
-      const rows=getRows(CUR);
-      const ri=rows.findIndex(d=>d.s===def.s);
-      if(ri>=0&&ri<VISIBLE) el.outerHTML=data?dataRow(def,data,ri+1):errRow(def,ri+1);
-    }
-  }, Math.min(CFG.CONC,3)); // gentler concurrency for a retry pass — these already failed once
-
-  rankRS(CUR);
-  renderTable(CUR);
-  renderMetrics(CUR);
-  updateStatus();
-  updateRetryButton(CUR);
-  saveCache(CUR);
-  hidePrg();
-  LOADING=false; btn.classList.remove('loading'); btn.innerHTML='↻ Retry Failed (<span id="retryCount">0</span>)';
-  updateRetryButton(CUR); // refresh count text after innerHTML reset
-}
-
-/* ══════════════════════════════════
-   EVENT HANDLERS
-══════════════════════════════════ */
-function updateMcapUI(market){
-  const wrap=$('mcapWrap');
-  if(market==='etf'){
-    wrap.style.display='none';
-    MIN_MCAP=0; // no filtering on ETF tab
-    return;
-  }
-  wrap.style.display='flex';
-  MIN_MCAP=MCAP_DEFAULTS[market] ?? 0;
-  $('mcapFil').value=MIN_MCAP;
-  if(market==='us'){
-    $('mcapPrefix').textContent='Min Mkt Cap $';
-    $('mcapSuffix').textContent='B';
-  } else {
-    $('mcapPrefix').textContent='Min Mkt Cap ₹';
-    $('mcapSuffix').textContent='Cr';
-  }
-}
 
 function switchMkt(market){
   if(market===CUR&&LOADED[market]) return;
   CUR=market;VISIBLE=CFG.INIT;
+  // Repoint the live sheet map at the market we're switching TO before any
+  // fetching starts. Without this, fetchStock() would still be reading the
+  // previous market's ticker map.
+  GSHEET_DATA = GSHEET_BY_MARKET[market] || null;
+  setGSheetStatus(market);
   F_CAP='All';F_SCT='';F_EMA='';F_RSI='';F_PIV='';
   $('emaFil').value='';$('rsiFil').value='';$('pivFil').value='';
   updateMcapUI(market);
-  $('retryBtn').style.display='none'; // reset — loadMarket() will show it again if this market has failures
   ['india','us','etf'].forEach(m=>$('tab-'+m).classList.toggle('active',m===market));
   const bnr={india:'🇮🇳 India (NSE) · Nifty 500',us:'🇺🇸 US Stocks · NYSE / NASDAQ',etf:'📊 ETFs · US, Intl & Commodity'};
   $('bnrMkt').textContent=bnr[market];
@@ -3023,24 +3501,46 @@ function onSearch(){SEARCH=$('searchQ').value.trim();VISIBLE=CFG.INIT;renderTabl
 function applyF(){
   F_SCT=$('sctFil').value;F_EMA=$('emaFil').value;
   F_RSI=$('rsiFil').value;F_PIV=$('pivFil').value;
+  F_REV=$('revFil').value;
   MIN_MCAP=parseFloat($('mcapFil').value)||0;
   VISIBLE=CFG.INIT;
   renderTable(CUR);updateStatus();
 }
 function clrF(){
-  SEARCH='';F_CAP='All';F_SCT='';F_EMA='';F_RSI='';F_PIV='';
+  SEARCH='';F_CAP='All';F_SCT='';F_EMA='';F_RSI='';F_PIV='';F_REV='';
   MIN_MCAP=MCAP_DEFAULTS[CUR] ?? 0;
   $('searchQ').value='';$('sctFil').value='';$('emaFil').value='';
-  $('rsiFil').value='';$('pivFil').value='';$('mcapFil').value=MIN_MCAP;
+  $('rsiFil').value='';$('pivFil').value='';$('mcapFil').value=MIN_MCAP;$('revFil').value='';
   document.querySelectorAll('#segGrp .seg-btn').forEach((b,i)=>b.classList.toggle('active',i===0));
   VISIBLE=CFG.INIT;
   renderTable(CUR);updateStatus();
 }
-function clrRev(){Object.keys(REV).forEach(k=>delete REV[k]);renderTable(CUR);}
+function clrRev(){
+  Object.keys(REV).forEach(k=>delete REV[k]);
+  saveReviewsLocal();
+  if(CFG.REVIEWS_API_URL){
+    fetch(CFG.REVIEWS_API_URL, {
+      method:'POST',
+      headers:{'Content-Type':'text/plain'},
+      body: JSON.stringify({action:'clearAll'})
+    }).catch(e=>console.warn('Could not clear reviews on the Sheet (cleared locally):', e.message));
+  }
+  renderTable(CUR);
+}
 function setRev(sym,val){
   REV[sym]=REV[sym]===val?null:val;
-  const el=document.getElementById('r-'+sym);
-  if(el){const g=el.querySelector('.rev-g');if(g) g.outerHTML=revC(sym);}
+  saveReviewsLocal(); // instant — never blocked by network
+  saveReviewRemote(sym, REV[sym]); // background sync to the Sheet, if configured
+  if(F_REV){
+    // A review filter is active — this stock may need to disappear from
+    // (or appear in) the current view, so a full re-render is correct here,
+    // not just patching this one row's bubble in place.
+    renderTable(CUR);
+    updateStatus();
+  } else {
+    const el=document.getElementById('r-'+sym);
+    if(el){const g=el.querySelector('.rev-g');if(g) g.outerHTML=revC(sym);}
+  }
 }
 function showMore(){VISIBLE+=25;renderTable(CUR);updateStatus();}
 function forceRefresh(){
@@ -3081,6 +3581,7 @@ document.addEventListener('DOMContentLoaded',()=>{
   });
   $('colModal').addEventListener('click',e=>{if(e.target===$('colModal'))$('colModal').classList.remove('open');});
   $('sectorModal').addEventListener('click',e=>{if(e.target===$('sectorModal'))closeSectorBreadth();});
+  $('rsModal').addEventListener('click',e=>{if(e.target===$('rsModal'))closeRSSettings();});
 });
 
 /* ══════════════════════════════════
@@ -3102,7 +3603,6 @@ const TOGGLEABLE_COLS=[
   {cls:'squeeze',label:'Squeeze'},
   {cls:'mrsrank',label:'MRS Rank'},
   {cls:'rstrend',label:'RS Trend'},
-  {cls:'earns',  label:'Next Earnings'},
   {cls:'notes',  label:'Notes'},
 ];
 const COL_VIS_KEY='sm_col_visibility';
@@ -3148,18 +3648,38 @@ function resetColumnVisibility(){
 /* ══════════════════════════════════
    INIT
 ══════════════════════════════════ */
+// Keeps the table's sticky header offset in sync with the TOP nav bar's
+// actual rendered height, rather than trusting a hardcoded pixel value to
+// stay accurate forever. That hardcoded-52px assumption is exactly the kind
+// of thing that silently breaks the moment the header's real content height
+// changes for any reason (more buttons added later, text wrapping on a
+// narrow screen, browser font-size settings, etc.) — this removes the need
+// to ever manually keep two numbers in sync again.
+function syncHeaderHeight(){
+  const hdr=document.querySelector('.hdr');
+  if(!hdr) return;
+  const h=hdr.getBoundingClientRect().height;
+  document.documentElement.style.setProperty('--hdr-h', h+'px');
+}
+
 (async function init(){
+  loadReviewsLocal(); // instant, always available regardless of remote config
+  loadRSConfig();
+  syncHeaderHeight();
+  window.addEventListener('resize', syncHeaderHeight);
   applyColVisibility();
   buildColModal();
   buildSegs('india');
   buildSctDropdown('india');
   updateMcapUI('india');
   renderMetrics('india'); // show skeleton cards
-  // Deliberately NOT awaited — a slow or hung Google Sheet fetch must never
-  // block the app from starting. It runs in the background; any ticker
-  // whose fetchStock() call happens before this resolves just uses Stooq
-  // instead (existing per-ticker fallback logic already handles this).
-  loadGoogleSheetData();
+  // Deliberately NOT awaited, and deliberately INDIA ONLY — a slow or hung
+  // Google Sheet fetch must never block the app from starting, and we don't
+  // download the US or ETF tabs until the user actually opens those markets.
+  // loadMarket('india') below does a bounded wait on this same (shared,
+  // cached) promise, so this head start is free.
+  loadGoogleSheetData('india');
+  loadReviewsRemote();
   loadMarket('india');
 })();
 </script>
