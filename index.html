@@ -376,6 +376,28 @@ td:last-child{border-right:none}
 .ppp{color:var(--text2);font-weight:600}.ps1{color:var(--orange);font-weight:600}
 .ps2{color:var(--red);font-weight:600}
 
+/* ─── DARVAS BOX BADGE ────────── */
+/* Only the two ACTIONABLE states are filled-and-bordered: `break` (crossed the
+   top on the latest bar) and `near` (within nearPct of it). `above` is amber
+   rather than green on purpose — the move already happened, so it is a caution
+   for a fresh entry, not a green light. `inside` and `below` recede. */
+.dbx{display:inline-block;padding:2px 7px;border-radius:9px;
+  font-size:10px;font-weight:700;border:1px solid transparent}
+.dbx-break{background:var(--green-bg);color:var(--green);border-color:var(--green)}
+.dbx-near{background:var(--blue-bg);color:var(--blue);border-color:#BFDBFE}
+.dbx-above{background:var(--orange-bg);color:var(--orange);border-color:#FCD34D}
+.dbx-inside{background:var(--surface2);color:var(--text2);border-color:var(--border)}
+.dbx-below{color:var(--red);font-weight:600}
+.dbx-rng{font-size:9.5px;color:var(--text3);white-space:nowrap}
+
+/* ─── FRESH-MOMENTUM BADGE ────── */
+/* One badge naming the most recent trigger, or a count when several fired on
+   the same row. Green because everything this column reports is a turn that
+   has JUST happened — the whole point is that it is not stale. */
+.frsh{display:inline-block;padding:2px 7px;border-radius:9px;font-size:10px;
+  font-weight:700;background:var(--green-bg);color:var(--green);border:1px solid #86EFAC}
+.frsh-n{font-size:9.5px;color:var(--text3);white-space:nowrap}
+
 /* bo badge */
 .boc{display:inline-flex;align-items:center;padding:2px 6px;border-radius:9px;
   font-size:10.5px;font-weight:600;background:var(--blue-bg);color:var(--blue);border:1px solid #BFDBFE}
@@ -467,12 +489,12 @@ body.breadth-collapsed .breadth-body{display:none}
 .algn.al-lo{background:var(--orange-bg);color:var(--orange);border-color:#FCD34D}
 .algn.al-wk{background:var(--red-bg);color:var(--red);border-color:#FCA5A5}
 
-/* ─── TRADINGVIEW LINKS ────────── */
+/* ─── TRADINGVIEW LINK ─────────── */
 /* Deliberately NOT a column. The table's <th>/skelRow/errRow/dataRow widths are
    one number that has to agree in five places, and "open the chart" does not
-   need a header of its own to explain itself — so the icon rides inside cells
-   that already exist. Dim until the row is hovered, so ~1,400 of them do not
-   turn the table into confetti. */
+   need a header of its own to explain itself — so the icon rides inside the
+   Ticker cell, which already exists. Dim until the row is hovered, so ~1,400 of
+   them do not turn the table into confetti. */
 .tv-lnk{display:inline-block;margin-left:4px;font-size:10px;line-height:1;
   text-decoration:none;opacity:.25;transition:opacity .12s;vertical-align:middle}
 tr:hover .tv-lnk{opacity:.65}
@@ -504,11 +526,11 @@ tr:hover .tv-lnk{opacity:.65}
    and the gain survives down to 480px (group B). */
 .c-wrsi,.c-wvol,.c-wpiv,.c-wema,.c-voldry,.c-retrace,.c-rstrend,.c-notes,
 .c-wcross,.c-wpattern,.c-monthly,.c-rs10w,.c-rsslope,.c-rshist,.c-slope200,
-.c-followup,.c-hist{display:table-cell}
+.c-followup,.c-hist,.c-wbox{display:table-cell}
 /* GROUP B — additionally force-hidden at ≤480px */
 .c-vr,.c-align,.c-ema,.c-bocnt,.c-squeeze,.c-mrsrank,.c-setup,
 .c-sector,.c-status,.c-xcross,.c-pattern,.c-consol,.c-rs21,.c-rs55,
-.c-ch1w,.c-ch1m,.c-ch3m,.c-histg{display:table-cell}
+.c-ch1w,.c-ch1m,.c-ch3m,.c-histg,.c-dbox,.c-avgval,.c-fresh{display:table-cell}
 
 /* User-controlled column toggles (via the Columns modal, saved to localStorage).
    Adding e.g. "hide-wrsi" to <body> hides every cell tagged .c-wrsi — works
@@ -521,7 +543,10 @@ body.hide-histg   .c-histg,
 body.hide-wrsi    .c-wrsi,
 body.hide-vr      .c-vr,
 body.hide-wvol    .c-wvol,
+body.hide-avgval  .c-avgval,
 body.hide-wpiv    .c-wpiv,
+body.hide-dbox    .c-dbox,
+body.hide-wbox    .c-wbox,
 body.hide-ema     .c-ema,
 body.hide-wema    .c-wema,
 body.hide-bocnt   .c-bocnt,
@@ -547,7 +572,8 @@ body.hide-rs10w   .c-rs10w,
 body.hide-rsslope .c-rsslope,
 body.hide-rshist  .c-rshist,
 body.hide-setup   .c-setup,
-body.hide-align   .c-align{display:none!important}
+body.hide-align   .c-align,
+body.hide-fresh   .c-fresh{display:none!important}
 
 /* ─── MODAL ───────────────────── */
 .overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.35);
@@ -616,7 +642,7 @@ body.hide-align   .c-align{display:none!important}
   .metrics-row{grid-template-columns:repeat(4,1fr)}
   .c-wrsi,.c-wvol,.c-wpiv,.c-wema,.c-voldry,.c-retrace,.c-rstrend,.c-notes,
   .c-wcross,.c-wpattern,.c-monthly,.c-rs10w,.c-rsslope,.c-rshist,.c-slope200,
-  .c-followup,.c-hist{display:none!important}
+  .c-followup,.c-hist,.c-wbox{display:none!important}
 }
 @media (max-width:768px){
   .metrics-row{grid-template-columns:repeat(2,1fr)}
@@ -632,7 +658,7 @@ body.hide-align   .c-align{display:none!important}
   .metrics-row{grid-template-columns:repeat(2,1fr)}
   .c-vr,.c-align,.c-ema,.c-bocnt,.c-squeeze,.c-mrsrank,.c-setup,
   .c-sector,.c-status,.c-xcross,.c-pattern,.c-consol,.c-rs21,.c-rs55,
-  .c-ch1w,.c-ch1m,.c-ch3m,.c-histg{display:none!important}
+  .c-ch1w,.c-ch1m,.c-ch3m,.c-histg,.c-dbox,.c-avgval,.c-fresh{display:none!important}
   .search-bar input{width:80px}
 }
 </style>
@@ -707,11 +733,12 @@ body.hide-align   .c-align{display:none!important}
     <button class="ref-btn" onclick="openSectorBreadth()" data-tip="See RSI, momentum, and breakout stats broken down by sector — click any row to filter the main table to just that sector">📊 Sector View</button>
     <button class="ref-btn" id="sortDefBtn" onclick="resetSort()" data-tip="Return to the default Setup Score order: quality setups first (starred in the Setup column), strongest sectors first within each group, then each stock's own 55-day relative strength. Clicking any column header sorts by that column instead — clicking the same header a third time also brings you back here.">↕ Default (Setup Score)</button>
     <button class="ref-btn" onclick="openRSSettings()" data-tip="Set the benchmark ticker that RS / MRS Rank is measured against">⚙️ RS Settings</button>
-    <button class="ref-btn" id="advBtn" onclick="openAdvFilters()" data-tip="Consolidation, 52W high proximity, breakout age, RSI, volume and EMA-crossover screens — each one switched on independently">⚙ Advanced Filters</button>
+    <button class="ref-btn" id="advBtn" onclick="openAdvFilters()" data-tip="Consolidation, 52W high proximity, breakout age, RSI, volume ratio, minimum average traded value and EMA-crossover screens — each one switched on independently">⚙ Advanced Filters</button>
     <div class="fsep"></div>
     <button class="ftog" id="alignTog" aria-pressed="false" onclick="toggleAlign()" data-tip="One click for the same screen as the EMA Filter's All EMAs Bullish option: price above enough of the 10, 20, 50 and 200-day moving averages to score 0.8 or better. Combines with every other filter rather than replacing them.">📈 EMAs Aligned</button>
     <button class="ftog" id="dwaTog" aria-pressed="false" onclick="toggleDWA()" data-tip="Keep only stocks scoring 7 or more of the Align checks that could actually be run for them. This is the swing-trade condition in one click: the daily and the weekly chart have to be saying the same thing. A stock with only 7 usable inputs qualifies on 7/7 — it is judged on what could be measured, never penalised for data that was missing. Combines with every other filter rather than replacing them.">🔗 Aligned D+W</button>
     <button class="ftog" id="boTog" aria-pressed="false" onclick="toggleBO()" data-tip="Keep only stocks with at least one volume-confirmed 52-bar breakout somewhere in the available history — BO Count above zero. Pair it with the Follow-up column to find the ones that broke out recently.">🚀 Breakout Stocks</button>
+    <button class="ftog" id="boxTog" aria-pressed="false" onclick="toggleBox()" data-tip="The Darvas box screen in one click: price above the 20, 50 AND 200-day EMAs, and the daily Darvas box state is Inside, Near or Break — that is, the stock is in a confirmed uptrend and is still consolidating inside its box, sitting within 1% of the box top, or crossing it on the latest bar. Stocks already trading above the box are left out on purpose: the move has happened and a fresh entry there is late. A stock whose EMA 200 cannot be calculated (under 200 bars of history) is excluded rather than waved through. Combines with every other filter rather than replacing them.">📦 Box Setup</button>
     <button class="ftog" id="wlTog" aria-pressed="false" onclick="toggleWL()" data-tip="Show only the stocks you have starred. The star sits next to each ticker; the list is saved in this browser and is shared across all three markets, so a name starred on the India tab is still starred when you come back tomorrow.">⭐ Watchlist</button>
     <select class="fsel" id="emaFil" onchange="applyF()">
       <option value="">EMA Filter</option>
@@ -828,6 +855,7 @@ body.hide-align   .c-align{display:none!important}
             <th data-s="ticker" data-tip="The exchange symbol, with the sector and market capitalisation printed underneath it. The star to its left adds the stock to your watchlist, which is saved in this browser and shared across all three markets. Sorting on this column puts the list in alphabetical order.">Ticker<span class="sort-ico"></span></th>
             <th class="c-setup" data-s="setup" data-tip="A star marks a quality setup — all four of these are true at once: within 30% of its 52-week high, price above every moving average that could be calculated, positive relative strength against the benchmark, and a full Stage 2 uptrend score. These rows sort to the top by default.">Setup<span class="sort-ico"></span></th>
             <th class="c-align" data-s="align" data-tip="How much the daily and the weekly timeframe agree, out of 8 checks: 1. price above the daily 20 EMA · 2. price above the daily 50 EMA · 3. price above the weekly 10 EMA · 4. price above the weekly 20 EMA · 5. daily RSI 50 or above · 6. weekly RSI 50 or above · 7. positive 21-day relative strength · 8. positive 10-week relative strength. A swing trade wants both clocks pointing the same way, so 7 or 8 is the shortlist. Each check needs its own input, and a check that cannot be run is left OUT OF THE TOTAL rather than counted as a failure — that is why some rows read 6/7 instead of 6/8. Sorting puts the higher score first and, on a tie, the row that could be fully measured above the one that could not.">Align<span class="sort-ico"></span></th>
+            <th class="c-fresh" data-s="fresh" data-tip="Stocks that have JUST turned, rather than stocks that are merely in a good state. Three events are tested, each with its own lookback and each null-guarding its own inputs: 1. the close crossed ABOVE the 50-day EMA within the last 3 bars · 2. RS21 — the 21-day excess return over the benchmark — crossed above zero within the last 5 bars, read off the same history the RS Rank History sparkline draws · 3. a base breakout, meaning a consolidation of 20 bars or more that broke out within the last 3 bars. The cell names whichever fired most recently and how many bars ago; when more than one fired it shows a count with the freshest named underneath. A dash means none of the three fired, or the inputs for them were not available — a stock with under 51 bars has no 50-EMA cross to report and one with no benchmark has no RS21 history. Sorting puts the freshest first, with the count only breaking ties.">Fresh<span class="sort-ico"></span></th>
             <th class="c-sector" data-s="sector" data-tip="Sector from the built-in universe — for India these are NSE's own macro industry groups, taken from the Nifty Total Market constituent list. It is not cosmetic: the default Setup Score order ranks sectors by the median RS55 of their members, so this label decides which group a stock is judged inside. Sortable, so the table can be grouped by sector without using the sector filter.">Sector<span class="sort-ico"></span></th>
             <th data-s="price" data-tip="The most recent closing price in the stock's own currency. It comes from the end-of-day data sheet, so it is yesterday's close, not a live quote.">Price<span class="sort-ico"></span></th>
             <th data-s="ch1d" data-tip="How much the price moved on its latest trading day, as a percentage of the previous close. Green is up, red is down.">1D%<span class="sort-ico"></span></th>
@@ -841,8 +869,11 @@ body.hide-align   .c-align{display:none!important}
             <th class="c-wrsi" data-s="wrsi" data-tip="The same 14-period momentum gauge measured on weekly bars, so it describes months rather than days and is much slower to change direction.">W-RSI<span class="sort-ico"></span></th>
             <th class="c-vr" data-s="vr" data-tip="The latest day's traded volume divided by the average of the 20 days before it (today itself is excluded, so a spike cannot dilute its own baseline). 2.0x means twice the usual number of shares changed hands — genuine interest rather than drift.">Vol Ratio<span class="sort-ico"></span></th>
             <th class="c-wvol" data-s="wvol" data-tip="The same volume comparison on weekly bars: the latest week's total volume against the average of the 10 weeks before it, which smooths out one-day spikes. Needs 11 weekly bars, so it shows — for anything younger.">W-VOL<span class="sort-ico"></span></th>
+            <th class="c-avgval" data-s="avgval" data-tip="Average daily traded VALUE over the last 20 trading bars — the mean of close × volume — shown in ₹ crore for Indian stocks and $ million for US stocks and ETFs. This is the tradability check, and it is deliberately value and not share volume: 100,000 shares of a ₹12 stock is ₹12 lakh of turnover while 100,000 shares of a ₹4,000 stock is ₹40 crore, so raw volume cannot be compared across names. Green above ₹25 Cr / $25M, red below ₹1 Cr / $1M, where a position of any size would move the price against you. Needs 20 bars; below that it shows a dash rather than a zero. The Advanced Filters modal has a minimum on this figure.">Avg Value<span class="sort-ico"></span></th>
             <th data-s="dpiv" data-tip="Where the price sits among the classic daily pivot levels, from below S2 (weakest) up to above R2 (strongest). Anything above the pivot point is the bullish half of the day's range.">D-Pivot<span class="sort-ico"></span></th>
             <th class="c-wpiv" data-s="wpiv" data-tip="The same pivot zones calculated from weekly bars — a slower read on whether the stock is holding the strong side of its range.">W-Pivot<span class="sort-ico"></span></th>
+            <th class="c-dbox" data-s="dbox" data-tip="Darvas Box on daily bars, box length 5. HOW THE BOX IS BUILT: a bar whose high beats the highest high of the previous 5 bars sets a candidate top; if the next 3 bars then make no new high, that candidate high becomes the box TOP and the lowest low of the 5 bars up to the confirming bar becomes the box BOTTOM. Once built the box PERSISTS until the next one forms, so it is a level to trade against, not a one-bar flag. THE STATES: Break = the close crossed above the top on the latest bar and was below it the day before — the freshest and most actionable · Near = below the top but within 1% of it · Inside = between the bottom and the top, i.e. still consolidating · Above = already trading over the top, so the move is under way and a new entry is late · Below = under the box bottom, the setup has failed · a dash means no box has formed yet or there are fewer than 9 bars of history. Sorting puts Break and Near first, then Inside, because those are the ones you can still act on.">D-Box<span class="sort-ico"></span></th>
+            <th class="c-wbox" data-s="wbox" data-tip="The same Darvas Box construction run on WEEKLY bars, so both the box and the states describe months rather than days. A weekly box needs 9 weekly bars (roughly 45 trading days) before it can exist, and it moves far less often than the daily one — a weekly Break is a much rarer and heavier signal than a daily one. The five states mean exactly what they mean in the D-Box column.">W-Box<span class="sort-ico"></span></th>
             <th data-s="h52" data-tip="% below the highest high in the available window. The data source holds ~1 trading year (~250 bars), so in practice this is a ~50-week high, not a full 52. Shows — for stocks with under 120 bars of history.">52W High<span class="sort-ico"></span></th>
             <th class="c-ema" data-s="ema" data-tip="How many of the 10, 20, 50 and 200-day moving averages the price is trading above, one badge each. All four green is the textbook shape of a healthy uptrend.">EMA Align<span class="sort-ico"></span></th>
             <th class="c-wema" data-s="wema" data-tip="The same alignment check on the weekly chart: price against the 10-week and 20-week moving averages.">W-EMA<span class="sort-ico"></span></th>
@@ -986,6 +1017,13 @@ body.hide-align   .c-align{display:none!important}
         </div>
       </div>
       <div class="adv-row">
+        <label class="adv-name"><input type="checkbox" id="advLiqOn"/> Avg traded value</label>
+        <div class="adv-fields">
+          at least <input type="number" id="advLiqMin" min="0" step="0.5"/>
+          <span id="advLiqUnit">₹ Cr</span> a day, averaged over 20 bars
+        </div>
+      </div>
+      <div class="adv-row">
         <label class="adv-name"><input type="checkbox" id="advXOn"/> EMA cross</label>
         <div class="adv-fields">
           fast
@@ -1112,7 +1150,25 @@ const CFG = {
   // actually cares about.
   CONSOL: {lookback:20, maxRangePct:10},
 
-  VER:  'gs6',      // gs5 -> gs6: computeTech() now also returns the raw daily/weekly PIVOT
+  /* ── Darvas Box (port of the user's Pine v4 "DARVAS BOX: A+" study) ──
+     boxp IS the Pine `boxp` input and nearPct IS its `nearPerc`; both live here
+     rather than hardcoded because the Pine script exposes them as inputs, and a
+     port that quietly freezes a tunable input is not a port.
+     WHY boxp=5 is comfortably inside the ~250-bar data ceiling: a box needs a
+     new-high bar plus boxp-2 quiet bars after it, and the new-high test itself
+     needs boxp prior bars — so the earliest index a box can exist at is
+     2*boxp-2, i.e. 9 bars of history for boxp=5. Even the WEEKLY box (9 weekly
+     bars ≈ 45 trading days) fits inside a year of data with room to spare. */
+  DARVAS: {boxp:5, nearPct:1.0},
+
+  VER:  'gs7',      // gs6 -> gs7: computeTech() returns a WIDER ROW — the Darvas box trio
+                    // (dBoxTop/dBoxBot/dBoxState and the weekly equivalents), the 20-bar
+                    // average traded VALUE (avgValue), and the fresh-momentum flags
+                    // (freshFlags/freshAge). A gs6 cache carries none of them, so every
+                    // rehydrated row would render four blank columns AND be silently
+                    // dropped by the Box Setup filter, which reads dBoxState. Orphaning
+                    // gs6 is much cheaper than shipping that.
+                    // gs5 -> gs6: computeTech() now also returns the raw daily/weekly PIVOT
                     // LEVELS (dPiv/wPiv), which the "Near R1" pivot screen needs — the zone
                     // string alone cannot express proximity to a level. A gs5 cache has no
                     // such field, so every rehydrated row would silently fail that one
@@ -2609,8 +2665,16 @@ UNI.us.forEach(def=>{ def.g = capTierFromMcapUSD(def.mcap); });
    tickers, values that disagree with a trustworthy static number by more than
    MCAP_MAX_RATIO, and anything at all aimed at UNI.etf. A rejected value falls
    back to the static one; with no static number it stays null, which getRows()
-   reads as "unknown, don't exclude". Nothing is ever silently corrected — a
-   number we cannot vouch for is dropped, not scaled.
+   reads as "unknown, don't exclude".
+
+   ONE EXCEPTION, and it is not a silent one: failure mode 1 is a correct number
+   in the wrong CURRENCY, not a wrong number, so it is recoverable. If the tab
+   publishes a USDINR row, a value rejected by the RATIO rule on an India ticker
+   is retried in rupees and accepted only if the corrected figure then agrees
+   with the static number — see mcapFxCorrect(). Rejections for the duplicate
+   cluster or the ETF rule are never retried, US tickers are never corrected,
+   and with no USDINR row the whole path is skipped. Everything else still
+   holds: a number we cannot vouch for is dropped, not scaled.
 
    KNOWN LIMIT, stated rather than hidden: rule 2 needs 3+ sharers, so the
    two-ticker cluster 177.56 (BLK, IBIT) is only caught for IBIT, via the ETF
@@ -2697,6 +2761,63 @@ function mcapRejectReason(sym,liveV,market,dupSet){
   return null;
 }
 
+/* ── ADR CURRENCY CORRECTION ────────────────────────────────────────────
+   The five Indian ADR names (HDFCBANK, ICICIBANK, INFY, DRREDDY, WIPRO) are the
+   ONE failure mode above that is not garbage — it is a correct number in the
+   wrong currency. GOOGLEFINANCE returns the ADR's cap in US dollars and the
+   page divides by 10^7 for ₹ crore, which lands it ~90–137x too small. The
+   ratio rule catches it and falls back to a hand-entered static figure that
+   goes stale the moment the market moves.
+
+   So: RECOVER them instead of discarding them. The Apps Script publishes a
+   USDINR row in the same MktCap tab (ticker `USDINR`, value = the rate). When a
+   value is rejected FOR THE RATIO RULE SPECIFICALLY, retry it multiplied by
+   that rate; if the corrected figure then lands within MCAP_MAX_RATIO of the
+   static number, it is a currency error and the corrected value is used.
+
+   THE THREE THINGS THIS DELIBERATELY DOES NOT DO:
+   · It never touches a 'dup' rejection. A value shared across twelve unrelated
+     tickers is a FAILED LOOKUP — it carries no information about this ticker in
+     any currency, and multiplying noise by 88 gives bigger noise.
+   · It never touches an 'etf' rejection, for the same reason the ETF rule is
+     blanket: an index level times a currency rate is still not a market cap.
+   · It never touches a US ticker. US caps are already in dollars; "correcting"
+     one would inflate it 88x, and the acceptance test would have to be equally
+     wrong for that to survive — a coincidence to design against, not rely on.
+   The correction is also NOT blind: it is only accepted if the result agrees
+   with the static number, so a bad rate cannot quietly rewrite the universe.
+
+   With no USDINR row present getUsdInrRate() returns null and every path below
+   is skipped, which is exactly today's behaviour.                        */
+const USDINR_TICKER='USDINR';
+/* A plausibility band, not a formality. An INVERTED rate (0.0113) would make
+   every corrected value ~8,000x too small and it would then agree with nothing,
+   so it is harmless — but a failed GOOGLEFINANCE lookup handing back a stray
+   five-figure number could in principle rescue a value it should not. Requiring
+   1 < rate < 1000 rules both out and costs nothing: USD/INR has never been
+   outside that band and never will be while this page exists. */
+function getUsdInrRate(){
+  const r=MCAP_LIVE[USDINR_TICKER];
+  if(r==null||!isFinite(r)||r<=1||r>=1000) return null;
+  return r;
+}
+
+/* Returns the FX-corrected value if it is defensible, otherwise null.
+   `reason` must be the rejection reason the guard actually produced, so the
+   dup/etf exclusions above cannot be bypassed by calling this directly. */
+function mcapFxCorrect(sym,liveV,market,reason,rate){
+  if(reason!=='ratio') return null;
+  if(market!=='india') return null;
+  const r=(rate===undefined)?getUsdInrRate():rate;
+  if(r==null||!isFinite(r)||r<=1||r>=1000) return null;
+  if(liveV==null||!isFinite(liveV)||liveV<=0) return null;
+  const corrected=liveV*r;
+  // The acceptance test is the SAME rule that rejected it, run again on the
+  // corrected figure. One threshold, one implementation.
+  if(mcapDisagrees(corrected,MCAP_STATIC[sym])) return null;
+  return corrected;
+}
+
 /* Merges the SURVIVING live caps over UNI and RECOMPUTES the cap tier from the
    merged value, which is the whole point — otherwise the 145 null-mcap India
    rows keep their defaulted 'SC' badge while the filter uses the real number.
@@ -2711,13 +2832,24 @@ function mcapRejectReason(sym,liveV,market,dupSet){
    first run happened to write. */
 function applyLiveMcaps(){
   const dups=mcapDupValues(MCAP_LIVE);
-  const st={applied:0,dup:0,ratio:0,etf:0,fellBack:0,leftNull:0,dupValues:dups.size};
+  const rate=getUsdInrRate();
+  /* fxCorrected is a SUB-COUNT of applied, not a fourth rejection bucket: the
+     row ends up carrying a live figure, so it belongs on the accepted side of
+     the ledger and applied+dup+ratio+etf still accounts for every ticker that
+     had a live value. The separate key is what makes "5 of these needed a
+     currency correction" visible in the console and in the tests. */
+  const st={applied:0,fxCorrected:0,dup:0,ratio:0,etf:0,fellBack:0,leftNull:0,dupValues:dups.size,usdInr:rate};
   [['india',capTierFromMcap],['us',capTierFromMcapUSD],['etf',null]].forEach(([mkt,tierFn])=>{
     UNI[mkt].forEach(def=>{
       const live=MCAP_LIVE[def.s];
       if(live!=null&&isFinite(live)){
         const why=mcapRejectReason(def.s,live,mkt,dups);
-        if(why){
+        // A ratio rejection on an India row gets ONE retry in rupees before it
+        // is written off — see mcapFxCorrect() for why only that one case.
+        const fx=why?mcapFxCorrect(def.s,live,mkt,why,rate):null;
+        if(fx!=null){
+          def.mcap=fx; st.applied++; st.fxCorrected++;
+        } else if(why){
           st[why]++;
           if(mkt!=='etf'){
             const fb=MCAP_STATIC[def.s];
@@ -2768,7 +2900,9 @@ async function loadMktCapData(){
     /* ONE line, not one per ticker. A per-ticker log of ~1,400 rows buries the
        number that actually matters (how many were rejected) and makes the
        console useless for every other feature on the page. */
-    console.log(`[mktcap] ${got} live caps read · ${st.applied} applied · `+
+    console.log(`[mktcap] ${got} live caps read · ${st.applied} applied `+
+      `(${st.fxCorrected} of them recovered by the USD/INR correction`+
+      `${st.usdInr!=null?` at ${st.usdInr}`:', no USDINR rate published'}) · `+
       `${st.dup+st.ratio+st.etf} rejected (${st.dup} shared-value across ${st.dupValues} `+
       `duplicate figures, ${st.ratio} >${MCAP_MAX_RATIO}x the static number, ${st.etf} ETF) · `+
       `of the rejected stock rows ${st.fellBack} fell back to a static cap and ${st.leftNull} stayed unknown.`);
@@ -3010,7 +3144,7 @@ const SCREENS_LS_KEY='sm_saved_screens_v1';
 const SCREEN_GET={
   F_CAP:()=>F_CAP, F_SCT:()=>F_SCT, F_EMA:()=>F_EMA, F_RSI:()=>F_RSI,
   F_PIV:()=>F_PIV, F_WPIV:()=>F_WPIV, F_REV:()=>F_REV, F_ALIGN:()=>F_ALIGN, F_BO:()=>F_BO,
-  F_DWA:()=>F_DWA,
+  F_DWA:()=>F_DWA, F_BOX:()=>F_BOX,
   MIN_MCAP:()=>MIN_MCAP, SEARCH:()=>SEARCH, SORT_C:()=>SORT_C, SORT_D:()=>SORT_D,
   /* Not a filter, but it IS part of "what the table is showing": a screen saved
      while sorted by Gain% since 2026-01-01 restores to a table sorted on an
@@ -3020,7 +3154,7 @@ const SCREEN_GET={
 const SCREEN_SET={
   F_CAP:v=>{F_CAP=v}, F_SCT:v=>{F_SCT=v}, F_EMA:v=>{F_EMA=v}, F_RSI:v=>{F_RSI=v},
   F_PIV:v=>{F_PIV=v}, F_WPIV:v=>{F_WPIV=v}, F_REV:v=>{F_REV=v}, F_ALIGN:v=>{F_ALIGN=!!v}, F_BO:v=>{F_BO=!!v},
-  F_DWA:v=>{F_DWA=!!v},
+  F_DWA:v=>{F_DWA=!!v}, F_BOX:v=>{F_BOX=!!v},
   MIN_MCAP:v=>{MIN_MCAP=+v||0}, SEARCH:v=>{SEARCH=v}, SORT_C:v=>{SORT_C=v}, SORT_D:v=>{SORT_D=v},
   // Memo is keyed on the date, so it must be dropped whenever the date is set
   // from anywhere other than applyHistDate().
@@ -3190,6 +3324,12 @@ let F_DWA=false;
    for the same reason as the other two: "watchlisted AND broken out AND RSI
    50-70" is the point. */
 let F_WL=false;
+/* Box Setup. This is the user's stated screen in one flag: "above EMA 20, 50
+   and 200, and below/at the box consolidating or squeezing and about to break
+   it, or has just crossed it". A FOURTH boolean rather than an option on the
+   EMA dropdown because it is a conjunction of two independent ideas (trend
+   filter AND box position) and must still stack with everything else. */
+let F_BOX=false;
 let SEARCH='', VISIBLE=CFG.INIT;
 let LOADING=false;
 
@@ -3576,6 +3716,167 @@ function breakout(closes,volumes){
   };
 }
 
+/* ── LIQUIDITY ──────────────────────────────────────────────────────────
+   Average daily traded VALUE: the mean of close × volume over the last `bars`
+   bars, in the stock's own currency.
+
+   WHY VALUE AND NOT VOLUME. Volume is shares, and shares are not comparable
+   across stocks: 100,000 shares of a ₹12 penny stock is ₹12 lakh of turnover
+   and 100,000 shares of a ₹4,000 name is ₹40 crore. An 8/8 setup you cannot
+   get filled in is useless, and only the value figure answers "can I get in".
+
+   WHY NOT AN RVOL COLUMN NEXT TO IT. The brief asked for RVol = today's volume
+   ÷ the 20-bar average volume excluding today. computeTech() already publishes
+   exactly that as `vRatio` (todV / mean(V.slice(-21,-1))) and the Vol Ratio
+   column already renders it. A second column computing the identical number
+   under a different name is how two implementations of one rule drift apart.
+
+   Needs `bars` bars (20). Returns null below that — never 0, which would read
+   as "this stock trades nothing" and be excluded by every liquidity filter. */
+const AVG_VAL_BARS=20;
+function avgTradedValue(C,V,bars){
+  const n=(C&&C.length)||0;
+  const b=bars||AVG_VAL_BARS;
+  if(!Array.isArray(C)||!Array.isArray(V)||V.length!==n||n<b) return null;
+  let sum=0;
+  for(let i=n-b;i<n;i++){
+    const c=C[i], v=V[i];
+    if(c==null||v==null||!isFinite(c)||!isFinite(v)) return null;
+    sum+=c*v;
+  }
+  return sum/b;
+}
+
+/* The same number in the unit a human screens on: ₹ crore for India, $ million
+   for everything else. Kept SEPARATE from the raw figure so the export and the
+   filter both work off one canonical value and only the presentation differs. */
+const AVG_VAL_DIV={INR:1e7, USD:1e6};   // 1 crore = 10,000,000 · 1 million = 1,000,000
+function avgValDisp(v,cur){
+  if(v==null||!isFinite(v)) return null;
+  return v/(AVG_VAL_DIV[cur]||AVG_VAL_DIV.USD);
+}
+
+/* ══════════════════════════════════
+   DARVAS BOX  — a faithful port of the user's Pine v4 study
+   ─────────────────────────────────
+   The Pine source, with boxp = 5:
+
+     LL = lowest(low, boxp)
+     k1 = highest(high, boxp); k2 = highest(high, boxp-1); k3 = highest(high, boxp-2)
+     NH = valuewhen(high > k1[1], high, 0)
+     box1 = k3 < k2
+     TopBox    = valuewhen(barssince(high > k1[1]) == boxp-2 and box1, NH, 0)
+     BottomBox = valuewhen(barssince(high > k1[1]) == boxp-2 and box1, LL, 0)
+
+   WHY THIS IS WALKED BAR BY BAR RATHER THAN APPROXIMATED. `valuewhen(cond,src,0)`
+   is "the value src had on the most recent bar where cond was true" and
+   `barssince(cond)` is "how many bars ago cond was last true" — both are
+   HISTORICAL lookups, not properties of the latest bar. The tempting shortcut
+   ("was there a new high exactly boxp-2 bars ago?") gives the same answer only
+   while a box is being FORMED; once formed, a Darvas box PERSISTS unchanged
+   until the next qualifying formation, and the shortcut would blank it out on
+   the very next bar. Since every state below is measured against a persisted
+   box, the shortcut would make the whole column flicker.
+
+   Pine `na` semantics are reproduced with null: any comparison involving a
+   window that is not yet full is false, never true, so nothing fires early.
+
+   RETURNS the full TopBox/BottomBox SERIES as well as the latest values,
+   because `break` is crossover(close, TopBox) — it needs TopBox at the PRIOR
+   bar, not just at this one. */
+function darvasSeries(H,L,boxp){
+  const p=(boxp&&boxp>=3)?Math.floor(boxp):5;
+  if(!Array.isArray(H)||!Array.isArray(L)||H.length!==L.length) return null;
+  const n=H.length;
+  const tops=new Array(n).fill(null), bots=new Array(n).fill(null);
+  if(n<2*p-1) return {tops,bots,minBars:2*p-1,boxp:p};
+
+  /* Rolling extreme over the w bars ENDING at i. null (Pine na) whenever the
+     window would run off the start of the series or contain a hole — a partial
+     window is a different statistic, not a smaller one. */
+  const ext=(arr,w,i,max)=>{
+    if(w<1||i-w+1<0) return null;
+    let m=null;
+    for(let j=i-w+1;j<=i;j++){
+      const v=arr[j];
+      if(v==null||!isFinite(v)) return null;
+      m = m==null ? v : (max ? Math.max(m,v) : Math.min(m,v));
+    }
+    return m;
+  };
+
+  let lastCond=-1;   // index of the most recent `high > k1[1]` bar  (barssince)
+  let NH=null;       // valuewhen(high > k1[1], high, 0)
+  let top=null, bot=null;   // the persisted box, carried forward bar to bar
+  for(let i=0;i<n;i++){
+    // cond = high > k1[1] : this bar's high beat the highest high of the boxp
+    // bars ending on the PREVIOUS bar.
+    const k1prev = i>0 ? ext(H,p,i-1,true) : null;
+    const hi=H[i];
+    if(k1prev!=null && hi!=null && isFinite(hi) && hi>k1prev){ lastCond=i; NH=hi; }
+
+    const k2=ext(H,p-1,i,true), k3=ext(H,p-2,i,true);
+    const box1 = (k2!=null && k3!=null && k3<k2);   // no new high in the last boxp-2 bars
+    const bs = lastCond>=0 ? i-lastCond : null;     // barssince(cond); null = never
+
+    if(bs===p-2 && box1 && NH!=null){
+      const ll=ext(L,p,i,false);
+      // Both legs come from the SAME bar i — Pine evaluates the two valuewhen()
+      // calls on one condition, so a TopBox from one bar and a BottomBox from
+      // another would not be a box at all.
+      if(ll!=null){ top=NH; bot=ll; }
+    }
+    tops[i]=top; bots[i]=bot;
+  }
+  return {tops,bots,minBars:2*p-1,boxp:p};
+}
+
+/* The six states, in the ORDER they are tested. `break` deliberately outranks
+   `above`: a close that crossed the top on THIS bar is a fresh, actionable
+   event, while "already above" is a fact about a move that may be days old.
+   Testing `above` first would make `break` unreachable, since every crossover
+   bar is also an above bar. */
+function darvasState(C,tops,bots,nearPct){
+  const n=(C&&C.length)||0;
+  if(!n||!tops||!bots) return null;
+  const top=tops[n-1], bot=bots[n-1];
+  if(top==null||bot==null) return null;            // no box has formed yet
+  const c=C[n-1];
+  if(c==null||!isFinite(c)) return null;
+  const prevC=n>=2?C[n-2]:null, prevTop=n>=2?tops[n-2]:null;
+  // Pine: crossover(close, TopBox) === close > TopBox and close[1] <= TopBox[1]
+  if(prevC!=null && prevTop!=null && isFinite(prevC) && prevC<=prevTop && c>top) return 'break';
+  if(c>top) return 'above';
+  const near=(nearPct==null?1.0:+nearPct);
+  if(c<top && c>=top*(1-near/100)) return 'near';
+  if(c>=bot && c<=top) return 'inside';
+  if(c<bot) return 'below';
+  return null;
+}
+
+/* One call site for both timeframes. Returns nulls rather than zeros when the
+   series is too short — a box of 0/0 would read as "this stock is trading a
+   million percent above its box". */
+function darvasBox(C,H,L,boxp,nearPct){
+  const n=(C&&C.length)||0;
+  if(!n||!Array.isArray(H)||!Array.isArray(L)||H.length!==n||L.length!==n) return {top:null,bot:null,state:null};
+  const s=darvasSeries(H,L,boxp);
+  if(!s) return {top:null,bot:null,state:null};
+  const top=s.tops[n-1], bot=s.bots[n-1];
+  return {
+    top: top==null?null:+top.toFixed(2),
+    bot: bot==null?null:+bot.toFixed(2),
+    state: darvasState(C,s.tops,s.bots,nearPct),
+  };
+}
+
+/* Sort ordinal. `break` and `near` sit at the TOP because they are the two
+   actionable states — the stock is at the line right now. `above` ranks BELOW
+   `inside` on purpose: the user's stated screen is "consolidating inside the
+   box and about to break", so a name that already ran is less interesting than
+   one still coiling. null (no box) sorts as unknown, i.e. bottom. */
+const DBOX_RANK={break:5, near:4, inside:3, above:2, below:1};
+
 /* O (daily opens) is the LAST parameter on purpose — see fetchStock's note.
    When it is absent every open falls back to the close, which makes every bar
    a zero-body doji; rather than emit a page full of bogus 'Doji' the pattern
@@ -3634,6 +3935,26 @@ function computeTech(C,H,L,V,dates,sym,O){
     }
   }
 
+  /* Bars since the close last crossed ABOVE the 50 EMA — the first of the three
+     Fresh flags. null when the close is NOT currently above the 50 EMA, when
+     no flip is visible in the comparable window, or when there is not enough
+     history for a 50 EMA at all: "it has been above the whole time" and
+     "it crossed today" are opposite facts and must not share a value.
+     Needs 51 bars (50 to seed the EMA + 1 prior bar to have a flip against);
+     computed from emaSeries so the comparison uses the EMA AS IT WAS on each
+     past bar, not today's EMA projected backwards. */
+  let e50CrossUpAge=null;
+  if(n>=51 && e50!=null){
+    const es=emaSeries(C,50);
+    const st=[];
+    for(let i=49;i<n;i++) st.push(C[i]>es[i]);
+    if(st[st.length-1]){
+      for(let i=st.length-1;i>0;i--){
+        if(st[i]!==st[i-1]){ e50CrossUpAge=(st.length-1)-i; break; }
+      }
+    }
+  }
+
   let eu=0,ec=0;
   [[e10,e20],[e20,e50],[e50,e150],[e150,e200],[price,e20]].forEach(([a,b])=>{
     if(a&&b){ec++;if(a>b)eu++;}
@@ -3648,6 +3969,9 @@ function computeTech(C,H,L,V,dates,sym,O){
   const vArr=V.slice(-21,-1).filter(v=>v>0);
   const avgV=vArr.length?vArr.reduce((a,b)=>a+b,0)/vArr.length:0;
   const vRatio=avgV>0?+(todV/avgV).toFixed(2):null;
+  /* vRatio IS the RVol the brief describes — today's volume over the 20-bar
+     average EXCLUDING today. It is not duplicated as a second column. */
+  const avgValue=avgTradedValue(C,V,AVG_VAL_BARS);
 
   /* 52-week high/low.
      `Math.min(n,252)` means this silently degrades to "highest high in whatever
@@ -3703,6 +4027,13 @@ function computeTech(C,H,L,V,dates,sym,O){
   const sq=squeeze(C.slice(-20),H.slice(-20),L.slice(-20));
   const bo=breakout(C,V);
 
+  /* Darvas boxes, daily and weekly. The weekly one is computed from the
+     RESAMPLED series (wk.*), never from the daily bars with a longer boxp —
+     those are different statistics: a weekly box's "new high" must beat the
+     highest WEEKLY high, which is a max-of-maxes, not a max over 5*boxp days. */
+  const dBox=darvasBox(C,H,L,CFG.DARVAS.boxp,CFG.DARVAS.nearPct);
+  const wBox=darvasBox(wk.closes,wk.highs,wk.lows,CFG.DARVAS.boxp,CFG.DARVAS.nearPct);
+
   /* Candlestick patterns. hasO distinguishes "the sheet has no Open column"
      from "the open happens to equal the close": without it, a missing-Open
      sheet reports a perfect Doji on literally every bar of every stock. */
@@ -3746,14 +4077,16 @@ function computeTech(C,H,L,V,dates,sym,O){
   const currency=sym.endsWith('.NS')?'INR':'USD';
 
   return{
-    sym,price,ch1d,ch1w,ch1m,ch3m,volume:todV,avgV,vRatio,h52d,h52,l52,
+    sym,price,ch1d,ch1w,ch1m,ch3m,volume:todV,avgV,vRatio,avgValue,h52d,h52,l52,
     rsi14,wRsi,e10,e20,e50,e100,e150,e200,emaScr,
     sma50,sma150,sma200,slope200,slopeDir,
-    xFast:XF,xSlow:XS,xFastEma,xSlowEma,xState,xBars,wxState,
+    xFast:XF,xSlow:XS,xFastEma,xSlowEma,xState,xBars,wxState,e50CrossUpAge,
     pattern,wPattern,
     consolDays:cons.days,consolRange:cons.range,volDry,monthlySetup,
     we10,we20,weEmaScr,
     dpz,wpz,dPiv,wPiv,s2,sq,wVolRatio,
+    dBoxTop:dBox.top, dBoxBot:dBox.bot, dBoxState:dBox.state,
+    wBoxTop:wBox.top, wBoxBot:wBox.bot, wBoxState:wBox.state,
     boGain:bo.gain,boCnt:bo.count,retrace:bo.retrace,
     // Own returns (inputs to RS, never displayed as RS).
     pc21,pc55,pc10w,pcHist21,
@@ -4530,6 +4863,30 @@ function vrC(r){
   const c=r>=2?'vg':r<0.7?'vr':'';
   return `<span class="${c}">${r}x</span>`;
 }
+/* Average traded value, in the unit the market is actually discussed in.
+   Green above ₹25 Cr / $25M (institutionally liquid), red below ₹1 Cr / $1M
+   (where a position of any size moves the price against you). */
+function avgValC(v,cur){
+  const d=avgValDisp(v,cur);
+  if(d==null) return '<span class="vm">—</span>';
+  const c=d>=25?'vg':d<1?'vr':'';
+  const txt = cur==='INR'
+    ? `₹${d>=100?Math.round(d).toLocaleString('en-IN'):d.toFixed(2)} Cr`
+    : `$${d>=100?Math.round(d).toLocaleString('en-US'):d.toFixed(2)}M`;
+  return `<span class="${c}">${txt}</span>`;
+}
+/* Fresh cell. One flag -> name it and give its age. Several -> a count badge,
+   with the freshest one named underneath so the badge is still specific. */
+function freshC(d){
+  const f=freshFlags(d);
+  if(!f.length) return '<span class="vm">—</span>';
+  const top=f[0];
+  if(f.length===1)
+    return `<span class="frsh">${FRESH_LABEL[top.key]}</span>`
+         + `<br><span class="frsh-n">${top.age}d ago</span>`;
+  return `<span class="frsh">⚡ ${f.length} fresh</span>`
+       + `<br><span class="frsh-n">${FRESH_LABEL[top.key]} ${top.age}d</span>`;
+}
 function pivC(z){
   if(!z||z==='—') return '<span class="vm">—</span>';
   const c=z.startsWith('R2')?'pr2':z.startsWith('R1')||z.includes('PP→R')?'pr1':z==='PP'?'ppp':z.includes('S1')?'ps1':'ps2';
@@ -4539,6 +4896,17 @@ function h52C(v){
   if(v==null) return '<span class="vm">—</span>';
   const c=v>=-5?'vg':v>=-15?'vo':'vr';
   return `<span class="${c}">${v}%</span>`;
+}
+/* Darvas box cell: the STATE as a badge, with the box range under it.
+   The range is printed as plain numbers with no currency symbol — the row
+   already carries the price in its own currency two columns to the left, and
+   two "₹" glyphs in a 90px cell is noise, not information. */
+const DBOX_LABEL={break:'BREAK', above:'Above', near:'Near', inside:'Inside', below:'Below'};
+function dboxC(state,top,bot){
+  if(!state||top==null||bot==null) return '<span class="vm">—</span>';
+  const n=v=>v>=1000?Math.round(v).toLocaleString('en-IN'):(+v).toFixed(2);
+  return `<span class="dbx dbx-${state}">${DBOX_LABEL[state]||state}</span>`
+       + `<br><span class="dbx-rng">${n(bot)}–${n(top)}</span>`;
 }
 function emaC(sc){
   if(sc==null) return '<span class="vm">—</span>';
@@ -4721,17 +5089,20 @@ function watchC(sym){
   const on=isWatched(sym), safe=escAttr(sym);
   return `<span class="wl-star${on?' on':''}" title="${on?'Remove from watchlist':'Add to watchlist'}" onclick="toggleWatch('${safe}')">${on?'★':'☆'}</span>`;
 }
-/* ── TRADINGVIEW DEEP LINKS ─────────────────────────────────────────────
-   Why three different intervals rather than one "open chart" link:
-   TradingView draws DAILY pivot levels on intraday charts up to 15 minutes,
-   and WEEKLY pivot levels on charts up to 1 hour. Open a daily chart from the
-   D-Pivot cell and the pivots you see are the WEEKLY ones — the numbers on
-   screen do not match the number in the cell you clicked, which is worse than
-   no link at all. So each cell links at the timeframe where its own figure is
-   the one TradingView plots:
-     Ticker cell → interval=D  (the price/EMA/RSI context the row describes)
-     D-Pivot     → interval=15 (daily pivots are drawn here)
-     W-Pivot     → interval=60 (weekly pivots are drawn here)          */
+/* ── TRADINGVIEW DEEP LINK ──────────────────────────────────────────────
+   ONE link per row, on the ticker, opening the DAILY chart — the price / EMA /
+   RSI context the whole row describes.
+
+   HISTORY, so it does not get "helpfully" re-added: the D-Pivot and W-Pivot
+   cells used to carry their own links at interval=15 and interval=60, on the
+   reasoning that TradingView plots daily pivots on intraday charts up to 15
+   minutes and weekly pivots on charts up to 1 hour, so each cell should link
+   where its own numbers are the ones drawn. The user asked for both to be
+   removed: three chart links per row on ~1,400 rows is clutter, and landing on
+   a 15-minute chart is not what anyone wants when they click a row in an
+   end-of-day screener. The interval parameter is KEPT on tvURL()/tvLink()
+   because it is part of the URL contract, not because anything but 'D' uses
+   it today.                                                            */
 const TV_BASE='https://www.tradingview.com/chart/';
 
 /* NSE: is the only exchange prefix we can state with confidence. Every .NS
@@ -4776,13 +5147,6 @@ function tvLink(sym,interval,tip){
 }
 
 const TV_TIP_D='Open this stock on TradingView as a daily chart, in a new tab.';
-const TV_TIP_DP='Open this stock on TradingView as a 15-minute chart, in a new tab. '+
-  'TradingView draws DAILY pivot levels on intraday charts up to 15 minutes, so 15m is the '+
-  'timeframe where the levels on the chart are the same ones this cell is reporting. '+
-  'On a daily chart you would be shown the weekly pivots instead.';
-const TV_TIP_WP='Open this stock on TradingView as a 1-hour chart, in a new tab. '+
-  'TradingView draws WEEKLY pivot levels on charts up to 1 hour, so 1h is the timeframe '+
-  'where the levels on the chart match this cell. Anything faster shows the daily pivots.';
 
 function boGC(v){
   if(v==null) return '<span class="vm">—</span>';
@@ -4829,7 +5193,7 @@ function histGC(v){ return fmtCh(v); }
    reason: without them a table loading with columns switched off renders
    skeleton rows WIDER than the data rows underneath, because only the data
    rows' cells get hidden. Length must equal (th count − 4). */
-const SKEL_COLS=['c-setup','c-align','c-sector','','','c-ch1w','c-ch1m','c-ch3m','c-hist','c-histg','c-status','','c-wrsi','c-vr','c-wvol','','c-wpiv','',
+const SKEL_COLS=['c-setup','c-align','c-fresh','c-sector','','','c-ch1w','c-ch1m','c-ch3m','c-hist','c-histg','c-status','','c-wrsi','c-vr','c-wvol','c-avgval','','c-wpiv','c-dbox','c-wbox','',
   'c-ema','c-wema','c-xcross','c-wcross','c-slope200','c-pattern','c-wpattern','c-consol',
   'c-monthly','','c-bocnt','c-followup','c-voldry','c-retrace','c-squeeze','','c-mrsrank','c-rs21',
   'c-rs55','c-rs10w','c-rsslope','c-rshist','','c-rstrend','c-notes'];
@@ -4870,6 +5234,7 @@ function dataRow(def,d,i){
     <td>${watchC(def.s)}<span class="ticker">${flag} ${def.d}</span>${tvLink(def.s,'D',TV_TIP_D)}<br><span class="sec">${def.sector}</span>${mcapLine}</td>
     <td class="c-setup">${setupC(d)}</td>
     <td class="c-align">${alignC(d)}</td>
+    <td class="c-fresh">${freshC(d)}</td>
     <td class="c-sector">${def.sector||'—'}</td>
     <td style="font-weight:600">${fmtP(d.price,d.currency)}</td>
     <td>${fmtCh(d.ch1d)}</td>
@@ -4883,8 +5248,11 @@ function dataRow(def,d,i){
     <td class="c-wrsi vm">${d.wRsi??'—'}</td>
     <td class="c-vr">${vrC(d.vRatio)}</td>
     <td class="c-wvol">${vrC(d.wVolRatio)}</td>
-    <td>${pivC(d.dpz)}${tvLink(def.s,'15',TV_TIP_DP)}</td>
-    <td class="c-wpiv">${pivC(d.wpz)}${tvLink(def.s,'60',TV_TIP_WP)}</td>
+    <td class="c-avgval">${avgValC(d.avgValue,d.currency)}</td>
+    <td>${pivC(d.dpz)}</td>
+    <td class="c-wpiv">${pivC(d.wpz)}</td>
+    <td class="c-dbox">${dboxC(d.dBoxState,d.dBoxTop,d.dBoxBot)}</td>
+    <td class="c-wbox">${dboxC(d.wBoxState,d.wBoxTop,d.wBoxBot)}</td>
     <td>${h52C(d.h52d)}</td>
     <td class="c-ema">${emaBadgeRow(d.price,[['10',d.e10],['20',d.e20],['50',d.e50],['200',d.e200]])}</td>
     <td class="c-wema">${emaBadgeRow(d.price,[['10',d.we10],['20',d.we20]])}</td>
@@ -4920,7 +5288,7 @@ function errRow(def,i){
     <td class="td-n">${i}</td><td>${revC(def.s)}</td>
     <td>${capB(def.g)}</td>
     <td>${watchC(def.s)}<span class="ticker">${def.d}</span><br><span class="sec">${def.sector}</span></td>
-    <td colspan="43" style="color:var(--text3);font-size:11px">
+    <td colspan="47" style="color:var(--text3);font-size:11px">
       ⚠ Not in this market's Google Sheet tab — re-run the Apps Script to backfill it
     </td>
   </tr>`;
@@ -4941,6 +5309,11 @@ const ADV_DEFAULTS={
   bo:    {on:false, minGain:0, maxDays:30},
   rsi:   {on:false, min:60},
   vol:   {on:false, min:1.5},
+  /* Minimum average traded VALUE, in the display unit of the row's own
+     currency: ₹ crore for India, $ million for US and ETF. One box rather than
+     two because the table only ever shows one market at a time, and "5" means
+     the same order of magnitude of tradability in both. */
+  liq:   {on:false, min:5},
   xover: {on:false, fast:10,   slow:20},
 };
 const cloneAdv=o=>JSON.parse(JSON.stringify(o));
@@ -4995,6 +5368,15 @@ function passesAdv(d){
   if(ADV.vol.on){
     if(d.vRatio==null || d.vRatio < +ADV.vol.min) return false;
   }
+  /* Liquidity. Compared in the DISPLAY unit, so the number in the box means
+     ₹ crore on the India tab and $ million on the US/ETF tabs — the same
+     conversion the column itself renders. A row with under 20 bars has no
+     figure at all and is DROPPED rather than kept: "we could not measure how
+     tradable this is" is not a reason to put it on a tradability shortlist. */
+  if(ADV.liq.on){
+    const v=avgValDisp(d.avgValue, d.currency);
+    if(v==null || v < +ADV.liq.min) return false;
+  }
   if(ADV.xover.on){
     if(d.xState!=='bull') return false;
   }
@@ -5014,6 +5396,11 @@ function openAdvFilters(){
   $('advRsiMin').value=ADV.rsi.min;
   $('advVolOn').checked=ADV.vol.on;
   $('advVolMin').value=ADV.vol.min;
+  $('advLiqOn').checked=ADV.liq.on;
+  $('advLiqMin').value=ADV.liq.min;
+  // The unit label follows the market on screen, so the number in the box is
+  // never ambiguous about what it means.
+  { const u=$('advLiqUnit'); if(u) u.textContent = CUR==='india' ? '₹ Cr' : '$ M'; }
   $('advXOn').checked=ADV.xover.on;
   $('advXFast').value=String(ADV.xover.fast);
   $('advXSlow').value=String(ADV.xover.slow);
@@ -5030,6 +5417,7 @@ function readAdvForm(){
   ADV.bo    ={on:$('advBoOn').checked,     minGain:num('advBoGain',ADV_DEFAULTS.bo.minGain), maxDays:num('advBoDays',ADV_DEFAULTS.bo.maxDays)};
   ADV.rsi   ={on:$('advRsiOn').checked,    min:num('advRsiMin',ADV_DEFAULTS.rsi.min)};
   ADV.vol   ={on:$('advVolOn').checked,    min:num('advVolMin',ADV_DEFAULTS.vol.min)};
+  ADV.liq   ={on:$('advLiqOn').checked,    min:num('advLiqMin',ADV_DEFAULTS.liq.min)};
   ADV.xover ={on:$('advXOn').checked,      fast:num('advXFast',ADV_DEFAULTS.xover.fast), slow:num('advXSlow',ADV_DEFAULTS.xover.slow)};
 }
 
@@ -5355,6 +5743,11 @@ const SORT_FN={
   hist:(_,def)=>histFor(def.s)?.price??null,
   histg:(d,def)=>histGain(d?.price??null, histFor(def.s)),
   vr:d=>d?.vRatio,wvol:d=>d?.wVolRatio,h52:d=>d?.h52d,ema:d=>d?.emaScr,wema:d=>d?.weEmaScr,
+  /* Sorted on the DISPLAY unit (₹ Cr / $M), not the raw currency amount. A
+     table holding both INR and USD rows would otherwise rank a ₹1 Cr Indian
+     stock (10,000,000 rupees) above a $50M US one (50,000,000 dollars) purely
+     because the rupee number is bigger — a units bug, not an ordering. */
+  avgval:d=>avgValDisp(d?.avgValue??null, d?.currency),
   bog:d=>d?.boGain,boc:d=>d?.boCnt,ret:d=>d?.retrace,sq:d=>d?.sq,
   /* Negated so that DESC — the first click, and what "sort by Follow-up"
      naturally means — puts the freshest breakout on top. Rows with no breakout
@@ -5370,6 +5763,13 @@ const SORT_FN={
      would otherwise sort above 'PP'). */
   dpiv:d=>PIV_RANK[d?.dpz],
   wpiv:d=>PIV_RANK[d?.wpz],
+  /* Darvas state is ordinal, not alphabetical: sorted as strings 'above' would
+     outrank 'break' and 'inside' would outrank 'near', which is the exact
+     opposite of what the column is for. DBOX_RANK puts break and near on top.
+     A row with no box returns undefined -> getRows() maps it to -Infinity, so
+     "no box yet" sinks rather than pretending to be 'below'. */
+  dbox:d=>DBOX_RANK[d?.dBoxState],
+  wbox:d=>DBOX_RANK[d?.wBoxState],
   sector:(_,def)=>def.sector,
   // Sort on the same fraction the badge is bucketed from, not on the raw score:
   // a 6/9 and a 6/7 are not the same setup.
@@ -5400,6 +5800,9 @@ const SORT_FN={
      everything and the other was not, and the more-tested row is the more
      trustworthy shortlist entry. */
   align:d=>{ const a=dwAlign(d); return a?a.score*100+a.total:null; },
+  // Freshest first on the first click (DESC), which is the only order this
+  // column has a reason to be sorted in.
+  fresh:d=>freshScore(d),
 };
 
 /* The EMA-alignment screen, in ONE place. The "All EMAs Bullish" dropdown
@@ -5410,6 +5813,105 @@ function emasAligned(d){ return (d?.emaScr||0)>=0.8; }
 /* boCnt is 0 for "scanned, found none" and null/undefined for "not enough
    history to scan" — both are correctly excluded by >0. */
 function hasBreakout(d){ return (d?.boCnt||0)>0; }
+
+/* ══════════════════════════════════
+   FRESH MOMENTUM
+   ─────────────────────────────────
+   Three ways a stock can have JUST turned. The column exists because every
+   other column on this page describes a STATE ("above the 50 EMA", "RS21 is
+   +4.2") and a state tells you nothing about whether you are early or three
+   weeks late. These are all EVENTS with an age attached.
+
+     · EMA50 cross   — the close crossed above the 50 EMA within 3 bars
+     · RS21 turn     — the 21-day excess return crossed above zero within 5 bars
+     · Base breakout — a 20+ bar consolidation broke out within 3 bars
+
+   WHY THIS IS DERIVED FROM THE ROW RATHER THAN COMPUTED IN computeTech():
+   two of the three inputs do not exist yet at computeTech() time. rsHist is
+   filled by rankRS() once the benchmark has loaded, and boAge is written by
+   the breakout pass afterwards. Deriving here means one implementation reading
+   whatever is actually present, instead of a snapshot taken too early.
+
+   EACH CHECK NULL-GUARDS ITS OWN INPUT and is simply absent when its data is
+   missing — a row with no benchmark still reports its EMA50 cross. */
+const FRESH_LOOKBACK={ema50:3, rs21:5, bo:3};
+const FRESH_LABEL={ema50:'EMA50 ↑', rs21:'RS21 +', bo:'Base BO'};
+
+function freshFlags(d){
+  if(!d) return [];
+  const out=[];
+
+  // 1 · crossed above EMA 50 within the last 3 bars. e50CrossUpAge is already
+  //     null unless the close is currently ABOVE the 50 EMA, so a cross down
+  //     can never be reported as fresh momentum.
+  const ea=d.e50CrossUpAge;
+  if(ea!=null && isFinite(ea) && ea<=FRESH_LOOKBACK.ema50) out.push({key:'ema50',age:ea});
+
+  /* 2 · rs21 turned positive within the last 5 bars. Read off rsHist — the
+        per-bar history of the 21-day excess return that the RS Rank History
+        sparkline already draws — rather than by recomputing anything: a second
+        implementation of "RS" is the exact drift the RS rewrite removed.
+        Requires the LAST reading to be positive AND a sign flip inside the
+        window; a series that was positive throughout has not "just turned". */
+  const h=d.rsHist;
+  if(Array.isArray(h) && h.length>=2){
+    const st=h.map(v=>v!=null&&isFinite(v)&&v>0);
+    if(st[st.length-1]){
+      for(let i=st.length-1;i>0;i--){
+        if(st[i]!==st[i-1]){
+          const age=(st.length-1)-i;
+          if(age<=FRESH_LOOKBACK.rs21) out.push({key:'rs21',age});
+          break;
+        }
+      }
+    }
+  }
+
+  // 3 · first breakout out of a real base. boAge is `undefined` (not null) on
+  //     rows rehydrated from a cache written before it existed, and undefined
+  //     must not be read as 0 — that would flag every such row as breaking out
+  //     on the latest bar.
+  const ba=d.boAge;
+  if(d.consolDays!=null && d.consolDays>=20 && ba!=null && ba!==undefined && isFinite(ba)
+     && ba<=FRESH_LOOKBACK.bo) out.push({key:'bo',age:ba});
+
+  // Freshest first; ties broken by the order above, which is the order of
+  // conviction (a trend cross beats a relative-strength blip).
+  return out.sort((a,b)=>a.age-b.age);
+}
+
+/* Sort key. Freshest age dominates, count only breaks ties — two stale flags
+   are not more actionable than one that fired today. null with no flags at all,
+   so "nothing turned" sinks instead of ranking as age 0. */
+function freshScore(d){
+  const f=freshFlags(d);
+  if(!f.length) return null;
+  return (10-Math.min(f[0].age,9))*10 + f.length;
+}
+
+/* THE BOX SETUP SCREEN, in one predicate, quoting the user's own words:
+   "find stocks which are above EMA's like 20, 50 & 200 and below the box
+    consolidating or squeezing and are about to break the box or crossed the
+    box or are above the box."
+   Read literally that last clause would include 'above', but the same sentence
+   opens with "below the box consolidating or squeezing" and the whole point is
+   to catch the move BEFORE it runs. So the box test is inside / near / break —
+   still coiling, at the line, or crossing it right now — and 'above' (already
+   extended) is deliberately excluded. The D-Box column still shows 'above', and
+   sorting on it still ranks it; it is only this one-click screen that omits it.
+
+   Every leg null-guards its own input rather than defaulting: a stock with under
+   200 bars has no e200 at all, and treating "not measurable" as "passes" would
+   put freshly-listed names into a screen whose whole premise is a long trend. */
+const BOX_SETUP_STATES=['inside','near','break'];
+function boxSetup(d){
+  if(!d) return false;
+  const p=d.price;
+  if(p==null||!isFinite(p)) return false;
+  if(d.e20==null||d.e50==null||d.e200==null) return false;
+  if(!(p>d.e20 && p>d.e50 && p>d.e200)) return false;
+  return BOX_SETUP_STATES.includes(d.dBoxState);
+}
 
 function getRows(market){
   let items=UNI[market].slice();
@@ -5445,6 +5947,7 @@ function getRows(market){
   if(F_ALIGN) items=items.filter(def=>emasAligned(SD[def.s]));
   if(F_DWA)   items=items.filter(def=>dwAligned(SD[def.s]));
   if(F_BO)    items=items.filter(def=>hasBreakout(SD[def.s]));
+  if(F_BOX)   items=items.filter(def=>boxSetup(SD[def.s]));
   // Keyed off the symbol, not off SD — a starred stock stays visible even while
   // its indicators are still loading, which is the only sane behaviour for a
   // list the user curated by hand.
@@ -5604,7 +6107,7 @@ const TOUR=[
   {el:'advBtn',    t:'5 · Narrowing the list',
    b:'Sector View breaks the whole market down by sector so you can see which groups are actually working, and clicking a row filters the table to it. Advanced Filters adds screens the dropdowns do not cover — consolidation length, distance from the 52-week high, breakout age, volume. And the D / W / D+W breadth toggle tells you how much of the market is rising on the daily, the weekly, or both, which is the fastest read on whether to be buying at all today.'},
   {el:'screenSel', t:'6 · Keeping your work',
-   b:'Mark a stock bull, bear or neutral with the Review buttons, type a note against it, or star it onto your watchlist — all three are saved in this browser and survive a reload. Save the whole filter combination as a named screen here and recall it any time, and use Excel to export exactly what is currently on screen with every column included. The small 📈 beside a ticker or a pivot cell opens that stock on TradingView at the timeframe that matches the cell you clicked.'},
+   b:'Mark a stock bull, bear or neutral with the Review buttons, type a note against it, or star it onto your watchlist — all three are saved in this browser and survive a reload. Save the whole filter combination as a named screen here and recall it any time, and use Excel to export exactly what is currently on screen with every column included. The small 📈 beside a ticker opens that stock on TradingView as a daily chart, in a new tab.'},
 ];
 let TOUR_I=0;
 function startTour(i){
@@ -5853,7 +6356,7 @@ function switchMkt(market){
   if(!LOADING) GSHEET_DATA = GSHEET_BY_MARKET[market] || null;
   setGSheetStatus(market);
   F_CAP='All';F_SCT='';F_EMA='';F_RSI='';F_PIV='';F_WPIV='';
-  F_ALIGN=false;F_BO=false;F_DWA=false;
+  F_ALIGN=false;F_BO=false;F_DWA=false;F_BOX=false;
   $('emaFil').value='';$('rsiFil').value='';$('pivFil').value='';$('wpivFil').value='';
   syncFilterToggles();
   updateMcapUI(market);
@@ -5894,7 +6397,7 @@ function applyF(){
    handlers flip the flag and call this, so a programmatic reset (clrF,
    switchMkt) lands on screen through the same one path. */
 function syncFilterToggles(){
-  [['alignTog',F_ALIGN],['dwaTog',F_DWA],['boTog',F_BO],['wlTog',F_WL]].forEach(([id,on])=>{
+  [['alignTog',F_ALIGN],['dwaTog',F_DWA],['boTog',F_BO],['boxTog',F_BOX],['wlTog',F_WL]].forEach(([id,on])=>{
     const el=$(id); if(!el) return;
     el.classList.toggle('on',on);
     el.setAttribute('aria-pressed',on?'true':'false');
@@ -5909,12 +6412,14 @@ function toggleDWA(){ F_DWA=!F_DWA; syncFilterToggles();
   VISIBLE=CFG.INIT; renderTable(CUR); updateStatus(); }
 function toggleBO(){ F_BO=!F_BO; syncFilterToggles();
   VISIBLE=CFG.INIT; renderTable(CUR); updateStatus(); }
+function toggleBox(){ F_BOX=!F_BOX; syncFilterToggles();
+  VISIBLE=CFG.INIT; renderTable(CUR); updateStatus(); }
 function toggleWL(){ F_WL=!F_WL; syncFilterToggles();
   VISIBLE=CFG.INIT; renderTable(CUR); updateStatus(); }
 
 function clrF(){
   SEARCH='';F_CAP='All';F_SCT='';F_EMA='';F_RSI='';F_PIV='';F_WPIV='';F_REV='';
-  F_ALIGN=false;F_BO=false;F_DWA=false;F_WL=false;
+  F_ALIGN=false;F_BO=false;F_DWA=false;F_WL=false;F_BOX=false;
   MIN_MCAP=MCAP_DEFAULTS[CUR] ?? 0;
   $('searchQ').value='';$('sctFil').value='';$('emaFil').value='';
   $('rsiFil').value='';$('pivFil').value='';$('wpivFil').value='';
@@ -5990,6 +6495,10 @@ const EXPORT_COLS=[
      what? — and splitting it into two columns invites someone to average the
      scores while ignoring the totals. */
   ['Align D+W',   (def,d)=>{ const a=dwAlign(d); return a?`${a.score}/${a.total}`:''; }],
+  /* Every flag that fired, with its age, not just the freshest — a spreadsheet
+     is where someone asks "which of these three fired", and the cell only has
+     room to name one. */
+  ['Fresh',       (def,d)=>freshFlags(d).map(f=>`${f.key}:${f.age}d`).join(' ')],
   ['MarketCap',   (def,d)=>def.mcap??''],
   ['Currency',    (def,d)=>d?.currency??''],
   ['Price',       (def,d)=>d?.price??''],
@@ -6007,8 +6516,22 @@ const EXPORT_COLS=[
   ['W-RSI',       (def,d)=>d?.wRsi??''],
   ['VolRatio',    (def,d)=>d?.vRatio??''],
   ['W-Vol',       (def,d)=>d?.wVolRatio??''],
+  /* Both the raw figure and the screening unit go out. The raw one is what the
+     currency-agnostic arithmetic needs; the ₹Cr/$M one is what the filter box
+     and every conversation about liquidity actually use. */
+  ['Avg Value',   (def,d)=>d?.avgValue??''],
+  ['Avg Value (Cr/M)',(def,d)=>{const v=avgValDisp(d?.avgValue??null,d?.currency); return v==null?'':+v.toFixed(2);}],
   ['D-Pivot',     (def,d)=>d?.dpz??''],
   ['W-Pivot',     (def,d)=>d?.wpz??''],
+  /* The box goes out as three columns per timeframe, not as the "98–110"
+     string the cell shows: a spreadsheet can filter on a state and compare a
+     top, but it cannot do arithmetic on a range printed with an en dash. */
+  ['D-Box State', (def,d)=>d?.dBoxState??''],
+  ['D-Box Top',   (def,d)=>d?.dBoxTop??''],
+  ['D-Box Bottom',(def,d)=>d?.dBoxBot??''],
+  ['W-Box State', (def,d)=>d?.wBoxState??''],
+  ['W-Box Top',   (def,d)=>d?.wBoxTop??''],
+  ['W-Box Bottom',(def,d)=>d?.wBoxBot??''],
   ['52W High%',   (def,d)=>d?.h52d??''],
   ['52W High',    (def,d)=>d?.h52??''],
   ['52W Low',     (def,d)=>d?.l52??''],
@@ -6194,6 +6717,7 @@ document.addEventListener('DOMContentLoaded',()=>{
 const TOGGLEABLE_COLS=[
   {cls:'setup',  label:'Setup'},
   {cls:'align',  label:'Align D+W'},
+  {cls:'fresh',  label:'Fresh'},
   {cls:'sector', label:'Sector'},
   {cls:'status', label:'Status'},
   {cls:'ch1w',   label:'1W%'},
@@ -6204,7 +6728,10 @@ const TOGGLEABLE_COLS=[
   {cls:'wrsi',   label:'W-RSI'},
   {cls:'vr',     label:'Vol Ratio'},
   {cls:'wvol',   label:'W-VOL'},
+  {cls:'avgval', label:'Avg Value'},
   {cls:'wpiv',   label:'W-Pivot'},
+  {cls:'dbox',   label:'D-Box (Darvas)'},
+  {cls:'wbox',   label:'W-Box (Darvas)'},
   {cls:'ema',    label:'EMA Align'},
   {cls:'wema',   label:'W-EMA'},
   {cls:'xcross', label:'EMA Cross'},
