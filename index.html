@@ -33,7 +33,13 @@
    a second stylesheet. */
 :root{
   --bg:#F1F3F6;--surface:#fff;--border:#E2E8F0;--border2:#CBD5E1;
-  --text:#0F172A;--text2:#475569;--text3:#94A3B8;
+  /* --text3 WAS #94A3B8 = 2.56:1 on --surface (#fff), well under the 4.5:1 AA
+     floor, and it was carrying real controls rather than decoration: the
+     inactive market tabs, the modal ✕ buttons and "Don't show again". #64748B
+     measures 4.75:1 on white while staying two clear steps lighter than
+     --text2 (#475569, 7.5:1), so genuinely de-emphasised table text still
+     reads as secondary instead of promoting itself to body copy. */
+  --text:#0F172A;--text2:#475569;--text3:#64748B;
   --accent:#4F46E5;--accent-bg:#EEF2FF;--accent-dk:#4338CA;--accent-ct:#fff;
   --dark:#1E293B;--dark-hv:#0F172A;--on-dark:#F8FAFC;  /* text ON a dark surface */
   --green:#16A34A;--green-bg:#DCFCE7;--green-lt:#F0FDF4;
@@ -48,7 +54,8 @@
 /* Paper — warmer neutrals, same semantics. */
 :root[data-theme="paper"]{
   --bg:#FAF9F6;--surface:#fff;--border:#E7E2D9;--border2:#D6CFC2;
-  --text:#1C1917;--text2:#57534E;--text3:#A8A29E;
+  /* Same AA fix in Paper's warm ramp: #A8A29E was 2.44:1, #78716C is 4.80:1. */
+  --text:#1C1917;--text2:#57534E;--text3:#78716C;
   --sh:0 1px 3px rgba(80,60,30,.08),0 1px 2px rgba(80,60,30,.05);
   --shm:0 4px 12px rgba(80,60,30,.10);
 }
@@ -189,6 +196,17 @@ input{font-family:inherit}
 .mcap-input .mcap-label{font-size:11px;font-weight:500;color:var(--text2);white-space:nowrap}
 .mcap-input input{border:none;background:transparent;outline:none;font-size:11px;
   font-weight:600;color:var(--text);width:60px;text-align:right}
+/* ─── HISTORICAL DATE PICKER ──── */
+/* Reuses .mcap-input's shell so the two toolbar text inputs read as one family.
+   The date input is wider than the number one, hence the override. */
+.hist-input input[type="date"]{width:118px;text-align:left}
+.hist-go{font-size:11px;font-weight:700;color:var(--blue);padding:0 4px;border-radius:9px}
+.hist-go:hover{background:var(--blue-bg)}
+/* The resolved bar date printed under the historical price. `.adj` marks the
+   case where the requested day was not a trading day, so the number on screen
+   is never mistaken for that day's close. */
+.hist-d{font-size:9.5px;color:var(--text3);white-space:nowrap}
+.hist-d.adj{color:var(--orange);font-weight:600}
 /* One-click screens. `.on` is a persistent state, so it is a class toggled from
    JS, not :hover or :focus — either of those would drop the moment the pointer
    or the keyboard moved on. Active state reuses --dark/--on-dark exactly as
@@ -430,6 +448,41 @@ body.breadth-collapsed .breadth-body{display:none}
   color:var(--text2);width:85px;font-family:inherit}
 .note-in::placeholder{color:var(--text3)}
 
+/* ─── WATCHLIST STAR ──────────── */
+.wl-star{cursor:pointer;font-size:13px;line-height:1;color:var(--text3);
+  margin-right:4px;user-select:none;transition:color .12s}
+.wl-star:hover{color:var(--orange)}
+.wl-star.on{color:var(--orange)}
+
+/* ─── DAILY+WEEKLY ALIGNMENT ───── */
+/* A ramp, not a pass/fail badge: the whole point of the column is that 6/8 and
+   8/8 are different answers, and a two-colour badge would flatten them. The
+   thresholds are on the RATIO, not the raw score, so a 6/7 row (one input
+   missing) is coloured like the 7/8 it is equivalent to rather than being
+   punished for data we never had. */
+.algn{display:inline-block;padding:2px 7px;border-radius:9px;font-size:10.5px;
+  font-weight:700;cursor:help;border:1px solid transparent}
+.algn.al-hi{background:var(--green-bg);color:var(--green);border-color:var(--green)}
+.algn.al-md{background:var(--blue-bg);color:var(--blue);border-color:#BFDBFE}
+.algn.al-lo{background:var(--orange-bg);color:var(--orange);border-color:#FCD34D}
+.algn.al-wk{background:var(--red-bg);color:var(--red);border-color:#FCA5A5}
+
+/* ─── TRADINGVIEW LINKS ────────── */
+/* Deliberately NOT a column. The table's <th>/skelRow/errRow/dataRow widths are
+   one number that has to agree in five places, and "open the chart" does not
+   need a header of its own to explain itself — so the icon rides inside cells
+   that already exist. Dim until the row is hovered, so ~1,400 of them do not
+   turn the table into confetti. */
+.tv-lnk{display:inline-block;margin-left:4px;font-size:10px;line-height:1;
+  text-decoration:none;opacity:.25;transition:opacity .12s;vertical-align:middle}
+tr:hover .tv-lnk{opacity:.65}
+.tv-lnk:hover{opacity:1}
+
+/* ─── SAVED SCREEN INDICATOR ──── */
+.screen-ind{font-size:11px;font-weight:600;color:var(--accent);white-space:nowrap}
+/* Amber, not red: drifting off a saved screen is a state, not an error. */
+.screen-ind.drift{color:var(--orange)}
+
 /* error row */
 .erow td{color:var(--text3);font-size:11px}
 
@@ -444,17 +497,27 @@ body.breadth-collapsed .breadth-body{display:none}
 
 /* ─── COLUMN VISIBILITY ────────── */
 /* GROUP A — force-hidden at ≤900px (the @media block below must list exactly
-   these, and TOGGLEABLE_COLS must list every class in both groups). */
+   these, and TOGGLEABLE_COLS must list every class in both groups).
+   Note the historical-price pair is split across the two groups on purpose: on
+   a narrow screen the % change since the chosen date is the answer and the raw
+   historical price is only the working, so the price drops out first (group A)
+   and the gain survives down to 480px (group B). */
 .c-wrsi,.c-wvol,.c-wpiv,.c-wema,.c-voldry,.c-retrace,.c-rstrend,.c-notes,
 .c-wcross,.c-wpattern,.c-monthly,.c-rs10w,.c-rsslope,.c-rshist,.c-slope200,
-.c-followup{display:table-cell}
+.c-followup,.c-hist{display:table-cell}
 /* GROUP B — additionally force-hidden at ≤480px */
-.c-vr,.c-ema,.c-bocnt,.c-squeeze,.c-mrsrank,.c-setup,
-.c-sector,.c-status,.c-xcross,.c-pattern,.c-consol,.c-rs21,.c-rs55{display:table-cell}
+.c-vr,.c-align,.c-ema,.c-bocnt,.c-squeeze,.c-mrsrank,.c-setup,
+.c-sector,.c-status,.c-xcross,.c-pattern,.c-consol,.c-rs21,.c-rs55,
+.c-ch1w,.c-ch1m,.c-ch3m,.c-histg{display:table-cell}
 
 /* User-controlled column toggles (via the Columns modal, saved to localStorage).
    Adding e.g. "hide-wrsi" to <body> hides every cell tagged .c-wrsi — works
    for skeleton/data/error rows alike since they all share the same classes. */
+body.hide-ch1w    .c-ch1w,
+body.hide-ch1m    .c-ch1m,
+body.hide-ch3m    .c-ch3m,
+body.hide-hist    .c-hist,
+body.hide-histg   .c-histg,
 body.hide-wrsi    .c-wrsi,
 body.hide-vr      .c-vr,
 body.hide-wvol    .c-wvol,
@@ -483,7 +546,8 @@ body.hide-rs55    .c-rs55,
 body.hide-rs10w   .c-rs10w,
 body.hide-rsslope .c-rsslope,
 body.hide-rshist  .c-rshist,
-body.hide-setup   .c-setup{display:none!important}
+body.hide-setup   .c-setup,
+body.hide-align   .c-align{display:none!important}
 
 /* ─── MODAL ───────────────────── */
 .overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.35);
@@ -552,7 +616,7 @@ body.hide-setup   .c-setup{display:none!important}
   .metrics-row{grid-template-columns:repeat(4,1fr)}
   .c-wrsi,.c-wvol,.c-wpiv,.c-wema,.c-voldry,.c-retrace,.c-rstrend,.c-notes,
   .c-wcross,.c-wpattern,.c-monthly,.c-rs10w,.c-rsslope,.c-rshist,.c-slope200,
-  .c-followup{display:none!important}
+  .c-followup,.c-hist{display:none!important}
 }
 @media (max-width:768px){
   .metrics-row{grid-template-columns:repeat(2,1fr)}
@@ -566,8 +630,9 @@ body.hide-setup   .c-setup{display:none!important}
 }
 @media (max-width:480px){
   .metrics-row{grid-template-columns:repeat(2,1fr)}
-  .c-vr,.c-ema,.c-bocnt,.c-squeeze,.c-mrsrank,.c-setup,
-  .c-sector,.c-status,.c-xcross,.c-pattern,.c-consol,.c-rs21,.c-rs55{display:none!important}
+  .c-vr,.c-align,.c-ema,.c-bocnt,.c-squeeze,.c-mrsrank,.c-setup,
+  .c-sector,.c-status,.c-xcross,.c-pattern,.c-consol,.c-rs21,.c-rs55,
+  .c-ch1w,.c-ch1m,.c-ch3m,.c-histg{display:none!important}
   .search-bar input{width:80px}
 }
 </style>
@@ -645,7 +710,9 @@ body.hide-setup   .c-setup{display:none!important}
     <button class="ref-btn" id="advBtn" onclick="openAdvFilters()" data-tip="Consolidation, 52W high proximity, breakout age, RSI, volume and EMA-crossover screens — each one switched on independently">⚙ Advanced Filters</button>
     <div class="fsep"></div>
     <button class="ftog" id="alignTog" aria-pressed="false" onclick="toggleAlign()" data-tip="One click for the same screen as the EMA Filter's All EMAs Bullish option: price above enough of the 10, 20, 50 and 200-day moving averages to score 0.8 or better. Combines with every other filter rather than replacing them.">📈 EMAs Aligned</button>
+    <button class="ftog" id="dwaTog" aria-pressed="false" onclick="toggleDWA()" data-tip="Keep only stocks scoring 7 or more of the Align checks that could actually be run for them. This is the swing-trade condition in one click: the daily and the weekly chart have to be saying the same thing. A stock with only 7 usable inputs qualifies on 7/7 — it is judged on what could be measured, never penalised for data that was missing. Combines with every other filter rather than replacing them.">🔗 Aligned D+W</button>
     <button class="ftog" id="boTog" aria-pressed="false" onclick="toggleBO()" data-tip="Keep only stocks with at least one volume-confirmed 52-bar breakout somewhere in the available history — BO Count above zero. Pair it with the Follow-up column to find the ones that broke out recently.">🚀 Breakout Stocks</button>
+    <button class="ftog" id="wlTog" aria-pressed="false" onclick="toggleWL()" data-tip="Show only the stocks you have starred. The star sits next to each ticker; the list is saved in this browser and is shared across all three markets, so a name starred on the India tab is still starred when you come back tomorrow.">⭐ Watchlist</button>
     <select class="fsel" id="emaFil" onchange="applyF()">
       <option value="">EMA Filter</option>
       <option value="bull">All EMAs Bullish</option>
@@ -658,12 +725,11 @@ body.hide-setup   .c-setup{display:none!important}
       <option value="mid">RSI 50–70</option>
       <option value="os">RSI ≤ 40</option>
     </select>
-    <select class="fsel" id="pivFil" onchange="applyF()">
-      <option value="">Pivot Zone</option>
-      <option value="above">Above PP</option>
-      <option value="r1">Above R1</option>
-      <option value="below">Below PP</option>
-    </select>
+    <!-- Both pivot dropdowns are FILLED BY buildPivSelects() from PIV_OPTS, the
+         same table getRows() screens with. Hardcoding the <option>s here is how
+         a dropdown ends up offering a value no filter branch handles. -->
+    <select class="fsel" id="pivFil" onchange="applyF()" data-tip="Where the latest price sits relative to the classic DAILY pivot levels, computed from the previous day's high, low and close. The bands are exclusive — R1 means between R1 and R2, S1 means between S2 and S1 — except Above R1, which is everything from R1 upwards. Near R1 is the odd one out: it is a proximity test, price within 1% of R1 either side, so it catches stocks pressing against the level from below as well as those that have just cleared it. Combines with the weekly dropdown next to it and with every other filter."></select>
+    <select class="fsel" id="wpivFil" onchange="applyF()" data-tip="The same nine pivot bands measured on WEEKLY bars, from the previous week's high, low and close — a slower read that does not reset every morning. It ANDs with the daily dropdown, so 'D: Above R1' plus 'W: Above R1' asks for stocks strong on both timeframes at once."></select>
     <select class="fsel" id="revFil" onchange="applyF()">
       <option value="">Review: All</option>
       <option value="bull">Review: 🐂 Bullish</option>
@@ -677,6 +743,24 @@ body.hide-setup   .c-setup{display:none!important}
       <input type="number" id="mcapFil" value="5000" step="500" min="0" onchange="applyF()"/>
       <span class="mcap-label" id="mcapSuffix">Cr</span>
     </div>
+    <div class="fsep"></div>
+    <!-- HISTORICAL DATE — fills the "Hist. Price" and "Gain% since" columns.
+         Applied on Go rather than on change: a partially-typed date fires
+         `change` in some browsers, and re-rendering ~900 rows per keystroke is
+         not worth it. Go re-renders only; it never refetches. -->
+    <div class="mcap-input hist-input" id="histWrap" data-tip="Pick any past date and press Go. Every row then shows that stock's close on that date and the % change from it to the current price. If the date was a weekend or a market holiday the last trading day at or before it is used, and the date actually used is printed under the price. Stocks that had not listed yet show a dash rather than their oldest available price.">
+      <span class="mcap-label">Hist. from</span>
+      <input type="date" id="histDate" onkeydown="if(event.key==='Enter')applyHistDate()"/>
+      <button class="hist-go" id="histGoBtn" onclick="applyHistDate()">Go</button>
+    </div>
+    <div class="fsep"></div>
+    <!-- SAVED SCREENS — name the current filter combination and come back to it -->
+    <select class="fsel" id="screenSel" onchange="onScreenPick(this.value)" data-tip="Recall a filter combination you saved earlier. Picking one restores every filter, the advanced-filter settings and the sort exactly as they were.">
+      <option value="">Screens…</option>
+    </select>
+    <button class="ref-btn" id="screenSaveBtn" onclick="saveScreenPrompt()" data-tip="Save the current filter bar, advanced filters and sort order under a name. Saving over a name you already used asks first.">💾 Save Screen</button>
+    <button class="ref-btn" id="screenDelBtn" onclick="deleteScreenPrompt()" data-tip="Delete the saved screen currently selected above.">🗑 Delete Screen</button>
+    <span class="screen-ind" id="screenInd"></span>
     <div class="fsep"></div>
     <button class="ctag" onclick="clrF()">✕ Clear Filters</button>
     <button class="ctag" onclick="clrRev()">✕ Clear Reviews</button>
@@ -701,6 +785,10 @@ body.hide-setup   .c-setup{display:none!important}
         <option value="MC">Mid cap</option>
         <option value="SC">Small cap</option>
       </select>
+      <!-- Timeframe. Same stopPropagation reason as the select above: the whole
+           header row is the collapse toggle. Built by buildBreadthTF() so the
+           three buttons and the three BREADTH_TF values cannot drift apart. -->
+      <div class="seg-grp" id="breadthTF" onclick="event.stopPropagation()"></div>
     </div>
     <div class="breadth-body" id="breadthBody">
       <div class="breadth-bar">
@@ -711,7 +799,10 @@ body.hide-setup   .c-setup{display:none!important}
       <div class="breadth-legend">
         <span>▲ Advancing <b id="breadthAdvN">—</b></span>
         <span>▼ Declining <b id="breadthDecN">—</b></span>
-        <span>● Unchanged <b id="breadthFlatN">—</b></span>
+        <!-- The middle bucket is genuinely "unchanged" on D and W, but on D+W it
+             holds stocks that disagree between the two timeframes. Calling those
+             unchanged would be false, so the label is written by renderBreadth(). -->
+        <span><span id="breadthFlatLbl">● Unchanged</span> <b id="breadthFlatN">—</b></span>
         <span id="breadthRatio"></span>
       </div>
     </div>
@@ -734,11 +825,17 @@ body.hide-setup   .c-setup{display:none!important}
             <th style="width:26px" data-tip="Position in the list as it is currently sorted and filtered. It renumbers every time you sort or filter, so treat it as a place in the queue, not an ID for the stock.">#</th>
             <th data-tip="Your own verdict on the stock — bull, bear or neutral. It is saved in this browser and drives the Review filter, so names you have already judged can be hidden.">Review</th>
             <th data-s="cap" data-tip="Size bucket taken from market capitalisation: Large, Mid, Small or Micro. Larger companies generally move more slowly and are easier to buy or sell in quantity. Where no market cap is on file the stock is shown as Small rather than blank, so treat SC on a name with no ₹ figure underneath the ticker as unknown, not measured.">Cap<span class="sort-ico"></span></th>
-            <th data-s="ticker" data-tip="The exchange symbol, with the sector and market capitalisation printed underneath it. Sorting on this column puts the list in alphabetical order.">Ticker<span class="sort-ico"></span></th>
+            <th data-s="ticker" data-tip="The exchange symbol, with the sector and market capitalisation printed underneath it. The star to its left adds the stock to your watchlist, which is saved in this browser and shared across all three markets. Sorting on this column puts the list in alphabetical order.">Ticker<span class="sort-ico"></span></th>
             <th class="c-setup" data-s="setup" data-tip="A star marks a quality setup — all four of these are true at once: within 30% of its 52-week high, price above every moving average that could be calculated, positive relative strength against the benchmark, and a full Stage 2 uptrend score. These rows sort to the top by default.">Setup<span class="sort-ico"></span></th>
+            <th class="c-align" data-s="align" data-tip="How much the daily and the weekly timeframe agree, out of 8 checks: 1. price above the daily 20 EMA · 2. price above the daily 50 EMA · 3. price above the weekly 10 EMA · 4. price above the weekly 20 EMA · 5. daily RSI 50 or above · 6. weekly RSI 50 or above · 7. positive 21-day relative strength · 8. positive 10-week relative strength. A swing trade wants both clocks pointing the same way, so 7 or 8 is the shortlist. Each check needs its own input, and a check that cannot be run is left OUT OF THE TOTAL rather than counted as a failure — that is why some rows read 6/7 instead of 6/8. Sorting puts the higher score first and, on a tie, the row that could be fully measured above the one that could not.">Align<span class="sort-ico"></span></th>
             <th class="c-sector" data-s="sector" data-tip="Sector from the built-in universe — for India these are NSE's own macro industry groups, taken from the Nifty Total Market constituent list. It is not cosmetic: the default Setup Score order ranks sectors by the median RS55 of their members, so this label decides which group a stock is judged inside. Sortable, so the table can be grouped by sector without using the sector filter.">Sector<span class="sort-ico"></span></th>
             <th data-s="price" data-tip="The most recent closing price in the stock's own currency. It comes from the end-of-day data sheet, so it is yesterday's close, not a live quote.">Price<span class="sort-ico"></span></th>
             <th data-s="ch1d" data-tip="How much the price moved on its latest trading day, as a percentage of the previous close. Green is up, red is down.">1D%<span class="sort-ico"></span></th>
+            <th class="c-ch1w" data-s="ch1w" data-tip="Price change over the last 5 trading bars — one trading week. Measured bar-to-bar, not calendar days, so holidays and weekends never dilute it. Needs at least 6 bars of history; below that it shows a dash rather than pretending the change was zero.">1W%<span class="sort-ico"></span></th>
+            <th class="c-ch1m" data-s="ch1m" data-tip="Price change over the last 21 trading bars — roughly one calendar month of sessions. Needs at least 22 bars of history; below that it shows a dash rather than pretending the change was zero.">1M%<span class="sort-ico"></span></th>
+            <th class="c-ch3m" data-s="ch3m" data-tip="Price change over the last 63 trading bars — roughly one quarter of sessions. Needs at least 64 bars of history; below that it shows a dash rather than pretending the change was zero.">3M%<span class="sort-ico"></span></th>
+            <th class="c-hist" data-s="hist" data-tip="The stock's closing price on the date chosen in the &quot;Hist. from&quot; box in the filter bar. If that date was a weekend or a market holiday there is no close for it, so the most recent trading day AT OR BEFORE it is used instead — the date actually used is printed underneath, in amber when it differs from the one you asked for. A dash means the date falls before this stock's earliest bar in the data: a stock that listed later has no price on that day, and showing its oldest available close instead would be a made-up answer."><span id="thHistLbl">Hist. Price</span><span class="sort-ico"></span></th>
+            <th class="c-histg" data-s="histg" data-tip="Percentage change from the historical close in the previous column to the current price — (current ÷ historical − 1) × 100. It uses the same resolved bar, so on a weekend or holiday it is measured from the most recent trading day at or before the date you picked, not from that calendar date. A dash means there is no historical price to measure from."><span id="thHistGainLbl">Gain% since</span><span class="sort-ico"></span></th>
             <th class="c-status" data-s="status" data-tip="One-glance verdict from the Stage 2 score: Stage 2 = at least 80% of the rules pass, Setup = at least half, Weak = below that.">Status<span class="sort-ico"></span></th>
             <th data-s="rsi" data-tip="14-day Relative Strength Index — a 0 to 100 momentum gauge. Above 60 means buyers have been in control recently; below 40 means sellers have.">RSI<span class="sort-ico"></span></th>
             <th class="c-wrsi" data-s="wrsi" data-tip="The same 14-period momentum gauge measured on weekly bars, so it describes months rather than days and is much slower to change direction.">W-RSI<span class="sort-ico"></span></th>
@@ -774,7 +871,7 @@ body.hide-setup   .c-setup{display:none!important}
             <th class="c-rshist" data-s="rshist" data-tip="Last ~30 readings of the 21-day excess return, drawn as a sparkline. The grey line is zero — above it the stock was beating the benchmark.">RS Rank History<span class="sort-ico"></span></th>
             <th style="text-align:center" data-tip="Lit up only when all three relative-strength legs — 21-day, 55-day and 10-week — are positive against the benchmark at the same time, i.e. broad outperformance rather than one good stretch.">Lead RS</th>
             <th class="c-rstrend" data-s="rst" data-tip="Bucketed straight from RS Slope, which is RS21 minus RS55: above +0.5 reads Up, below −0.5 reads Down, and anything in between is Flat. Because it compares the 21-day excess return against the 55-day one, Up does not merely mean the stock is beating the benchmark — it means the recent leg of that outperformance is running ahead of the medium-term leg, i.e. relative strength is accelerating.">RS Trend<span class="sort-ico"></span></th>
-            <th class="c-notes" data-tip="A free-text note you can type against any stock. It is kept for this browsing session and is included in the Excel export.">Notes</th>
+            <th class="c-notes" data-tip="A free-text note you can type against any stock. It is saved in this browser, so it survives closing the tab, switching markets and a data refresh, and it is included in the Excel export. Clear Notes deletes the saved copy as well.">Notes</th>
           </tr>
         </thead>
         <tbody id="tBody"></tbody>
@@ -934,6 +1031,22 @@ const CFG = {
     india: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQT391ILoECK80YpMc7MGbvLZYlXCT-8ZpNELFdbT1tE_zJV_78H308sL2Mp1HVJLG9XnWvW6uPY6XA/pub?gid=0&single=true&output=csv',
     us:    'https://docs.google.com/spreadsheets/d/e/2PACX-1vQT391ILoECK80YpMc7MGbvLZYlXCT-8ZpNELFdbT1tE_zJV_78H308sL2Mp1HVJLG9XnWvW6uPY6XA/pub?gid=1946852214&single=true&output=csv',
     etf:   'https://docs.google.com/spreadsheets/d/e/2PACX-1vQT391ILoECK80YpMc7MGbvLZYlXCT-8ZpNELFdbT1tE_zJV_78H308sL2Mp1HVJLG9XnWvW6uPY6XA/pub?gid=418929572&single=true&output=csv',
+
+    /* ── LIVE MARKET CAPS — YOU MUST PUBLISH THE 'MktCap' TAB AND PASTE ITS gid HERE ──
+       The Apps Script now maintains a tab literally named `MktCap`, three
+       columns wide: Ticker | MarketCap | UpdatedDate. MarketCap is already in
+       the units this page uses — Rs Crore for .NS tickers, $ Billion for
+       everything else — so no conversion happens in the browser.
+
+       TO TURN IT ON: File > Share > Publish to web > pick the **MktCap** tab >
+       CSV > Publish, then paste the resulting URL below. It is the same shape
+       as the three above; only the gid= number differs.
+
+       LEAVING IT BLANK IS SAFE AND IS THE DEFAULT. Nothing is fetched, the
+       static `mcap` numbers already in UNI keep working exactly as they do
+       today, and a single console line tells you which tab is not wired up.
+       Live values WIN over the static ones; static is the fallback. */
+    mktcap: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQT391ILoECK80YpMc7MGbvLZYlXCT-8ZpNELFdbT1tE_zJV_78H308sL2Mp1HVJLG9XnWvW6uPY6XA/pub?gid=1839776845&single=true&output=csv',
   },
 
   // Sanity check for the URLs above. A published-CSV gid is just a number —
@@ -999,7 +1112,13 @@ const CFG = {
   // actually cares about.
   CONSOL: {lookback:20, maxRangePct:10},
 
-  VER:  'gs5',      // gs4 -> gs5: computeTech() returns a different SHAPE — r3m/r6m/r12 are
+  VER:  'gs6',      // gs5 -> gs6: computeTech() now also returns the raw daily/weekly PIVOT
+                    // LEVELS (dPiv/wPiv), which the "Near R1" pivot screen needs — the zone
+                    // string alone cannot express proximity to a level. A gs5 cache has no
+                    // such field, so every rehydrated row would silently fail that one
+                    // dropdown option while the other eight worked. Orphaning gs5 is cheaper
+                    // than shipping a filter that quietly matches nothing.
+                    // gs4 -> gs5: computeTech() returns a different SHAPE — r3m/r6m/r12 are
                     // GONE and rs21/rs55/rs10w/pattern/sma*/xState/... are new. A gs4 cache
                     // rehydrated into this build would restore rows with no rs21 (so RS ranks
                     // silently blank) and with r3m still present (so nothing recomputes it).
@@ -1906,439 +2025,439 @@ const UNI = {
   us: [
     {s:'AAPL', d:'AAPL', sector:'Technology', mcap:3500},
     {s:'MSFT', d:'MSFT', sector:'Technology', mcap:3100},
-    {s:'NVDA', d:'NVDA', sector:'Semiconductors', mcap:3300},
-    {s:'AMZN', d:'AMZN', sector:'Consumer Disc.', mcap:2000},
-    {s:'GOOGL', d:'GOOGL', sector:'Technology', mcap:2100},
-    {s:'META', d:'META', sector:'Technology', mcap:1400},
-    {s:'TSLA', d:'TSLA', sector:'Auto', mcap:900},
-    {s:'AVGO', d:'AVGO', sector:'Semiconductors', mcap:900},
-    {s:'LLY', d:'LLY', sector:'Pharma', mcap:750},
-    {s:'JPM', d:'JPM', sector:'Banking', mcap:650},
+    {s:'NVDA', d:'NVDA', sector:'Technology', mcap:3300},
+    {s:'AMZN', d:'AMZN', sector:'Consumer Cyclical', mcap:2000},
+    {s:'GOOGL', d:'GOOGL', sector:'Communication Services', mcap:2100},
+    {s:'META', d:'META', sector:'Communication Services', mcap:1400},
+    {s:'TSLA', d:'TSLA', sector:'Consumer Cyclical', mcap:900},
+    {s:'AVGO', d:'AVGO', sector:'Technology', mcap:900},
+    {s:'LLY', d:'LLY', sector:'Healthcare', mcap:750},
+    {s:'JPM', d:'JPM', sector:'Financial', mcap:650},
     {s:'UNH', d:'UNH', sector:'Healthcare', mcap:480},
-    {s:'V', d:'V', sector:'Payments', mcap:550},
+    {s:'V', d:'V', sector:'Financial', mcap:550},
     {s:'XOM', d:'XOM', sector:'Energy', mcap:480},
-    {s:'COST', d:'COST', sector:'Retail', mcap:400},
-    {s:'MA', d:'MA', sector:'Payments', mcap:470},
-    {s:'HD', d:'HD', sector:'Retail', mcap:400},
-    {s:'PG', d:'PG', sector:'FMCG', mcap:380},
-    {s:'WMT', d:'WMT', sector:'Retail', mcap:700},
-    {s:'MRK', d:'MRK', sector:'Pharma', mcap:250},
-    {s:'ABBV', d:'ABBV', sector:'Biotech', mcap:350},
+    {s:'COST', d:'COST', sector:'Consumer Defensive', mcap:400},
+    {s:'MA', d:'MA', sector:'Financial', mcap:470},
+    {s:'HD', d:'HD', sector:'Consumer Cyclical', mcap:400},
+    {s:'PG', d:'PG', sector:'Consumer Defensive', mcap:380},
+    {s:'WMT', d:'WMT', sector:'Consumer Defensive', mcap:700},
+    {s:'MRK', d:'MRK', sector:'Healthcare', mcap:250},
+    {s:'ABBV', d:'ABBV', sector:'Healthcare', mcap:350},
     {s:'CVX', d:'CVX', sector:'Energy', mcap:270},
-    {s:'KO', d:'KO', sector:'FMCG', mcap:290},
-    {s:'PEP', d:'PEP', sector:'FMCG', mcap:220},
-    {s:'NFLX', d:'NFLX', sector:'Media', mcap:350},
-    {s:'AMD', d:'AMD', sector:'Semiconductors', mcap:220},
-    {s:'CRM', d:'CRM', sector:'Software', mcap:260},
-    {s:'ADBE', d:'ADBE', sector:'Software', mcap:220},
-    {s:'ORCL', d:'ORCL', sector:'Software', mcap:450},
+    {s:'KO', d:'KO', sector:'Consumer Defensive', mcap:290},
+    {s:'PEP', d:'PEP', sector:'Consumer Defensive', mcap:220},
+    {s:'NFLX', d:'NFLX', sector:'Communication Services', mcap:350},
+    {s:'AMD', d:'AMD', sector:'Technology', mcap:220},
+    {s:'CRM', d:'CRM', sector:'Technology', mcap:260},
+    {s:'ADBE', d:'ADBE', sector:'Technology', mcap:220},
+    {s:'ORCL', d:'ORCL', sector:'Technology', mcap:450},
     {s:'CSCO', d:'CSCO', sector:'Technology', mcap:220},
-    {s:'QCOM', d:'QCOM', sector:'Semiconductors', mcap:180},
-    {s:'MU', d:'MU', sector:'Semiconductors', mcap:140},
-    {s:'AMAT', d:'AMAT', sector:'Semiconductors', mcap:150},
-    {s:'INTU', d:'INTU', sector:'Software', mcap:180},
-    {s:'PANW', d:'PANW', sector:'Cybersecurity', mcap:120},
-    {s:'CRWD', d:'CRWD', sector:'Cybersecurity', mcap:90},
-    {s:'NOW', d:'NOW', sector:'Software', mcap:190},
-    {s:'PLTR', d:'PLTR', sector:'Software', mcap:180},
-    {s:'SNOW', d:'SNOW', sector:'Cloud', mcap:55},
-    {s:'ARM', d:'ARM', sector:'Semiconductors', mcap:140},
+    {s:'QCOM', d:'QCOM', sector:'Technology', mcap:180},
+    {s:'MU', d:'MU', sector:'Technology', mcap:140},
+    {s:'AMAT', d:'AMAT', sector:'Technology', mcap:150},
+    {s:'INTU', d:'INTU', sector:'Technology', mcap:180},
+    {s:'PANW', d:'PANW', sector:'Technology', mcap:120},
+    {s:'CRWD', d:'CRWD', sector:'Technology', mcap:90},
+    {s:'NOW', d:'NOW', sector:'Technology', mcap:190},
+    {s:'PLTR', d:'PLTR', sector:'Technology', mcap:180},
+    {s:'SNOW', d:'SNOW', sector:'Technology', mcap:55},
+    {s:'ARM', d:'ARM', sector:'Technology', mcap:140},
     {s:'UBER', d:'UBER', sector:'Technology', mcap:150},
-    {s:'BAC', d:'BAC', sector:'Banking', mcap:320},
-    {s:'WFC', d:'WFC', sector:'Banking', mcap:240},
-    {s:'GS', d:'GS', sector:'Banking', mcap:180},
-    {s:'MS', d:'MS', sector:'Banking', mcap:190},
-    {s:'BLK', d:'BLK', sector:'Asset Mgmt', mcap:140},
+    {s:'BAC', d:'BAC', sector:'Financial', mcap:320},
+    {s:'WFC', d:'WFC', sector:'Financial', mcap:240},
+    {s:'GS', d:'GS', sector:'Financial', mcap:180},
+    {s:'MS', d:'MS', sector:'Financial', mcap:190},
+    {s:'BLK', d:'BLK', sector:'Financial', mcap:140},
     {s:'JNJ', d:'JNJ', sector:'Healthcare', mcap:380},
-    {s:'AMGN', d:'AMGN', sector:'Biotech', mcap:160},
-    {s:'ISRG', d:'ISRG', sector:'MedTech', mcap:190},
+    {s:'AMGN', d:'AMGN', sector:'Healthcare', mcap:160},
+    {s:'ISRG', d:'ISRG', sector:'Healthcare', mcap:190},
     {s:'CAT', d:'CAT', sector:'Industrials', mcap:190},
     {s:'GE', d:'GE', sector:'Industrials', mcap:210},
-    {s:'AA', d:'AA', sector:'Metals', mcap:8},
-    {s:'AAOI', d:'AAOI', sector:'Semiconductors', mcap:2},
-    {s:'ABNB', d:'ABNB', sector:'Travel Tech', mcap:75},
+    {s:'AA', d:'AA', sector:'Basic Materials', mcap:8},
+    {s:'AAOI', d:'AAOI', sector:'Technology', mcap:2},
+    {s:'ABNB', d:'ABNB', sector:'Consumer Cyclical', mcap:75},
     {s:'ABT', d:'ABT', sector:'Healthcare', mcap:190},
-    {s:'ACMR', d:'ACMR', sector:'Semi Equipment', mcap:4},
-    {s:'ACN', d:'ACN', sector:'IT Services', mcap:180},
-    {s:'ADP', d:'ADP', sector:'Business Services', mcap:110},
-    {s:'ADSK', d:'ADSK', sector:'Software', mcap:55},
-    {s:'AEHR', d:'AEHR', sector:'Semi Equipment', mcap:0.5},
-    {s:'AEM', d:'AEM', sector:'Gold Mining', mcap:55},
+    {s:'ACMR', d:'ACMR', sector:'Technology', mcap:4},
+    {s:'ACN', d:'ACN', sector:'Technology', mcap:180},
+    {s:'ADP', d:'ADP', sector:'Technology', mcap:110},
+    {s:'ADSK', d:'ADSK', sector:'Technology', mcap:55},
+    {s:'AEHR', d:'AEHR', sector:'Technology', mcap:0.5},
+    {s:'AEM', d:'AEM', sector:'Basic Materials', mcap:55},
     {s:'AES', d:'AES', sector:'Utilities', mcap:15},
-    {s:'AFRM', d:'AFRM', sector:'Fintech', mcap:20},
+    {s:'AFRM', d:'AFRM', sector:'Financial', mcap:20},
     {s:'AGX', d:'AGX', sector:'Industrials', mcap:3},
-    {s:'AI', d:'AI', sector:'AI Software', mcap:3},
-    {s:'AIRO', d:'AIRO', sector:'Aerospace/Drones', mcap:1},
-    {s:'ALAB', d:'ALAB', sector:'Semi/Datacenter', mcap:30},
-    {s:'ALGM', d:'ALGM', sector:'Semiconductors', mcap:6},
-    {s:'ALGN', d:'ALGN', sector:'Medtech', mcap:15},
-    {s:'ALLY', d:'ALLY', sector:'Banking', mcap:12},
-    {s:'ALSN', d:'ALSN', sector:'Industrials', mcap:7},
-    {s:'AMKR', d:'AMKR', sector:'Semi Packaging', mcap:9},
-    {s:'AMR', d:'AMR', sector:'Mining/Coal', mcap:3},
-    {s:'AMT', d:'AMT', sector:'REIT/Telecom', mcap:95},
-    {s:'ANET', d:'ANET', sector:'Networking/Datacenter', mcap:150},
-    {s:'ANF', d:'ANF', sector:'Retail', mcap:4},
-    {s:'APD', d:'APD', sector:'Chemicals', mcap:65},
-    {s:'APH', d:'APH', sector:'Electronics', mcap:110},
-    {s:'APLD', d:'APLD', sector:'Datacenter/AI', mcap:10},
-    {s:'APP', d:'APP', sector:'AdTech/Software', mcap:150},
-    {s:'APPS', d:'APPS', sector:'AdTech', mcap:1},
-    {s:'APTV', d:'APTV', sector:'Auto Anc.', mcap:15},
-    {s:'AR', d:'AR', sector:'Energy/Nat Gas', mcap:10},
-    {s:'ARQQ', d:'ARQQ', sector:'Quantum/Cyber', mcap:0.3},
-    {s:'ASML', d:'ASML', sector:'Semi Equipment', mcap:350},
-    {s:'AVAV', d:'AVAV', sector:'Defense/Drones', mcap:12},
-    {s:'AVY', d:'AVY', sector:'Materials', mcap:14},
-    {s:'AXON', d:'AXON', sector:'Defense Tech', mcap:50},
+    {s:'AI', d:'AI', sector:'Technology', mcap:3},
+    {s:'AIRO', d:'AIRO', sector:'Industrials', mcap:1},
+    {s:'ALAB', d:'ALAB', sector:'Technology', mcap:30},
+    {s:'ALGM', d:'ALGM', sector:'Technology', mcap:6},
+    {s:'ALGN', d:'ALGN', sector:'Healthcare', mcap:15},
+    {s:'ALLY', d:'ALLY', sector:'Financial', mcap:12},
+    {s:'ALSN', d:'ALSN', sector:'Consumer Cyclical', mcap:7},
+    {s:'AMKR', d:'AMKR', sector:'Technology', mcap:9},
+    {s:'AMR', d:'AMR', sector:'Basic Materials', mcap:3},
+    {s:'AMT', d:'AMT', sector:'Real Estate', mcap:95},
+    {s:'ANET', d:'ANET', sector:'Technology', mcap:150},
+    {s:'ANF', d:'ANF', sector:'Consumer Cyclical', mcap:4},
+    {s:'APD', d:'APD', sector:'Basic Materials', mcap:65},
+    {s:'APH', d:'APH', sector:'Technology', mcap:110},
+    {s:'APLD', d:'APLD', sector:'Technology', mcap:10},
+    {s:'APP', d:'APP', sector:'Communication Services', mcap:150},
+    {s:'APPS', d:'APPS', sector:'Technology', mcap:1},
+    {s:'APTV', d:'APTV', sector:'Consumer Cyclical', mcap:15},
+    {s:'AR', d:'AR', sector:'Energy', mcap:10},
+    {s:'ARQQ', d:'ARQQ', sector:'Technology', mcap:0.3},
+    {s:'ASML', d:'ASML', sector:'Technology', mcap:350},
+    {s:'AVAV', d:'AVAV', sector:'Industrials', mcap:12},
+    {s:'AVY', d:'AVY', sector:'Consumer Cyclical', mcap:14},
+    {s:'AXON', d:'AXON', sector:'Industrials', mcap:50},
     {s:'AXP', d:'AXP', sector:'Financial', mcap:200},
-    {s:'AXTI', d:'AXTI', sector:'Semi Materials', mcap:0.4},
-    {s:'AZN', d:'AZN', sector:'Pharma', mcap:230},
-    {s:'BA', d:'BA', sector:'Aerospace', mcap:140},
-    {s:'BABA', d:'BABA', sector:'E-commerce/Tech', mcap:230},
-    {s:'BALL', d:'BALL', sector:'Packaging', mcap:19},
-    {s:'BBAI', d:'BBAI', sector:'AI/Defense Software', mcap:1.5},
-    {s:'BCC', d:'BCC', sector:'Building Products', mcap:4},
-    {s:'BE', d:'BE', sector:'Fuel Cells/Energy', mcap:20},
-    {s:'BEAM', d:'BEAM', sector:'Biotech', mcap:4},
-    {s:'BIDU', d:'BIDU', sector:'Tech/AI', mcap:35},
-    {s:'BKNG', d:'BKNG', sector:'Travel', mcap:160},
-    {s:'BKR', d:'BKR', sector:'Energy Services', mcap:45},
-    {s:'BKSY', d:'BKSY', sector:'Satellite/Space', mcap:1},
-    {s:'BMI', d:'BMI', sector:'Industrials', mcap:9},
-    {s:'BMNR', d:'BMNR', sector:'Crypto Mining', mcap:3},
-    {s:'BNTX', d:'BNTX', sector:'Biotech/Pharma', mcap:28},
-    {s:'BRK-A', d:'BRK.A', sector:'Conglomerate', mcap:950},
-    {s:'BRK-B', d:'BRK.B', sector:'Conglomerate', mcap:950},
-    {s:'BROS', d:'BROS', sector:'Restaurants', mcap:8},
-    {s:'BSX', d:'BSX', sector:'Medtech', mcap:140},
-    {s:'BWXT', d:'BWXT', sector:'Nuclear/Defense', mcap:12},
-    {s:'BX', d:'BX', sector:'Asset Mgmt', mcap:160},
-    {s:'C', d:'C', sector:'Banking', mcap:140},
-    {s:'CARR', d:'CARR', sector:'Industrials/HVAC', mcap:50},
-    {s:'CAVA', d:'CAVA', sector:'Restaurants', mcap:7},
-    {s:'CC', d:'CC', sector:'Chemicals', mcap:2},
-    {s:'CCJ', d:'CCJ', sector:'Uranium/Nuclear', mcap:30},
-    {s:'CCL', d:'CCL', sector:'Cruise/Travel', mcap:35},
-    {s:'CDE', d:'CDE', sector:'Silver/Gold Mining', mcap:3},
-    {s:'CDNA', d:'CDNA', sector:'Healthcare Diagnostics', mcap:1.5},
-    {s:'CDNS', d:'CDNS', sector:'Semi Software', mcap:90},
-    {s:'CDW', d:'CDW', sector:'IT Reseller', mcap:25},
-    {s:'CEG', d:'CEG', sector:'Utilities/Nuclear', mcap:90},
-    {s:'CELH', d:'CELH', sector:'Consumer/Beverages', mcap:8},
-    {s:'CHKP', d:'CHKP', sector:'Cybersecurity', mcap:20},
-    {s:'CHTR', d:'CHTR', sector:'Telecom/Cable', mcap:45},
-    {s:'CHWY', d:'CHWY', sector:'E-commerce/Pet', mcap:10},
-    {s:'CIFR', d:'CIFR', sector:'Crypto/Datacenter', mcap:5},
-    {s:'CLF', d:'CLF', sector:'Steel', mcap:6},
-    {s:'CLOV', d:'CLOV', sector:'Healthcare Insurance', mcap:2},
-    {s:'CLS', d:'CLS', sector:'Electronics Mfg', mcap:15},
-    {s:'CLSK', d:'CLSK', sector:'Crypto Mining', mcap:5},
-    {s:'CMG', d:'CMG', sector:'Restaurants', mcap:65},
-    {s:'CNC', d:'CNC', sector:'Healthcare Insurance', mcap:15},
-    {s:'CNI', d:'CNI', sector:'Railways', mcap:65},
-    {s:'CNX', d:'CNX', sector:'Energy/Nat Gas', mcap:7},
-    {s:'COHR', d:'COHR', sector:'Semi/Optical', mcap:15},
-    {s:'COIN', d:'COIN', sector:'Crypto Exchange', mcap:60},
-    {s:'COO', d:'COO', sector:'Medtech', mcap:15},
-    {s:'CORZ', d:'CORZ', sector:'Crypto/Datacenter', mcap:8},
-    {s:'CPRT', d:'CPRT', sector:'Industrials/Auto Auctions', mcap:50},
-    {s:'CRCL', d:'CRCL', sector:'Fintech/Crypto', mcap:30},
-    {s:'CRDO', d:'CRDO', sector:'Semi/Datacenter', mcap:15},
-    {s:'CROX', d:'CROX', sector:'Consumer/Footwear', mcap:6},
-    {s:'CRSP', d:'CRSP', sector:'Biotech', mcap:5},
-    {s:'CRWV', d:'CRWV', sector:'AI Cloud/Datacenter', mcap:60},
+    {s:'AXTI', d:'AXTI', sector:'Technology', mcap:0.4},
+    {s:'AZN', d:'AZN', sector:'Healthcare', mcap:230},
+    {s:'BA', d:'BA', sector:'Industrials', mcap:140},
+    {s:'BABA', d:'BABA', sector:'Consumer Cyclical', mcap:230},
+    {s:'BALL', d:'BALL', sector:'Consumer Cyclical', mcap:19},
+    {s:'BBAI', d:'BBAI', sector:'Technology', mcap:1.5},
+    {s:'BCC', d:'BCC', sector:'Basic Materials', mcap:4},
+    {s:'BE', d:'BE', sector:'Industrials', mcap:20},
+    {s:'BEAM', d:'BEAM', sector:'Healthcare', mcap:4},
+    {s:'BIDU', d:'BIDU', sector:'Communication Services', mcap:35},
+    {s:'BKNG', d:'BKNG', sector:'Consumer Cyclical', mcap:160},
+    {s:'BKR', d:'BKR', sector:'Energy', mcap:45},
+    {s:'BKSY', d:'BKSY', sector:'Industrials', mcap:1},
+    {s:'BMI', d:'BMI', sector:'Technology', mcap:9},
+    {s:'BMNR', d:'BMNR', sector:'Financial', mcap:3},
+    {s:'BNTX', d:'BNTX', sector:'Healthcare', mcap:28},
+    {s:'BRK-A', d:'BRK.A', sector:'Financial', mcap:950},
+    {s:'BRK-B', d:'BRK.B', sector:'Financial', mcap:950},
+    {s:'BROS', d:'BROS', sector:'Consumer Cyclical', mcap:8},
+    {s:'BSX', d:'BSX', sector:'Healthcare', mcap:140},
+    {s:'BWXT', d:'BWXT', sector:'Industrials', mcap:12},
+    {s:'BX', d:'BX', sector:'Financial', mcap:160},
+    {s:'C', d:'C', sector:'Financial', mcap:140},
+    {s:'CARR', d:'CARR', sector:'Industrials', mcap:50},
+    {s:'CAVA', d:'CAVA', sector:'Consumer Cyclical', mcap:7},
+    {s:'CC', d:'CC', sector:'Basic Materials', mcap:2},
+    {s:'CCJ', d:'CCJ', sector:'Energy', mcap:30},
+    {s:'CCL', d:'CCL', sector:'Consumer Cyclical', mcap:35},
+    {s:'CDE', d:'CDE', sector:'Basic Materials', mcap:3},
+    {s:'CDNA', d:'CDNA', sector:'Healthcare', mcap:1.5},
+    {s:'CDNS', d:'CDNS', sector:'Technology', mcap:90},
+    {s:'CDW', d:'CDW', sector:'Technology', mcap:25},
+    {s:'CEG', d:'CEG', sector:'Utilities', mcap:90},
+    {s:'CELH', d:'CELH', sector:'Consumer Defensive', mcap:8},
+    {s:'CHKP', d:'CHKP', sector:'Technology', mcap:20},
+    {s:'CHTR', d:'CHTR', sector:'Communication Services', mcap:45},
+    {s:'CHWY', d:'CHWY', sector:'Consumer Cyclical', mcap:10},
+    {s:'CIFR', d:'CIFR', sector:'Financial', mcap:5},
+    {s:'CLF', d:'CLF', sector:'Basic Materials', mcap:6},
+    {s:'CLOV', d:'CLOV', sector:'Healthcare', mcap:2},
+    {s:'CLS', d:'CLS', sector:'Technology', mcap:15},
+    {s:'CLSK', d:'CLSK', sector:'Financial', mcap:5},
+    {s:'CMG', d:'CMG', sector:'Consumer Cyclical', mcap:65},
+    {s:'CNC', d:'CNC', sector:'Healthcare', mcap:15},
+    {s:'CNI', d:'CNI', sector:'Industrials', mcap:65},
+    {s:'CNX', d:'CNX', sector:'Energy', mcap:7},
+    {s:'COHR', d:'COHR', sector:'Technology', mcap:15},
+    {s:'COIN', d:'COIN', sector:'Financial', mcap:60},
+    {s:'COO', d:'COO', sector:'Healthcare', mcap:15},
+    {s:'CORZ', d:'CORZ', sector:'Technology', mcap:8},
+    {s:'CPRT', d:'CPRT', sector:'Industrials', mcap:50},
+    {s:'CRCL', d:'CRCL', sector:'Financial', mcap:30},
+    {s:'CRDO', d:'CRDO', sector:'Technology', mcap:15},
+    {s:'CROX', d:'CROX', sector:'Consumer Cyclical', mcap:6},
+    {s:'CRSP', d:'CRSP', sector:'Healthcare', mcap:5},
+    {s:'CRWV', d:'CRWV', sector:'Technology', mcap:60},
     {s:'CSW', d:'CSW', sector:'Industrials', mcap:6},
-    {s:'CTAS', d:'CTAS', sector:'Business Services', mcap:90},
-    {s:'CVNA', d:'CVNA', sector:'Auto Retail', mcap:60},
-    {s:'CVS', d:'CVS', sector:'Healthcare/Retail', mcap:85},
-    {s:'DAL', d:'DAL', sector:'Airlines', mcap:35},
-    {s:'DASH', d:'DASH', sector:'Delivery/Tech', mcap:90},
-    {s:'DD', d:'DD', sector:'Chemicals', mcap:35},
-    {s:'DDOG', d:'DDOG', sector:'Software/Cloud', mcap:45},
-    {s:'DE', d:'DE', sector:'Ag Equipment', mcap:130},
-    {s:'DECK', d:'DECK', sector:'Consumer/Footwear', mcap:20},
-    {s:'DEFT', d:'DEFT', sector:'Software (small)', mcap:1},
-    {s:'DELL', d:'DELL', sector:'Tech Hardware', mcap:90},
-    {s:'DFDV', d:'DFDV', sector:'Crypto/Fintech', mcap:1},
-    {s:'DHI', d:'DHI', sector:'Homebuilders', mcap:40},
-    {s:'DHR', d:'DHR', sector:'Healthcare/Industrials', mcap:150},
-    {s:'DIS', d:'DIS', sector:'Media', mcap:200},
-    {s:'DKNG', d:'DKNG', sector:'Gaming/Betting', mcap:20},
-    {s:'DLR', d:'DLR', sector:'REIT/Datacenter', mcap:55},
-    {s:'DLTR', d:'DLTR', sector:'Retail', mcap:20},
-    {s:'DOCN', d:'DOCN', sector:'Cloud Computing', mcap:3},
-    {s:'DOCS', d:'DOCS', sector:'Healthcare Tech', mcap:10},
-    {s:'DOCU', d:'DOCU', sector:'Software', mcap:13},
+    {s:'CTAS', d:'CTAS', sector:'Industrials', mcap:90},
+    {s:'CVNA', d:'CVNA', sector:'Consumer Cyclical', mcap:60},
+    {s:'CVS', d:'CVS', sector:'Healthcare', mcap:85},
+    {s:'DAL', d:'DAL', sector:'Industrials', mcap:35},
+    {s:'DASH', d:'DASH', sector:'Consumer Cyclical', mcap:90},
+    {s:'DD', d:'DD', sector:'Basic Materials', mcap:35},
+    {s:'DDOG', d:'DDOG', sector:'Technology', mcap:45},
+    {s:'DE', d:'DE', sector:'Industrials', mcap:130},
+    {s:'DECK', d:'DECK', sector:'Consumer Cyclical', mcap:20},
+    {s:'DEFT', d:'DEFT', sector:'Other', mcap:1},
+    {s:'DELL', d:'DELL', sector:'Technology', mcap:90},
+    {s:'DFDV', d:'DFDV', sector:'Other', mcap:1},
+    {s:'DHI', d:'DHI', sector:'Consumer Cyclical', mcap:40},
+    {s:'DHR', d:'DHR', sector:'Healthcare', mcap:150},
+    {s:'DIS', d:'DIS', sector:'Communication Services', mcap:200},
+    {s:'DKNG', d:'DKNG', sector:'Consumer Cyclical', mcap:20},
+    {s:'DLR', d:'DLR', sector:'Real Estate', mcap:55},
+    {s:'DLTR', d:'DLTR', sector:'Consumer Defensive', mcap:20},
+    {s:'DOCN', d:'DOCN', sector:'Technology', mcap:3},
+    {s:'DOCS', d:'DOCS', sector:'Healthcare', mcap:10},
+    {s:'DOCU', d:'DOCU', sector:'Technology', mcap:13},
     {s:'DOV', d:'DOV', sector:'Industrials', mcap:24},
-    {s:'DOW', d:'DOW', sector:'Chemicals', mcap:25},
-    {s:'DRI', d:'DRI', sector:'Restaurants', mcap:22},
-    {s:'DUOL', d:'DUOL', sector:'EdTech', mcap:15},
-    {s:'EBAY', d:'EBAY', sector:'E-commerce', mcap:35},
-    {s:'EL', d:'EL', sector:'Consumer/Cosmetics', mcap:35},
-    {s:'ELF', d:'ELF', sector:'Consumer/Cosmetics', mcap:7},
-    {s:'ENPH', d:'ENPH', sector:'Solar/Energy', mcap:10},
-    {s:'ENTG', d:'ENTG', sector:'Semi Materials', mcap:15},
-    {s:'EOSE', d:'EOSE', sector:'Battery Storage', mcap:3},
-    {s:'EQIX', d:'EQIX', sector:'REIT/Datacenter', mcap:75},
-    {s:'ESI', d:'ESI', sector:'Chemicals', mcap:6},
-    {s:'ESTC', d:'ESTC', sector:'Software/Search', mcap:10},
-    {s:'ET', d:'ET', sector:'Energy/Pipelines', mcap:65},
-    {s:'ETN', d:'ETN', sector:'Industrials/Electrical', mcap:140},
-    {s:'ETSY', d:'ETSY', sector:'E-commerce', mcap:6},
-    {s:'EXPE', d:'EXPE', sector:'Travel', mcap:20},
-    {s:'F', d:'F', sector:'Auto', mcap:45},
-    {s:'FANG', d:'FANG', sector:'Energy/Oil&Gas', mcap:40},
-    {s:'FAST', d:'FAST', sector:'Industrials/Distribution', mcap:45},
-    {s:'FCEL', d:'FCEL', sector:'Fuel Cells', mcap:0.3},
-    {s:'FCX', d:'FCX', sector:'Mining/Copper', mcap:55},
-    {s:'FDX', d:'FDX', sector:'Logistics', mcap:65},
-    {s:'FICO', d:'FICO', sector:'Financial/Analytics', mcap:40},
-    {s:'FIG', d:'FIG', sector:'Design Software', mcap:40},
-    {s:'FIX', d:'FIX', sector:'Industrials/HVAC', mcap:20},
-    {s:'FRPT', d:'FRPT', sector:'Consumer/Pet Food', mcap:8},
-    {s:'FRSH', d:'FRSH', sector:'Software/SaaS', mcap:4},
-    {s:'FSLR', d:'FSLR', sector:'Solar', mcap:20},
-    {s:'FSLY', d:'FSLY', sector:'Cloud/CDN', mcap:1.5},
-    {s:'FTNT', d:'FTNT', sector:'Cybersecurity', mcap:65},
-    {s:'FUTU', d:'FUTU', sector:'Fintech/Brokerage', mcap:15},
-    {s:'GDDY', d:'GDDY', sector:'Internet/Domains', mcap:20},
-    {s:'GEV', d:'GEV', sector:'Energy/Power Equipment', mcap:110},
-    {s:'GFS', d:'GFS', sector:'Semi Foundry', mcap:25},
-    {s:'GLW', d:'GLW', sector:'Materials/Fiber', mcap:50},
-    {s:'GM', d:'GM', sector:'Auto', mcap:50},
-    {s:'GNRC', d:'GNRC', sector:'Industrials/Generators', mcap:9},
-    {s:'GRAB', d:'GRAB', sector:'Tech/Ride-hailing', mcap:18},
-    {s:'GTLB', d:'GTLB', sector:'Software/DevOps', mcap:8},
-    {s:'HIFS', d:'HIFS', sector:'Banking (small)', mcap:0.7},
-    {s:'HIMS', d:'HIMS', sector:'Healthcare/Telehealth', mcap:10},
-    {s:'HIVE', d:'HIVE', sector:'Crypto Mining', mcap:1},
-    {s:'HNST', d:'HNST', sector:'Consumer', mcap:0.7},
-    {s:'HOLO', d:'HOLO', sector:'Tech (small)', mcap:0.1},
+    {s:'DOW', d:'DOW', sector:'Basic Materials', mcap:25},
+    {s:'DRI', d:'DRI', sector:'Consumer Cyclical', mcap:22},
+    {s:'DUOL', d:'DUOL', sector:'Technology', mcap:15},
+    {s:'EBAY', d:'EBAY', sector:'Consumer Cyclical', mcap:35},
+    {s:'EL', d:'EL', sector:'Consumer Defensive', mcap:35},
+    {s:'ELF', d:'ELF', sector:'Consumer Defensive', mcap:7},
+    {s:'ENPH', d:'ENPH', sector:'Technology', mcap:10},
+    {s:'ENTG', d:'ENTG', sector:'Technology', mcap:15},
+    {s:'EOSE', d:'EOSE', sector:'Industrials', mcap:3},
+    {s:'EQIX', d:'EQIX', sector:'Real Estate', mcap:75},
+    {s:'ESI', d:'ESI', sector:'Basic Materials', mcap:6},
+    {s:'ESTC', d:'ESTC', sector:'Technology', mcap:10},
+    {s:'ET', d:'ET', sector:'Energy', mcap:65},
+    {s:'ETN', d:'ETN', sector:'Industrials', mcap:140},
+    {s:'ETSY', d:'ETSY', sector:'Consumer Cyclical', mcap:6},
+    {s:'EXPE', d:'EXPE', sector:'Consumer Cyclical', mcap:20},
+    {s:'F', d:'F', sector:'Consumer Cyclical', mcap:45},
+    {s:'FANG', d:'FANG', sector:'Energy', mcap:40},
+    {s:'FAST', d:'FAST', sector:'Industrials', mcap:45},
+    {s:'FCEL', d:'FCEL', sector:'Industrials', mcap:0.3},
+    {s:'FCX', d:'FCX', sector:'Basic Materials', mcap:55},
+    {s:'FDX', d:'FDX', sector:'Industrials', mcap:65},
+    {s:'FICO', d:'FICO', sector:'Technology', mcap:40},
+    {s:'FIG', d:'FIG', sector:'Technology', mcap:40},
+    {s:'FIX', d:'FIX', sector:'Industrials', mcap:20},
+    {s:'FRPT', d:'FRPT', sector:'Consumer Defensive', mcap:8},
+    {s:'FRSH', d:'FRSH', sector:'Technology', mcap:4},
+    {s:'FSLR', d:'FSLR', sector:'Technology', mcap:20},
+    {s:'FSLY', d:'FSLY', sector:'Technology', mcap:1.5},
+    {s:'FTNT', d:'FTNT', sector:'Technology', mcap:65},
+    {s:'FUTU', d:'FUTU', sector:'Financial', mcap:15},
+    {s:'GDDY', d:'GDDY', sector:'Technology', mcap:20},
+    {s:'GEV', d:'GEV', sector:'Industrials', mcap:110},
+    {s:'GFS', d:'GFS', sector:'Technology', mcap:25},
+    {s:'GLW', d:'GLW', sector:'Technology', mcap:50},
+    {s:'GM', d:'GM', sector:'Consumer Cyclical', mcap:50},
+    {s:'GNRC', d:'GNRC', sector:'Industrials', mcap:9},
+    {s:'GRAB', d:'GRAB', sector:'Technology', mcap:18},
+    {s:'GTLB', d:'GTLB', sector:'Technology', mcap:8},
+    {s:'HIFS', d:'HIFS', sector:'Financial', mcap:0.7},
+    {s:'HIMS', d:'HIMS', sector:'Healthcare', mcap:10},
+    {s:'HIVE', d:'HIVE', sector:'Financial', mcap:1},
+    {s:'HNST', d:'HNST', sector:'Consumer Defensive', mcap:0.7},
+    {s:'HOLO', d:'HOLO', sector:'Technology', mcap:0.1},
     {s:'HON', d:'HON', sector:'Industrials', mcap:140},
-    {s:'HOOD', d:'HOOD', sector:'Fintech', mcap:90},
-    {s:'HPE', d:'HPE', sector:'Tech Hardware', mcap:30},
-    {s:'HRI', d:'HRI', sector:'Industrials/Equipment Rental', mcap:7},
-    {s:'HUBB', d:'HUBB', sector:'Industrials/Electrical', mcap:20},
-    {s:'HUBS', d:'HUBS', sector:'Software/CRM', mcap:30},
-    {s:'HUT', d:'HUT', sector:'Crypto/Datacenter', mcap:5},
-    {s:'IBKR', d:'IBKR', sector:'Brokerage/Fintech', mcap:90},
-    {s:'IBM', d:'IBM', sector:'Tech', mcap:250},
-    {s:'ICLR', d:'ICLR', sector:'Healthcare/CRO', mcap:18},
-    {s:'ILMN', d:'ILMN', sector:'Biotech/Genomics', mcap:15},
-    {s:'IMXI', d:'IMXI', sector:'Fintech/Remittance', mcap:0.5},
-    {s:'INTC', d:'INTC', sector:'Semiconductors', mcap:180},
-    {s:'IONQ', d:'IONQ', sector:'Quantum Computing', mcap:15},
-    {s:'IOT', d:'IOT', sector:'IoT/Software', mcap:25},
-    {s:'IREN', d:'IREN', sector:'Crypto/Datacenter', mcap:10},
-    {s:'IRM', d:'IRM', sector:'REIT/Data Mgmt', mcap:30},
-    {s:'JACK', d:'JACK', sector:'Restaurants', mcap:0.7},
-    {s:'JBLU', d:'JBLU', sector:'Airlines', mcap:2},
-    {s:'JD', d:'JD', sector:'E-commerce', mcap:50},
-    {s:'KBH', d:'KBH', sector:'Homebuilders', mcap:5},
-    {s:'KGC', d:'KGC', sector:'Gold Mining', mcap:20},
-    {s:'KLAC', d:'KLAC', sector:'Semi Equipment', mcap:130},
-    {s:'KTOS', d:'KTOS', sector:'Defense/Aerospace', mcap:10},
-    {s:'LAC', d:'LAC', sector:'Mining/Lithium', mcap:2},
-    {s:'LAES', d:'LAES', sector:'Semi/Security', mcap:0.3},
-    {s:'LEN', d:'LEN', sector:'Homebuilders', mcap:35},
-    {s:'LEU', d:'LEU', sector:'Nuclear/Uranium', mcap:5},
-    {s:'LIN', d:'LIN', sector:'Chemicals/Industrial Gas', mcap:220},
-    {s:'LITE', d:'LITE', sector:'Semi/Optical', mcap:15},
-    {s:'LKQ', d:'LKQ', sector:'Auto Parts', mcap:9},
-    {s:'LMND', d:'LMND', sector:'Insurtech', mcap:2},
-    {s:'LMT', d:'LMT', sector:'Defense/Aerospace', mcap:120},
-    {s:'LOW', d:'LOW', sector:'Retail', mcap:140},
-    {s:'LRCX', d:'LRCX', sector:'Semi Equipment', mcap:130},
-    {s:'LSCC', d:'LSCC', sector:'Semiconductors', mcap:8},
-    {s:'LULU', d:'LULU', sector:'Consumer/Apparel', mcap:30},
-    {s:'LUNR', d:'LUNR', sector:'Space', mcap:2},
-    {s:'LYFT', d:'LYFT', sector:'Ride-hailing', mcap:7},
-    {s:'MAR', d:'MAR', sector:'Hospitality', mcap:75},
-    {s:'MARA', d:'MARA', sector:'Crypto Mining', mcap:7},
-    {s:'MCD', d:'MCD', sector:'Restaurants', mcap:210},
-    {s:'MCHP', d:'MCHP', sector:'Semiconductors', mcap:35},
-    {s:'MCO', d:'MCO', sector:'Financial/Ratings', mcap:85},
-    {s:'MDA', d:'MDA', sector:'Space/Satellite', mcap:4},
-    {s:'MDB', d:'MDB', sector:'Software/Database', mcap:18},
-    {s:'MDGL', d:'MDGL', sector:'Biotech', mcap:10},
-    {s:'MDLZ', d:'MDLZ', sector:'FMCG', mcap:85},
-    {s:'MDT', d:'MDT', sector:'Medtech', mcap:110},
-    {s:'MELI', d:'MELI', sector:'E-commerce (LatAm)', mcap:100},
+    {s:'HOOD', d:'HOOD', sector:'Financial', mcap:90},
+    {s:'HPE', d:'HPE', sector:'Technology', mcap:30},
+    {s:'HRI', d:'HRI', sector:'Industrials', mcap:7},
+    {s:'HUBB', d:'HUBB', sector:'Industrials', mcap:20},
+    {s:'HUBS', d:'HUBS', sector:'Technology', mcap:30},
+    {s:'HUT', d:'HUT', sector:'Financial', mcap:5},
+    {s:'IBKR', d:'IBKR', sector:'Financial', mcap:90},
+    {s:'IBM', d:'IBM', sector:'Technology', mcap:250},
+    {s:'ICLR', d:'ICLR', sector:'Healthcare', mcap:18},
+    {s:'ILMN', d:'ILMN', sector:'Healthcare', mcap:15},
+    {s:'IMXI', d:'IMXI', sector:'Financial', mcap:0.5},
+    {s:'INTC', d:'INTC', sector:'Technology', mcap:180},
+    {s:'IONQ', d:'IONQ', sector:'Technology', mcap:15},
+    {s:'IOT', d:'IOT', sector:'Technology', mcap:25},
+    {s:'IREN', d:'IREN', sector:'Financial', mcap:10},
+    {s:'IRM', d:'IRM', sector:'Real Estate', mcap:30},
+    {s:'JACK', d:'JACK', sector:'Consumer Cyclical', mcap:0.7},
+    {s:'JBLU', d:'JBLU', sector:'Industrials', mcap:2},
+    {s:'JD', d:'JD', sector:'Consumer Cyclical', mcap:50},
+    {s:'KBH', d:'KBH', sector:'Consumer Cyclical', mcap:5},
+    {s:'KGC', d:'KGC', sector:'Basic Materials', mcap:20},
+    {s:'KLAC', d:'KLAC', sector:'Technology', mcap:130},
+    {s:'KTOS', d:'KTOS', sector:'Industrials', mcap:10},
+    {s:'LAC', d:'LAC', sector:'Basic Materials', mcap:2},
+    {s:'LAES', d:'LAES', sector:'Technology', mcap:0.3},
+    {s:'LEN', d:'LEN', sector:'Consumer Cyclical', mcap:35},
+    {s:'LEU', d:'LEU', sector:'Energy', mcap:5},
+    {s:'LIN', d:'LIN', sector:'Basic Materials', mcap:220},
+    {s:'LITE', d:'LITE', sector:'Technology', mcap:15},
+    {s:'LKQ', d:'LKQ', sector:'Consumer Cyclical', mcap:9},
+    {s:'LMND', d:'LMND', sector:'Financial', mcap:2},
+    {s:'LMT', d:'LMT', sector:'Industrials', mcap:120},
+    {s:'LOW', d:'LOW', sector:'Consumer Cyclical', mcap:140},
+    {s:'LRCX', d:'LRCX', sector:'Technology', mcap:130},
+    {s:'LSCC', d:'LSCC', sector:'Technology', mcap:8},
+    {s:'LULU', d:'LULU', sector:'Consumer Cyclical', mcap:30},
+    {s:'LUNR', d:'LUNR', sector:'Industrials', mcap:2},
+    {s:'LYFT', d:'LYFT', sector:'Technology', mcap:7},
+    {s:'MAR', d:'MAR', sector:'Consumer Cyclical', mcap:75},
+    {s:'MARA', d:'MARA', sector:'Financial', mcap:7},
+    {s:'MCD', d:'MCD', sector:'Consumer Cyclical', mcap:210},
+    {s:'MCHP', d:'MCHP', sector:'Technology', mcap:35},
+    {s:'MCO', d:'MCO', sector:'Financial', mcap:85},
+    {s:'MDA', d:'MDA', sector:'Industrials', mcap:4},
+    {s:'MDB', d:'MDB', sector:'Technology', mcap:18},
+    {s:'MDGL', d:'MDGL', sector:'Healthcare', mcap:10},
+    {s:'MDLZ', d:'MDLZ', sector:'Consumer Defensive', mcap:85},
+    {s:'MDT', d:'MDT', sector:'Healthcare', mcap:110},
+    {s:'MELI', d:'MELI', sector:'Consumer Cyclical', mcap:100},
     {s:'MMM', d:'MMM', sector:'Industrials', mcap:80},
-    {s:'MNDY', d:'MNDY', sector:'Software/SaaS', mcap:13},
-    {s:'MNST', d:'MNST', sector:'Consumer/Beverages', mcap:55},
-    {s:'MP', d:'MP', sector:'Rare Earth/Mining', mcap:12},
-    {s:'MPWR', d:'MPWR', sector:'Semiconductors', mcap:30},
-    {s:'MRNA', d:'MRNA', sector:'Biotech/Pharma', mcap:15},
-    {s:'MRVL', d:'MRVL', sector:'Semiconductors', mcap:75},
-    {s:'MSTR', d:'MSTR', sector:'Software/Bitcoin Treasury', mcap:90},
-    {s:'MTD', d:'MTD', sector:'Industrials/Instruments', mcap:25},
-    {s:'MTH', d:'MTH', sector:'Homebuilders', mcap:5},
-    {s:'MTRN', d:'MTRN', sector:'Materials', mcap:3},
-    {s:'MVST', d:'MVST', sector:'Battery Tech', mcap:1},
-    {s:'NBIS', d:'NBIS', sector:'AI Cloud/Datacenter', mcap:15},
-    {s:'NCLH', d:'NCLH', sector:'Cruise/Travel', mcap:10},
-    {s:'NDAQ', d:'NDAQ', sector:'Financial/Exchange', mcap:40},
-    {s:'NEE', d:'NEE', sector:'Utilities/Renewables', mcap:150},
-    {s:'NEM', d:'NEM', sector:'Gold Mining', mcap:65},
-    {s:'NET', d:'NET', sector:'Cybersecurity/Cloud', mcap:50},
-    {s:'NIO', d:'NIO', sector:'EV (China)', mcap:10},
-    {s:'NKE', d:'NKE', sector:'Consumer/Apparel', mcap:110},
-    {s:'NOK', d:'NOK', sector:'Telecom Equipment', mcap:30},
-    {s:'NVAX', d:'NVAX', sector:'Biotech/Vaccines', mcap:2},
-    {s:'NVO', d:'NVO', sector:'Pharma', mcap:350},
-    {s:'NVTS', d:'NVTS', sector:'Semiconductors', mcap:2},
-    {s:'NXPI', d:'NXPI', sector:'Semiconductors', mcap:55},
-    {s:'ODFL', d:'ODFL', sector:'Logistics/Trucking', mcap:40},
-    {s:'OKE', d:'OKE', sector:'Energy/Pipelines', mcap:50},
-    {s:'OKLO', d:'OKLO', sector:'Nuclear/SMR', mcap:10},
-    {s:'OKTA', d:'OKTA', sector:'Cybersecurity', mcap:15},
-    {s:'OLN', d:'OLN', sector:'Chemicals', mcap:3},
-    {s:'ON', d:'ON', sector:'Semiconductors', mcap:25},
-    {s:'ONDS', d:'ONDS', sector:'Drones/Wireless', mcap:1},
-    {s:'ONTO', d:'ONTO', sector:'Semi Equipment', mcap:10},
-    {s:'OPEN', d:'OPEN', sector:'Real Estate Tech', mcap:2},
-    {s:'OSCR', d:'OSCR', sector:'Healthcare Insurance', mcap:5},
-    {s:'OUST', d:'OUST', sector:'Lidar/Sensors', mcap:1},
-    {s:'PAAS', d:'PAAS', sector:'Silver Mining', mcap:10},
-    {s:'PATH', d:'PATH', sector:'Software/RPA/AI', mcap:7},
-    {s:'PAYX', d:'PAYX', sector:'Business Services', mcap:50},
+    {s:'MNDY', d:'MNDY', sector:'Technology', mcap:13},
+    {s:'MNST', d:'MNST', sector:'Consumer Defensive', mcap:55},
+    {s:'MP', d:'MP', sector:'Basic Materials', mcap:12},
+    {s:'MPWR', d:'MPWR', sector:'Technology', mcap:30},
+    {s:'MRNA', d:'MRNA', sector:'Healthcare', mcap:15},
+    {s:'MRVL', d:'MRVL', sector:'Technology', mcap:75},
+    {s:'MSTR', d:'MSTR', sector:'Technology', mcap:90},
+    {s:'MTD', d:'MTD', sector:'Healthcare', mcap:25},
+    {s:'MTH', d:'MTH', sector:'Consumer Cyclical', mcap:5},
+    {s:'MTRN', d:'MTRN', sector:'Basic Materials', mcap:3},
+    {s:'MVST', d:'MVST', sector:'Industrials', mcap:1},
+    {s:'NBIS', d:'NBIS', sector:'Technology', mcap:15},
+    {s:'NCLH', d:'NCLH', sector:'Consumer Cyclical', mcap:10},
+    {s:'NDAQ', d:'NDAQ', sector:'Financial', mcap:40},
+    {s:'NEE', d:'NEE', sector:'Utilities', mcap:150},
+    {s:'NEM', d:'NEM', sector:'Basic Materials', mcap:65},
+    {s:'NET', d:'NET', sector:'Technology', mcap:50},
+    {s:'NIO', d:'NIO', sector:'Consumer Cyclical', mcap:10},
+    {s:'NKE', d:'NKE', sector:'Consumer Cyclical', mcap:110},
+    {s:'NOK', d:'NOK', sector:'Technology', mcap:30},
+    {s:'NVAX', d:'NVAX', sector:'Healthcare', mcap:2},
+    {s:'NVO', d:'NVO', sector:'Healthcare', mcap:350},
+    {s:'NVTS', d:'NVTS', sector:'Technology', mcap:2},
+    {s:'NXPI', d:'NXPI', sector:'Technology', mcap:55},
+    {s:'ODFL', d:'ODFL', sector:'Industrials', mcap:40},
+    {s:'OKE', d:'OKE', sector:'Energy', mcap:50},
+    {s:'OKLO', d:'OKLO', sector:'Utilities', mcap:10},
+    {s:'OKTA', d:'OKTA', sector:'Technology', mcap:15},
+    {s:'OLN', d:'OLN', sector:'Basic Materials', mcap:3},
+    {s:'ON', d:'ON', sector:'Technology', mcap:25},
+    {s:'ONDS', d:'ONDS', sector:'Technology', mcap:1},
+    {s:'ONTO', d:'ONTO', sector:'Technology', mcap:10},
+    {s:'OPEN', d:'OPEN', sector:'Real Estate', mcap:2},
+    {s:'OSCR', d:'OSCR', sector:'Healthcare', mcap:5},
+    {s:'OUST', d:'OUST', sector:'Technology', mcap:1},
+    {s:'PAAS', d:'PAAS', sector:'Basic Materials', mcap:10},
+    {s:'PATH', d:'PATH', sector:'Technology', mcap:7},
+    {s:'PAYX', d:'PAYX', sector:'Technology', mcap:50},
     {s:'PCG', d:'PCG', sector:'Utilities', mcap:45},
-    {s:'PD', d:'PD', sector:'Software', mcap:1.5},
-    {s:'PDD', d:'PDD', sector:'E-commerce (China)', mcap:180},
-    {s:'PFE', d:'PFE', sector:'Pharma', mcap:140},
-    {s:'PINS', d:'PINS', sector:'Social Media/Tech', mcap:25},
-    {s:'PL', d:'PL', sector:'Satellite/Space', mcap:3},
-    {s:'PLUG', d:'PLUG', sector:'Hydrogen/Fuel Cells', mcap:2},
-    {s:'POET', d:'POET', sector:'Semi/Optical (small)', mcap:1},
-    {s:'PRIM', d:'PRIM', sector:'Industrials/Infra', mcap:7},
-    {s:'PSTG', d:'PSTG', sector:'Tech/Data Storage', mcap:20},
-    {s:'PVH', d:'PVH', sector:'Apparel', mcap:6},
-    {s:'PWR', d:'PWR', sector:'Industrials/Infra', mcap:55},
-    {s:'PYPL', d:'PYPL', sector:'Fintech/Payments', mcap:70},
-    {s:'QBTS', d:'QBTS', sector:'Quantum Computing', mcap:3},
-    {s:'QMCO', d:'QMCO', sector:'Data Storage (small)', mcap:0.1},
-    {s:'QRVO', d:'QRVO', sector:'Semiconductors', mcap:9},
-    {s:'QS', d:'QS', sector:'Battery Tech/EV', mcap:4},
-    {s:'QUBT', d:'QUBT', sector:'Quantum Computing', mcap:1.5},
-    {s:'QUIK', d:'QUIK', sector:'Semiconductors (small)', mcap:0.1},
-    {s:'RACE', d:'RACE', sector:'Auto/Luxury', mcap:90},
-    {s:'RBLX', d:'RBLX', sector:'Gaming/Tech', mcap:45},
-    {s:'RCAT', d:'RCAT', sector:'Drones', mcap:1},
-    {s:'RDDT', d:'RDDT', sector:'Social Media/Tech', mcap:30},
-    {s:'RDW', d:'RDW', sector:'Space', mcap:3},
-    {s:'REAL', d:'REAL', sector:'E-commerce/Retail', mcap:1},
-    {s:'REGN', d:'REGN', sector:'Biotech', mcap:70},
-    {s:'RGTI', d:'RGTI', sector:'Quantum Computing', mcap:3},
-    {s:'RIOT', d:'RIOT', sector:'Crypto Mining', mcap:5},
-    {s:'RIVN', d:'RIVN', sector:'EV', mcap:15},
-    {s:'RKLB', d:'RKLB', sector:'Space', mcap:20},
-    {s:'RKT', d:'RKT', sector:'Fintech/Mortgage', mcap:35},
-    {s:'RMBS', d:'RMBS', sector:'Semi/IP', mcap:10},
-    {s:'ROG', d:'ROG', sector:'Materials/Electronics', mcap:2},
-    {s:'ROK', d:'ROK', sector:'Industrials/Automation', mcap:35},
-    {s:'ROKU', d:'ROKU', sector:'Media/Streaming Tech', mcap:13},
-    {s:'ROOT', d:'ROOT', sector:'Insurtech', mcap:2},
-    {s:'RR', d:'RR', sector:'Robotics (small)', mcap:0.3},
-    {s:'RRC', d:'RRC', sector:'Energy/Nat Gas', mcap:9},
-    {s:'RTX', d:'RTX', sector:'Defense/Aerospace', mcap:180},
-    {s:'RUM', d:'RUM', sector:'Media/Video', mcap:3},
-    {s:'RVTY', d:'RVTY', sector:'Healthcare/Life Sciences', mcap:15},
-    {s:'RXRX', d:'RXRX', sector:'Biotech/AI', mcap:3},
-    {s:'SANM', d:'SANM', sector:'Electronics Mfg', mcap:8},
-    {s:'SAP', d:'SAP', sector:'Enterprise Software', mcap:250},
-    {s:'SBUX', d:'SBUX', sector:'Restaurants', mcap:100},
-    {s:'SCHW', d:'SCHW', sector:'Financial/Brokerage', mcap:150},
-    {s:'SFM', d:'SFM', sector:'Retail/Grocery', mcap:13},
-    {s:'SG', d:'SG', sector:'Restaurants', mcap:1},
-    {s:'SHAK', d:'SHAK', sector:'Restaurants', mcap:4},
-    {s:'SHOP', d:'SHOP', sector:'E-commerce/Software', mcap:150},
-    {s:'SKHY', d:'SKHY', sector:'Semiconductors (Memory)', mcap:null}, /* Ticker identity unconfirmed — SK Hynix itself trades on the Korea Exchange (KRX:000660), not under this symbol. Kept per your list as-is; verify what this ticker actually maps to before trusting its data. */
-    {s:'SLGN', d:'SLGN', sector:'Packaging', mcap:7},
-    {s:'SMCI', d:'SMCI', sector:'Servers/Datacenter Hardware', mcap:25},
-    {s:'SMR', d:'SMR', sector:'Nuclear/SMR', mcap:4},
-    {s:'SNDK', d:'SNDK', sector:'Semi/Storage', mcap:20},
-    {s:'SNPS', d:'SNPS', sector:'Semi Software', mcap:90},
-    {s:'SOFI', d:'SOFI', sector:'Fintech', mcap:15},
-    {s:'SOLS', d:'SOLS', sector:'Energy Infra (small)', mcap:1},
-    {s:'SOUN', d:'SOUN', sector:'AI/Voice Tech', mcap:5},
-    {s:'SPCX', d:'SPCX', sector:'Space/AI', mcap:null}, /* SpaceX is NOT publicly traded — no real market cap exists and no exchange ticker exists either, so this row can never populate. */
-    {s:'SPOT', d:'SPOT', sector:'Media/Streaming', mcap:140},
-    {s:'SRTS', d:'SRTS', sector:'Medtech (small)', mcap:0.1},
-    {s:'STX', d:'STX', sector:'Semi/Storage', mcap:35},
-    {s:'STZ', d:'STZ', sector:'Consumer/Beverages', mcap:30},
-    {s:'SUPV', d:'SUPV', sector:'Banking (Argentina)', mcap:1},
-    {s:'SWKS', d:'SWKS', sector:'Semiconductors', mcap:9},
-    {s:'SYM', d:'SYM', sector:'Robotics/Automation', mcap:20},
-    {s:'SYNA', d:'SYNA', sector:'Semiconductors', mcap:3},
-    {s:'T', d:'T', sector:'Telecom', mcap:180},
-    {s:'TE', d:'TE', sector:'Electronics', mcap:55},
-    {s:'TEAM', d:'TEAM', sector:'Software', mcap:50},
-    {s:'TEM', d:'TEM', sector:'Healthcare/AI', mcap:10},
-    {s:'TEN', d:'TEN', sector:'Shipping/Energy', mcap:1.5},
-    {s:'TER', d:'TER', sector:'Semi Equipment', mcap:20},
-    {s:'TGT', d:'TGT', sector:'Retail', mcap:45},
-    {s:'TKO', d:'TKO', sector:'Media/Entertainment', mcap:25},
-    {s:'TLN', d:'TLN', sector:'Utilities/Power', mcap:15},
-    {s:'TMDX', d:'TMDX', sector:'Medtech', mcap:5},
-    {s:'TMO', d:'TMO', sector:'Healthcare/Life Sciences', mcap:180},
-    {s:'TMUS', d:'TMUS', sector:'Telecom', mcap:250},
-    {s:'TOL', d:'TOL', sector:'Homebuilders', mcap:12},
-    {s:'TOST', d:'TOST', sector:'Fintech/POS Software', mcap:15},
-    {s:'TROO', d:'TROO', sector:'Media (small)', mcap:0.1},
-    {s:'TSCO', d:'TSCO', sector:'Retail', mcap:25},
-    {s:'TSEM', d:'TSEM', sector:'Semiconductors', mcap:5},
-    {s:'TSM', d:'TSM', sector:'Semi Foundry', mcap:900},
-    {s:'TSSI', d:'TSSI', sector:'Datacenter/IT Services (small)', mcap:1},
-    {s:'TTD', d:'TTD', sector:'AdTech', mcap:30},
-    {s:'TTWO', d:'TTWO', sector:'Gaming', mcap:30},
-    {s:'TWLO', d:'TWLO', sector:'Software/Communications', mcap:15},
-    {s:'TWST', d:'TWST', sector:'Biotech/Synthetic DNA', mcap:2},
-    {s:'TXN', d:'TXN', sector:'Semiconductors', mcap:170},
-    {s:'UAL', d:'UAL', sector:'Airlines', mcap:30},
-    {s:'UAMY', d:'UAMY', sector:'Mining (small)', mcap:0.3},
-    {s:'UAVS', d:'UAVS', sector:'Drones (small)', mcap:0.05},
-    {s:'UEC', d:'UEC', sector:'Uranium Mining', mcap:3},
-    {s:'ULTA', d:'ULTA', sector:'Retail/Cosmetics', mcap:20},
-    {s:'UMAC', d:'UMAC', sector:'Drones (small)', mcap:0.3},
-    {s:'UNP', d:'UNP', sector:'Railways', mcap:140},
-    {s:'UPST', d:'UPST', sector:'Fintech/AI Lending', mcap:7},
-    {s:'URBN', d:'URBN', sector:'Retail/Apparel', mcap:5},
-    {s:'UTHR', d:'UTHR', sector:'Biotech', mcap:13},
-    {s:'UUUU', d:'UUUU', sector:'Uranium Mining', mcap:2},
-    {s:'VALE', d:'VALE', sector:'Mining', mcap:45},
-    {s:'VECO', d:'VECO', sector:'Semi Equipment', mcap:2},
-    {s:'VEEV', d:'VEEV', sector:'Software/Healthcare', mcap:35},
-    {s:'VERI', d:'VERI', sector:'AI Software (small)', mcap:0.3},
-    {s:'VIAV', d:'VIAV', sector:'Semi/Optical', mcap:2},
-    {s:'VKTX', d:'VKTX', sector:'Biotech', mcap:5},
-    {s:'VPG', d:'VPG', sector:'Electronics (small)', mcap:0.4},
-    {s:'VRSK', d:'VRSK', sector:'Data/Analytics', mcap:35},
-    {s:'VRSN', d:'VRSN', sector:'Internet Infra', mcap:25},
-    {s:'VRT', d:'VRT', sector:'Datacenter Infra/Cooling', mcap:50},
-    {s:'VRTX', d:'VRTX', sector:'Biotech', mcap:120},
-    {s:'VST', d:'VST', sector:'Utilities/Power', mcap:55},
-    {s:'VZ', d:'VZ', sector:'Telecom', mcap:180},
-    {s:'WDAY', d:'WDAY', sector:'Software/HR Tech', mcap:65},
-    {s:'WDC', d:'WDC', sector:'Semi/Storage', mcap:30},
-    {s:'WDFC', d:'WDFC', sector:'Consumer Products', mcap:3},
-    {s:'WH', d:'WH', sector:'Hospitality', mcap:7},
-    {s:'WIMI', d:'WIMI', sector:'Tech (small)', mcap:0.1},
-    {s:'WKEY', d:'WKEY', sector:'Cybersecurity (small)', mcap:0.1},
-    {s:'WPM', d:'WPM', sector:'Mining Royalty', mcap:35},
-    {s:'WULF', d:'WULF', sector:'Crypto/Datacenter', mcap:4},
-    {s:'WYNN', d:'WYNN', sector:'Gaming/Casino', mcap:11},
-    {s:'XPEV', d:'XPEV', sector:'EV (China)', mcap:15},
-    {s:'XYZ', d:'XYZ', sector:'Fintech', mcap:40},
-    {s:'YOU', d:'YOU', sector:'Identity/Security Tech', mcap:5},
-    {s:'YUM', d:'YUM', sector:'Restaurants', mcap:38},
-    {s:'Z', d:'Z', sector:'Real Estate Tech', mcap:16},
-    {s:'ZETA', d:'ZETA', sector:'AdTech/Marketing Software', mcap:4},
-    {s:'ZM', d:'ZM', sector:'Software/Video', mcap:20},
-    {s:'ZS', d:'ZS', sector:'Cybersecurity', mcap:30},
-    {s:'SSNLF', d:'SAMSUNG', sector:'Semiconductors/Electronics', mcap:380},
-    {s:'SBGSF', d:'SOFTBANK GRP', sector:'Tech/Telecom Holding', mcap:120},
+    {s:'PD', d:'PD', sector:'Technology', mcap:1.5},
+    {s:'PDD', d:'PDD', sector:'Consumer Cyclical', mcap:180},
+    {s:'PFE', d:'PFE', sector:'Healthcare', mcap:140},
+    {s:'PINS', d:'PINS', sector:'Communication Services', mcap:25},
+    {s:'PL', d:'PL', sector:'Industrials', mcap:3},
+    {s:'PLUG', d:'PLUG', sector:'Industrials', mcap:2},
+    {s:'POET', d:'POET', sector:'Technology', mcap:1},
+    {s:'PRIM', d:'PRIM', sector:'Industrials', mcap:7},
+    {s:'PSTG', d:'PSTG', sector:'Technology', mcap:20},
+    {s:'PVH', d:'PVH', sector:'Consumer Cyclical', mcap:6},
+    {s:'PWR', d:'PWR', sector:'Industrials', mcap:55},
+    {s:'PYPL', d:'PYPL', sector:'Financial', mcap:70},
+    {s:'QBTS', d:'QBTS', sector:'Technology', mcap:3},
+    {s:'QMCO', d:'QMCO', sector:'Technology', mcap:0.1},
+    {s:'QRVO', d:'QRVO', sector:'Technology', mcap:9},
+    {s:'QS', d:'QS', sector:'Consumer Cyclical', mcap:4},
+    {s:'QUBT', d:'QUBT', sector:'Technology', mcap:1.5},
+    {s:'QUIK', d:'QUIK', sector:'Technology', mcap:0.1},
+    {s:'RACE', d:'RACE', sector:'Consumer Cyclical', mcap:90},
+    {s:'RBLX', d:'RBLX', sector:'Communication Services', mcap:45},
+    {s:'RCAT', d:'RCAT', sector:'Industrials', mcap:1},
+    {s:'RDDT', d:'RDDT', sector:'Communication Services', mcap:30},
+    {s:'RDW', d:'RDW', sector:'Industrials', mcap:3},
+    {s:'REAL', d:'REAL', sector:'Consumer Cyclical', mcap:1},
+    {s:'REGN', d:'REGN', sector:'Healthcare', mcap:70},
+    {s:'RGTI', d:'RGTI', sector:'Technology', mcap:3},
+    {s:'RIOT', d:'RIOT', sector:'Financial', mcap:5},
+    {s:'RIVN', d:'RIVN', sector:'Consumer Cyclical', mcap:15},
+    {s:'RKLB', d:'RKLB', sector:'Industrials', mcap:20},
+    {s:'RKT', d:'RKT', sector:'Financial', mcap:35},
+    {s:'RMBS', d:'RMBS', sector:'Technology', mcap:10},
+    {s:'ROG', d:'ROG', sector:'Technology', mcap:2},
+    {s:'ROK', d:'ROK', sector:'Industrials', mcap:35},
+    {s:'ROKU', d:'ROKU', sector:'Communication Services', mcap:13},
+    {s:'ROOT', d:'ROOT', sector:'Financial', mcap:2},
+    {s:'RR', d:'RR', sector:'Other', mcap:0.3},
+    {s:'RRC', d:'RRC', sector:'Energy', mcap:9},
+    {s:'RTX', d:'RTX', sector:'Industrials', mcap:180},
+    {s:'RUM', d:'RUM', sector:'Communication Services', mcap:3},
+    {s:'RVTY', d:'RVTY', sector:'Healthcare', mcap:15},
+    {s:'RXRX', d:'RXRX', sector:'Healthcare', mcap:3},
+    {s:'SANM', d:'SANM', sector:'Technology', mcap:8},
+    {s:'SAP', d:'SAP', sector:'Technology', mcap:250},
+    {s:'SBUX', d:'SBUX', sector:'Consumer Cyclical', mcap:100},
+    {s:'SCHW', d:'SCHW', sector:'Financial', mcap:150},
+    {s:'SFM', d:'SFM', sector:'Consumer Defensive', mcap:13},
+    {s:'SG', d:'SG', sector:'Consumer Cyclical', mcap:1},
+    {s:'SHAK', d:'SHAK', sector:'Consumer Cyclical', mcap:4},
+    {s:'SHOP', d:'SHOP', sector:'Technology', mcap:150},
+    {s:'SKHY', d:'SKHY', sector:'Other', mcap:null}, /* Ticker identity unconfirmed — SK Hynix itself trades on the Korea Exchange (KRX:000660), not under this symbol. Kept per your list as-is; verify what this ticker actually maps to before trusting its data. */
+    {s:'SLGN', d:'SLGN', sector:'Consumer Cyclical', mcap:7},
+    {s:'SMCI', d:'SMCI', sector:'Technology', mcap:25},
+    {s:'SMR', d:'SMR', sector:'Industrials', mcap:4},
+    {s:'SNDK', d:'SNDK', sector:'Technology', mcap:20},
+    {s:'SNPS', d:'SNPS', sector:'Technology', mcap:90},
+    {s:'SOFI', d:'SOFI', sector:'Financial', mcap:15},
+    {s:'SOLS', d:'SOLS', sector:'Basic Materials', mcap:1},
+    {s:'SOUN', d:'SOUN', sector:'Technology', mcap:5},
+    {s:'SPCX', d:'SPCX', sector:'Other', mcap:null}, /* SpaceX is NOT publicly traded — no real market cap exists and no exchange ticker exists either, so this row can never populate. */
+    {s:'SPOT', d:'SPOT', sector:'Communication Services', mcap:140},
+    {s:'SRTS', d:'SRTS', sector:'Healthcare', mcap:0.1},
+    {s:'STX', d:'STX', sector:'Technology', mcap:35},
+    {s:'STZ', d:'STZ', sector:'Consumer Defensive', mcap:30},
+    {s:'SUPV', d:'SUPV', sector:'Financial', mcap:1},
+    {s:'SWKS', d:'SWKS', sector:'Technology', mcap:9},
+    {s:'SYM', d:'SYM', sector:'Industrials', mcap:20},
+    {s:'SYNA', d:'SYNA', sector:'Technology', mcap:3},
+    {s:'T', d:'T', sector:'Communication Services', mcap:180},
+    {s:'TE', d:'TE', sector:'Industrials', mcap:55},
+    {s:'TEAM', d:'TEAM', sector:'Technology', mcap:50},
+    {s:'TEM', d:'TEM', sector:'Healthcare', mcap:10},
+    {s:'TEN', d:'TEN', sector:'Energy', mcap:1.5},
+    {s:'TER', d:'TER', sector:'Technology', mcap:20},
+    {s:'TGT', d:'TGT', sector:'Consumer Defensive', mcap:45},
+    {s:'TKO', d:'TKO', sector:'Communication Services', mcap:25},
+    {s:'TLN', d:'TLN', sector:'Utilities', mcap:15},
+    {s:'TMDX', d:'TMDX', sector:'Healthcare', mcap:5},
+    {s:'TMO', d:'TMO', sector:'Healthcare', mcap:180},
+    {s:'TMUS', d:'TMUS', sector:'Communication Services', mcap:250},
+    {s:'TOL', d:'TOL', sector:'Consumer Cyclical', mcap:12},
+    {s:'TOST', d:'TOST', sector:'Technology', mcap:15},
+    {s:'TROO', d:'TROO', sector:'Other', mcap:0.1},
+    {s:'TSCO', d:'TSCO', sector:'Consumer Cyclical', mcap:25},
+    {s:'TSEM', d:'TSEM', sector:'Technology', mcap:5},
+    {s:'TSM', d:'TSM', sector:'Technology', mcap:900},
+    {s:'TSSI', d:'TSSI', sector:'Technology', mcap:1},
+    {s:'TTD', d:'TTD', sector:'Communication Services', mcap:30},
+    {s:'TTWO', d:'TTWO', sector:'Communication Services', mcap:30},
+    {s:'TWLO', d:'TWLO', sector:'Technology', mcap:15},
+    {s:'TWST', d:'TWST', sector:'Healthcare', mcap:2},
+    {s:'TXN', d:'TXN', sector:'Technology', mcap:170},
+    {s:'UAL', d:'UAL', sector:'Industrials', mcap:30},
+    {s:'UAMY', d:'UAMY', sector:'Basic Materials', mcap:0.3},
+    {s:'UAVS', d:'UAVS', sector:'Industrials', mcap:0.05},
+    {s:'UEC', d:'UEC', sector:'Energy', mcap:3},
+    {s:'ULTA', d:'ULTA', sector:'Consumer Cyclical', mcap:20},
+    {s:'UMAC', d:'UMAC', sector:'Industrials', mcap:0.3},
+    {s:'UNP', d:'UNP', sector:'Industrials', mcap:140},
+    {s:'UPST', d:'UPST', sector:'Financial', mcap:7},
+    {s:'URBN', d:'URBN', sector:'Consumer Cyclical', mcap:5},
+    {s:'UTHR', d:'UTHR', sector:'Healthcare', mcap:13},
+    {s:'UUUU', d:'UUUU', sector:'Energy', mcap:2},
+    {s:'VALE', d:'VALE', sector:'Basic Materials', mcap:45},
+    {s:'VECO', d:'VECO', sector:'Technology', mcap:2},
+    {s:'VEEV', d:'VEEV', sector:'Healthcare', mcap:35},
+    {s:'VERI', d:'VERI', sector:'Technology', mcap:0.3},
+    {s:'VIAV', d:'VIAV', sector:'Technology', mcap:2},
+    {s:'VKTX', d:'VKTX', sector:'Healthcare', mcap:5},
+    {s:'VPG', d:'VPG', sector:'Technology', mcap:0.4},
+    {s:'VRSK', d:'VRSK', sector:'Industrials', mcap:35},
+    {s:'VRSN', d:'VRSN', sector:'Technology', mcap:25},
+    {s:'VRT', d:'VRT', sector:'Industrials', mcap:50},
+    {s:'VRTX', d:'VRTX', sector:'Healthcare', mcap:120},
+    {s:'VST', d:'VST', sector:'Utilities', mcap:55},
+    {s:'VZ', d:'VZ', sector:'Communication Services', mcap:180},
+    {s:'WDAY', d:'WDAY', sector:'Technology', mcap:65},
+    {s:'WDC', d:'WDC', sector:'Technology', mcap:30},
+    {s:'WDFC', d:'WDFC', sector:'Basic Materials', mcap:3},
+    {s:'WH', d:'WH', sector:'Consumer Cyclical', mcap:7},
+    {s:'WIMI', d:'WIMI', sector:'Technology', mcap:0.1},
+    {s:'WKEY', d:'WKEY', sector:'Technology', mcap:0.1},
+    {s:'WPM', d:'WPM', sector:'Basic Materials', mcap:35},
+    {s:'WULF', d:'WULF', sector:'Financial', mcap:4},
+    {s:'WYNN', d:'WYNN', sector:'Consumer Cyclical', mcap:11},
+    {s:'XPEV', d:'XPEV', sector:'Consumer Cyclical', mcap:15},
+    {s:'XYZ', d:'XYZ', sector:'Technology', mcap:40},
+    {s:'YOU', d:'YOU', sector:'Technology', mcap:5},
+    {s:'YUM', d:'YUM', sector:'Consumer Cyclical', mcap:38},
+    {s:'Z', d:'Z', sector:'Communication Services', mcap:16},
+    {s:'ZETA', d:'ZETA', sector:'Technology', mcap:4},
+    {s:'ZM', d:'ZM', sector:'Technology', mcap:20},
+    {s:'ZS', d:'ZS', sector:'Technology', mcap:30},
+    {s:'SSNLF', d:'SAMSUNG', sector:'Technology', mcap:380},
+    {s:'SBGSF', d:'SOFTBANK GRP', sector:'Communication Services', mcap:120},
 
   ],
   etf: [
@@ -2452,6 +2571,217 @@ function capTierFromMcapUSD(mcap){
 }
 UNI.us.forEach(def=>{ def.g = capTierFromMcapUSD(def.mcap); });
 
+/* ══════════════════════════════════
+   LIVE MARKET CAPS  (CFG.GSHEET_CSV_URLS.mktcap)
+   ────────────────────────────────────
+   The static `mcap` numbers in UNI were hand-entered and 145 India stocks plus
+   most of the US list have `null`. getRows() treats a null mcap as "unknown,
+   don't exclude", so the minimum-market-cap filter was quietly a no-op for
+   them, AND capTierFromMcap() defaults null to 'SC' — so those rows also wore
+   a Small Cap badge that was a guess, not a measurement.
+
+   The MktCap tab fixes both. The rule is: LIVE VALUE WINS *IF IT SURVIVES THE
+   SANITY GUARD BELOW*, STATIC IS THE FALLBACK. A ticker absent from the tab (or
+   a tab that never loads) keeps its static number, which is why the whole
+   feature degrades to today's behaviour rather than to blanks.
+
+   ─── WHY THERE IS A GUARD AT ALL ───
+   The tab is filled by GOOGLEFINANCE, which fails in three ways that all look
+   like data rather than like errors. Verified against the live published tab:
+
+   1. ADR CONTAMINATION. An Indian stock that also trades as a US ADR comes back
+      with the ADR's market cap in US DOLLARS. Divided by 10^7 for ₹ Crore that
+      lands ~90–137x too small: HDFCBANK.NS 11,974.72 (should be ~1,500,000 Cr),
+      ICICIBANK.NS 10,847.44, INFY.NS 4,661.4, DRREDDY.NS 1,000.29,
+      WIPRO.NS 1,904.52. Stocks without an ADR are correct (SBIN.NS 947,799.8,
+      RELIANCE.NS 1,768,591.33, TCS.NS 856,021.26), so the failure is not
+      market-wide and cannot be corrected with a blanket multiplier.
+   2. A SHARED WRONG VALUE. When the lookup fails, GOOGLEFINANCE hands back
+      whatever was last in the Scratch cell, so ONE number appears against many
+      unrelated tickers: 13.73 against GLD/ISRG/JEPI/XLB/XLC/XLK/XLP/XLRE/XLV/
+      XLY/DELL/DOCN, 293.04 against BABA/COHR/CRDO/MPWR/NVTS/SOFI/SYM/TSEM.
+      Two unrelated companies sharing a cap to the cent is a coincidence; twelve
+      is a signature.
+   3. ETFs HAVE NO MARKET CAP. Whatever comes back for one is the index level or
+      a stale AUM figure, never a capitalisation.
+
+   The guard therefore rejects, in order: values shared by MCAP_DUP_MIN or more
+   tickers, values that disagree with a trustworthy static number by more than
+   MCAP_MAX_RATIO, and anything at all aimed at UNI.etf. A rejected value falls
+   back to the static one; with no static number it stays null, which getRows()
+   reads as "unknown, don't exclude". Nothing is ever silently corrected — a
+   number we cannot vouch for is dropped, not scaled.
+
+   KNOWN LIMIT, stated rather than hidden: rule 2 needs 3+ sharers, so the
+   two-ticker cluster 177.56 (BLK, IBIT) is only caught for IBIT, via the ETF
+   rule. BLK keeps a wrong live cap unless a static value exists to disagree
+   with it. Lowering the threshold to 2 would start rejecting genuine ties.
+══════════════════════════════════ */
+const MCAP_LIVE={};             // ticker -> market cap in that market's own units
+let MCAP_LIVE_LOADED=false;     // the fetch was attempted (success or not)
+
+/* The hand-entered numbers, snapshotted BEFORE any merge touches def.mcap.
+   applyLiveMcaps() has to compare live against static and to fall back to
+   static, and a merge that overwrote def.mcap in place would destroy the very
+   baseline the next comparison needs — running the guard twice would then
+   "agree" with whatever the first run wrote. */
+const MCAP_STATIC={};
+['india','us','etf'].forEach(m=>UNI[m].forEach(def=>{ MCAP_STATIC[def.s]=def.mcap??null; }));
+
+const MCAP_DUP_MIN=3;      // a value shared by this many tickers is a failure signature
+const MCAP_MAX_RATIO=5;    // live-vs-static disagreement beyond this is not a price move
+let MCAP_STATS=null;       // last applyLiveMcaps() tally, for the console summary and tests
+
+/* Values that appear against MCAP_DUP_MIN or more DIFFERENT tickers. Keyed on
+   the number itself, so the test is exact-equality: a genuine cluster of caps
+   that merely round to the same figure would still differ at full precision. */
+function mcapDupValues(live,minCount){
+  const min=minCount||MCAP_DUP_MIN;
+  const n=new Map();
+  for(const k in live){ const v=live[k]; n.set(v,(n.get(v)||0)+1); }
+  const out=new Set();
+  n.forEach((count,v)=>{ if(count>=min) out.add(v); });
+  return out;
+}
+
+/* True when the two numbers are too far apart to both be describing the same
+   company. Ratio-based rather than absolute because the same threshold has to
+   work for a ₹2,000 Cr micro cap and a ₹15L Cr mega cap. A missing or
+   non-positive static number is NOT a disagreement — there is nothing to
+   disagree with, and treating "unknown" as "conflicting" would throw away
+   exactly the live values this feature exists to supply. */
+function mcapDisagrees(liveV,staticV,maxRatio){
+  if(staticV==null||!isFinite(staticV)||staticV<=0) return false;
+  if(liveV==null||!isFinite(liveV)||liveV<=0) return true;
+  const r=maxRatio||MCAP_MAX_RATIO;
+  return liveV>staticV*r || staticV>liveV*r;
+}
+
+/* Ticker,MarketCap,UpdatedDate. Deliberately tolerant: a blank or unparseable
+   cap is SKIPPED, never stored as 0 — a 0 would read as "this company is worth
+   nothing" and would be excluded by every min-cap filter. */
+function parseMktCapCSV(text){
+  if(!text||typeof text!=='string') return null;
+  const lines=text.trim().split(/\r?\n/);
+  if(lines.length<2) return null;
+  const out={};
+  for(let i=1;i<lines.length;i++){
+    const pts=lines[i].split(',');
+    if(pts.length<2) continue;
+    const t=(pts[0]||'').trim().replace(/^"|"$/g,'');
+    if(!t) continue;
+    const n=parseFloat((pts[1]||'').replace(/["\s,]/g,''));
+    if(!isFinite(n)||n<=0) continue;
+    out[t]=n;
+  }
+  return out;
+}
+
+/* Verdict on ONE live value for ONE ticker: null to accept, otherwise the
+   reason string it was rejected for. The order is the order the three failures
+   were diagnosed in, and it matters:
+     'dup'   first, because a value shared across unrelated tickers is a FAILED
+             LOOKUP. It carries no information about this ticker at all, so
+             there is nothing to be gained by then comparing it with a static
+             number that may itself be missing.
+     'ratio' second, because it is the only rule that can catch a plausible-
+             looking single value — the ADR-in-dollars case, where 11,974.72
+             next to a static 1,500,000 is the only evidence anything is wrong.
+     'etf'   last, as the backstop. It fires for every ETF regardless, so
+             putting it first would hide which ETFs were ALSO caught by the
+             other two and make the console summary less diagnostic. */
+function mcapRejectReason(sym,liveV,market,dupSet){
+  if(dupSet&&dupSet.has(liveV)) return 'dup';
+  if(mcapDisagrees(liveV,MCAP_STATIC[sym])) return 'ratio';
+  if(market==='etf') return 'etf';   // an index level or a stale AUM, never a capitalisation
+  return null;
+}
+
+/* Merges the SURVIVING live caps over UNI and RECOMPUTES the cap tier from the
+   merged value, which is the whole point — otherwise the 145 null-mcap India
+   rows keep their defaulted 'SC' badge while the filter uses the real number.
+   India and US use different tier ladders because their units differ
+   (Rs Cr vs $B); ETFs have no market cap concept, so their tier is left alone
+   entirely (they carry a fixed g:'ETF' badge, not a size tier).
+
+   A rejected value is not "skipped" — def.mcap is written back from the
+   MCAP_STATIC snapshot. Assigning rather than leaving it alone is what makes
+   this function IDEMPOTENT: run it twice and the second run still compares live
+   against the ORIGINAL hand-entered number, instead of against whatever the
+   first run happened to write. */
+function applyLiveMcaps(){
+  const dups=mcapDupValues(MCAP_LIVE);
+  const st={applied:0,dup:0,ratio:0,etf:0,fellBack:0,leftNull:0,dupValues:dups.size};
+  [['india',capTierFromMcap],['us',capTierFromMcapUSD],['etf',null]].forEach(([mkt,tierFn])=>{
+    UNI[mkt].forEach(def=>{
+      const live=MCAP_LIVE[def.s];
+      if(live!=null&&isFinite(live)){
+        const why=mcapRejectReason(def.s,live,mkt,dups);
+        if(why){
+          st[why]++;
+          if(mkt!=='etf'){
+            const fb=MCAP_STATIC[def.s];
+            def.mcap=fb==null?null:fb;
+            fb==null?st.leftNull++:st.fellBack++;   // null reads as "unknown, don't exclude" in getRows()
+          }
+        } else {
+          def.mcap=live; st.applied++;
+        }
+      }
+      if(tierFn) def.g=tierFn(def.mcap);   // recompute either way: static rows must stay correct too
+    });
+  });
+  MCAP_STATS=st;
+  return st;
+}
+
+/* Loaded ONCE, never per market — the tab covers every ticker in one file and
+   it is a few tens of KB. Never rejects: a missing URL, a dead URL or a garbage
+   body all land on "keep the static numbers". */
+async function loadMktCapData(){
+  if(MCAP_LIVE_LOADED) return null;
+  MCAP_LIVE_LOADED=true;
+  const url=CFG.GSHEET_CSV_URLS && CFG.GSHEET_CSV_URLS.mktcap;
+  if(!url){
+    console.log('[mktcap] No URL set for the "MktCap" tab in CFG.GSHEET_CSV_URLS.mktcap — '+
+      'using the static mcap values built into UNI. To get live caps: publish the '+
+      '"MktCap" tab (File > Share > Publish to web > MktCap > CSV) and paste its URL there.');
+    return null;
+  }
+  const ctrl=new AbortController();
+  const tid=setTimeout(()=>ctrl.abort(),30000);
+  try{
+    const res=await fetch(url,{signal:ctrl.signal});
+    clearTimeout(tid);
+    if(!res.ok){
+      console.warn(`[mktcap] The "MktCap" tab returned HTTP ${res.status} — keeping the static mcap values.`);
+      return null;
+    }
+    const parsed=parseMktCapCSV(await res.text());
+    const got=parsed?Object.keys(parsed).length:0;
+    if(!got){
+      console.warn('[mktcap] The "MktCap" tab loaded but held no usable rows — keeping the static mcap values. Expected columns: Ticker,MarketCap,UpdatedDate.');
+      return null;
+    }
+    Object.assign(MCAP_LIVE,parsed);
+    const st=applyLiveMcaps();
+    /* ONE line, not one per ticker. A per-ticker log of ~1,400 rows buries the
+       number that actually matters (how many were rejected) and makes the
+       console useless for every other feature on the page. */
+    console.log(`[mktcap] ${got} live caps read · ${st.applied} applied · `+
+      `${st.dup+st.ratio+st.etf} rejected (${st.dup} shared-value across ${st.dupValues} `+
+      `duplicate figures, ${st.ratio} >${MCAP_MAX_RATIO}x the static number, ${st.etf} ETF) · `+
+      `of the rejected stock rows ${st.fellBack} fell back to a static cap and ${st.leftNull} stayed unknown.`);
+    renderTable(CUR); updateStatus();
+    return parsed;
+  } catch(e){
+    clearTimeout(tid);
+    console.warn('[mktcap] Could not load the "MktCap" tab:',
+      e.name==='AbortError'?'timed out':e.message, '— keeping the static mcap values.');
+    return null;
+  }
+}
+
 /* Market cap filter — units and default differ by market:
    India: Rs Crore, default 5,000
    US:    $ Billion, default 150 */
@@ -2546,7 +2876,295 @@ function saveReviewRemote(sym, status){
   }).catch(e=>console.warn('Could not save review mark to Sheet (kept locally):', e.message));
 }
 
+/* ══════════════════════════════════
+   localStorage, guarded
+   ────────────────────────────────
+   Every persisted feature below goes through these two. localStorage throws —
+   not returns null — in Safari private mode, when a storage quota is full, and
+   whenever a page is embedded with third-party storage blocked. An unguarded
+   getItem at module scope takes the whole page down before a single row
+   renders, so "storage is unavailable" has to degrade to "this session is
+   in-memory only", never to a blank screen.
+══════════════════════════════════ */
+function lsRead(key){
+  try{ return localStorage.getItem(key); } catch(e){ return null; }
+}
+function lsWrite(key,val){
+  try{ localStorage.setItem(key,val); return true; }
+  catch(e){ console.warn(`Could not save "${key}" to localStorage (${e.message}) — this session only.`); return false; }
+}
+
+/* ══════════════════════════════════
+   NOTES  (persisted)
+   ────────────────────────────────
+   Notes used to be a bare in-memory object, which meant reviews survived a
+   reload and notes — the thing you actually typed — did not. Persisted exactly
+   the way REV is (see saveReviewsLocal/loadReviewsLocal): same shape, same
+   failure handling.
+
+   The key carries its OWN version and is deliberately NOT derived from
+   CFG.VER. CFG.VER versions the computed-indicator CACHE, and bumping it is
+   routine — a note is user-authored content and must outlive every such bump.
+══════════════════════════════════ */
 const NOTES = {};         // symbol -> string
+const NOTES_LS_KEY='sm_notes_v1';
+
+function saveNotesLocal(){ lsWrite(NOTES_LS_KEY, JSON.stringify(NOTES)); }
+function loadNotesLocal(){
+  try{
+    const raw=lsRead(NOTES_LS_KEY);
+    if(!raw) return;
+    const saved=JSON.parse(raw);
+    if(!saved||typeof saved!=='object'||Array.isArray(saved)) return;
+    // An empty string is "no note"; keeping it would resurrect blank rows
+    // forever and make Clear Notes look like it half-worked.
+    Object.keys(saved).forEach(k=>{
+      if(typeof saved[k]==='string' && saved[k]!=='') NOTES[k]=saved[k];
+    });
+  } catch(e){ /* corrupt payload: start with no notes rather than no page */ }
+}
+/* The Notes <input>'s onchange target. It is a named function rather than the
+   old inline `NOTES[sym]=this.value` precisely so the write and the save can
+   never drift apart — there is one place a note is set. */
+function setNote(sym,text){
+  const v=String(text==null?'':text);
+  if(v==='') delete NOTES[sym]; else NOTES[sym]=v;
+  saveNotesLocal();
+}
+
+/* ══════════════════════════════════
+   WATCHLIST  (persisted)
+   ────────────────────────────────
+   A per-ticker star, global across markets. localStorage is the WORKING store,
+   not a cache in front of something else.
+
+   ON REMOTE SYNC: the Apps Script already declares SHEET_UNIVERSE='Watchlist'
+   and answers doGet(action=getWatchlist) / doPost(action=saveWatchlist). Both
+   need a DEPLOYED web-app /exec URL in CFG.REVIEWS_API_URL, which is blank by
+   default and, for most users, will stay blank. Wiring the client to an unset
+   endpoint would produce a feature that looks synced and silently is not — so
+   the sync is a single explicitly-guarded hook (syncWatchlistRemote) that does
+   nothing at all until that URL is filled in, and localStorage is the truth
+   either way.
+══════════════════════════════════ */
+const WATCH = {};         // symbol -> true (absent = not watched)
+const WATCH_LS_KEY='sm_watchlist_v1';
+
+function saveWatchLocal(){ lsWrite(WATCH_LS_KEY, JSON.stringify(Object.keys(WATCH))); }
+function loadWatchLocal(){
+  try{
+    const raw=lsRead(WATCH_LS_KEY);
+    if(!raw) return;
+    const saved=JSON.parse(raw);
+    if(!Array.isArray(saved)) return;
+    saved.forEach(t=>{ if(typeof t==='string'&&t) WATCH[t]=true; });
+  } catch(e){ /* corrupt payload: empty watchlist beats a dead page */ }
+}
+function isWatched(sym){ return !!WATCH[sym]; }
+function watchCount(){ return Object.keys(WATCH).length; }
+function toggleWatch(sym){
+  if(WATCH[sym]) delete WATCH[sym]; else WATCH[sym]=true;
+  saveWatchLocal();
+  syncWatchlistRemote();
+  syncFilterToggles();          // the count on the Watchlist toggle
+  if(F_WL){ VISIBLE=CFG.INIT; renderTable(CUR); updateStatus(); }
+  else {
+    // Same optimistic in-place patch setRev() uses: repaint one star, not 900 rows.
+    const el=document.getElementById('r-'+sym);
+    const st=el&&el.querySelector('.wl-star');
+    if(st) st.outerHTML=watchC(sym);
+    else { renderTable(CUR); updateStatus(); }
+  }
+}
+/* THE HOOK, not the feature. Returns immediately unless a web-app URL is
+   configured, so nothing about the watchlist depends on a deployment existing. */
+function syncWatchlistRemote(){
+  if(!CFG.REVIEWS_API_URL) return false;
+  const today=new Date().toISOString().slice(0,10);
+  fetch(CFG.REVIEWS_API_URL, {
+    method:'POST',
+    headers:{'Content-Type':'text/plain'}, // simple request — no CORS preflight, same as saveReviewRemote
+    body: JSON.stringify({action:'saveWatchlist',
+      watchlist:Object.keys(WATCH).map(t=>[t,today,''])})
+  }).catch(e=>console.warn('Could not sync the watchlist to the Sheet (kept locally):', e.message));
+  return true;
+}
+
+/* ══════════════════════════════════
+   SAVED SCREENS  (persisted)
+   ────────────────────────────────
+   A screen is the WHOLE filter setup under a name: every filter-bar control,
+   the advanced-filter object, and the sort. SCREEN_FIELDS is the single list
+   the capture, the restore and the drift check all read, so a filter added
+   later cannot be captured but not restored (or vice versa) — the classic way
+   a "saved screen" quietly loses one control.
+══════════════════════════════════ */
+const SCREENS_LS_KEY='sm_saved_screens_v1';
+/* Explicit getter/setter pairs, NOT globalThis[name].
+   The filter state is declared with top-level `let`, and top-level let/const
+   are script-scoped — they are NOT properties of globalThis. `globalThis.F_CAP`
+   reads undefined in a browser and in the test vm alike, so a name-string
+   approach would have captured a screen full of `undefined` and restored it
+   over every filter. These two objects are the one place the field list lives;
+   SCREEN_FIELDS is derived from them so capture and restore cannot diverge. */
+const SCREEN_GET={
+  F_CAP:()=>F_CAP, F_SCT:()=>F_SCT, F_EMA:()=>F_EMA, F_RSI:()=>F_RSI,
+  F_PIV:()=>F_PIV, F_WPIV:()=>F_WPIV, F_REV:()=>F_REV, F_ALIGN:()=>F_ALIGN, F_BO:()=>F_BO,
+  F_DWA:()=>F_DWA,
+  MIN_MCAP:()=>MIN_MCAP, SEARCH:()=>SEARCH, SORT_C:()=>SORT_C, SORT_D:()=>SORT_D,
+  /* Not a filter, but it IS part of "what the table is showing": a screen saved
+     while sorted by Gain% since 2026-01-01 restores to a table sorted on an
+     empty column unless the date comes back with it. */
+  HIST_DATE:()=>HIST_DATE,
+};
+const SCREEN_SET={
+  F_CAP:v=>{F_CAP=v}, F_SCT:v=>{F_SCT=v}, F_EMA:v=>{F_EMA=v}, F_RSI:v=>{F_RSI=v},
+  F_PIV:v=>{F_PIV=v}, F_WPIV:v=>{F_WPIV=v}, F_REV:v=>{F_REV=v}, F_ALIGN:v=>{F_ALIGN=!!v}, F_BO:v=>{F_BO=!!v},
+  F_DWA:v=>{F_DWA=!!v},
+  MIN_MCAP:v=>{MIN_MCAP=+v||0}, SEARCH:v=>{SEARCH=v}, SORT_C:v=>{SORT_C=v}, SORT_D:v=>{SORT_D=v},
+  // Memo is keyed on the date, so it must be dropped whenever the date is set
+  // from anywhere other than applyHistDate().
+  HIST_DATE:v=>{HIST_DATE=v||''; HIST_MEMO={_k:''};},
+};
+const SCREEN_FIELDS=Object.keys(SCREEN_GET);
+let SCREENS={};            // name -> screen object
+let ACTIVE_SCREEN='';      // '' = no screen applied
+
+function loadScreensLocal(){
+  try{
+    const raw=lsRead(SCREENS_LS_KEY);
+    if(!raw) return;
+    const saved=JSON.parse(raw);
+    if(!saved||typeof saved!=='object'||Array.isArray(saved)) return;
+    // Per-screen validation: one corrupt entry must not discard the rest, and a
+    // non-object entry must never reach applyScreen() and assign undefined
+    // into every filter.
+    Object.keys(saved).forEach(k=>{
+      const v=saved[k];
+      if(v&&typeof v==='object'&&!Array.isArray(v)) SCREENS[k]=v;
+    });
+  } catch(e){ SCREENS={}; /* corrupt payload: no saved screens, but the page starts */ }
+}
+function saveScreensLocal(){ lsWrite(SCREENS_LS_KEY, JSON.stringify(SCREENS)); }
+
+function captureScreen(){
+  const out={};
+  SCREEN_FIELDS.forEach(f=>{ out[f]=SCREEN_GET[f](); });
+  out.ADV=cloneAdv(ADV);   // deep — ADV is nested, and a shared reference would
+                           // make every saved screen mutate with the live one
+  return out;
+}
+/* Canonical serialisation for the drift check. Compares FIELD BY FIELD in a
+   fixed order rather than JSON.stringify-ing the objects directly, because key
+   order in a JSON round-trip is not something to bet a UI indicator on. */
+function screenKey(sc){
+  if(!sc) return '';
+  const parts=SCREEN_FIELDS.map(f=>String(sc[f]===undefined?'':sc[f]));
+  const adv=sc.ADV||{};
+  Object.keys(ADV_DEFAULTS).sort().forEach(g=>{
+    const o=adv[g]||{};
+    Object.keys(ADV_DEFAULTS[g]).sort().forEach(k=>parts.push(g+'.'+k+'='+String(o[k])));
+  });
+  return JSON.stringify(parts);
+}
+function screenIsDirty(){
+  if(!ACTIVE_SCREEN||!SCREENS[ACTIVE_SCREEN]) return false;
+  return screenKey(captureScreen())!==screenKey(SCREENS[ACTIVE_SCREEN]);
+}
+
+function applyScreen(name){
+  const sc=SCREENS[name];
+  if(!sc) return false;
+  SCREEN_FIELDS.forEach(f=>{ if(sc[f]!==undefined) SCREEN_SET[f](sc[f]); });
+  // ADV is merged per group over the defaults, exactly like loadAdvFilters —
+  // a screen saved before a filter group existed gets that group's defaults
+  // instead of undefined fields that passesAdv() would read as NaN.
+  ADV=cloneAdv(ADV_DEFAULTS);
+  Object.keys(ADV_DEFAULTS).forEach(k=>{
+    if(sc.ADV && typeof sc.ADV[k]==='object') Object.assign(ADV[k], sc.ADV[k]);
+  });
+  ACTIVE_SCREEN=name;
+  VISIBLE=CFG.INIT;
+  syncScreenToDom();
+  renderTable(CUR); updateStatus();
+  return true;
+}
+/* Paints the restored state back onto the controls. Every lookup is guarded:
+   this also runs from tests and from a DOM that may not have every control
+   present yet. */
+function syncScreenToDom(){
+  const set=(id,v)=>{ const el=$(id); if(el) el.value=v; };
+  set('sctFil',F_SCT); set('emaFil',F_EMA); set('rsiFil',F_RSI);
+  set('pivFil',F_PIV); set('wpivFil',F_WPIV); set('revFil',F_REV); set('mcapFil',MIN_MCAP);
+  set('searchQ',SEARCH);
+  syncFilterToggles();
+  syncHistLabel();   // repaints the date box AND the two column headers
+  /* The advanced-filter form is deliberately NOT repainted here: openAdvFilters()
+     already reads every control straight off ADV each time it opens, so there is
+     no second copy of that state to keep in step. */
+  document.querySelectorAll('#segGrp .seg-btn').forEach(b=>
+    b.classList.toggle('active', b.textContent===F_CAP));
+  document.querySelectorAll('th[data-s]').forEach(h=>{
+    h.classList.remove('sa','sd');
+    if(h.dataset && h.dataset.s===SORT_C) h.classList.add(SORT_D==='asc'?'sa':'sd');
+  });
+  updateAdvBtn();
+}
+
+function saveScreenPrompt(){
+  const name=(prompt('Save the current filters as a screen. Name:', ACTIVE_SCREEN||'')||'').trim();
+  if(!name) return false;
+  if(SCREENS[name] && !confirm(`A screen called "${name}" already exists. Overwrite it?`)) return false;
+  SCREENS[name]=captureScreen();
+  saveScreensLocal();
+  ACTIVE_SCREEN=name;
+  buildScreenSelect();
+  updateScreenUI();
+  return true;
+}
+function deleteScreen(name){
+  if(!SCREENS[name]) return false;
+  delete SCREENS[name];
+  saveScreensLocal();
+  if(ACTIVE_SCREEN===name) ACTIVE_SCREEN='';
+  buildScreenSelect();
+  updateScreenUI();
+  return true;
+}
+function deleteScreenPrompt(){
+  const name=ACTIVE_SCREEN || ($('screenSel')?$('screenSel').value:'');
+  if(!name){ alert('Pick a saved screen first, then delete it.'); return false; }
+  if(!confirm(`Delete the saved screen "${name}"? This cannot be undone.`)) return false;
+  return deleteScreen(name);
+}
+function onScreenPick(name){
+  if(!name){ ACTIVE_SCREEN=''; updateScreenUI(); return; }
+  applyScreen(name);
+}
+function buildScreenSelect(){
+  const sel=$('screenSel'); if(!sel) return;
+  const names=Object.keys(SCREENS).sort();
+  sel.innerHTML='<option value="">Screens…</option>'+
+    names.map(n=>`<option value="${escAttr(n)}"${n===ACTIVE_SCREEN?' selected':''}>${n}</option>`).join('');
+  sel.value=ACTIVE_SCREEN;
+}
+/* The visible "which screen am I on, and have I wandered off it" indicator.
+   Called from renderTable(), so every path that changes a filter — dropdowns,
+   toggles, segment buttons, header sorts, Clear Filters — updates it without
+   each one having to remember to. */
+function updateScreenUI(){
+  const el=$('screenInd'); if(!el) return;
+  if(!ACTIVE_SCREEN||!SCREENS[ACTIVE_SCREEN]){
+    el.textContent=''; el.className='screen-ind'; el.title=''; return;
+  }
+  const dirty=screenIsDirty();
+  el.textContent=dirty?`● ${ACTIVE_SCREEN} (modified)`:`● ${ACTIVE_SCREEN}`;
+  el.className='screen-ind'+(dirty?' drift':'');
+  el.title=dirty
+    ? `The filters no longer match the saved screen "${ACTIVE_SCREEN}". Save Screen under the same name to update it.`
+    : `Showing the saved screen "${ACTIVE_SCREEN}".`;
+}
+
 // 'rs' (the old blend's rank) is gone as a column and as a sort key; MRS Rank
 // is the same percentile and is what the table now opens sorted by.
 /* SORT_C empty = no explicit column sort, which is what selects the composite
@@ -2554,13 +3172,112 @@ const NOTES = {};         // symbol -> string
    same header a third time (or the "Default (Setup Score)" button) clears it. */
 let SORT_C = '', SORT_D = 'desc';
 let F_CAP='All', F_SCT='', F_EMA='', F_RSI='', F_PIV='', F_REV='';
+/* Weekly pivot zone. Its own binding rather than a mode on F_PIV, because the
+   point of having both is asking them TOGETHER — "above R1 on the day AND on
+   the week" is a different, stricter screen than either alone. */
+let F_WPIV='';
 /* The two one-click toggles in the filter bar. Booleans rather than another
    value on F_EMA, because they have to be able to stack with the dropdowns and
    with each other — "EMAs aligned AND has broken out AND RSI 50-70" is the
    point of them. */
 let F_ALIGN=false, F_BO=false;
+/* The Align column's own toggle. A THIRD boolean rather than a mode on
+   F_ALIGN: "EMAs aligned" is a daily-only question and "aligned D+W" is a
+   two-timeframe one, and a trader wanting both should get the intersection,
+   not have to pick. */
+let F_DWA=false;
+/* Watchlist filter. A third toggle rather than a value on an existing dropdown,
+   for the same reason as the other two: "watchlisted AND broken out AND RSI
+   50-70" is the point. */
+let F_WL=false;
 let SEARCH='', VISIBLE=CFG.INIT;
 let LOADING=false;
+
+/* ══════════════════════════════════
+   HISTORICAL PRICE / GAIN SINCE
+   ─────────────────────────────────
+   Reads the raw close series the sheet already holds (GSHEET_BY_MARKET[m][sym]
+   carries parallel `C` and `dates` arrays), so picking a date is a RE-RENDER,
+   never a refetch — nothing about the chosen date changes any indicator.
+
+   HIST_DATE is a module-level binding, not per-market state: the date you are
+   measuring from is a question you are asking, and switching from India to US
+   does not change the question. switchMkt() deliberately does not reset it.
+══════════════════════════════════ */
+let HIST_DATE='';          // '' = feature off, both columns show a dash
+/* Memo for one (market, date) pair. getRows() can call the lookup twice per
+   comparison while sorting, which is ~n log n binary searches over a 250-bar
+   array for no reason. Invalidated wholesale whenever either key changes. */
+let HIST_MEMO={_k:''};
+
+/* Resolve a requested calendar date to a real bar in THIS stock's own series.
+   Returns {price,date,exact} or null. Two rules carry the whole feature:
+
+   1. Non-trading day -> the most recent bar AT OR BEFORE it, and `date` reports
+      which bar that was. Presenting Friday's close under Sunday's date would be
+      a quietly wrong number, which is worse than an obviously missing one.
+   2. Before the first bar -> null. A stock that listed later genuinely has no
+      close on that date; returning its oldest available close would invent a
+      price and, worse, produce a plausible-looking Gain% from it.
+
+   `dates` are ISO YYYY-MM-DD and ascending, so lexicographic compare IS date
+   compare — no Date objects, and therefore no timezone to get wrong. */
+function histBarAt(gd,iso){
+  if(!gd||!iso) return null;
+  const D=gd.dates, C=gd.C;
+  if(!Array.isArray(D)||!Array.isArray(C)||!D.length||D.length!==C.length) return null;
+  if(iso<D[0]) return null;                       // rule 2
+  let lo=0,hi=D.length-1,idx=-1;                  // rule 1: last bar with date <= iso
+  while(lo<=hi){
+    const m=(lo+hi)>>1;
+    if(D[m]<=iso){ idx=m; lo=m+1; } else hi=m-1;
+  }
+  if(idx<0) return null;
+  const p=C[idx];
+  if(p==null||!isFinite(p)) return null;
+  return {price:p, date:D[idx], exact:D[idx]===iso};
+}
+/* Per-symbol lookup against the market's sheet map. Returns null — the same
+   answer as "no bar" — when the tab is not in memory (the cached-load path
+   never downloads it), because a dash is the honest reading either way. */
+function histFor(sym,market){
+  if(!HIST_DATE) return null;
+  const m=market||CUR;
+  const k=m+'|'+HIST_DATE;
+  if(HIST_MEMO._k!==k) HIST_MEMO={_k:k};
+  if(Object.prototype.hasOwnProperty.call(HIST_MEMO,sym)) return HIST_MEMO[sym];
+  const map=GSHEET_BY_MARKET[m];
+  const v=histBarAt(map&&map[sym], HIST_DATE);
+  HIST_MEMO[sym]=v;
+  return v;
+}
+/* (current / historical − 1) × 100. Guarded on a positive base: a zero or
+   negative close in the data would otherwise produce Infinity or a sign flip. */
+function histGain(cur,h){
+  if(h==null||cur==null||!(h.price>0)) return null;
+  return +((cur/h.price-1)*100).toFixed(2);
+}
+function histGainFor(sym,d,market){ return histGain(d?.price??null, histFor(sym,market)); }
+
+/* Applied by the Go button, not by the date input's own change event — see the
+   markup comment. Re-render only: no loadMarket, no fetch, no recompute. */
+function applyHistDate(){
+  const el=$('histDate');
+  HIST_DATE=el&&el.value?el.value:'';
+  HIST_MEMO={_k:''};
+  syncHistLabel();
+  VISIBLE=CFG.INIT;
+  renderTable(CUR); updateStatus();
+}
+/* The chosen date belongs in the header as well as under each price: without it
+   a column headed "Gain% since" does not say since when. */
+function syncHistLabel(){
+  const a=$('thHistLbl'), b=$('thHistGainLbl');
+  if(a) a.textContent = HIST_DATE?`Hist. Price ${HIST_DATE}`:'Hist. Price';
+  if(b) b.textContent = HIST_DATE?`Gain% since ${HIST_DATE}`:'Gain% since';
+  const inp=$('histDate');
+  if(inp&&inp.value!==HIST_DATE) inp.value=HIST_DATE;
+}
 
 /* ══════════════════════════════════
    MATH
@@ -2611,6 +3328,59 @@ function pivZone(price,piv){
   if(price>=s1)         return 'S1→PP';
   if(price>=s2)         return 'S2→S1';
   return '<S2';
+}
+
+/* ── THE NINE PIVOT-ZONE SCREENS ──────────────────────────────────────
+   One table drives all three consumers: the Daily dropdown, the Weekly
+   dropdown and getRows()'s filter. An option that no predicate can satisfy is
+   therefore not merely untested — it cannot be offered at all.
+
+   Eight of the nine map straight onto strings pivZone() already emits, and the
+   bands are EXCLUSIVE: "R1" is the R1→R2 band, not everything above R1 (that
+   is the separate "Above R1" option), and "S1" is the S2→S1 band by the same
+   symmetry. "S2" and "R2" are the open-ended outer bands.
+
+   "Near R1" is the one label with no equivalent in the zone model: pivZone()
+   reports which side of R1 the price is on and never how far away it is. Rather
+   than drop it or fake it with an adjacent band, it is computed honestly from
+   the levels themselves — |price ÷ R1 − 1| ≤ PIV_NEAR_PCT — which is why the
+   levels ride along on the row as d.dPiv / d.wPiv. It deliberately STRADDLES
+   R1: a stock 0.6% under the level and one 0.6% over it are both "at R1", and
+   that pair is exactly what the question is asking for. It therefore overlaps
+   "PP–R1" and "R1" by design; these options are alternatives, not a partition.
+
+   A stock whose pivots could not be computed (fewer than 2 bars) has piv=null
+   and is excluded from Near R1 — unknown is not near. */
+const PIV_NEAR_PCT=1;
+const PIV_OPTS=[
+  {v:'ar1',  label:'Above R1', test:z=>z==='R1→R2'||z==='R2+'},
+  {v:'r2',   label:'R2',       test:z=>z==='R2+'},
+  {v:'r1b',  label:'R1',       test:z=>z==='R1→R2'},
+  {v:'nr1',  label:'Near R1',  test:(z,price,piv)=>
+       piv!=null && piv.r1>0 && price!=null && Math.abs(price/piv.r1-1)*100<=PIV_NEAR_PCT},
+  {v:'ppr1', label:'PP–R1',    test:z=>z==='PP→R1'},
+  {v:'pp',   label:'Pivot',    test:z=>z==='PP'},
+  {v:'s1pp', label:'S1–PP',    test:z=>z==='S1→PP'},
+  {v:'s1b',  label:'S1',       test:z=>z==='S2→S1'},
+  {v:'s2',   label:'S2',       test:z=>z==='<S2'},
+];
+/* The three values the daily dropdown used to offer. Still HONOURED (a saved
+   screen from before this change must not silently become a different screen)
+   but no longer OFFERED. Note 'r1' meant "above R1" then and is a different
+   band now, which is exactly why the new values are spelled differently —
+   reusing the string would have quietly narrowed every old saved screen. */
+const PIV_LEGACY={
+  above: z=>['PP→R1','R1→R2','R2+'].includes(z),
+  r1:    z=>['R1→R2','R2+'].includes(z),
+  below: z=>['S1→PP','S2→S1','<S2'].includes(z),
+};
+function pivMatch(sel,zone,price,piv){
+  if(!sel) return true;                       // no screen selected
+  const o=PIV_OPTS.find(x=>x.v===sel);
+  if(o) return !!o.test(zone,price,piv);
+  const lg=PIV_LEGACY[sel];
+  if(lg) return !!lg(zone);
+  return true;   // a value from a future build screens nothing rather than emptying the table
 }
 
 /* Minervini trend template, 9 rules (was a 7-rule EMA-based approximation).
@@ -2720,6 +3490,16 @@ function emaSeries(arr,p){
 
 /* % change over the last N bars. Needs N+1 bars: the endpoints are
    arr[len-1] and arr[len-1-N], so 21 bars can NOT produce a 21-bar change. */
+/* pctChange() rounded to the 2dp the % columns display, keeping null as null.
+   Written as its own function rather than inline because `+(null).toFixed(2)`
+   is 0 — i.e. "not enough history" would render as a flat 0% change, which is
+   a claim about the stock rather than about the data. The multi-day change
+   columns are exactly where that lie is hardest to spot. */
+function barChange(arr,N){
+  const v=pctChange(arr,N);
+  return v==null?null:+v.toFixed(2);
+}
+
 function pctChange(arr,N){
   if(!arr||arr.length<N+1) return null;
   const a=arr[arr.length-1-N], b=arr[arr.length-1];
@@ -2808,6 +3588,10 @@ function computeTech(C,H,L,V,dates,sym,O){
   const n=C.length; if(n<2) return null;
   const price=C[n-1], prev=C[n-2]||C[n-1];
   const ch1d=+((price-prev)/prev*100).toFixed(2);
+  /* Multi-day changes over TRADING bars, not calendar days: 5/21/63 bars are
+     the conventional week/month/quarter. Each needs N+1 bars (6/22/64) and
+     barChange() returns null below that — never 0. */
+  const ch1w=barChange(C,5), ch1m=barChange(C,21), ch3m=barChange(C,63);
 
   const e10=ema(C,10), e20=ema(C,20);
   const e50=n>=50?ema(C,50):null;
@@ -2881,10 +3665,15 @@ function computeTech(C,H,L,V,dates,sym,O){
   const l52 = n>=H52_MIN_BARS ? Math.min(...L.slice(-win)) : null;
   const h52d = h52 ? +((price/h52-1)*100).toFixed(1) : null;
 
-  let dpz='—',wpz='—';
-  if(n>=2) dpz=pivZone(price,pivots(H[n-2],L[n-2],C[n-2]));
+  /* The LEVELS are kept, not just the zone label. pivZone() answers "which band
+     is price in", which is all the column needs, but the "Near R1" screen asks
+     "how far is price from R1" — a question the band label cannot answer at all.
+     Deriving it a second time in the filter would mean two implementations of
+     the pivot formula; keeping the levels on the row means one. */
+  let dpz='—',wpz='—',dPiv=null,wPiv=null;
+  if(n>=2){ dPiv=pivots(H[n-2],L[n-2],C[n-2]); dpz=pivZone(price,dPiv); }
   const wn=wk.closes.length;
-  if(wn>=2) wpz=pivZone(price,pivots(wk.highs[wn-2],wk.lows[wn-2],wk.closes[wn-2]));
+  if(wn>=2){ wPiv=pivots(wk.highs[wn-2],wk.lows[wn-2],wk.closes[wn-2]); wpz=pivZone(price,wPiv); }
 
   // Weekly volume ratio: latest completed week's volume vs avg of trailing 10 weeks
   let wVolRatio=null;
@@ -2957,14 +3746,14 @@ function computeTech(C,H,L,V,dates,sym,O){
   const currency=sym.endsWith('.NS')?'INR':'USD';
 
   return{
-    sym,price,ch1d,volume:todV,avgV,vRatio,h52d,h52,l52,
+    sym,price,ch1d,ch1w,ch1m,ch3m,volume:todV,avgV,vRatio,h52d,h52,l52,
     rsi14,wRsi,e10,e20,e50,e100,e150,e200,emaScr,
     sma50,sma150,sma200,slope200,slopeDir,
     xFast:XF,xSlow:XS,xFastEma,xSlowEma,xState,xBars,wxState,
     pattern,wPattern,
     consolDays:cons.days,consolRange:cons.range,volDry,monthlySetup,
     we10,we20,weEmaScr,
-    dpz,wpz,s2,sq,wVolRatio,
+    dpz,wpz,dPiv,wPiv,s2,sq,wVolRatio,
     boGain:bo.gain,boCnt:bo.count,retrace:bo.retrace,
     // Own returns (inputs to RS, never displayed as RS).
     pc21,pc55,pc10w,pcHist21,
@@ -3883,6 +4672,24 @@ function sparkC(hist){
 }
 /* Shown so the default ordering is explainable: the badge is exactly the test
    that lifted the row to the top. */
+/* The Align cell. The tooltip lists ALL EIGHT checks every time, marking each
+   one ✓ / ✕ / – so the reason a denominator is 7 is visible rather than
+   mysterious. Separators are " · " not newlines: .tip-box is white-space:normal,
+   so a \n would collapse to a space and run the list together. */
+function alignC(d){
+  const a=dwAlign(d);
+  if(!a) return '<span class="vm">—</span>';
+  const r=a.score/a.total;
+  const cls=r>=0.875?'al-hi':r>=0.625?'al-md':r>=0.375?'al-lo':'al-wk';
+  const list=a.details.map((x,i)=>
+    `${x.pass===null?'–':x.pass?'✓':'✕'} ${i+1}. ${x.label}${x.pass===null?' (no data — not counted)':''}`
+  ).join(' · ');
+  const missing=a.max-a.total;
+  const tip=`Daily and weekly agreement: ${a.score} of the ${a.total} checks that could be run.`
+    +(missing?` ${missing} of the 8 had no data and are left out of the total rather than counted against the stock.`:'')
+    +` · ${list}`;
+  return `<span class="algn ${cls}" data-tip="${escAttr(tip)}">${a.score}/${a.total}</span>`;
+}
 function setupC(d){
   if(!d) return '<span class="vm">—</span>';
   return isQualitySetup(d) ? '<span class="setup-badge">★ Setup</span>' : '<span class="vm">—</span>';
@@ -3905,6 +4712,78 @@ function revC(sym){
     `<div class="rev-b ${st===val?cls:'rb-off'}" title="${lbl}" onclick="setRev('${safe}','${val}')">${ico}</div>`
   ).join('')}</div>`;
 }
+/* The watchlist star. Rendered INSIDE the Ticker cell rather than as a column
+   of its own: the table's <th>/skelRow/errRow/dataRow widths are one number
+   that must agree everywhere, and a star does not need 40px of header to
+   explain itself. escAttr because tickers like M&M.NS and J&KBANK.NS carry an
+   ampersand straight into an inline handler. */
+function watchC(sym){
+  const on=isWatched(sym), safe=escAttr(sym);
+  return `<span class="wl-star${on?' on':''}" title="${on?'Remove from watchlist':'Add to watchlist'}" onclick="toggleWatch('${safe}')">${on?'★':'☆'}</span>`;
+}
+/* ── TRADINGVIEW DEEP LINKS ─────────────────────────────────────────────
+   Why three different intervals rather than one "open chart" link:
+   TradingView draws DAILY pivot levels on intraday charts up to 15 minutes,
+   and WEEKLY pivot levels on charts up to 1 hour. Open a daily chart from the
+   D-Pivot cell and the pivots you see are the WEEKLY ones — the numbers on
+   screen do not match the number in the cell you clicked, which is worse than
+   no link at all. So each cell links at the timeframe where its own figure is
+   the one TradingView plots:
+     Ticker cell → interval=D  (the price/EMA/RSI context the row describes)
+     D-Pivot     → interval=15 (daily pivots are drawn here)
+     W-Pivot     → interval=60 (weekly pivots are drawn here)          */
+const TV_BASE='https://www.tradingview.com/chart/';
+
+/* NSE: is the only exchange prefix we can state with confidence. Every .NS
+   ticker in this universe is by definition an NSE listing, so stripping the
+   Yahoo-style .NS suffix and prefixing NSE: is exact.
+
+   US symbols get NO prefix, on purpose. This universe mixes NASDAQ, NYSE and
+   AMEX listings and nothing in UNI.us records which is which, so any prefix we
+   invented would be a guess — and a WRONG guess is worse than none, because
+   "NASDAQ:GE" resolves to nothing while a bare "GE" makes TradingView run its
+   own symbol search and land on the right exchange. Bare symbol = correct for
+   all three exchanges; guessed prefix = correct for some and broken for the
+   rest. ETFs take the same path for the same reason. */
+function tvSymbol(sym){
+  return sym.endsWith('.NS') ? 'NSE:'+sym.slice(0,-3) : sym;
+}
+
+/* The raw URL. encodeURIComponent because five NSE tickers carry an ampersand
+   (M&M.NS, ARE&M.NS, GMRP&UI.NS, J&KBANK.NS, GVT&D.NS) and an unencoded & would
+   silently truncate the symbol at "M" and turn the rest into a bogus query
+   parameter. Note this is a SEPARATE concern from escAttr() below: this one is
+   about URL syntax, that one is about HTML attribute syntax, and the same
+   ticker needs both. */
+function tvURL(sym,interval){
+  return `${TV_BASE}?symbol=${encodeURIComponent(tvSymbol(sym))}&interval=${interval}`;
+}
+
+/* The icon itself.
+   - escAttr on the finished URL: its literal "&interval=" must become
+     "&amp;interval=" to be a valid HTML attribute value.
+   - stopPropagation so the click opens the chart and nothing else. Nothing is
+     currently bound to the row, but the star and the review buttons in these
+     same cells already are, and a link that also toggled a watchlist entry
+     would be a maddening bug to track down later.
+   - rel="noopener noreferrer" because target="_blank" otherwise hands the new
+     tab a window.opener reference back into this page. */
+function tvLink(sym,interval,tip){
+  return `<a class="tv-lnk" href="${escAttr(tvURL(sym,interval))}"`
+       + ` target="_blank" rel="noopener noreferrer"`
+       + ` onclick="event.stopPropagation()" data-tip="${escAttr(tip)}"`
+       + ` aria-label="Open ${escAttr(sym)} on TradingView">📈</a>`;
+}
+
+const TV_TIP_D='Open this stock on TradingView as a daily chart, in a new tab.';
+const TV_TIP_DP='Open this stock on TradingView as a 15-minute chart, in a new tab. '+
+  'TradingView draws DAILY pivot levels on intraday charts up to 15 minutes, so 15m is the '+
+  'timeframe where the levels on the chart are the same ones this cell is reporting. '+
+  'On a daily chart you would be shown the weekly pivots instead.';
+const TV_TIP_WP='Open this stock on TradingView as a 1-hour chart, in a new tab. '+
+  'TradingView draws WEEKLY pivot levels on charts up to 1 hour, so 1h is the timeframe '+
+  'where the levels on the chart match this cell. Anything faster shows the daily pivots.';
+
 function boGC(v){
   if(v==null) return '<span class="vm">—</span>';
   return `<span class="${v>=0?'vg':'vr'}">${v>=0?'+':''}${v}%</span>`;
@@ -3929,6 +4808,17 @@ function boFuC(v){
   const cls=v<=5?'fu-hot':v<=20?'fu-warm':'fu-cold';
   return `<span class="fu ${cls}">${v}d</span>`;
 }
+/* The historical close, with the bar date it actually came from printed under
+   it — always, not only when it was adjusted. A price with no date attached is
+   the failure mode this column exists to avoid. */
+function histC(h,cur){
+  if(h==null) return '<span class="vm">—</span>';
+  const t=h.exact?`Close on ${h.date}`
+                 :`${HIST_DATE} was not a trading day — this is the close on ${h.date}, the last trading day at or before it`;
+  return `<span style="font-weight:600">${fmtP(h.price,cur)}</span>`
+       + `<br><span class="hist-d${h.exact?'':' adj'}" title="${escAttr(t)}">${h.date}</span>`;
+}
+function histGC(v){ return fmtCh(v); }
 
 /* ══════════════════════════════════
    ROW RENDERING
@@ -3939,7 +4829,7 @@ function boFuC(v){
    reason: without them a table loading with columns switched off renders
    skeleton rows WIDER than the data rows underneath, because only the data
    rows' cells get hidden. Length must equal (th count − 4). */
-const SKEL_COLS=['c-setup','c-sector','','','c-status','','c-wrsi','c-vr','c-wvol','','c-wpiv','',
+const SKEL_COLS=['c-setup','c-align','c-sector','','','c-ch1w','c-ch1m','c-ch3m','c-hist','c-histg','c-status','','c-wrsi','c-vr','c-wvol','','c-wpiv','',
   'c-ema','c-wema','c-xcross','c-wcross','c-slope200','c-pattern','c-wpattern','c-consol',
   'c-monthly','','c-bocnt','c-followup','c-voldry','c-retrace','c-squeeze','','c-mrsrank','c-rs21',
   'c-rs55','c-rs10w','c-rsslope','c-rshist','','c-rstrend','c-notes'];
@@ -3949,7 +4839,7 @@ function skelRow(def,i){
   return `<tr id="r-${escAttr(def.s)}">
     <td class="td-n">${i}</td><td>${revC(def.s)}</td>
     <td>${capB(def.g)}</td>
-    <td><span class="ticker">${def.d}</span><br><span class="sec">${def.sector}</span></td>
+    <td>${watchC(def.s)}<span class="ticker">${def.d}</span><br><span class="sec">${def.sector}</span></td>
     ${SKEL_COLS.map((cls,j)=>`<td class="${cls}">${sk(j%3===0?'lg':j%2===0?'md':'sm')}</td>`).join('')}
   </tr>`;
 }
@@ -3970,22 +4860,31 @@ function dataRow(def,d,i){
   const safeSym=escAttr(def.s);
   const mcapText = def.mcap==null ? '' : (d.currency==='INR' ? fmtMcap(def.mcap) : fmtMcapUSD(def.mcap));
   const mcapLine = mcapText ? `<br><span class="sec" style="color:var(--text3)">${mcapText}</span>` : '';
+  // Resolved once per row, not once per cell: the price and the Gain% must be
+  // measured from the SAME bar, and looking it up twice invites them to drift.
+  const hist = histFor(def.s);
   return `<tr id="r-${safeSym}">
     <td class="td-n">${i}</td>
     <td>${revC(def.s)}</td>
     <td>${capB(cap)}</td>
-    <td><span class="ticker">${flag} ${def.d}</span><br><span class="sec">${def.sector}</span>${mcapLine}</td>
+    <td>${watchC(def.s)}<span class="ticker">${flag} ${def.d}</span>${tvLink(def.s,'D',TV_TIP_D)}<br><span class="sec">${def.sector}</span>${mcapLine}</td>
     <td class="c-setup">${setupC(d)}</td>
+    <td class="c-align">${alignC(d)}</td>
     <td class="c-sector">${def.sector||'—'}</td>
     <td style="font-weight:600">${fmtP(d.price,d.currency)}</td>
     <td>${fmtCh(d.ch1d)}</td>
+    <td class="c-ch1w">${fmtCh(d.ch1w)}</td>
+    <td class="c-ch1m">${fmtCh(d.ch1m)}</td>
+    <td class="c-ch3m">${fmtCh(d.ch3m)}</td>
+    <td class="c-hist">${histC(hist,d.currency)}</td>
+    <td class="c-histg">${histGC(histGain(d.price,hist))}</td>
     <td class="c-status">${statusC(d.s2)}</td>
     <td>${rsiC(d.rsi14)}</td>
     <td class="c-wrsi vm">${d.wRsi??'—'}</td>
     <td class="c-vr">${vrC(d.vRatio)}</td>
     <td class="c-wvol">${vrC(d.wVolRatio)}</td>
-    <td>${pivC(d.dpz)}</td>
-    <td class="c-wpiv">${pivC(d.wpz)}</td>
+    <td>${pivC(d.dpz)}${tvLink(def.s,'15',TV_TIP_DP)}</td>
+    <td class="c-wpiv">${pivC(d.wpz)}${tvLink(def.s,'60',TV_TIP_WP)}</td>
     <td>${h52C(d.h52d)}</td>
     <td class="c-ema">${emaBadgeRow(d.price,[['10',d.e10],['20',d.e20],['50',d.e50],['200',d.e200]])}</td>
     <td class="c-wema">${emaBadgeRow(d.price,[['10',d.we10],['20',d.we20]])}</td>
@@ -4011,8 +4910,8 @@ function dataRow(def,d,i){
     <td class="c-rshist">${sparkC(d.rsHist)}</td>
     <td>${d.leadRS!=null?ldC(d.leadRS):'<span class="vm">—</span>'}</td>
     <td class="c-rstrend">${rstC(d.rsTrend)}</td>
-    <td class="c-notes"><input class="note-in" value="${NOTES[def.s]||''}" placeholder="Add note…"
-      onchange="NOTES['${safeSym}']=this.value"/></td>
+    <td class="c-notes"><input class="note-in" value="${escAttr(NOTES[def.s]||'')}" placeholder="Add note…"
+      onchange="setNote('${safeSym}',this.value)"/></td>
   </tr>`;
 }
 
@@ -4020,8 +4919,8 @@ function errRow(def,i){
   return `<tr id="r-${escAttr(def.s)}" class="erow">
     <td class="td-n">${i}</td><td>${revC(def.s)}</td>
     <td>${capB(def.g)}</td>
-    <td><span class="ticker">${def.d}</span><br><span class="sec">${def.sector}</span></td>
-    <td colspan="37" style="color:var(--text3);font-size:11px">
+    <td>${watchC(def.s)}<span class="ticker">${def.d}</span><br><span class="sec">${def.sector}</span></td>
+    <td colspan="43" style="color:var(--text3);font-size:11px">
       ⚠ Not in this market's Google Sheet tab — re-run the Apps Script to backfill it
     </td>
   </tr>`;
@@ -4183,25 +5082,88 @@ function syncXoverLabel(){
    MARKET BREADTH
 ══════════════════════════════════ */
 const BREADTH_KEY='sm_breadth_collapsed';
-/* Advancing / declining / unchanged from ch1d on the market currently loaded.
-   Cap filter uses the same "computed tier wins over the static one" rule as the
-   table's cap segments, so the two can't disagree. Rows still loading (undefined)
-   or missing from the sheet (null) are counted in neither column — they are not
-   unchanged, they are unknown. */
-function calcBreadth(market,cap){
+const BREADTH_TF_KEY='sm_breadth_tf';
+/* Which timeframe the advance/decline count is measured on.
+   Persisted exactly like the collapsed state above — same storage, same
+   read-on-init, same "one localStorage key, one UI concern" shape. */
+let BREADTH_TF='d';                       // 'd' | 'w' | 'dw'
+const BREADTH_TFS=[
+  {v:'d',  label:'D',   title:'Advancing = up on the latest trading day (1D%).'},
+  {v:'w',  label:'W',   title:'Advancing = up over the last 5 trading bars (1W%).'},
+  {v:'dw', label:'D+W', title:'Confirmed strength: advancing on the day AND on the week. Declining likewise requires both. Stocks that disagree between the two timeframes fall into the middle bucket.'},
+];
+function loadBreadthTF(){
+  const v=lsRead(BREADTH_TF_KEY);
+  BREADTH_TF = BREADTH_TFS.some(t=>t.v===v) ? v : 'd';
+}
+function buildBreadthTF(){
+  const el=$('breadthTF'); if(!el) return;
+  el.innerHTML=BREADTH_TFS.map(t=>
+    `<button class="seg-btn${t.v===BREADTH_TF?' active':''}" data-tf="${t.v}" title="${escAttr(t.title)}"
+      onclick="setBreadthTF('${t.v}')">${t.label}</button>`).join('');
+}
+function setBreadthTF(tf){
+  if(!BREADTH_TFS.some(t=>t.v===tf)) return;
+  BREADTH_TF=tf;
+  lsWrite(BREADTH_TF_KEY,tf);
+  buildBreadthTF();
+  renderBreadth();
+}
+
+/* WHICH WEEKLY SERIES THIS USES, AND WHY.
+   d.ch1w — the 5-trading-bar change — not the weekly resampled bars.
+   The resampled series (weeklyResample) buckets by calendar week, so its LAST
+   bar is a partial week for four days out of five: on a Tuesday it compares two
+   days of trading against a full previous week, which systematically reports
+   fewer advancers early in the week and more by Friday. That is a calendar
+   artefact, not breadth. ch1w is measured bar-to-bar over exactly 5 trading
+   bars, so it means the same thing on every weekday, it is already on every
+   row (no extra field, no cache bump), and it is the same number the 1W%
+   column shows — so the panel and the table cannot disagree.
+   ch1w is null below 6 bars of history; those rows are unknown, not flat. */
+function breadthDir(d,tf){
+  if(!d) return null;
+  const dd=d.ch1d, ww=d.ch1w;
+  if(tf==='w')  return ww==null?null:(ww>0?1:ww<0?-1:0);
+  if(tf==='dw'){
+    // The intersection, both ways. A stock up on the day and down on the week
+    // is neither confirmed-advancing nor confirmed-declining.
+    if(dd==null||ww==null) return null;
+    if(dd>0&&ww>0) return 1;
+    if(dd<0&&ww<0) return -1;
+    return 0;
+  }
+  return dd==null?null:(dd>0?1:dd<0?-1:0);
+}
+/* Advancing / declining / unchanged over the rows the TABLE is showing.
+   WHY getRows() and not UNI, the same lesson calcSectorBreadth already learned:
+   a panel that ignores the active filters reports on a different population
+   than the list underneath it, and the two numbers then contradict each other
+   on screen. The breadth cap select is applied ON TOP of that, so it still
+   composes with everything else. `rows` is injectable so renderTable() can hand
+   over the array it just built instead of paying for a second filter+sort.
+   Cap uses the same "computed tier wins over the static one" rule as the table's
+   cap segments. Rows still loading (undefined) or missing from the sheet (null)
+   are counted in neither column — they are not unchanged, they are unknown. */
+function calcBreadth(market,cap,tf,rows){
+  const t=tf||BREADTH_TF;
   let adv=0,dec=0,flat=0,known=0;
-  (UNI[market]||[]).forEach(def=>{
+  // UNI[market] guard: getRows() would throw on a market that does not exist.
+  (rows || (UNI[market]?getRows(market):[])).forEach(def=>{
     const d=SD[def.s];
-    if(!d || d.ch1d==null) return;
+    const dir=breadthDir(d,t);
+    if(dir==null) return;
     if(cap && cap!=='All' && ((d.g||def.g)!==cap)) return;
     known++;
-    if(d.ch1d>0) adv++; else if(d.ch1d<0) dec++; else flat++;
+    if(dir>0) adv++; else if(dir<0) dec++; else flat++;
   });
-  return {adv,dec,flat,total:known};
+  return {adv,dec,flat,total:known,tf:t};
 }
-function renderBreadth(){
+function renderBreadth(rows){
   const capEl=$('breadthCap');
-  const b=calcBreadth(CUR, capEl?capEl.value:'All');
+  const b=calcBreadth(CUR, capEl?capEl.value:'All', BREADTH_TF, rows);
+  const lbl=$('breadthFlatLbl');
+  if(lbl) lbl.textContent = b.tf==='dw' ? '● Mixed' : '● Unchanged';
   const pct=n=>b.total?(n/b.total*100):0;
   $('breadthAdvBar').style.width=pct(b.adv).toFixed(1)+'%';
   $('breadthFlatBar').style.width=pct(b.flat).toFixed(1)+'%';
@@ -4209,10 +5171,13 @@ function renderBreadth(){
   $('breadthAdvN').textContent=b.adv;
   $('breadthDecN').textContent=b.dec;
   $('breadthFlatN').textContent=b.flat;
+  // The timeframe is named in the numbers themselves: "62% advancing" means
+  // three different things depending on the toggle, so it has to say which.
+  const tfl=(BREADTH_TFS.find(t=>t.v===b.tf)||{}).label||'D';
   $('breadthRatio').textContent = b.total
-    ? `A/D ${b.dec?(b.adv/b.dec).toFixed(2):'∞'} · ${Math.round(pct(b.adv))}% advancing of ${b.total}`
+    ? `A/D ${b.dec?(b.adv/b.dec).toFixed(2):'∞'} · ${Math.round(pct(b.adv))}% advancing of ${b.total} (${tfl})`
     : 'No data yet';
-  $('breadthSum').textContent = b.total ? `▲ ${b.adv} · ▼ ${b.dec}` : '—';
+  $('breadthSum').textContent = b.total ? `${tfl} · ▲ ${b.adv} · ▼ ${b.dec}` : '—';
 }
 function applyBreadthCollapsed(){
   let c=false;
@@ -4285,6 +5250,53 @@ function isQualitySetup(d){
   return true;
 }
 
+/* ══════════════════════════════════
+   DAILY + WEEKLY ALIGNMENT
+   ────────────────────────────────────
+   A swing trade is a bet that the daily and the weekly chart are telling the
+   same story. Eight checks, four of them daily and four weekly, scored
+   together — that is the whole idea of the column.
+
+   THE DENOMINATOR IS THE POINT. Every check null-guards ITS OWN input and
+   returns null (not false) when it cannot be run, and a null is dropped from
+   the total instead of counted as a failure. A stock whose weekly RSI has not
+   been computed yet is 6/7, not 6/8: it did not fail a test, we could not
+   administer one. Scoring it out of 8 would quietly rank real weakness and
+   missing data as the same thing, which is precisely the bug this shape
+   avoids — and it is why the cell prints the real denominator instead of a
+   tidy /8. */
+const DW_ALIGN_CRITERIA=[
+  ['Price above the daily 20 EMA',        d=>d.price!=null&&d.e20!=null  ? d.price>d.e20  : null],
+  ['Price above the daily 50 EMA',        d=>d.price!=null&&d.e50!=null  ? d.price>d.e50  : null],
+  ['Price above the weekly 10 EMA',       d=>d.price!=null&&d.we10!=null ? d.price>d.we10 : null],
+  ['Price above the weekly 20 EMA',       d=>d.price!=null&&d.we20!=null ? d.price>d.we20 : null],
+  ['Daily RSI 50 or above',               d=>d.rsi14!=null ? d.rsi14>=50 : null],
+  ['Weekly RSI 50 or above',              d=>d.wRsi!=null  ? d.wRsi>=50  : null],
+  ['21-day relative strength positive',   d=>d.rs21!=null  ? d.rs21>0    : null],
+  ['10-week relative strength positive',  d=>d.rs10w!=null ? d.rs10w>0   : null],
+];
+const DW_ALIGN_MAX=DW_ALIGN_CRITERIA.length;
+
+/* -> {score, total, max, details} or null when NOTHING could be evaluated.
+   null rather than 0/0 because "we know nothing about this stock" and "this
+   stock passed none of eight tests" must not render as the same cell. */
+function dwAlign(d){
+  if(!d) return null;
+  const details=DW_ALIGN_CRITERIA.map(([label,fn])=>({label, pass:fn(d)}));
+  const usable=details.filter(x=>x.pass!==null);
+  if(!usable.length) return null;
+  return {score:usable.filter(x=>x.pass).length, total:usable.length, max:DW_ALIGN_MAX, details};
+}
+
+/* The "Aligned D+W" toggle. 7 OF WHAT WAS AVAILABLE, deliberately not 7/8:
+   a stock with only 7 usable inputs that passes all 7 is as aligned as the
+   data allows, and excluding it would mean the filter silently prefers stocks
+   with complete data over stocks that are actually strong. A row with 6 or
+   fewer usable checks cannot reach 7 and is excluded — correctly, since there
+   is not enough evidence to call it aligned. */
+function dwAligned(d){ const a=dwAlign(d); return !!a && a.score>=DW_ALIGN_MIN; }
+const DW_ALIGN_MIN=7;
+
 /* MEDIAN, not mean: one member up 300% would otherwise drag its whole sector to
    the top of the table. Sectors with fewer than 3 rows carrying data are pinned
    to the floor instead — a 1-stock "sector" is a sample, not a signal. */
@@ -4335,6 +5347,13 @@ function sortBySetupScore(items,market){
 const PIV_RANK={'R2+':7,'R1→R2':6,'PP→R1':5,'PP':4,'S1→PP':3,'S2→S1':2,'<S2':1};
 const SORT_FN={
   price:d=>d?.price,ch1d:d=>d?.ch1d,rsi:d=>d?.rsi14,wrsi:d=>d?.wRsi,
+  ch1w:d=>d?.ch1w,ch1m:d=>d?.ch1m,ch3m:d=>d?.ch3m,
+  /* Historical price / gain. Keyed off def.s rather than off `d`, because the
+     close series lives in the sheet map, not in the computed row. Both return
+     null with no date chosen, so the columns sort as "all unknown" instead of
+     inventing an order. */
+  hist:(_,def)=>histFor(def.s)?.price??null,
+  histg:(d,def)=>histGain(d?.price??null, histFor(def.s)),
   vr:d=>d?.vRatio,wvol:d=>d?.wVolRatio,h52:d=>d?.h52d,ema:d=>d?.emaScr,wema:d=>d?.weEmaScr,
   bog:d=>d?.boGain,boc:d=>d?.boCnt,ret:d=>d?.retrace,sq:d=>d?.sq,
   /* Negated so that DESC — the first click, and what "sort by Follow-up"
@@ -4373,6 +5392,14 @@ const SORT_FN={
   rst:d=>({up:3,flat:2,down:1,'↑':3,'→':2,'↓':1}[d?.rsTrend]||0),
   // Explicit sort on the Setup column: qualifies / does not / no data.
   setup:d=>d?(isQualitySetup(d)?1:0):null,
+  /* Align: SCORE first, then DENOMINATOR. Packed into one number because
+     SORT_FN entries return a single comparable — score*100+total is monotone
+     in score and only breaks ties on total, and total can never reach 100.
+     Ranking the denominator second is what puts a fully-measured 7/8 above a
+     partially-measured 7/7: same score, but one of them was tested on
+     everything and the other was not, and the more-tested row is the more
+     trustworthy shortlist entry. */
+  align:d=>{ const a=dwAlign(d); return a?a.score*100+a.total:null; },
 };
 
 /* The EMA-alignment screen, in ONE place. The "All EMAs Bullish" dropdown
@@ -4416,15 +5443,26 @@ function getRows(market){
   // The two filter-bar toggles. Applied as their own AND terms so they stack
   // with the dropdowns instead of overriding them.
   if(F_ALIGN) items=items.filter(def=>emasAligned(SD[def.s]));
+  if(F_DWA)   items=items.filter(def=>dwAligned(SD[def.s]));
   if(F_BO)    items=items.filter(def=>hasBreakout(SD[def.s]));
+  // Keyed off the symbol, not off SD — a starred stock stays visible even while
+  // its indicators are still loading, which is the only sane behaviour for a
+  // list the user curated by hand.
+  if(F_WL)    items=items.filter(def=>isWatched(def.s));
 
   if(F_RSI==='ob') items=items.filter(def=>(SD[def.s]?.rsi14||0)>=70);
   else if(F_RSI==='mid') items=items.filter(def=>{const r=SD[def.s]?.rsi14;return r!=null&&r>=50&&r<70;});
   else if(F_RSI==='os') items=items.filter(def=>(SD[def.s]?.rsi14||100)<=40);
 
-  if(F_PIV==='above') items=items.filter(def=>['PP→R1','R1→R2','R2+'].includes(SD[def.s]?.dpz));
-  else if(F_PIV==='r1') items=items.filter(def=>['R1→R2','R2+'].includes(SD[def.s]?.dpz));
-  else if(F_PIV==='below') items=items.filter(def=>['S1→PP','S2→S1','<S2'].includes(SD[def.s]?.dpz));
+  /* Two independent AND terms, one per timeframe. Both go through pivMatch(),
+     so the daily and weekly screens cannot drift apart, and both are no-ops
+     when their dropdown is on the blank option. */
+  if(F_PIV) items=items.filter(def=>{
+    const d=SD[def.s]; return pivMatch(F_PIV, d?.dpz, d?.price??null, d?.dPiv??null);
+  });
+  if(F_WPIV) items=items.filter(def=>{
+    const d=SD[def.s]; return pivMatch(F_WPIV, d?.wpz, d?.price??null, d?.wPiv??null);
+  });
 
   if(F_REV==='none') items=items.filter(def=>!REV[def.s]);
   else if(F_REV) items=items.filter(def=>REV[def.s]===F_REV);
@@ -4459,9 +5497,14 @@ function renderTable(market){
   $('vCnt').textContent=vis.length;
   $('tCnt').textContent=n;
   $('smLbl').textContent=`Showing ${vis.length} of ${n}`;
-  // Breadth is derived from the same SD the table just rendered, so it is
-  // refreshed here rather than from each of the half-dozen load call sites.
-  renderBreadth();
+  /* Breadth is derived from EXACTLY the array the table just rendered — handed
+     over rather than recomputed, so the panel and the list cannot disagree and
+     the filter+sort pass is not paid for twice. */
+  renderBreadth(all);
+  /* Every path that changes a filter ends in renderTable() — dropdowns,
+     toggles, segment buttons, header sorts, Clear Filters, applyScreen. Hooking
+     the indicator here means none of them has to remember to update it. */
+  updateScreenUI();
 }
 
 /* ══════════════════════════════════
@@ -4472,7 +5515,10 @@ const SEGS={
      UNI.india spells them. 'Banking' and 'Pharma' were left behind when the
      universe was relabelled to NSE's macro sectors and matched nothing at all. */
   india:['All','LC','MC','SC','Mic','IT','Financials','Healthcare','Auto','Power'],
-  us:   ['All','LC','MC','Tech','Healthcare','Financial','Energy'],
+  /* Relabelled with the rebuilt US taxonomy — these are matched against
+     def.sector, and 'Tech' stopped being a sector the moment UNI.us moved
+     to the Morningstar 11. */
+  us:   ['All','LC','MC','Technology','Healthcare','Financial','Industrials','Consumer Cyclical','Energy'],
   etf:  ['All','US Equity','Sector','Bonds','Commodities','Intl'],
 };
 
@@ -4535,19 +5581,30 @@ function toggleTheme(){ applyTheme(currentTheme()==='paper'?'classic':'paper'); 
    skipped rather than pointing at empty space.
 ══════════════════════════════════ */
 const TOUR_KEY='gs_tour_done';
+/* WHAT THIS TOUR IS FOR. The previous version named the regions of the screen —
+   "this is the sector filter", "this is the table" — which anyone can work out
+   by looking. What nobody can work out by looking is the WORKFLOW: that the
+   table already arrives sorted into a useful order, that the Align column is
+   the actual entry condition, and that four separate columns exist purely to
+   answer "am I too late?". So these steps teach the sequence a swing trader
+   would follow, in plain language, and each one is anchored to a control that
+   really exists — renderTour() skips any step whose element is missing rather
+   than highlighting empty space. */
 const TOUR=[
-  {el:null,        t:'Welcome to GlobalScreener',
-   b:'A technical scanner for Indian and US equities, refreshed daily from end-of-day data. Everything is computed in your browser from one year of prices — nothing is precomputed or opinionated. This takes about 30 seconds.'},
-  {el:'segGrp',    t:'1 · Pick your universe',
-   b:'Switch between India, US and ETFs at the top, then narrow by market-cap tier here. Large, Mid, Small and Micro are derived from the market cap on each stock, so the split stays consistent as you filter.'},
-  {el:'sctFil',    t:'2 · Filter by sector',
-   b:'Narrow to one sector — Banking, IT, Pharma and so on. Pair it with the cap filter to answer things like "which small-cap chemical names are setting up".'},
-  {el:'emaFil',    t:'3 · Smart filters',
-   b:'EMA alignment, RSI bands and pivot zones. These are the quick screens: "all EMAs bullish" plus "RSI 50–70" is a reasonable first pass for trend-following setups.'},
-  {el:'stk-tbl',   t:'4 · Read the table',
-   b:'Every column sorts — click a header. Hover any header for what it actually measures. Stage 2 scores the Minervini trend template, and the RS columns compare each stock against a real benchmark ETF rather than against its peers.'},
-  {el:'csvBtn',    t:'5 · Take it with you',
-   b:'Export whatever is currently filtered to Excel, with every column included. Mark stocks with the Review buttons and add notes — both are saved and survive a reload.'},
+  {el:'srcTag',    t:'What this is',
+   b:'A momentum screener for Indian and US stocks, plus ETFs. The prices come from end-of-day data that refreshes once a day, so you are always looking at yesterday’s close rather than a live quote. Every number in the table is worked out in your browser from about a year of that price history.'},
+  {el:'sortDefBtn',t:'1 · The order is already the answer',
+   b:'You do not have to sort anything to start: the table opens in Setup Score order, which floats the quality setups to the top and, within those, puts the strongest sectors first. A stock earns the ★ Setup mark only when all four of these are true at once — it is within 30% of its 52-week high, its price is above every moving average that could be calculated for it, its relative strength is positive, and it has a full Stage 2 score. Any column header re-sorts the table, and this button brings you back.'},
+  {el:'dwaTog',    t:'2 · Align — the swing condition',
+   b:'The Align column scores how much the daily chart and the weekly chart agree, out of eight checks — four daily, four weekly — and a swing trade lasting days to weeks really only works when both timeframes point the same way. Seven or eight out of eight is the shortlist, and this button keeps exactly those rows. When a stock is missing an input that check is left out of the total rather than counted as a failure, which is why some rows read 6/7 instead of 6/8.'},
+  {el:'stk-tbl',   t:'3 · Stage 2 and relative strength',
+   b:'Stage 2 asks whether a stock is in a genuine advancing phase: price above its long moving averages, those averages stacked in the right order and rising, and the stock well off its 52-week low. Hover the Stage 2 chip to see which individual rules it passed. Relative strength is measured against a real benchmark ETF — not against the other stocks on this screen — so a positive RS means it is beating the market, not merely beating a weak list.'},
+  {el:'tHead',     t:'4 · Are you already late?',
+   b:'A strong stock can still be a bad entry, and four columns exist to tell those apart. 52W High% is how far below its 52-week high it is trading, Retrace% is how much it has given back from its recent peak, Follow-up counts the trading days since its last breakout, and Consolidation shows how long it has been coiling quietly. Fresh and tight beats extended and stretched — a low Follow-up number on a stock still near its high is a move you can still join.'},
+  {el:'advBtn',    t:'5 · Narrowing the list',
+   b:'Sector View breaks the whole market down by sector so you can see which groups are actually working, and clicking a row filters the table to it. Advanced Filters adds screens the dropdowns do not cover — consolidation length, distance from the 52-week high, breakout age, volume. And the D / W / D+W breadth toggle tells you how much of the market is rising on the daily, the weekly, or both, which is the fastest read on whether to be buying at all today.'},
+  {el:'screenSel', t:'6 · Keeping your work',
+   b:'Mark a stock bull, bear or neutral with the Review buttons, type a note against it, or star it onto your watchlist — all three are saved in this browser and survive a reload. Save the whole filter combination as a named screen here and recall it any time, and use Excel to export exactly what is currently on screen with every column included. The small 📈 beside a ticker or a pivot cell opens that stock on TradingView at the timeframe that matches the cell you clicked.'},
 ];
 let TOUR_I=0;
 function startTour(i){
@@ -4795,9 +5852,9 @@ function switchMkt(market){
   // corrupt the in-flight load without starting a new one.
   if(!LOADING) GSHEET_DATA = GSHEET_BY_MARKET[market] || null;
   setGSheetStatus(market);
-  F_CAP='All';F_SCT='';F_EMA='';F_RSI='';F_PIV='';
-  F_ALIGN=false;F_BO=false;
-  $('emaFil').value='';$('rsiFil').value='';$('pivFil').value='';
+  F_CAP='All';F_SCT='';F_EMA='';F_RSI='';F_PIV='';F_WPIV='';
+  F_ALIGN=false;F_BO=false;F_DWA=false;
+  $('emaFil').value='';$('rsiFil').value='';$('pivFil').value='';$('wpivFil').value='';
   syncFilterToggles();
   updateMcapUI(market);
   ['india','us','etf'].forEach(m=>$('tab-'+m).classList.toggle('active',m===market));
@@ -4813,9 +5870,21 @@ function onSeg(btn,val){
   F_CAP=val;renderTable(CUR);updateStatus();
 }
 function onSearch(){SEARCH=$('searchQ').value.trim();VISIBLE=CFG.INIT;renderTable(CUR);updateStatus();}
+/* Builds both pivot dropdowns from PIV_OPTS. The D:/W: prefix is what keeps
+   two dropdowns holding the same nine labels apart at a glance. */
+function buildPivSelects(){
+  [['pivFil','Pivot Zone','D'],['wpivFil','W-Pivot Zone','W']].forEach(([id,head,pfx])=>{
+    const el=$(id); if(!el) return;
+    const cur=id==='pivFil'?F_PIV:F_WPIV;
+    el.innerHTML=`<option value="">${head}</option>`+
+      PIV_OPTS.map(o=>`<option value="${o.v}"${o.v===cur?' selected':''}>${pfx}: ${o.label}</option>`).join('');
+    el.value=cur;
+  });
+}
 function applyF(){
   F_SCT=$('sctFil').value;F_EMA=$('emaFil').value;
   F_RSI=$('rsiFil').value;F_PIV=$('pivFil').value;
+  F_WPIV=$('wpivFil').value;
   F_REV=$('revFil').value;
   MIN_MCAP=parseFloat($('mcapFil').value)||0;
   VISIBLE=CFG.INIT;
@@ -4825,23 +5894,31 @@ function applyF(){
    handlers flip the flag and call this, so a programmatic reset (clrF,
    switchMkt) lands on screen through the same one path. */
 function syncFilterToggles(){
-  [['alignTog',F_ALIGN],['boTog',F_BO]].forEach(([id,on])=>{
+  [['alignTog',F_ALIGN],['dwaTog',F_DWA],['boTog',F_BO],['wlTog',F_WL]].forEach(([id,on])=>{
     const el=$(id); if(!el) return;
     el.classList.toggle('on',on);
     el.setAttribute('aria-pressed',on?'true':'false');
   });
+  // The count lives on the toggle so it is visible without opening anything.
+  const wl=$('wlTog');
+  if(wl){ const n=watchCount(); wl.innerHTML = n ? `⭐ Watchlist (${n})` : '⭐ Watchlist'; }
 }
 function toggleAlign(){ F_ALIGN=!F_ALIGN; syncFilterToggles();
   VISIBLE=CFG.INIT; renderTable(CUR); updateStatus(); }
+function toggleDWA(){ F_DWA=!F_DWA; syncFilterToggles();
+  VISIBLE=CFG.INIT; renderTable(CUR); updateStatus(); }
 function toggleBO(){ F_BO=!F_BO; syncFilterToggles();
+  VISIBLE=CFG.INIT; renderTable(CUR); updateStatus(); }
+function toggleWL(){ F_WL=!F_WL; syncFilterToggles();
   VISIBLE=CFG.INIT; renderTable(CUR); updateStatus(); }
 
 function clrF(){
-  SEARCH='';F_CAP='All';F_SCT='';F_EMA='';F_RSI='';F_PIV='';F_REV='';
-  F_ALIGN=false;F_BO=false;
+  SEARCH='';F_CAP='All';F_SCT='';F_EMA='';F_RSI='';F_PIV='';F_WPIV='';F_REV='';
+  F_ALIGN=false;F_BO=false;F_DWA=false;F_WL=false;
   MIN_MCAP=MCAP_DEFAULTS[CUR] ?? 0;
   $('searchQ').value='';$('sctFil').value='';$('emaFil').value='';
-  $('rsiFil').value='';$('pivFil').value='';$('mcapFil').value=MIN_MCAP;$('revFil').value='';
+  $('rsiFil').value='';$('pivFil').value='';$('wpivFil').value='';
+  $('mcapFil').value=MIN_MCAP;$('revFil').value='';
   syncFilterToggles();
   document.querySelectorAll('#segGrp .seg-btn').forEach((b,i)=>b.classList.toggle('active',i===0));
   VISIBLE=CFG.INIT;
@@ -4859,15 +5936,16 @@ function clrRev(){
   }
   renderTable(CUR);
 }
-/* Notes live only in memory, on purpose — see the Notes column tooltip. So the
-   whole of "persisting" a note is the NOTES object itself, and clearing it is
-   emptying that object and re-rendering, which repaints every <input> from
-   NOTES[def.s]. Reassigning NOTES would not do: it is a const and dataRow's
-   inline onchange handler closes over the binding.
-   Confirmed first because there is no undo and no copy anywhere else. */
+/* Notes are persisted (NOTES_LS_KEY), so clearing has to empty BOTH copies —
+   emptying only the object would put every note back on the next reload, which
+   is the most confusing possible outcome for a button labelled "Clear".
+   NOTES is emptied IN PLACE: it is a const, and dataRow's <input> handler
+   resolves it through setNote(), which closes over that same binding.
+   Confirmed first because there is no undo. */
 function clrNotes(){
   if(!confirm('Delete every note you have written, in every market? This cannot be undone.')) return;
   Object.keys(NOTES).forEach(k=>delete NOTES[k]);
+  saveNotesLocal();   // writes the now-empty object over the stored one
   renderTable(CUR);
 }
 function setRev(sym,val){
@@ -4907,10 +5985,24 @@ const EXPORT_COLS=[
   ['Sector',      (def,d)=>def.sector],
   ['Cap',         (def,d)=>d?.g||def.g||''],
   ['Setup',       (def,d)=>d?(isQualitySetup(d)?'Y':'N'):''],
+  /* Exported as "7/8", the same string the cell shows, so the denominator
+     travels with the score. A bare 7 in a spreadsheet is unreadable — 7 out of
+     what? — and splitting it into two columns invites someone to average the
+     scores while ignoring the totals. */
+  ['Align D+W',   (def,d)=>{ const a=dwAlign(d); return a?`${a.score}/${a.total}`:''; }],
   ['MarketCap',   (def,d)=>def.mcap??''],
   ['Currency',    (def,d)=>d?.currency??''],
   ['Price',       (def,d)=>d?.price??''],
   ['1D%',         (def,d)=>d?.ch1d??''],
+  ['1W%',         (def,d)=>d?.ch1w??''],
+  ['1M%',         (def,d)=>d?.ch1m??''],
+  ['3M%',         (def,d)=>d?.ch3m??''],
+  /* The RESOLVED bar date ships alongside the price, not just the date typed
+     into the toolbar: on a weekend or holiday those differ per stock, and a
+     spreadsheet with a price column and no date column cannot be audited. */
+  ['Hist Date',   (def,d)=>histFor(def.s)?.date??''],
+  ['Hist Price',  (def,d)=>histFor(def.s)?.price??''],
+  ['Gain% since', (def,d)=>histGainFor(def.s,d)??''],
   ['RSI',         (def,d)=>d?.rsi14??''],
   ['W-RSI',       (def,d)=>d?.wRsi??''],
   ['VolRatio',    (def,d)=>d?.vRatio??''],
@@ -4959,6 +6051,7 @@ const EXPORT_COLS=[
   ['RS History',  (def,d)=>Array.isArray(d?.rsHist)?d.rsHist.join(' '):''],
   ['Lead RS',     (def,d)=>d?.leadRS!=null?(d.leadRS?'Y':'N'):''],
   ['RS Trend',    (def,d)=>d?.rsTrend??''],
+  ['Watchlist',   (def,d)=>isWatched(def.s)?'Y':''],
   ['Review',      (def,d)=>REV[def.s]||''],
   ['Notes',       (def,d)=>(typeof NOTES!=='undefined'&&NOTES[def.s])||''],
 ];
@@ -5100,8 +6193,14 @@ document.addEventListener('DOMContentLoaded',()=>{
 ══════════════════════════════════ */
 const TOGGLEABLE_COLS=[
   {cls:'setup',  label:'Setup'},
+  {cls:'align',  label:'Align D+W'},
   {cls:'sector', label:'Sector'},
   {cls:'status', label:'Status'},
+  {cls:'ch1w',   label:'1W%'},
+  {cls:'ch1m',   label:'1M%'},
+  {cls:'ch3m',   label:'3M%'},
+  {cls:'hist',   label:'Hist. Price'},
+  {cls:'histg',  label:'Gain% since'},
   {cls:'wrsi',   label:'W-RSI'},
   {cls:'vr',     label:'Vol Ratio'},
   {cls:'wvol',   label:'W-VOL'},
@@ -5188,13 +6287,19 @@ function syncHeaderHeight(){
 
 (async function init(){
   loadReviewsLocal(); // instant, always available regardless of remote config
+  loadNotesLocal();   // ditto — notes are browser-local and must precede the first render
+  loadWatchLocal();
+  loadScreensLocal();
   loadRSConfig();
   // Before anything renders: loadAdvFilters can change CFG.XOVER, which the
   // indicator pass and the column header both read.
   loadAdvFilters();
   syncXoverLabel();
+  syncHistLabel();   // no date chosen yet: writes the plain column headings
   updateAdvBtn();
   applyBreadthCollapsed();
+  loadBreadthTF();     // must precede buildBreadthTF/renderBreadth, which read it
+  buildBreadthTF();
   // Sync the theme button label with whatever the pre-paint script already applied.
   applyTheme(currentTheme());
   syncHeaderHeight();
@@ -5203,7 +6308,11 @@ function syncHeaderHeight(){
   buildColModal();
   buildSegs('india');
   buildSctDropdown('india');
+  buildPivSelects();   // before any applyF()/syncScreenToDom() can read their values
+  buildScreenSelect();
+  updateScreenUI();
   updateMcapUI('india');
+  syncFilterToggles();   // paints the watchlist count from the restored list
   renderMetrics('india'); // show skeleton cards
   // Deliberately NOT awaited, and deliberately INDIA ONLY — a slow or hung
   // Google Sheet fetch must never block the app from starting, and we don't
@@ -5211,6 +6320,9 @@ function syncHeaderHeight(){
   // loadMarket('india') below does a bounded wait on this same (shared,
   // cached) promise, so this head start is free.
   loadGoogleSheetData('india');
+  /* Not awaited: an unconfigured or slow MktCap tab must never delay the first
+     paint. On success it merges over UNI and re-renders itself. */
+  loadMktCapData();
   loadReviewsRemote();
   loadMarket('india');
   maybeAutoTour();
