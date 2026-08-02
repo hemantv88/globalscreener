@@ -339,11 +339,21 @@ td:last-child{border-right:none}
 .s2d{width:7px;height:7px;border-radius:50%}
 .s2d.on{background:var(--green)}.s2d.off{background:var(--border2)}
 .s2f{font-size:11px;font-weight:600;color:var(--text2)}
-.s2-tooltip{display:none;position:absolute;bottom:calc(100% + 8px);left:0;
+/* WAS position:absolute with bottom:calc(100% + 8px) and a pure :hover rule,
+   which is exactly why the nine-rule Stage 2 tooltip was unreadable: an
+   absolutely-positioned box pinned to the TOP of its cell grows UPWARDS, so on
+   a row anywhere near the top of the table its first six rules were pushed
+   above y=0 and clipped by the viewport (and by .tbl-scroll's overflow before
+   that). Nothing in CSS can clamp it, because CSS cannot know the row's
+   position. It is now position:fixed and placed by showTip(), which shares the
+   same viewport clamping the plain .tip-box uses — including a top clamp and a
+   height cap, so a tooltip of ANY length stays fully on screen.
+   pointer-events:none so the box can never steal the mouseout that hides it. */
+.s2-tooltip{display:none;position:fixed;left:0;top:0;
   background:#1E293B;color:var(--surface2);padding:11px 13px;border-radius:8px;
-  font-size:11px;white-space:nowrap;z-index:999;box-shadow:var(--shm);
-  min-width:230px;text-align:left}
-.s2w:hover .s2-tooltip{display:block}
+  font-size:11px;white-space:nowrap;z-index:9999;box-shadow:var(--shm);
+  min-width:230px;text-align:left;pointer-events:none;
+  overflow-y:auto;overscroll-behavior:contain}
 .s2t-title{font-weight:700;margin-bottom:7px;font-size:11.5px}
 .s2t-row{padding:2.5px 0;display:flex;align-items:center;gap:7px}
 .s2t-row .s2t-mark{width:13px;flex-shrink:0;font-weight:700}
@@ -632,6 +642,12 @@ body.hide-fresh   .c-fresh{display:none!important}
      a slightly looser line-height is legible without dominating the screen. */
   background:var(--dark);color:var(--on-dark);font-size:12.5px;font-weight:500;line-height:1.55;
   white-space:normal;max-width:340px;text-align:left;text-transform:none;letter-spacing:.1px;
+  /* A bounded WIDTH without a bounded HEIGHT is only half a clamp: the longest
+     data-tip in this file renders taller than a laptop viewport, and the box
+     then overflows one edge or the other whichever way showTip() flips it.
+     showTip() sets an exact max-height in px from the live window height; this
+     is the static backstop for anything that renders before that runs. */
+  max-height:calc(100vh - 16px);overflow-y:auto;overscroll-behavior:contain;
   padding:9px 12px;border-radius:7px;pointer-events:none;box-shadow:0 8px 22px rgba(0,0,0,.34)}
 
 /* ─── RESPONSIVE ──────────────── */
@@ -960,11 +976,26 @@ body.hide-fresh   .c-fresh{display:none!important}
     <h3>⚙️ RS Calculation Settings</h3>
     <p>Controls how the RS / MRS Rank columns and "Leading RS" are calculated. Changes apply to the tab you're currently viewing after clicking Apply.</p>
 
+    <!-- WHY A SELECT AND NOT A TEXT BOX: this was free text, and a benchmark is
+         only usable if the Apps Script actually fetches it into the sheet. Any
+         other string typed here produces a benchmark that is "not in the sheet",
+         which blanks every RS column — a spelling mistake and a deliberate
+         choice looked identical. The list is generated from BENCHMARK_OPTS,
+         which names only tickers the script really pulls, and is filtered per
+         market so the India tab cannot be pointed at SPY. "Other…" is kept
+         because removing the ability to name a ticker outright would be a
+         regression for anyone tracking an index this list does not carry. -->
     <div style="margin-top:14px" id="rsBenchmarkRow">
-      <label style="font-size:11.5px;font-weight:600;color:var(--text2);display:block;margin-bottom:6px">Benchmark ticker for the current tab (<span id="rsBenchMarketLabel"></span>)</label>
-      <input type="text" id="rsBenchmarkInput" placeholder="e.g. NIFTYBEES.NS or SPY"
-        style="width:100%;padding:6px 10px;border-radius:8px;border:1.5px solid var(--border2);font-size:12px;font-family:inherit"/>
-      <p style="margin-top:4px;font-size:10.5px">Must be a valid ticker in the same format your screener already uses (India: SYMBOL.NS, US/ETF: plain symbol). Defaults: NIFTYBEES.NS (Nifty 50 ETF) for India, SPY for US/ETF — neither is an exact Nifty 500 tracker, since one isn't reliably available for free — pick any ticker you trust more if you have one.</p>
+      <label style="font-size:11.5px;font-weight:600;color:var(--text2);display:block;margin-bottom:6px">Benchmark for the current tab (<span id="rsBenchMarketLabel"></span>)</label>
+      <select id="rsBenchmarkSel" onchange="onBenchmarkPick()"
+        style="width:100%;padding:6px 10px;border-radius:8px;border:1.5px solid var(--border2);font-size:12px;font-family:inherit;cursor:pointer"><!-- JS fills this per market --></select>
+      <div id="rsBenchOtherWrap" style="display:none;margin-top:8px">
+        <input type="text" id="rsBenchmarkInput" placeholder="e.g. JUNIORBEES.NS or IWM"
+          style="width:100%;padding:6px 10px;border-radius:8px;border:1.5px solid var(--border2);font-size:12px;font-family:inherit"/>
+        <p style="margin-top:4px;font-size:10.5px">Any ticker, in the same format the screener already uses (India: SYMBOL.NS, US/ETF: plain symbol). It has to be present in this market's tab of the Google Sheet — add it to the <code>BENCHMARKS</code> list in the Apps Script and re-run it first, or Apply will tell you it cannot be found.</p>
+      </div>
+      <p id="rsBenchMsg" style="margin-top:8px;font-size:11px;display:none"></p>
+      <p style="margin-top:4px;font-size:10.5px">RS is measured as excess return over this series, so the choice sets the bar: benchmarking against Nifty Smallcap 250 during a small-cap rally makes most of your universe read as weak, while Nifty 50 asks the broader "is it beating the market" question.</p>
     </div>
 
     <div style="margin-top:16px;display:flex;gap:8px;justify-content:space-between;align-items:center">
@@ -1034,6 +1065,7 @@ body.hide-fresh   .c-fresh{display:none!important}
           × slow
           <select id="advXSlow">
             <option value="20">20</option><option value="50">50</option><option value="100">100</option>
+            <option value="200">EMA 200</option>
           </select>
           — keeps rows whose fast EMA is above the slow one
         </div>
@@ -1161,7 +1193,7 @@ const CFG = {
      bars ≈ 45 trading days) fits inside a year of data with room to spare. */
   DARVAS: {boxp:5, nearPct:1.0},
 
-  VER:  'gs7',      // gs6 -> gs7: computeTech() returns a WIDER ROW — the Darvas box trio
+  VER:  'gs8',      // gs6 -> gs7: computeTech() returns a WIDER ROW — the Darvas box trio
                     // (dBoxTop/dBoxBot/dBoxState and the weekly equivalents), the 20-bar
                     // average traded VALUE (avgValue), and the fresh-momentum flags
                     // (freshFlags/freshAge). A gs6 cache carries none of them, so every
@@ -2919,7 +2951,11 @@ async function loadMktCapData(){
 /* Market cap filter — units and default differ by market:
    India: Rs Crore, default 5,000
    US:    $ Billion, default 150 */
-const MCAP_DEFAULTS = { india: 5000, us: 0 };
+// India floor lowered 5000 -> 2000 Cr at the user's request: 5000 excluded a
+// large slice of the small/mid-cap universe this screener now covers (881 names
+// from the Nifty Total Market list), which is exactly where momentum setups
+// tend to appear first.
+const MCAP_DEFAULTS = { india: 2000, us: 0 };
 let MIN_MCAP = MCAP_DEFAULTS.india;
 
 /* ══════════════════════════════════
@@ -4017,6 +4053,33 @@ function computeTech(C,H,L,V,dates,sym,O){
   // Same crossover rule as daily, on the weekly series. we20 needs 20 weekly
   // bars ≈ 100 trading days, so this is null for anything younger.
   const wxState=(we10!=null&&we20!=null)?(we10>we20?'bull':'bear'):null;
+
+  /* Weeks since the weekly EMA 10/20 relationship last flipped.
+     The daily crossover column already shows its age in bars; the weekly one
+     showed only Bull/Bear, so a cross from ten months ago looked identical to
+     one from last week — which is the opposite of useful for swing entries.
+     Counted in WEEKLY bars, so the unit matches the timeframe the column is
+     named after. null when there is no flip inside the available history
+     (~50 weekly bars from ~250 daily), which is honest rather than reporting
+     the length of the window as though it were the age of a cross. */
+  let wxBars=null;
+  if(wxState!=null && wk.closes.length>=21){
+    const upNow = wxState==='bull';
+    for(let k=1; k<=wk.closes.length-21; k++){
+      const c=wk.closes.slice(0, wk.closes.length-k);
+      const a=ema(c,10), b2=ema(c,20);
+      if(a==null||b2==null) break;
+      if((a>b2)!==upNow){ wxBars=k; break; }
+    }
+  }
+
+  /* Is the pair chosen in Advanced Filters even evaluable on the weekly chart?
+     The weekly series is ~50 bars (one year of daily resampled), so a weekly
+     EMA 50/100/200 cannot exist — a weekly EMA 200 needs ~200 weeks, i.e. four
+     years. The weekly crossover is therefore always 10x20, and when the user
+     picks a slower pair the honest answer is "not applicable at this timeframe"
+     rather than silently showing an unrelated 10x20 result under their heading. */
+  const wxApplicable = (CFG.XOVER.fast<=20 && CFG.XOVER.slow<=20);
   let weu=0,wec=0;
   [[we10,we20],[price,we10],[price,we20]].forEach(([a,b])=>{
     if(a&&b){wec++;if(a>b)weu++;}
@@ -4083,7 +4146,7 @@ function computeTech(C,H,L,V,dates,sym,O){
     xFast:XF,xSlow:XS,xFastEma,xSlowEma,xState,xBars,wxState,e50CrossUpAge,
     pattern,wPattern,
     consolDays:cons.days,consolRange:cons.range,volDry,monthlySetup,
-    we10,we20,weEmaScr,
+    we10,we20,weEmaScr,wxBars,wxApplicable,
     dpz,wpz,dPiv,wPiv,s2,sq,wVolRatio,
     dBoxTop:dBox.top, dBoxBot:dBox.bot, dBoxState:dBox.state,
     wBoxTop:wBox.top, wBoxBot:wBox.bot, wBoxState:wBox.state,
@@ -4186,6 +4249,7 @@ async function fetchBenchmark(market){
   // Below that the benchmark is present but useless, which is a failure.
   if(gd && gd.C && gd.C.length>=22){
     BENCHMARK_DATA[market]={sym:ticker,C:gd.C,H:gd.H,L:gd.L,V:gd.V,dates:gd.dates};
+    clearBenchmarkWarning(market);
     return;
   }
   // Cache-hit path: the tab was never downloaded this session. The sym check
@@ -4195,7 +4259,11 @@ async function fetchBenchmark(market){
     const raw=localStorage.getItem(bKey(market));
     if(raw){
       const b=JSON.parse(raw);
-      if(b && b.sym===ticker && b.C && b.C.length>=22){ BENCHMARK_DATA[market]=b; return; }
+      if(b && b.sym===ticker && b.C && b.C.length>=22){
+        BENCHMARK_DATA[market]=b;
+        clearBenchmarkWarning(market);
+        return;
+      }
     }
   }catch(e){ /* corrupt cache is a miss, not a crash */ }
   // Visible, not silent — and now genuinely fatal for RS rather than a quiet
@@ -4204,6 +4272,77 @@ async function fetchBenchmark(market){
   console.warn(`Benchmark ${ticker} unavailable for ${market} — RS columns will be blank for this load.`);
   const el=document.getElementById('bnrSub');
   if(el && market===CUR) el.innerHTML=`&nbsp;·&nbsp;<span style="color:var(--red,#DC2626)">RS unavailable — benchmark ${ticker||'not set'} is not in the sheet</span>`;
+  // Reflect it in the banner too, so a cached load that cannot compute RS says
+  // so in the loudest place on the page rather than only in the small subtitle.
+  updateScanBanner(market);
+}
+
+/* The success counterpart of the warning above. Without it the red "RS
+   unavailable" subtitle written on a failed attempt SURVIVED a later successful
+   one — switch tab, come back, press Refresh, and the page still claimed RS was
+   broken while every RS cell was populated. A warning that cannot be withdrawn
+   is a warning nobody believes. */
+function clearBenchmarkWarning(market){
+  const el=document.getElementById('bnrSub');
+  if(el && market===CUR) el.innerHTML='&nbsp;·&nbsp; Google Sheets · End-of-Day · Client-side Technicals';
+}
+
+/* THE BENCHMARK MENU — one table, filtered per market.
+   ────────────────────────────────────────────────────
+   Every ticker here is one the Apps Script's `var BENCHMARKS` really fetches
+   into the sheet; anything else would be offered in a dropdown and then fail to
+   resolve, which is worse than not offering it. Labels are the index the fund
+   tracks, because "Nifty 50" is what the user thinks in and NIFTYBEES.NS is an
+   implementation detail of how that index is made fetchable (GOOGLEFINANCE will
+   not serve INDEXNIFTY:* historically — see the note in script.txt).
+   India and US/ETF are deliberately separate lists: a benchmark from the wrong
+   market is never in that market's tab, so offering it could only produce a
+   blank RS column. */
+const BENCHMARK_OPTS={
+  india:[
+    {label:'Nifty 50',            ticker:'NIFTYBEES.NS'},   // Nippon Nifty 50 ETF
+    {label:'Nifty 500',           ticker:'MONIFTY500.NS'},  // Motilal Oswal Nifty 500 ETF
+    {label:'Nifty Smallcap 250',  ticker:'HDFCSML250.NS'},  // HDFC Nifty Smallcap 250 ETF
+  ],
+  us:[
+    {label:'SPY — S&P 500',       ticker:'SPY'},
+    {label:'QQQ — Nasdaq 100',    ticker:'QQQ'},
+  ],
+  etf:[
+    {label:'SPY — S&P 500',       ticker:'SPY'},
+    {label:'QQQ — Nasdaq 100',    ticker:'QQQ'},
+  ],
+};
+// Sentinel for the free-text escape hatch. Deliberately not a legal ticker, so
+// it can never collide with a real one stored in RS_CONFIG.
+const BENCH_OTHER='__other__';
+
+/* Is `ticker` a series this market can actually be scored against right now?
+   Checks BOTH sources fetchBenchmark() checks, in the same order, so the modal
+   cannot say "fine" about something the fetch will then reject — including on a
+   cached load, where the tab was never downloaded and the day-stamped benchmark
+   cache is the only series in hand. */
+function benchmarkAvailable(market,ticker){
+  if(!ticker) return false;
+  const map=GSHEET_BY_MARKET[market];
+  const gd=map && map[ticker];
+  if(gd && gd.C && gd.C.length>=22) return true;
+  try{
+    const raw=localStorage.getItem(bKey(market));
+    if(raw){
+      const b=JSON.parse(raw);
+      if(b && b.sym===ticker && b.C && b.C.length>=22) return true;
+    }
+  }catch(e){ /* corrupt cache is a miss, not a crash */ }
+  return false;
+}
+
+function setRSMsg(text,isError){
+  const el=document.getElementById('rsBenchMsg');
+  if(!el) return;
+  el.textContent=text||'';
+  el.style.display = text ? 'block' : 'none';
+  el.style.color   = isError ? 'var(--red,#DC2626)' : 'var(--text2)';
 }
 
 /* One setting, because there is only one thing left to decide: which series RS
@@ -4212,18 +4351,61 @@ async function fetchBenchmark(market){
    nothing is worse than no control. */
 function openRSSettings(){
   $('rsBenchMarketLabel').textContent = CUR;
-  $('rsBenchmarkInput').value = RS_CONFIG.benchmark[CUR] || '';
+  const cur=RS_CONFIG.benchmark[CUR] || '';
+  const opts=BENCHMARK_OPTS[CUR] || [];
+  const known=opts.some(o=>o.ticker===cur);
+  // escAttr on the ticker: it lands inside a value="..." attribute. The labels
+  // are ours, but the option VALUE is a ticker and tickers are data.
+  $('rsBenchmarkSel').innerHTML =
+    opts.map(o=>`<option value="${escAttr(o.ticker)}"${o.ticker===cur?' selected':''}>${o.label} (${o.ticker})</option>`).join('')
+    + `<option value="${BENCH_OTHER}"${known?'':' selected'}>Other… (type a ticker)</option>`;
+  // A saved ticker that is not on the menu is not an error — it is exactly what
+  // the escape hatch is for, so reopen the box with it still in place.
+  $('rsBenchmarkInput').value = known ? '' : cur;
+  $('rsBenchOtherWrap').style.display = known ? 'none' : 'block';
+  setRSMsg('');
   $('rsModal').classList.add('open');
 }
 function closeRSSettings(){ $('rsModal').classList.remove('open'); }
 
+// Reveal / hide the free-text box as the menu changes. Kept out of applyRSConfig
+// so the field appears the instant "Other…" is picked, not after Apply.
+function onBenchmarkPick(){
+  const other = $('rsBenchmarkSel').value===BENCH_OTHER;
+  $('rsBenchOtherWrap').style.display = other ? 'block' : 'none';
+  setRSMsg('');
+}
+
+// What the modal is currently asking for, menu or free text, trimmed.
+function readBenchmarkChoice(){
+  const v=$('rsBenchmarkSel').value;
+  return v===BENCH_OTHER ? ($('rsBenchmarkInput').value||'').trim() : v;
+}
+
 async function applyRSConfig(){
-  RS_CONFIG.benchmark[CUR] = $('rsBenchmarkInput').value.trim() || RS_CONFIG.benchmark[CUR];
+  const chosen=readBenchmarkChoice();
+  if(!chosen){
+    setRSMsg('Type a ticker, or pick one from the list.',true);
+    return;
+  }
+  /* VALIDATE BEFORE COMMITTING. Previously any string was accepted, saved, and
+     the modal closed; if it was not in the sheet every RS cell quietly turned
+     into a dash and nothing said why. Now an unresolvable benchmark keeps the
+     modal open, keeps the previous benchmark working, and says what is wrong. */
+  if(!benchmarkAvailable(CUR,chosen)){
+    const cachedOnly = GSHEET_STATUS[CUR]==='cached' || !GSHEET_BY_MARKET[CUR];
+    setRSMsg(`${chosen} is not in the ${CUR.toUpperCase()} tab of the sheet`
+      + (cachedOnly
+          ? ', and this tab is showing cached data, so the sheet has not been downloaded to check properly. Press ↻ Refresh first, then pick it again.'
+          : '. RS would be blank for every row, so the previous benchmark has been kept. Add it to the BENCHMARKS list in the Apps Script and re-run it, or pick one from the list.'),
+      true);
+    return;
+  }
+  RS_CONFIG.benchmark[CUR]=chosen;
   saveRSConfig();
   closeRSSettings();
 
-  // Re-rank immediately using whatever data is already loaded for this tab —
-  // fetches the benchmark ticker fresh if benchmark mode was just turned on.
+  // Re-rank immediately using whatever data is already loaded for this tab.
   await fetchBenchmark(CUR);
   rankRS(CUR);
   renderTable(CUR);
@@ -4319,7 +4501,12 @@ function rankRS(market){
 ══════════════════════════════════ */
 const SHEET_COVERAGE={};     // market -> {missing,extra,thin} — readable from the console
 const GSHEET_BY_MARKET={};   // market -> { 'RELIANCE.NS': {C,H,L,V,dates}, ... } | null
-const GSHEET_STATUS={};      // market -> 'unconfigured'|'loading'|'ok'|'failed'
+/* 'cached' exists because a market served from localStorage used to get NO
+   entry here at all, and an absent key is indistinguishable from a market that
+   failed — confirmed live: CUR was 'us', GSHEET_STATUS read {india:'ok'}, and
+   433 of 435 US rows were nonetheless populated from the cache. "Not downloaded
+   because we did not need to" is a success, and now says so. */
+const GSHEET_STATUS={};      // market -> 'unconfigured'|'loading'|'ok'|'cached'|'failed'
 const GSHEET_PROMISE={};     // market -> in-flight/settled promise (shared, never rejects)
 let GSHEET_DATA=null;        // pointer to the ACTIVE market's map — what fetchStock() reads
 
@@ -4447,6 +4634,9 @@ function setGSheetStatus(market){
   // differently.
   updateScanBanner(market);
   if(st==='ok')                el.title=`${M}: Google Sheet loaded — ${n} tickers.`;
+  else if(st==='cached')       el.title=`${M}: served from today's cache — the sheet tab was NOT re-downloaded. `
+                                       + (BENCHMARK_DATA[market] ? `RS is measured against the cached ${BENCHMARK_DATA[market].sym} series.`
+                                                                 : `The benchmark series is not cached either, so RS columns are blank. Press ↻ Refresh to download the tab.`);
   else if(st==='loading')      el.title=`${M}: downloading the Google Sheet tab…`;
   else if(st==='failed')       el.title=`${M}: the Google Sheet tab could not be loaded or is empty. No data will be shown — there is no fallback source.`;
   else if(st==='unconfigured') el.title=`${M}: no Google Sheet URL is set for this market in CFG.GSHEET_CSV_URLS.`;
@@ -4612,6 +4802,20 @@ const cKey=(m)=>`${CFG.VER}_${m}_${today()}`;
 const bKey=(m)=>`${CFG.VER}_bench_${m}_${today()}`;
 
 function saveCache(market){
+  /* THE BENCHMARK IS WRITTEN FIRST, AND IN ITS OWN try.
+     ──────────────────────────────────────────────────
+     It used to be written last, inside the same try as the market blob. The
+     market blob is megabytes and the benchmark is a few kilobytes, so on a
+     browser anywhere near its localStorage quota the big write is the one that
+     throws — and because both writes shared a try, the throw skipped the small
+     one. The next visit then got a cache HIT on the market (written on an
+     earlier, roomier day) with NO benchmark series to go with it, which is
+     precisely the "cached load, RS silently blank" failure. Cheap and essential
+     goes first; expensive and optional goes second and may fail on its own. */
+  try{
+    const b=BENCHMARK_DATA[market];
+    if(b) localStorage.setItem(bKey(market),JSON.stringify(b));
+  } catch(e){ console.warn('Benchmark cache save:',e.message); }
   try{
     const data={};
     UNI[market].forEach(def=>{
@@ -4620,8 +4824,6 @@ function saveCache(market){
       data[def.s]=rest;
     });
     localStorage.setItem(cKey(market),JSON.stringify(data));
-    const b=BENCHMARK_DATA[market];
-    if(b) localStorage.setItem(bKey(market),JSON.stringify(b));
   } catch(e){console.warn('Cache save:',e.message)}
 }
 
@@ -4983,9 +5185,13 @@ function xoverC(d){
   const pair=(d.xFast!=null&&d.xSlow!=null)?`${d.xFast}×${d.xSlow}`:'';
   return `<span class="chip ${bull?'up':'dn'}" title="EMA ${pair}${d.xBars!=null?` crossed ${d.xBars} bar(s) ago`:''}">${bull?'▲ Bull':'▼ Bear'}${age}</span>`;
 }
-function wxC(v){
+function wxC(v,bars,applicable){
+  // A pair the weekly timeframe cannot express reports a dash, not a 10x20
+  // result wearing the user's chosen label. See wxApplicable in computeTech.
+  if(applicable===false) return '<span class="vm" title="The EMA pair selected in Advanced Filters cannot be computed on the weekly timeframe — only ~50 weekly bars are available, so the weekly cross is always 10\u00d720.">—</span>';
   if(!v) return '<span class="vm">—</span>';
-  return `<span class="chip ${v==='bull'?'up':'dn'}">${v==='bull'?'▲ Bull':'▼ Bear'}</span>`;
+  const age = bars==null ? '' : ` \u00b7 ${bars}w`;
+  return `<span class="chip ${v==='bull'?'up':'dn'}" title="Weekly EMA 10\u00d720${bars!=null?` crossed ${bars} week(s) ago`:' — no flip inside the available history'}">${v==='bull'?'▲ Bull':'▼ Bear'}${age}</span>`;
 }
 function slopeC(d){
   if(!d||d.slope200==null) return '<span class="vm">—</span>';
@@ -5245,7 +5451,7 @@ function dataRow(def,d,i){
     <td class="c-histg">${histGC(histGain(d.price,hist))}</td>
     <td class="c-status">${statusC(d.s2)}</td>
     <td>${rsiC(d.rsi14)}</td>
-    <td class="c-wrsi vm">${d.wRsi??'—'}</td>
+    <td class="c-wrsi">${rsiC(d.wRsi)}</td>
     <td class="c-vr">${vrC(d.vRatio)}</td>
     <td class="c-wvol">${vrC(d.wVolRatio)}</td>
     <td class="c-avgval">${avgValC(d.avgValue,d.currency)}</td>
@@ -5257,7 +5463,7 @@ function dataRow(def,d,i){
     <td class="c-ema">${emaBadgeRow(d.price,[['10',d.e10],['20',d.e20],['50',d.e50],['200',d.e200]])}</td>
     <td class="c-wema">${emaBadgeRow(d.price,[['10',d.we10],['20',d.we20]])}</td>
     <td class="c-xcross">${xoverC(d)}</td>
-    <td class="c-wcross">${wxC(d.wxState)}</td>
+    <td class="c-wcross">${wxC(d.wxState,d.wxBars,d.wxApplicable)}</td>
     <td class="c-slope200">${slopeC(d)}</td>
     <td class="c-pattern">${patC(d.pattern)}</td>
     <td class="c-wpattern">${patC(d.wPattern)}</td>
@@ -5600,6 +5806,18 @@ function updateScanBanner(market){
   } else if((st==='failed'||st==='unconfigured') && CACHE_SHOWN[CUR]){
     el.classList.add('err','show');
     txt.textContent='⚠️ Showing previous scan data — the '+CUR.toUpperCase()+' sheet could not be loaded, so these numbers are from the last successful scan.';
+  } else if(st==='cached'){
+    /* A cache hit is not a failure, but it IS a different thing from a live
+       download and the user has to be able to tell. The RS half matters most:
+       the cached path never downloads the tab, so if the benchmark series was
+       not cached alongside it there is no way to compute RS — and blank RS
+       cells with no explanation is exactly the silent degradation this banner
+       exists to prevent. Say which of the two it is, always. */
+    el.classList.add('warn','show');
+    const bad=BENCHMARK_FAILED[CUR];
+    txt.textContent = bad
+      ? `💾 Served from today's cache — the ${CUR.toUpperCase()} sheet was not re-downloaded, and the benchmark ${bad} was not cached with it, so the RS columns are blank. Press ↻ Refresh to download the tab and restore RS.`
+      : `💾 Served from today's cache — the ${CUR.toUpperCase()} sheet was not re-downloaded. RS is measured against the cached ${(BENCHMARK_DATA[CUR]&&BENCHMARK_DATA[CUR].sym)||'benchmark'} series. Press ↻ Refresh for a fresh download.`;
   }
 }
 
@@ -5777,7 +5995,9 @@ const SORT_FN={
   // Bull sorts above bear, and within each the FRESHER cross first — xBars is
   // negated so 0 bars ago (just flipped) outranks 40 bars ago.
   xstate:d=>d?.xState?((d.xState==='bull'?1e6:0)-(d.xBars??999)):null,
-  wxstate:d=>d?.wxState==='bull'?1:d?.wxState==='bear'?0:null,
+  // Direction dominates, recency breaks ties: a bull cross 2 weeks ago should
+  // outrank a bull cross 30 weeks ago when sorting descending.
+  wxstate:d=>d?.wxState==null?null:((d.wxState==='bull'?1000:0)-(d.wxBars??999)),
   slope:d=>d?.slope200,
   pattern:d=>d?.pattern,
   wpattern:d=>d?.wPattern,
@@ -6102,12 +6322,14 @@ const TOUR=[
    b:'The Align column scores how much the daily chart and the weekly chart agree, out of eight checks — four daily, four weekly — and a swing trade lasting days to weeks really only works when both timeframes point the same way. Seven or eight out of eight is the shortlist, and this button keeps exactly those rows. When a stock is missing an input that check is left out of the total rather than counted as a failure, which is why some rows read 6/7 instead of 6/8.'},
   {el:'stk-tbl',   t:'3 · Stage 2 and relative strength',
    b:'Stage 2 asks whether a stock is in a genuine advancing phase: price above its long moving averages, those averages stacked in the right order and rising, and the stock well off its 52-week low. Hover the Stage 2 chip to see which individual rules it passed. Relative strength is measured against a real benchmark ETF — not against the other stocks on this screen — so a positive RS means it is beating the market, not merely beating a weak list.'},
-  {el:'tHead',     t:'4 · Are you already late?',
-   b:'A strong stock can still be a bad entry, and four columns exist to tell those apart. 52W High% is how far below its 52-week high it is trading, Retrace% is how much it has given back from its recent peak, Follow-up counts the trading days since its last breakout, and Consolidation shows how long it has been coiling quietly. Fresh and tight beats extended and stretched — a low Follow-up number on a stock still near its high is a move you can still join.'},
-  {el:'advBtn',    t:'5 · Narrowing the list',
-   b:'Sector View breaks the whole market down by sector so you can see which groups are actually working, and clicking a row filters the table to it. Advanced Filters adds screens the dropdowns do not cover — consolidation length, distance from the 52-week high, breakout age, volume. And the D / W / D+W breadth toggle tells you how much of the market is rising on the daily, the weekly, or both, which is the fastest read on whether to be buying at all today.'},
-  {el:'screenSel', t:'6 · Keeping your work',
-   b:'Mark a stock bull, bear or neutral with the Review buttons, type a note against it, or star it onto your watchlist — all three are saved in this browser and survive a reload. Save the whole filter combination as a named screen here and recall it any time, and use Excel to export exactly what is currently on screen with every column included. The small 📈 beside a ticker opens that stock on TradingView as a daily chart, in a new tab.'},
+  {el:'boxTog',    t:'4 · The Darvas boxes',
+   b:'The D-Box and W-Box columns draw a box around each stock — a ceiling set by a high that held, and a floor under it — on daily bars and on weekly bars, then say where the price is sitting: Inside it, Near the top, Break through it, Above it, or Below it. Break and Near are the two you can still act on, while Above means the move has already gone and a fresh entry there is late. This 📦 Box Setup button keeps only the stocks in a confirmed uptrend that are still Inside, Near or Breaking, so the extended names never reach your list.'},
+  {el:'tHead',     t:'5 · Fresh, or already late?',
+   b:'A strong stock can still be a bad entry, and several columns exist to tell those apart: 52W High% is how far below its 52-week high it is trading, Retrace% is how much it has given back from its recent peak, Follow-up counts the trading days since its last breakout, and Consolidation shows how long it has been coiling quietly. The Fresh column answers the other half of that question by naming the stocks that have only just turned — a cross back above the 50-day average, relative strength turning positive, or a breakout from a long base — together with how many days ago it happened. Fresh and tight beats extended and stretched.'},
+  {el:'advBtn',    t:'6 · Narrowing the list',
+   b:'Sector View breaks the whole market down by sector so you can see which groups are actually working, and clicking a row filters the table to it. Advanced Filters adds screens the dropdowns do not cover — consolidation length, distance from the 52-week high, breakout age, volume, and a minimum on Avg Value, which is the average daily turnover in rupees or dollars and the honest liquidity test of whether you could get in and out of a name at your size. And the D / W / D+W breadth toggle tells you how much of the market is rising on the daily, the weekly, or both, which is the fastest read on whether to be buying at all today.'},
+  {el:'screenSel', t:'7 · Keeping your work',
+   b:'Mark a stock bull, bear or neutral with the Review buttons, type a note against it, or star it onto your watchlist — all three are saved in this browser, shared across all three markets, and survive a reload. Save the whole filter combination as a named screen here and recall it any time, and use Excel to export exactly what is currently on screen with every column included. The small 📈 beside a ticker opens that stock on TradingView as a daily chart, in a new tab.'},
 ];
 let TOUR_I=0;
 function startTour(i){
@@ -6228,9 +6450,17 @@ async function loadMarket(market,force=false){
       // is empty" (already covered by setSheetError) apart from "sheet failed
       // but you are looking at yesterday's numbers", which is the dangerous one.
       CACHE_SHOWN[market]=true;
+      /* Record the state explicitly. Without this line the market simply had no
+         entry in GSHEET_STATUS, which every reader — setGSheetStatus,
+         updateScanBanner, setTag — treated as "not loaded yet", identical to a
+         market nobody had opened. 'cached' is a real, distinct outcome. Set
+         BEFORE setGSheetStatus so the tag and banner describe it correctly. */
+      GSHEET_STATUS[market]='cached';
       GSHEET_DATA = GSHEET_BY_MARKET[market] || null;
       setGSheetStatus(market);
       await fetchBenchmark(market);
+      // The banner text depends on whether the benchmark resolved, so it is
+      // refreshed once more below, after fetchBenchmark has decided.
       rankRS(market);
       computeSectorStrength(market);   // medians move whenever the data does
       renderTable(market); renderMetrics(market);
@@ -6638,12 +6868,27 @@ function tipBox(){
   }
   return TIP_BOX;
 }
+/* The element currently being positioned. It is NOT always TIP_BOX: the Stage 2
+   cell ships its own rich markup (a green tick / red cross per rule) which a
+   textContent-only box cannot render, so that node is positioned in place
+   instead of being copied into the shared box. hideTip() has to know which. */
+let TIP_SHOWN=null;
+/* Positions EITHER the shared text box (any [data-tip]) OR an element's own
+   rich tooltip child (.s2-tooltip on the Stage 2 dots). Both are position:fixed
+   and both get the identical viewport clamp — the Stage 2 one used to be a
+   CSS-only absolute box growing upwards out of the top of the screen. */
 function showTip(el){
-  const txt=el&&el.getAttribute&&el.getAttribute('data-tip');
-  if(!txt) return;
-  const b=tipBox();
-  b.textContent=txt;
+  if(!el) return;
+  const rich = el.querySelector ? el.querySelector('.s2-tooltip') : null;
+  const txt  = el.getAttribute ? el.getAttribute('data-tip') : null;
+  if(!rich && !txt) return;
+  const b = rich || tipBox();
+  if(!rich) b.textContent=txt;
+  // Clear any cap left over from the previous hover before measuring, or a tall
+  // tooltip would permanently shrink every shorter one that followed it.
+  b.style.maxHeight='';
   b.style.display='block';
+  TIP_SHOWN=b;
   // Measure after the text is in, and before clamping — max-width means the
   // rendered box can be narrower than 320px and centring on a guess is wrong.
   const r=el.getBoundingClientRect(), t=b.getBoundingClientRect();
@@ -6652,22 +6897,42 @@ function showTip(el){
   // Clamped into the viewport: without this the first column's tooltip renders
   // at a negative x and the last column's runs off the right edge.
   const left=Math.max(8, Math.min(r.left+r.width/2-t.width/2, vw-t.width-8));
+  // 8px is the viewport margin used on all four sides.
+  // HEIGHT FIRST, THEN POSITION. The Stage 2 tooltip lists nine rules and the
+  // longest data-tip in this file is a paragraph; either can be taller than the
+  // window. Capping the height before choosing a top is what makes the top
+  // clamp below achievable at all — otherwise "fits above" and "fits below" are
+  // both false and the box has to hang off one edge.
+  let h=t.height;
+  const maxH=vh-16;
+  if(h>maxH){ h=maxH; b.style.maxHeight=maxH+'px'; }   // internal scroll takes the rest
   // Prefer above; the sticky header row sits at the very top of the scroll
   // panel, where there is no room, so it flips below instead of being clipped.
-  let top=r.top-t.height-8;
-  if(top<8) top=Math.min(r.bottom+8, Math.max(8, vh-t.height-8));
+  let top=r.top-h-8;
+  if(top<8) top=Math.min(r.bottom+8, Math.max(8, vh-h-8));
+  // Final clamp, and the actual fix for the reported bug: whatever the two
+  // branches above decided, the top edge never goes above the 8px margin and
+  // the bottom never runs past the viewport. Every rule stays readable.
+  top=Math.max(8, Math.min(top, Math.max(8, vh-h-8)));
   b.style.left=left+'px';
   b.style.top=top+'px';
 }
-function hideTip(){ if(TIP_BOX) TIP_BOX.style.display='none'; }
+function hideTip(){
+  if(TIP_BOX) TIP_BOX.style.display='none';
+  if(TIP_SHOWN && TIP_SHOWN!==TIP_BOX){ TIP_SHOWN.style.display='none'; TIP_SHOWN.style.maxHeight=''; }
+  TIP_SHOWN=null;
+}
+// Anything that owns a tooltip: a plain data-tip, or the Stage 2 cell whose
+// tooltip is rich markup rather than text.
+const TIP_SEL='[data-tip],.s2w';
 function initTips(){
   // Delegated, so tooltips keep working on rows rendered after page load.
   document.addEventListener('mouseover',e=>{
-    const el=e.target&&e.target.closest&&e.target.closest('[data-tip]');
+    const el=e.target&&e.target.closest&&e.target.closest(TIP_SEL);
     if(el) showTip(el);
   });
   document.addEventListener('mouseout',e=>{
-    const el=e.target&&e.target.closest&&e.target.closest('[data-tip]');
+    const el=e.target&&e.target.closest&&e.target.closest(TIP_SEL);
     if(el) hideTip();
   });
   // Capture phase: .tbl-scroll's own scroll events do not bubble to window.
