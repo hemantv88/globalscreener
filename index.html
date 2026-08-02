@@ -725,7 +725,18 @@ body.hide-fresh   .c-fresh{display:none!important}
    ancestor's overflow and stacking context; showTip() then clamps it inside
    the viewport, which is what keeps the leftmost and rightmost columns legible.
    text-transform is reset because <th> is uppercased. */
-[data-tip]{position:relative}
+/* NO position:relative HERE. It used to be needed for the old ::after tooltip,
+   which was replaced by the body-level .tip-box (position:fixed, placed by JS
+   from getBoundingClientRect) — so it is vestigial, and actively harmful:
+   `[data-tip]` is specificity (0,1,0) and beats `th` (0,0,1), so every header
+   cell carrying a tooltip computed to position:relative and silently lost
+   BOTH its vertical stickiness and its frozen-column `left`. That is why the
+   header stopped following the page down and stopped pinning left.
+   It only surfaced when tooltips were added to ALL 47 headers — before that the
+   handful without a data-tip were still sticky, so the row never fully broke.
+   Confirmed in a live browser: computed position was `relative` on every th.
+   Anything needing a positioned ancestor must set it on itself, not here. */
+[data-tip]{}
 .tip-box{position:fixed;left:0;top:0;display:none;z-index:9999;
   /* 10.5px was too small to read comfortably against a dark panel; 12.5px with
      a slightly looser line-height is legible without dominating the screen. */
