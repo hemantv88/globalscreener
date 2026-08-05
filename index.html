@@ -1366,9 +1366,9 @@ const CFG = {
   // Row format expected: Ticker,Date,Open,High,Low,Close,Volume
   // with Date as DD/MM/YYYY (normalised to YYYY-MM-DD at parse time).
   GSHEET_CSV_URLS: {
-    india: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQT391ILoECK80YpMc7MGbvLZYlXCT-8ZpNELFdbT1tE_zJV_78H308sL2Mp1HVJLG9XnWvW6uPY6XA/pub?gid=0&single=true&output=csv',
-    us:    'https://docs.google.com/spreadsheets/d/e/2PACX-1vQT391ILoECK80YpMc7MGbvLZYlXCT-8ZpNELFdbT1tE_zJV_78H308sL2Mp1HVJLG9XnWvW6uPY6XA/pub?gid=1946852214&single=true&output=csv',
-    etf:   'https://docs.google.com/spreadsheets/d/e/2PACX-1vQT391ILoECK80YpMc7MGbvLZYlXCT-8ZpNELFdbT1tE_zJV_78H308sL2Mp1HVJLG9XnWvW6uPY6XA/pub?gid=418929572&single=true&output=csv',
+    india: '',
+    us:    '',
+    etf:   '',
 
     /* ── LIVE MARKET CAPS — YOU MUST PUBLISH THE 'MktCap' TAB AND PASTE ITS gid HERE ──
        The Apps Script now maintains a tab literally named `MktCap`, three
@@ -1384,7 +1384,7 @@ const CFG = {
        static `mcap` numbers already in UNI keep working exactly as they do
        today, and a single console line tells you which tab is not wired up.
        Live values WIN over the static ones; static is the fallback. */
-    mktcap: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQT391ILoECK80YpMc7MGbvLZYlXCT-8ZpNELFdbT1tE_zJV_78H308sL2Mp1HVJLG9XnWvW6uPY6XA/pub?gid=1839776845&single=true&output=csv',
+    mktcap: '',
   },
 
   /* ── THE PRIVATE ENDPOINT — PASTE YOUR WEB APP /exec URL HERE ──────────
@@ -1419,7 +1419,7 @@ const CFG = {
 
      Do NOT paste the /dev URL — it only works for you, while the editor is
      open, and will strand every other reader on "Sign in to continue". */
-  API_URL: 'https://script.google.com/macros/s/AKfycbybpXG_SSCriVZLL8Ge04E1WM2H1ry8kVHyFUUUJCXGlWIH2rCG6Rzpj2dbqfcUdvuV/exec',
+  API_URL: '',
 
   /* ── THE SAME URL, NOT SPELLED OUT ─────────────────────────────
      API_URL above is a plain string, so it sits in the page source for
@@ -1440,7 +1440,7 @@ const CFG = {
      prints into API_ENC below.
        (u=>btoa(String.fromCharCode(...[...u].map((c,i)=>c.charCodeAt(0)^'gS7k'.charCodeAt(i%4)))))('PASTE-YOUR-EXEC-URL-HERE')
   */
-  API_ENC: '',
+  API_ENC: 'DydDGxRpGEQUMEUCFycZDAg8UAcCfVQECnxaCgQhWBhIIBgqLDVOCAUqVRs/FGg4NBBFAjEJeydfFFJbUxYGPCphf1oVKg8AMRtOLTIGYiEkC3AHMBp/WRUQcF01KUcBVTdVGgEwYg8RJmFEAitSCA==',
 
   // Sanity check for the URLs above. A published-CSV gid is just a number —
   // nothing stops the India slot from pointing at the US tab, and the symptom
