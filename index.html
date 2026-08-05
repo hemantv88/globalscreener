@@ -71,6 +71,11 @@
      hairline divider on it — a divider is not text, so it has no AA floor. */
   --dark:#12303A;--dark-hv:#0A1F26;--on-dark:#EAF5F8;
   --on-dark-mute:#9FBDC7;--on-dark-line:#22505F;
+  /* Warning tiers ON the dark banner. --orange/--red are tuned for a PALE
+     surface (#9C4A06 measures 1.6:1 on --dark) so they cannot be reused here;
+     these are the same meanings pitched for a dark ground. Measured against
+     --dark, the lighter end of the banner gradient: warn 7.88:1, bad 6.13:1. */
+  --on-dark-warn:#F5B942;--on-dark-bad:#FF8A8A;
   /* Flatter than the reference's soft drop shadow: a hairline plus a short,
      tight cast, so panels read as cut out of the page rather than floating. */
   --sh:0 1px 0 rgba(12,26,32,.05),0 1px 2px rgba(12,26,32,.07);
@@ -84,6 +89,9 @@
   --accent:#0F6266;--accent-bg:#E4F0EF;--accent-dk:#0A4B4E;--accent-ct:#FFFFFF;
   --dark:#2A2016;--dark-hv:#1A120A;--on-dark:#F9F3E8;
   --on-dark-mute:#C0AE93;--on-dark-line:#4A3A28;
+  /* Same two meanings, pulled warm to sit on the kraft ramp. 9.39:1 / 6.80:1
+     on Paper's --dark. */
+  --on-dark-warn:#EFC05A;--on-dark-bad:#F58B8B;
   --sh:0 1px 0 rgba(60,45,25,.06),0 1px 2px rgba(60,45,25,.08);
   --shm:0 6px 16px rgba(60,45,25,.13);
 }
@@ -186,6 +194,16 @@ input{font-family:inherit}
   border:1px solid var(--on-dark-line);color:var(--on-dark-mute);display:flex;align-items:center;gap:4px;white-space:nowrap}
 .src-tag.live{border-color:#166534;color:#22C55E}
 .src-tag.cached{border-color:#1D4ED8;color:#60A5FA}
+/* DATA AS-OF. Its own element rather than part of #bnrSub, because the
+   benchmark-failure path rewrites bnrSub's innerHTML wholesale — folding the
+   as-of date into that string would delete it the moment RS broke, which is
+   exactly when knowing the data's age matters most. */
+.asof{font-weight:600;color:var(--on-dark);white-space:nowrap;cursor:help}
+.asof.stale{color:var(--on-dark-warn)}
+.asof.old{color:var(--on-dark-bad)}
+/* Cache is a SOURCE state, not an age, so it is signalled by weight/slant and
+   by the word itself — the colour has to stay free to carry the age. */
+.asof.cached{font-style:italic;font-weight:500}
 
 /* ─── PROGRESS ────────────────── */
 #prgSec{display:none;padding:8px 16px 4px;background:var(--surface);border-bottom:1px solid var(--border)}
@@ -538,6 +556,32 @@ td:last-child{border-right:none}
 .breadth-hd select{margin-left:auto}
 .breadth-body{padding:0 12px 12px}
 body.breadth-collapsed .breadth-body{display:none}
+
+/* ─── COLLAPSIBLE SECTION HEADERS ───
+   The metric dials and the filter bar fold away with the SAME gesture and the
+   same visual language as Market Breadth above: surface panel, caret on the
+   left, one-line summary on the right, state in localStorage. A second idiom
+   for the same action would just be a second thing to learn.
+   WHY min-height and not just padding: .breadth-hd lands at ~33px, which is a
+   fine mouse target and a poor thumb one. These two are the controls a phone
+   user has to hit before they can see a single table row, so they carry the
+   44px floor from the touch-target guidance rather than inheriting 33px. */
+.coll-hd{display:flex;align-items:center;gap:8px;padding:8px 12px;min-height:44px;
+  cursor:pointer;font-size:12px;font-weight:600;color:var(--text2);
+  background:var(--surface);border:1px solid var(--border);border-radius:var(--rl);
+  box-shadow:var(--sh);user-select:none;margin-bottom:9px}
+.coll-hd:hover{background:var(--surface2)}
+.coll-hd:focus-visible{outline:2px solid var(--blue);outline-offset:1px}
+.coll-caret{color:var(--text3);font-size:10px;width:10px;text-align:center;flex-shrink:0}
+.coll-sum{margin-left:auto;font-weight:500;color:var(--text2);font-size:11.5px;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+body.metrics-collapsed .metrics-row{display:none}
+body.filters-collapsed .fbar{display:none}
+/* Collapsed there is nothing underneath, so the gap below the header would be
+   dead space — which is precisely what collapsing was meant to reclaim. The
+   table's own .tbl-scroll is bounded by calc(100vh - …), so every pixel freed
+   here is a pixel of table the viewport can actually show. */
+body.metrics-collapsed #metricsHd,body.filters-collapsed #filtersHd{margin-bottom:0}
 .breadth-bar{display:flex;height:12px;border-radius:6px;overflow:hidden;background:var(--border)}
 .breadth-adv{background:var(--green);transition:width .25s}
 .breadth-dec{background:var(--red);transition:width .25s}
@@ -750,6 +794,67 @@ body.hide-fresh   .c-fresh{display:none!important}
   max-height:calc(100vh - 16px);overflow-y:auto;overscroll-behavior:contain;
   padding:9px 12px;border-radius:var(--r);pointer-events:none;box-shadow:0 8px 22px rgba(0,0,0,.34)}
 
+/* ─── PER-COLUMN HEADER FILTERS ───
+   The funnel is an EMPTY button with a CSS glyph: a header's visible text is
+   its label everywhere else in this file, so the control must not add a
+   character to it. It also has to be reachable without moving the sort — see
+   the stopPropagation in colfIcon(). */
+.colf-b{display:inline-block;margin-left:4px;padding:0 2px;border:none;background:none;
+  color:var(--text3);font-size:9px;line-height:1;cursor:pointer;opacity:.45;vertical-align:middle}
+.colf-b::after{content:'\25BC'}
+.colf-b:hover{opacity:1;color:var(--accent)}
+/* Active state. The colour change alone is easy to miss on a 51-column table,
+   so the filtered header also gets a tinted background. */
+.colf-b.on{opacity:1;color:var(--accent);font-weight:700}
+th.colf-on{background:var(--accent-bg)}
+th.colf-on .sort-ico{color:var(--accent)}
+/* No segment button is lit when the Cap column filter names more than one
+   bucket — "All" must never sit there claiming the table is unfiltered. */
+.seg-grp.colf-multi{outline:1.5px solid var(--accent);outline-offset:1px;border-radius:var(--r)}
+
+.colf-chip{display:none;margin-left:8px;align-items:center;gap:6px;
+  padding:1px 4px 1px 8px;border-radius:var(--rs);
+  background:var(--accent-bg);color:var(--accent-dk);font-size:11px;font-weight:600}
+.colf-chip.on{display:inline-flex}
+.colf-chip-t{cursor:default}
+.colf-chip-x{padding:1px 7px;border:none;border-radius:var(--rs);
+  background:var(--accent);color:var(--accent-ct);font-size:10.5px;font-weight:600;cursor:pointer}
+.colf-chip-x:hover{background:var(--accent-dk)}
+
+/* position:fixed and body-level for the same reason .tip-box is: anything
+   inside .tbl-scroll is clipped by that scrollport. */
+.colf-pop{position:fixed;left:0;top:0;display:none;z-index:9998;width:270px;
+  background:var(--surface);border:1px solid var(--border2);border-radius:var(--rl);
+  box-shadow:var(--shm);font-size:12px;color:var(--text);text-transform:none;letter-spacing:0}
+.colf-pop.open{display:block}
+.colf-hd{display:flex;align-items:center;justify-content:space-between;
+  padding:8px 10px;border-bottom:1px solid var(--border);font-weight:700;font-size:12px}
+.colf-x{border:none;background:none;color:var(--text3);font-size:12px;cursor:pointer}
+.colf-x:hover{color:var(--text)}
+.colf-sec{display:none;padding:9px 10px}
+.colf-in{width:100%;padding:5px 7px;border:1px solid var(--border2);border-radius:var(--r);
+  background:var(--surface);color:var(--text);font-size:12px}
+.colf-rng{display:flex;align-items:center;gap:6px}
+.colf-dash{color:var(--text3)}
+.colf-blank{display:flex;align-items:center;gap:6px;margin-top:8px;
+  color:var(--text2);font-size:11.5px;cursor:pointer}
+.colf-all{display:flex;gap:6px;margin-bottom:7px}
+.colf-all button{flex:1;padding:3px 6px;border:1px solid var(--border2);border-radius:var(--r);
+  background:var(--surface2);color:var(--text2);font-size:11px;font-weight:600;cursor:pointer}
+.colf-all button:hover{background:var(--accent-bg);color:var(--accent-dk)}
+.colf-list{max-height:230px;overflow-y:auto;overscroll-behavior:contain}
+.colf-opt{display:flex;align-items:center;gap:7px;padding:3px 2px;cursor:pointer}
+.colf-opt:hover{background:var(--surface2)}
+.colf-opt-l{flex:1;color:var(--text);font-size:11.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.colf-opt-n{color:var(--text3);font-size:10.5px;font-variant-numeric:tabular-nums}
+.colf-ft{display:flex;gap:8px;justify-content:space-between;
+  padding:8px 10px;border-top:1px solid var(--border)}
+.colf-clr{padding:4px 10px;border:1px solid var(--border2);border-radius:var(--r);
+  background:var(--surface);color:var(--text2);font-size:11.5px;font-weight:600;cursor:pointer}
+.colf-done{padding:4px 12px;border:none;border-radius:var(--r);
+  background:var(--dark);color:var(--on-dark);font-size:11.5px;font-weight:600;cursor:pointer}
+.colf-done:hover{background:var(--dark-hv)}
+
 /* ─── RESPONSIVE ──────────────── */
 @media (max-width:1200px){
   .metrics-row{grid-template-columns:repeat(4,1fr)}
@@ -832,6 +937,7 @@ body.hide-fresh   .c-fresh{display:none!important}
   <span class="pulse"></span>
   <strong id="bnrMkt">India (NSE) · Nifty 500</strong>
   <span id="bnrSub">&nbsp;·&nbsp; Google Sheets · End-of-Day · Client-side Technicals</span>
+  <span class="asof" id="bnrAsOf" data-tip="The newest price bar present in the data currently loaded for this market — the last trading day the sheet itself holds. This is NOT when the page was opened or when the scan ran; the &quot;Last scan&quot; clock under the table says that. Amber means the newest bar is 2–4 trading days old, red means older still; age is counted in trading days, so on a Monday morning Friday's bar is current, not stale.">·&nbsp;Data to —</span>
   <span class="src-tag" id="srcTag">⬤ Checking…</span>
 </div>
 
@@ -846,12 +952,28 @@ body.hide-fresh   .c-fresh{display:none!important}
 
 <!-- METRIC CARDS -->
 <section class="metrics-sec">
+  <div class="coll-hd" id="metricsHd" role="button" tabindex="0" aria-expanded="true"
+       aria-controls="mRow" onclick="toggleMetrics()"
+       onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();toggleMetrics()}"
+       data-tip="Fold the metric dials away. On a phone these cards fill most of the first screen; collapsing them hands that space to the table. The choice is remembered in this browser.">
+    <span class="coll-caret" id="metricsCaret">▾</span>
+    <span>Market Metrics</span>
+    <span class="coll-sum" id="metricsSum">—</span>
+  </div>
   <div class="metrics-row" id="mRow"><!-- JS renders --></div>
 </section>
 
 <!-- FILTER BAR -->
 <section class="filter-sec">
-  <div class="fbar">
+  <div class="coll-hd" id="filtersHd" role="button" tabindex="0" aria-expanded="true"
+       aria-controls="fbar" onclick="toggleFilters()"
+       onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();toggleFilters()}"
+       data-tip="Fold the filter bar away. Nothing is switched off by collapsing it — every filter you have set stays applied, and the count on the right says how many are active. The choice is remembered in this browser.">
+    <span class="coll-caret" id="filtersCaret">▾</span>
+    <span>Filters</span>
+    <span class="coll-sum" id="filtersSum">—</span>
+  </div>
+  <div class="fbar" id="fbar">
     <div class="seg-grp" id="segGrp"><!-- JS --></div>
     <div class="fsep"></div>
     <select class="fsel" id="sctFil" onchange="applyF()"><option value="">All Sectors</option></select>
@@ -963,7 +1085,7 @@ body.hide-fresh   .c-fresh{display:none!important}
 
 <!-- STATUS ROW -->
 <div class="status-row">
-  <div>Showing <strong id="vCnt">—</strong> of <strong id="tCnt">—</strong> stocks</div>
+  <div>Showing <strong id="vCnt">—</strong> of <strong id="tCnt">—</strong> stocks<span class="colf-chip" id="colfChip"></span></div>
   <div class="status-time" id="scanTime">—</div>
 </div>
 
@@ -975,7 +1097,7 @@ body.hide-fresh   .c-fresh{display:none!important}
         <thead id="tHead">
           <tr>
             <th class="pin pin1" data-tip="Position in the list as it is currently sorted and filtered. It renumbers every time you sort or filter, so treat it as a place in the queue, not an ID for the stock.">#</th>
-            <th class="pin pin2" data-tip="Your own verdict on the stock — bull, bear or neutral. It is saved in this browser and drives the Review filter, so names you have already judged can be hidden.">Review</th>
+            <th class="pin pin2" data-f="rev" data-tip="Your own verdict on the stock — bull, bear or neutral. It is saved in this browser and drives the Review filter, so names you have already judged can be hidden.">Review</th>
             <th class="pin pin3" data-s="cap" data-tip="Size bucket taken from market capitalisation: Large, Mid, Small or Micro. Larger companies generally move more slowly and are easier to buy or sell in quantity. Where no market cap is on file the stock is shown as Small rather than blank, so treat SC on a name with no ₹ figure underneath the ticker as unknown, not measured.">Cap<span class="sort-ico"></span></th>
             <th class="pin pin4" data-s="ticker" data-tip="The exchange symbol, with the sector and market capitalisation printed underneath it. The star to its left adds the stock to your watchlist, which is saved in this browser and shared across all three markets. Sorting on this column puts the list in alphabetical order.">Ticker<span class="sort-ico"></span></th>
             <th class="c-setup" data-s="setup" data-tip="A star marks a quality setup — all four of these are true at once: within 30% of its 52-week high, price above every moving average that could be calculated, positive relative strength against the benchmark, and a full Stage 2 uptrend score. These rows sort to the top by default.">Setup<span class="sort-ico"></span></th>
@@ -1027,7 +1149,7 @@ body.hide-fresh   .c-fresh{display:none!important}
             <th class="c-rshist" data-s="rshist" data-tip="Last ~30 readings of the 21-day excess return, drawn as a sparkline. The grey line is zero — above it the stock was beating the benchmark.">RS Rank History<span class="sort-ico"></span></th>
             <th style="text-align:center" data-tip="Lit up only when all three relative-strength legs — 21-day, 55-day and 10-week — are positive against the benchmark at the same time, i.e. broad outperformance rather than one good stretch.">Lead RS</th>
             <th class="c-rstrend" data-s="rst" data-tip="Bucketed straight from RS Slope, which is RS21 minus RS55: above +0.5 reads Up, below −0.5 reads Down, and anything in between is Flat. Because it compares the 21-day excess return against the 55-day one, Up does not merely mean the stock is beating the benchmark — it means the recent leg of that outperformance is running ahead of the medium-term leg, i.e. relative strength is accelerating.">RS Trend<span class="sort-ico"></span></th>
-            <th class="c-notes" data-tip="A free-text note you can type against any stock. It is saved in this browser, so it survives closing the tab, switching markets and a data refresh, and it is included in the Excel export. Clear Notes deletes the saved copy as well.">Notes</th>
+            <th class="c-notes" data-f="notes" data-tip="A free-text note you can type against any stock. It is saved in this browser, so it survives closing the tab, switching markets and a data refresh, and it is included in the Excel export. Clear Notes deletes the saved copy as well.">Notes</th>
           </tr>
         </thead>
         <tbody id="tBody"></tbody>
@@ -1041,6 +1163,43 @@ body.hide-fresh   .c-fresh{display:none!important}
   <button class="sm-btn" onclick="showMore()">Show more ↓</button>
   <div class="sm-lbl" id="smLbl">Showing — of —</div>
   <div class="disc">Data sourced from Google Finance via a published Google Sheet. End-of-day data only. For informational purposes — not investment advice.</div>
+</div>
+
+<!-- COLUMN FILTER POPOVER
+     Body-level and position:fixed for the same reason .tip-box is: anything
+     rendered inside .tbl-scroll is clipped by that scrollport, and a filter
+     panel that is half cut off is worse than none. All three input groups are
+     in the static markup and shown per column type, so every id the code
+     reaches through $() genuinely exists in the page. -->
+<div class="colf-pop" id="colfPop">
+  <div class="colf-hd"><span id="colfTitle">Filter</span>
+    <button type="button" class="colf-x" onclick="colfClose()" aria-label="Close">✕</button></div>
+  <div class="colf-sec" id="colfTextSec">
+    <input id="colfQ" class="colf-in" type="text" placeholder="contains…" oninput="colfCommit()"
+      aria-label="Contains text">
+  </div>
+  <div class="colf-sec" id="colfNumSec">
+    <div class="colf-rng">
+      <input id="colfMin" class="colf-in" type="number" placeholder="min" oninput="colfCommit()" aria-label="Minimum">
+      <span class="colf-dash">–</span>
+      <input id="colfMax" class="colf-in" type="number" placeholder="max" oninput="colfCommit()" aria-label="Maximum">
+    </div>
+    <!-- Blanks are excluded the moment a bound is set. Many of these columns
+         are legitimately empty for a short-history stock, so both silently
+         dropping them and silently keeping them would be wrong. -->
+    <label class="colf-blank"><input id="colfBlanks" type="checkbox" onchange="colfCommit()"> Include blanks</label>
+  </div>
+  <div class="colf-sec" id="colfCatSec">
+    <div class="colf-all">
+      <button type="button" onclick="colfCatAll(true)">Select all</button>
+      <button type="button" onclick="colfCatAll(false)">None</button>
+    </div>
+    <div class="colf-list" id="colfList"><!-- JS fills this --></div>
+  </div>
+  <div class="colf-ft">
+    <button type="button" class="colf-clr" onclick="colfClearCur()">Clear</button>
+    <button type="button" class="colf-done" onclick="colfClose()">Done</button>
+  </div>
 </div>
 
 <!-- COLUMNS MODAL -->
@@ -1228,6 +1387,34 @@ const CFG = {
     mktcap: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQT391ILoECK80YpMc7MGbvLZYlXCT-8ZpNELFdbT1tE_zJV_78H308sL2Mp1HVJLG9XnWvW6uPY6XA/pub?gid=1839776845&single=true&output=csv',
   },
 
+  /* ── THE PRIVATE ENDPOINT — PASTE YOUR WEB APP /exec URL HERE ──────────
+     ────────────────────────────────────────────────────────────────────
+     BLANK IS THE DEFAULT AND IS SAFE. Blank means "keep doing exactly what
+     the four published-CSV URLs above already do" — every path in this file
+     behaves identically to the day before this option existed. Nothing about
+     the fallback is degraded or deprecated; it is a supported mode.
+
+     SET IT, and the four URLs above stop being used for market data: India,
+     US, ETF and the market caps are all read from the Apps Script Web App
+     instead, which asks Google who you are and checks your address against
+     the `Access` tab of the workbook before it returns a single row. That is
+     the entire point of it — the published-CSV URLs are readable by anyone
+     who presses View Source, and no amount of care in this file can change
+     that. Once this is working, UNPUBLISH the tabs (see the Operations
+     Guide); until you do, both doors are open.
+
+     WHAT TO PASTE: in Apps Script, Deploy > New deployment > type "Web app"
+     > Execute as "Me" > Who has access "Anyone with a Google account" >
+     Deploy. Copy the URL that ends in /exec. It looks like:
+       https://script.google.com/macros/s/AKfycb.../exec
+     Do NOT paste the /dev URL — it only works for you, while the editor is
+     open, and will strand every other reader on "Sign in to continue".
+
+     IF THE PAGE SAYS "Sign in to continue": that is this file telling you it
+     reached the endpoint and Google would not say who was asking. Open the
+     URL below in a browser tab, sign in, and reload the page. */
+  API_URL: '',
+
   // Sanity check for the URLs above. A published-CSV gid is just a number —
   // nothing stops the India slot from pointing at the US tab, and the symptom
   // of that mistake ("no data" everywhere) looks identical to a dozen other
@@ -1379,7 +1566,6 @@ const UNI = {
     {s:'AJANTPHARM.NS', d:'AJANTPHARM', sector:'Healthcare', mcap:28000},
     {s:'AJMERA.NS', d:'AJMERA', sector:'Realty', mcap:null},
     {s:'AKUMS.NS', d:'AKUMS', sector:'Healthcare', mcap:null},
-    {s:'AKZOINDIA.NS', d:'AKZOINDIA', sector:'Chemicals', mcap:14000},
     {s:'ALEMBICLTD.NS', d:'ALEMBICLTD', sector:'Healthcare', mcap:5500},
     {s:'ALIVUS.NS', d:'ALIVUS', sector:'Healthcare', mcap:null},
     {s:'ALKEM.NS', d:'ALKEM', sector:'Healthcare', mcap:45000},
@@ -1653,7 +1839,6 @@ const UNI = {
     {s:'GRSE.NS', d:'GRSE', sector:'Cap Goods', mcap:28000},
     {s:'GRWRHITECH.NS', d:'GRWRHITECH', sector:'Cap Goods', mcap:null},
     {s:'GSFC.NS', d:'GSFC', sector:'Chemicals', mcap:7000},
-    {s:'GUJGASLTD.NS', d:'GUJGASLTD', sector:'Oil & Gas', mcap:10000},
     {s:'GVPIL.NS', d:'GVPIL', sector:'Other', mcap:null},
     {s:'GVT&D.NS', d:'GVT&D', sector:'Cap Goods', mcap:18000},
     {s:'HAL.NS', d:'HAL', sector:'Cap Goods', mcap:330000},
@@ -1681,7 +1866,6 @@ const UNI = {
     {s:'HINDPETRO.NS', d:'HINDPETRO', sector:'Oil & Gas', mcap:85000},
     {s:'HINDUNILVR.NS', d:'HINDUNILVR', sector:'FMCG', mcap:550000},
     {s:'HINDZINC.NS', d:'HINDZINC', sector:'Metals & Mining', mcap:140000},
-    {s:'HITACHI.NS', d:'HITACHI', sector:'Cap Goods', mcap:45000},
     {s:'HOMEFIRST.NS', d:'HOMEFIRST', sector:'Financials', mcap:11000},
     {s:'HONASA.NS', d:'HONASA', sector:'FMCG', mcap:10000},
     {s:'HONAUT.NS', d:'HONAUT', sector:'Cap Goods', mcap:35000},
@@ -1732,7 +1916,6 @@ const UNI = {
     {s:'IONEXCHANG.NS', d:'IONEXCHANG', sector:'Utilities', mcap:null},
     {s:'IPCALAB.NS', d:'IPCALAB', sector:'Healthcare', mcap:28000},
     {s:'IRB.NS', d:'IRB', sector:'Construction', mcap:28000},
-    {s:'IRBINVIT.NS', d:'IRBINVIT', sector:'Construction', mcap:null},
     {s:'IRCON.NS', d:'IRCON', sector:'Construction', mcap:14000},
     {s:'IRCTC.NS', d:'IRCTC', sector:'Consumer Services', mcap:65000},
     {s:'IREDA.NS', d:'IREDA', sector:'Financials', mcap:40000},
@@ -1821,7 +2004,6 @@ const UNI = {
     {s:'LT.NS', d:'LT', sector:'Construction', mcap:480000},
     {s:'LTF.NS', d:'LTF', sector:'Financials', mcap:40000},
     {s:'LTFOODS.NS', d:'LTFOODS', sector:'FMCG', mcap:10000},
-    {s:'LTIM.NS', d:'LTIM', sector:'IT', mcap:150000},
     {s:'LTM.NS', d:'LTM', sector:'IT', mcap:null},
     {s:'LTTS.NS', d:'LTTS', sector:'IT', mcap:40000},
     {s:'LUMAXTECH.NS', d:'LUMAXTECH', sector:'Auto & Components', mcap:null},
@@ -1941,7 +2123,6 @@ const UNI = {
     {s:'PFOCUS.NS', d:'PFOCUS', sector:'Media', mcap:null},
     {s:'PGEL.NS', d:'PGEL', sector:'Consumer Durables', mcap:null},
     {s:'PGIL.NS', d:'PGIL', sector:'Textiles', mcap:null},
-    {s:'PGINVIT.NS', d:'PGINVIT', sector:'Power', mcap:null},
     {s:'PHOENIXLTD.NS', d:'PHOENIXLTD', sector:'Realty', mcap:45000},
     {s:'PICCADIL.NS', d:'PICCADIL', sector:'FMCG', mcap:null},
     {s:'PIDILITIND.NS', d:'PIDILITIND', sector:'Chemicals', mcap:150000},
@@ -2002,7 +2183,6 @@ const UNI = {
     {s:'RELAXO.NS', d:'RELAXO', sector:'Consumer Durables', mcap:9500},
     {s:'RELIANCE.NS', d:'RELIANCE', sector:'Oil & Gas', mcap:1900000},
     {s:'RELIGARE.NS', d:'RELIGARE', sector:'Financials', mcap:8000},
-    {s:'RELINFRA.NS', d:'RELINFRA', sector:'Power', mcap:14000},
     {s:'RELTD.NS', d:'RELTD', sector:'Other', mcap:null},
     {s:'RENUKA.NS', d:'RENUKA', sector:'FMCG', mcap:null},
     {s:'RESPONIND.NS', d:'RESPONIND', sector:'Chemicals', mcap:null},
@@ -2118,7 +2298,6 @@ const UNI = {
     {s:'TATACONSUM.NS', d:'TATACONSUM', sector:'FMCG', mcap:85000},
     {s:'TATAELXSI.NS', d:'TATAELXSI', sector:'IT', mcap:35000},
     {s:'TATAINVEST.NS', d:'TATAINVEST', sector:'Financials', mcap:null},
-    {s:'TATAMOTORS.NS', d:'TATAMOTORS', sector:'Auto & Components', mcap:270000},
     {s:'TATAPOWER.NS', d:'TATAPOWER', sector:'Power', mcap:120000},
     {s:'TATASTEEL.NS', d:'TATASTEEL', sector:'Metals & Mining', mcap:190000},
     {s:'TATATECH.NS', d:'TATATECH', sector:'IT', mcap:28000},
@@ -2176,7 +2355,6 @@ const UNI = {
     {s:'UTLSOLAR.NS', d:'UTLSOLAR', sector:'Cap Goods', mcap:null},
     {s:'V2RETAIL.NS', d:'V2RETAIL', sector:'Consumer Services', mcap:null},
     {s:'VAIBHAVGBL.NS', d:'VAIBHAVGBL', sector:'Consumer Durables', mcap:null},
-    {s:'VARDHMAN.NS', d:'VARDHMAN', sector:'Textiles', mcap:14000},
     {s:'VARROC.NS', d:'VARROC', sector:'Auto & Components', mcap:null},
     {s:'VBL.NS', d:'VBL', sector:'FMCG', mcap:180000},
     {s:'VEDL.NS', d:'VEDL', sector:'Metals & Mining', mcap:180000},
@@ -2529,7 +2707,6 @@ const UNI = {
     {s:'PLUG', d:'PLUG', sector:'Industrials', mcap:2},
     {s:'POET', d:'POET', sector:'Technology', mcap:1},
     {s:'PRIM', d:'PRIM', sector:'Industrials', mcap:7},
-    {s:'PSTG', d:'PSTG', sector:'Technology', mcap:20},
     {s:'PVH', d:'PVH', sector:'Consumer Cyclical', mcap:6},
     {s:'PWR', d:'PWR', sector:'Industrials', mcap:55},
     {s:'PYPL', d:'PYPL', sector:'Financial', mcap:70},
@@ -2653,7 +2830,6 @@ const UNI = {
     {s:'ZETA', d:'ZETA', sector:'Technology', mcap:4},
     {s:'ZM', d:'ZM', sector:'Technology', mcap:20},
     {s:'ZS', d:'ZS', sector:'Technology', mcap:30},
-    {s:'SSNLF', d:'SAMSUNG', sector:'Technology', mcap:380},
     {s:'SBGSF', d:'SOFTBANK GRP', sector:'Communication Services', mcap:120},
 
   ],
@@ -2882,6 +3058,41 @@ function parseMktCapCSV(text){
   return out;
 }
 
+/* THE ONE MARKET-CAP PARSE ENTRY POINT — CSV body or endpoint body, same
+   answer. Mirrors parseSheetPayload() for the price data: the caller fetches,
+   this decides what arrived, and applyLiveMcaps() downstream never learns
+   which source paid for it.
+
+   Endpoint shape "mc1":
+     { status:'success', shape:'mc1', updated:'2026-08-01',
+       caps:{ 'TCS.NS':1520000, 'AAPL':3120.4, 'USDINR':87.5 }, count:n }
+   A plain map IS the compact form at ~1,400 entries — there is no repeated key
+   to eliminate, because the keys are the data. The units are untouched (Rs
+   Crore for .NS, $ Billion otherwise), exactly as with the published CSV, and
+   the USDINR rate rides along as an ordinary key because that is where the
+   page already looks for it. */
+function parseMktCapPayload(raw){
+  if(raw==null||raw==='') return null;
+  if(typeof raw!=='object'){
+    const head=String(raw).slice(0,400).trim();
+    if(!head.startsWith('{')&&!head.startsWith('[')) return parseMktCapCSV(raw);
+    try{ raw=JSON.parse(raw); }catch(e){ return null; }
+  }
+  if(!raw||typeof raw!=='object') return null;
+  if(raw.status&&raw.status!=='success') return null;   // denied/error: keep the static caps
+  const caps=raw.caps;
+  if(!caps||typeof caps!=='object') return null;
+  const out={};
+  Object.keys(caps).forEach(t=>{
+    const k=String(t||'').trim();
+    if(!k) return;
+    const n=Number(caps[t]);
+    if(!isFinite(n)||n<=0) return;      // same rule the CSV parser applies
+    out[k]=n;
+  });
+  return out;
+}
+
 /* Verdict on ONE live value for ONE ticker: null to accept, otherwise the
    reason string it was rejected for. The order is the order the three failures
    were diagnosed in, and it matters:
@@ -3014,7 +3225,13 @@ function applyLiveMcaps(){
 async function loadMktCapData(){
   if(MCAP_LIVE_LOADED) return null;
   MCAP_LIVE_LOADED=true;
-  const url=CFG.GSHEET_CSV_URLS && CFG.GSHEET_CSV_URLS.mktcap;
+  /* Same two-source rule as the price data: the endpoint when CFG.API_URL is
+     set, the published CSV when it is not. The market caps have to move with
+     the prices — leaving this one tab published would keep a public URL alive
+     for the sake of a column, and the whole point of the change is that there
+     is no public URL left. */
+  const viaApi=apiConfigured();
+  const url=viaApi ? apiURL('getMktCap') : (CFG.GSHEET_CSV_URLS && CFG.GSHEET_CSV_URLS.mktcap);
   if(!url){
     console.log('[mktcap] No URL set for the "MktCap" tab in CFG.GSHEET_CSV_URLS.mktcap — '+
       'using the static mcap values built into UNI. To get live caps: publish the '+
@@ -3027,13 +3244,15 @@ async function loadMktCapData(){
     const res=await fetch(url,{signal:ctrl.signal});
     clearTimeout(tid);
     if(!res.ok){
-      console.warn(`[mktcap] The "MktCap" tab returned HTTP ${res.status} — keeping the static mcap values.`);
+      console.warn(`[mktcap] The ${viaApi?'endpoint':'"MktCap" tab'} returned HTTP ${res.status} — keeping the static mcap values.`);
       return null;
     }
-    const parsed=parseMktCapCSV(await res.text());
+    const parsed=parseMktCapPayload(await res.text());
     const got=parsed?Object.keys(parsed).length:0;
     if(!got){
-      console.warn('[mktcap] The "MktCap" tab loaded but held no usable rows — keeping the static mcap values. Expected columns: Ticker,MarketCap,UpdatedDate.');
+      console.warn('[mktcap] The '+(viaApi?'endpoint':'"MktCap" tab')+' loaded but held no usable rows — keeping the static mcap values. '+
+        (viaApi?'A denied or signed-out request lands here too, and is harmless: the static caps keep working.'
+              :'Expected columns: Ticker,MarketCap,UpdatedDate.'));
       return null;
     }
     Object.assign(MCAP_LIVE,parsed);
@@ -3291,6 +3510,10 @@ const SCREEN_GET={
   F_PIV:()=>F_PIV, F_WPIV:()=>F_WPIV, F_REV:()=>F_REV, F_ALIGN:()=>F_ALIGN, F_BO:()=>F_BO,
   F_DWA:()=>F_DWA, F_BOX:()=>F_BOX,
   MIN_MCAP:()=>MIN_MCAP, SEARCH:()=>SEARCH, SORT_C:()=>SORT_C, SORT_D:()=>SORT_D,
+  /* Deep-cloned both ways: COLF holds nested arrays and objects, and a shared
+     reference would make every saved screen mutate along with the live one —
+     the same trap cloneAdv() exists for. */
+  COLF:()=>JSON.parse(JSON.stringify(COLF)),
   /* Not a filter, but it IS part of "what the table is showing": a screen saved
      while sorted by Gain% since 2026-01-01 restores to a table sorted on an
      empty column unless the date comes back with it. */
@@ -3301,6 +3524,7 @@ const SCREEN_SET={
   F_PIV:v=>{F_PIV=v}, F_WPIV:v=>{F_WPIV=v}, F_REV:v=>{F_REV=v}, F_ALIGN:v=>{F_ALIGN=!!v}, F_BO:v=>{F_BO=!!v},
   F_DWA:v=>{F_DWA=!!v}, F_BOX:v=>{F_BOX=!!v},
   MIN_MCAP:v=>{MIN_MCAP=+v||0}, SEARCH:v=>{SEARCH=v}, SORT_C:v=>{SORT_C=v}, SORT_D:v=>{SORT_D=v},
+  COLF:v=>{ COLF=(v&&typeof v==='object'&&!Array.isArray(v))?JSON.parse(JSON.stringify(v)):{}; },
   // Memo is keyed on the date, so it must be dropped whenever the date is set
   // from anywhere other than applyHistDate().
   HIST_DATE:v=>{HIST_DATE=v||''; HIST_MEMO={_k:''};},
@@ -3338,7 +3562,15 @@ function captureScreen(){
    order in a JSON round-trip is not something to bet a UI indicator on. */
 function screenKey(sc){
   if(!sc) return '';
-  const parts=SCREEN_FIELDS.map(f=>String(sc[f]===undefined?'':sc[f]));
+  /* Object-valued fields (COLF) are serialised structurally. String() would
+     flatten every possible column-filter state to "[object Object]", so the
+     dirty indicator could never fire on one — the screen would silently look
+     saved while showing different rows. */
+  const parts=SCREEN_FIELDS.map(f=>{
+    const v=sc[f];
+    if(v===undefined) return '';
+    return (v!==null && typeof v==='object') ? colfStableKey(v) : String(v);
+  });
   const adv=sc.ADV||{};
   Object.keys(ADV_DEFAULTS).sort().forEach(g=>{
     const o=adv[g]||{};
@@ -3362,6 +3594,11 @@ function applyScreen(name){
   Object.keys(ADV_DEFAULTS).forEach(k=>{
     if(sc.ADV && typeof sc.ADV[k]==='object') Object.assign(ADV[k], sc.ADV[k]);
   });
+  /* A screen saved BEFORE column filters existed carries no COLF. Rebuilding
+     it from the toolbar values the screen did restore is the only answer that
+     cannot bring the two back disagreeing; leaving COLF as whatever the
+     previous screen left behind is the failure this guards. */
+  if(sc.COLF===undefined){ COLF={}; colfDeriveAll(); }
   ACTIVE_SCREEN=name;
   VISIBLE=CFG.INIT;
   syncScreenToDom();
@@ -3377,6 +3614,10 @@ function syncScreenToDom(){
   set('pivFil',F_PIV); set('wpivFil',F_WPIV); set('revFil',F_REV); set('mcapFil',MIN_MCAP);
   set('searchQ',SEARCH);
   syncFilterToggles();
+  /* Snapshot only: F_* and COLF both came out of the same screen and already
+     agree, so this repaints the funnels, the chip and the sentinel options
+     WITHOUT re-deriving either side from the other. */
+  colfSnapTB(); colfSyncDom();
   syncHistLabel();   // repaints the date box AND the two column headers
   /* The advanced-filter form is deliberately NOT repainted here: openAdvFilters()
      already reads every control straight off ADV each time it opens, so there is
@@ -4614,10 +4855,47 @@ const GSHEET_BY_MARKET={};   // market -> { 'RELIANCE.NS': {C,H,L,V,dates}, ... 
    entry here at all, and an absent key is indistinguishable from a market that
    failed — confirmed live: CUR was 'us', GSHEET_STATUS read {india:'ok'}, and
    433 of 435 US rows were nonetheless populated from the cache. "Not downloaded
-   because we did not need to" is a success, and now says so. */
-const GSHEET_STATUS={};      // market -> 'unconfigured'|'loading'|'ok'|'cached'|'failed'
+   because we did not need to" is a success, and now says so.
+
+   'signin' and 'denied' joined them when the data moved behind the Web App, and
+   for the same reason: an authentication problem that renders as "no data" is a
+   user staring at 900 dashes wondering which of their columns broke. Five
+   distinct outcomes, five distinct things to say:
+     unconfigured  no URL for this market at all
+     signin        the endpoint would not say who is asking
+     denied        it knows who is asking and says no
+     failed        it answered with something unusable, or not at all
+     ok / cached   there is data */
+const GSHEET_STATUS={};      // market -> 'unconfigured'|'loading'|'ok'|'cached'|'signin'|'denied'|'failed'
 const GSHEET_PROMISE={};     // market -> in-flight/settled promise (shared, never rejects)
+/* The exact sentence the failing layer wanted the user to read, per market.
+   Without this the UI can only re-derive a generic message from the status
+   word, and the specific one — which account was refused, which URL was wrong —
+   is the whole value of a structured refusal. */
+const SHEET_STATE_MSG={};
 let GSHEET_DATA=null;        // pointer to the ACTIVE market's map — what fetchStock() reads
+
+/* Is the private endpoint configured? A FUNCTION, not a constant captured at
+   load: CFG.API_URL is the one setting a user edits by hand, and a constant
+   would freeze whatever it happened to be when this file was first evaluated. */
+function apiConfigured(){ return !!(CFG.API_URL && String(CFG.API_URL).trim()); }
+
+/* market key (lowercase, this file's vocabulary) -> region parameter (the Apps
+   Script's vocabulary, and the Data_* tab names). Kept as an explicit map
+   rather than a .toUpperCase() so that 'india' -> 'India' and not 'INDIA', and
+   so a future fourth market fails loudly here instead of quietly requesting a
+   region the endpoint has never heard of. */
+const API_REGION={india:'India',us:'US',etf:'ETF'};
+
+function apiURL(action,params){
+  const base=String(CFG.API_URL||'').trim();
+  if(!base) return '';
+  const q=['action='+encodeURIComponent(action)];
+  Object.keys(params||{}).forEach(k=>{
+    if(params[k]!=null && params[k]!=='') q.push(encodeURIComponent(k)+'='+encodeURIComponent(params[k]));
+  });
+  return base + (base.indexOf('?')>=0?'&':'?') + q.join('&');
+}
 
 /* Returns a promise that ALWAYS resolves (never rejects) once this market's
    sheet attempt has finished, successfully or not. Cached, so concurrent
@@ -4625,10 +4903,17 @@ let GSHEET_DATA=null;        // pointer to the ACTIVE market's map — what fetc
 function loadGoogleSheetData(market){
   if(GSHEET_PROMISE[market]) return GSHEET_PROMISE[market];
   GSHEET_PROMISE[market]=(async()=>{
-    const url=CFG.GSHEET_CSV_URLS && CFG.GSHEET_CSV_URLS[market];
+    /* ONE fetch, ONE parse, TWO possible sources. Everything below this pair of
+       lines is identical whichever source is in force — which is the property
+       that makes the published-CSV fallback a supported mode rather than a
+       decaying one. */
+    const viaApi=apiConfigured();
+    const url=viaApi ? apiURL('getData',{region:API_REGION[market]||market})
+                     : (CFG.GSHEET_CSV_URLS && CFG.GSHEET_CSV_URLS[market]);
     if(!url){
       GSHEET_STATUS[market]='unconfigured';
       GSHEET_BY_MARKET[market]=null;
+      SHEET_STATE_MSG[market]=`No data source is configured for ${market.toUpperCase()}: CFG.API_URL is blank and so is CFG.GSHEET_CSV_URLS.${market}.`;
       console.warn(`[${market}] No Google Sheet URL configured — this market cannot load any data.`);
       setGSheetStatus(market);
       return null;
@@ -4639,23 +4924,48 @@ function loadGoogleSheetData(market){
     const tid=setTimeout(()=>ctrl.abort(),CFG.GSHEET_TO);
     const t0=performance.now();
     try{
-      console.log(`[${market}] Fetching sheet CSV (timeout ${CFG.GSHEET_TO/1000}s)...`);
+      console.log(`[${market}] Fetching ${viaApi?'from the Web App endpoint':'sheet CSV'} (timeout ${CFG.GSHEET_TO/1000}s)...`);
       const res=await fetch(url,{signal:ctrl.signal});
       clearTimeout(tid);
       const ms=Math.round(performance.now()-t0);
       if(!res.ok){
-        console.warn(`[${market}] Sheet fetch returned HTTP ${res.status} after ${ms}ms — this market will show no data. Check that THIS tab specifically is published (File > Share > Publish to web > pick the tab > CSV) and that the gid in CFG.GSHEET_CSV_URLS.${market} matches.`);
-        GSHEET_STATUS[market]='failed'; GSHEET_BY_MARKET[market]=null;
+        /* 401/403 from the endpoint is an AUTHENTICATION answer, not a broken
+           deployment, and saying "sheet unavailable" for it sends the user off
+           to check a URL that was never wrong. */
+        if(viaApi && (res.status===401||res.status===403)){
+          GSHEET_STATUS[market]='signin';
+          SHEET_STATE_MSG[market]=`The endpoint answered HTTP ${res.status} — Google did not accept the request as signed in. Open the API URL in a tab, sign in with your Google account, then reload.`;
+        } else {
+          GSHEET_STATUS[market]='failed';
+          SHEET_STATE_MSG[market]= viaApi
+            ? `The endpoint returned HTTP ${res.status} after ${ms}ms. Check that CFG.API_URL is the /exec URL of a CURRENT deployment (Deploy > Manage deployments).`
+            : `The Google Sheet tab returned HTTP ${res.status} after ${ms}ms. Check that THIS tab is published (File > Share > Publish to web > pick the tab > CSV) and that the gid in CFG.GSHEET_CSV_URLS.${market} matches.`;
+        }
+        console.warn(`[${market}] ${SHEET_STATE_MSG[market]}`);
+        GSHEET_BY_MARKET[market]=null;
         setGSheetStatus(market);
         return null;
       }
       const text=await res.text();
-      const parsed=parseGSheetCSV(text);
-      const n=parsed?Object.keys(parsed).length:0;
-      GSHEET_BY_MARKET[market]=n?parsed:null;
-      GSHEET_STATUS[market]=n?'ok':'failed';
-      console.log(`[${market}] Sheet OK in ${ms}ms — ${(text.length/1024/1024).toFixed(2)} MB, ${n} tickers.`);
-      if(!n) console.warn(`[${market}] Sheet fetched fine but parsed to 0 tickers — the tab is probably empty, or its columns aren't Ticker,Date,Open,High,Low,Close,Volume.`);
+      /* THE SINGLE PARSE ENTRY POINT. CSV or JSON, allowed or refused — it all
+         comes back as one envelope and nothing downstream can tell which. */
+      const out=parseSheetPayload(text);
+      if(out.status!=='ok'){
+        GSHEET_STATUS[market]= out.status==='signin' ? 'signin'
+                             : out.status==='denied' ? 'denied'
+                             : 'failed';
+        GSHEET_BY_MARKET[market]=null;
+        SHEET_STATE_MSG[market]=out.message;
+        console.warn(`[${market}] ${out.message}`);
+        setGSheetStatus(market);
+        return null;
+      }
+      const parsed=out.data;
+      const n=Object.keys(parsed).length;
+      GSHEET_BY_MARKET[market]=parsed;
+      GSHEET_STATUS[market]='ok';
+      SHEET_STATE_MSG[market]='';
+      console.log(`[${market}] ${viaApi?'Endpoint':'Sheet'} OK in ${ms}ms — ${(text.length/1024/1024).toFixed(2)} MB, ${n} tickers.`);
       // Late arrival still helps: if the bounded race in loadMarket() already
       // gave up and moved on, repoint the live pointer here so every ticker
       // fetched from this moment onward sees the data.
@@ -4668,8 +4978,15 @@ function loadGoogleSheetData(market){
       clearTimeout(tid);
       const ms=Math.round(performance.now()-t0);
       const reason = e.name==='AbortError' ? `timed out after ${CFG.GSHEET_TO/1000}s` : e.message;
-      console.warn(`[${market}] Sheet fetch failed: ${reason} (after ${ms}ms) — this market will show no data.`);
       GSHEET_STATUS[market]='failed'; GSHEET_BY_MARKET[market]=null;
+      /* A cross-origin fetch that never completes cannot report WHY — the
+         browser withholds the detail on purpose. When the endpoint is in use
+         the overwhelmingly likely cause is the redirect to Google's sign-in
+         page, so the message names that first instead of pretending to know. */
+      SHEET_STATE_MSG[market]= viaApi
+        ? `Could not reach the endpoint (${reason}). The usual cause is not being signed in: open the API URL in a tab, sign in with your Google account, then reload. If that is already done, check the deployment is current and set to "Anyone with a Google account".`
+        : `The Google Sheet tab could not be fetched (${reason}).`;
+      console.warn(`[${market}] Fetch failed: ${reason} (after ${ms}ms) — this market will show no data.`);
       setGSheetStatus(market);
       return null;
     }
@@ -4726,14 +5043,53 @@ function reportSheetCoverage(market){
   SHEET_COVERAGE[market]={missing,extra,thin};
 }
 
+/* ONE description of a market's current data state, used by the three places
+   that show it (the source tag, the banner and the sub-title). Four failures,
+   four messages, and none of them may read like "there is simply no data" —
+   that ambiguity is the reason this function exists rather than a chain of
+   ifs repeated three times:
+
+     unconfigured  nothing is set up yet          → say what to set
+     signin        the endpoint won't say who you are → say "Sign in to continue"
+     denied        it knows you and refuses       → name the account, say who to ask
+     failed        it broke, or answered rubbish  → say what to check
+
+   `msg` is the specific sentence the failing layer produced (which account,
+   which HTTP code); `tag` and `head` are the short forms with room for
+   nothing but the category. */
+function sheetStateMsg(market){
+  const st=GSHEET_STATUS[market];
+  const M=market.toUpperCase();
+  const n=GSHEET_BY_MARKET[market]?Object.keys(GSHEET_BY_MARKET[market]).length:0;
+  const specific=SHEET_STATE_MSG[market]||'';
+  const api=apiConfigured();
+  if(st==='ok')      return {kind:'ok',      tag:null, head:'', msg:`${M}: ${api?'loaded from the private endpoint':'Google Sheet loaded'} — ${n} tickers.`};
+  if(st==='loading') return {kind:'loading', tag:null, head:'', msg:`${M}: downloading the ${api?'data from the endpoint':'Google Sheet tab'}…`};
+  if(st==='cached')  return {kind:'cached',  tag:null, head:'', msg:`${M}: served from today's cache — nothing was re-downloaded.`};
+  if(st==='signin')  return {kind:'signin',  tag:'⬤ Sign in to continue',
+    head:'Sign in to continue',
+    msg: specific || `${M}: this data is private. Sign in with your Google account to load it.`};
+  if(st==='denied')  return {kind:'denied',  tag:'⬤ Access denied',
+    head:'Access denied',
+    msg: specific || `${M}: your Google account is not on the access list for this screener.`};
+  if(st==='failed')  return {kind:'failed',  tag: api?'⬤ Endpoint error':'⬤ Sheet unavailable',
+    head: api?'Endpoint error':'Sheet unavailable',
+    msg: specific || (api
+      ? `${M}: the data endpoint could not be loaded. No data will be shown — there is no fallback source.`
+      : `${M}: the Google Sheet tab could not be loaded or is empty. No data will be shown — there is no fallback source.`)};
+  if(st==='unconfigured') return {kind:'unconfigured', tag:'⬤ Not configured',
+    head:'Not configured',
+    msg: api ? `${M}: CFG.API_URL is set but this market has no region mapping.`
+             : `${M}: no Google Sheet URL is set for this market in CFG.GSHEET_CSV_URLS.`};
+  return {kind:'idle', tag:null, head:'', msg:`${M}: not loaded yet — open this tab to fetch it.`};
+}
+
 // Lightweight status hook so the UI can reflect what's happening with each
 // market's sheet without blocking anything — purely informational.
 function setGSheetStatus(market){
   const el=document.getElementById('srcTag');
   if(!el || market!==CUR) return;
   const st=GSHEET_STATUS[market];
-  const n=GSHEET_BY_MARKET[market]?Object.keys(GSHEET_BY_MARKET[market]).length:0;
-  const M=market.toUpperCase();
   // BUG THIS FIXES: the final `else` used to say "no Google Sheet URL configured".
   // But GSHEET_STATUS[market] is *undefined* until that market's fetch actually
   // starts, and switchMkt() calls this the instant you click a tab — before
@@ -4742,14 +5098,122 @@ function setGSheetStatus(market){
   // yet. 'undefined' and 'unconfigured' are different states; they now read
   // differently.
   updateScanBanner(market);
-  if(st==='ok')                el.title=`${M}: Google Sheet loaded — ${n} tickers.`;
-  else if(st==='cached')       el.title=`${M}: served from today's cache — the sheet tab was NOT re-downloaded. `
-                                       + (BENCHMARK_DATA[market] ? `RS is measured against the cached ${BENCHMARK_DATA[market].sym} series.`
-                                                                 : `The benchmark series is not cached either, so RS columns are blank. Press ↻ Refresh to download the tab.`);
-  else if(st==='loading')      el.title=`${M}: downloading the Google Sheet tab…`;
-  else if(st==='failed')       el.title=`${M}: the Google Sheet tab could not be loaded or is empty. No data will be shown — there is no fallback source.`;
-  else if(st==='unconfigured') el.title=`${M}: no Google Sheet URL is set for this market in CFG.GSHEET_CSV_URLS.`;
-  else                         el.title=`${M}: not loaded yet — open this tab to fetch it.`;
+  // Every status transition — first paint, switchMkt, fetch OK, fetch failed,
+  // cache hit — passes through here, so this is the ONE hook the as-of stamp
+  // needs. Hooking each call site individually is how one of them gets missed
+  // and the banner keeps showing the previous market's date.
+  updateDataAsOf(market);
+  const s=sheetStateMsg(market);
+  if(st==='cached'){
+    el.title=`${market.toUpperCase()}: served from today's cache — the sheet tab was NOT re-downloaded. `
+            + (BENCHMARK_DATA[market] ? `RS is measured against the cached ${BENCHMARK_DATA[market].sym} series.`
+                                      : `The benchmark series is not cached either, so RS columns are blank. Press ↻ Refresh to download the tab.`);
+    return;
+  }
+  el.title=s.msg;
+  /* The failure states own the tag TEXT as well as its tooltip. A tooltip
+     nobody hovers is not a message: "Sign in to continue" has to be legible
+     without touching anything. */
+  if(s.tag){ el.className='src-tag'; el.textContent=s.tag; }
+}
+
+/* ══════════════════════════════════
+   DATA AS-OF — how fresh the numbers actually are
+   ─────────────────────────────────
+   THE QUESTION THIS ANSWERS is "am I looking at today's market?", and the two
+   clocks the page already had both answer a DIFFERENT question: "Last scan" and
+   the page-load time say when the browser ran, which is always now, even when
+   the sheet underneath has not been refreshed for a week. So none of this reads
+   Date.now() for the value — only for the AGE — and the value comes off the
+   price series itself.
+══════════════════════════════════ */
+
+/* The newest bar date held for a market, as ISO 'YYYY-MM-DD', or null.
+   parseGSheetCSV already sorts each ticker chronologically, but this takes a
+   real max rather than trusting dates[length-1]: a single unsorted series would
+   otherwise be able to under-report the whole market's freshness, and reporting
+   data as OLDER than it is would send the user off to re-run a pipeline that is
+   working. It runs on load and on tab switch, not per render. */
+function seriesMaxDate(market){
+  let max=null;
+  const consider=ser=>{
+    const ds=ser&&ser.dates;
+    if(!Array.isArray(ds)) return;
+    for(let i=ds.length-1;i>=0;i--){
+      const d=ds[i];
+      if(typeof d==='string' && d && (max===null || d>max)) max=d;   // ISO sorts lexicographically
+    }
+  };
+  const map=GSHEET_BY_MARKET[market];
+  if(map) for(const k in map) consider(map[k]);
+  /* CACHE HIT. loadMarket() deliberately does not re-download the market tab,
+     so GSHEET_BY_MARKET is empty on that path and the loop above finds nothing.
+     The benchmark's raw series is cached alongside it and is read out of the
+     SAME sheet tab, so its newest bar is the sheet's newest bar. Without this
+     every cached load would claim to have no data at all. */
+  if(max===null) consider(BENCHMARK_DATA[market]);
+  return max;
+}
+
+/* Age of a bar in TRADING days, not calendar days.
+   Friday's close is the current close all weekend and all Monday morning;
+   counting calendar days would paint it amber on Sunday and red by Wednesday's
+   calendar reckoning, which trains the user to ignore the colour. Saturday and
+   Sunday are simply not counted. `now` is injectable so this is testable
+   without touching the system clock. */
+function weekdayAge(iso, now){
+  if(!/^\d{4}-\d{2}-\d{2}$/.test(String(iso||''))) return null;
+  const n = now instanceof Date ? now : (now==null ? new Date() : new Date(now));
+  if(isNaN(n.getTime())) return null;
+  // Both sides reduced to a bare calendar day. The bar date has no time zone at
+  // all, so comparing it against a timestamp would make the answer depend on
+  // the hour of day.
+  const from=Date.UTC(+iso.slice(0,4), +iso.slice(5,7)-1, +iso.slice(8,10));
+  const to  =Date.UTC(n.getFullYear(), n.getMonth(), n.getDate());
+  if(!(to>from)) return 0;                      // today's bar, or a bar dated ahead of today
+  if(to-from > 400*864e5) return 999;           // a year-plus gap: no point walking it day by day
+  let age=0;
+  for(let t=from+864e5; t<=to; t+=864e5){
+    const w=new Date(t).getUTCDay();
+    if(w!==0 && w!==6) age++;                   // 0 Sun, 6 Sat — never trading days
+  }
+  return age;
+}
+
+// '2026-08-04' -> '04 Aug 2026'. Unambiguous in every locale, which '04/08/2026'
+// is not — the whole point of the stamp is that it cannot be misread.
+function fmtBarDate(iso){
+  if(!/^\d{4}-\d{2}-\d{2}$/.test(String(iso||''))) return '—';
+  const M=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  return iso.slice(8,10)+' '+M[+iso.slice(5,7)-1]+' '+iso.slice(0,4);
+}
+
+/* The whole state in one pure value, so the colour rule and the wording are
+   testable without a DOM. LEVELS: fresh = the newest bar is today's or the
+   previous trading day's; stale = 2–4 trading days behind; old = 5 or more,
+   i.e. a full trading week, at which point the pipeline is broken rather than
+   merely lagging. */
+function dataAsOfState(market, now){
+  const m=market||CUR;
+  const cached=GSHEET_STATUS[m]==='cached';
+  const iso=seriesMaxDate(m);
+  if(!iso) return {iso:null,age:null,level:'none',cached,text:'—'};
+  const age=weekdayAge(iso,now);
+  const level = age==null ? 'fresh' : age<=1 ? 'fresh' : age<=4 ? 'stale' : 'old';
+  return {iso,age,level,cached,text:fmtBarDate(iso)+(cached?' · cached':'')};
+}
+
+function updateDataAsOf(market){
+  const el=$('bnrAsOf'); if(!el) return;
+  const m=market||CUR;
+  if(m!==CUR) return;          // a background market's dates are not what the banner is about
+  const st=dataAsOfState(m);
+  el.textContent='·\u00A0Data to '+st.text;
+  if(el.classList){
+    el.classList.toggle('stale', st.level==='stale');
+    el.classList.toggle('old',   st.level==='old');
+    el.classList.toggle('cached',!!st.cached);
+  }
 }
 
 /* Normalise a sheet date cell to ISO 'YYYY-MM-DD'.
@@ -4821,11 +5285,21 @@ function parseGSheetCSV(text){
     g.dates.push(iso);   // ISO from here on — never the raw DD/MM/YYYY
   }
   if(badDates) console.warn(`parseGSheetCSV: skipped ${badDates} row(s) with an unparseable date.`);
+  return finaliseSeries(grouped);
+}
 
-  // Sort chronologically. Now safe as a plain string compare BECAUSE the dates
-  // are ISO — 'YYYY-MM-DD' is the one format where lexicographic order and
-  // chronological order coincide. Also de-duplicates on date, so a sheet that
-  // ever double-writes a day can't corrupt the series.
+/* Sort chronologically. Now safe as a plain string compare BECAUSE the dates
+   are ISO — 'YYYY-MM-DD' is the one format where lexicographic order and
+   chronological order coincide. Also de-duplicates on date, so a sheet that
+   ever double-writes a day can't corrupt the series.
+
+   SHARED BY BOTH DATA PATHS ON PURPOSE. The CSV parser and the JSON parser
+   below hand their raw, unordered `grouped` object to this one function, so
+   ordering, de-duplication and the "later row wins" rule cannot drift apart
+   between the two sources. The equivalence test in t14.js — same bars in,
+   byte-identical row objects out, whichever path they arrived by — is only
+   meaningful because this step is literally the same code. */
+function finaliseSeries(grouped){
   Object.keys(grouped).forEach(t=>{
     const g=grouped[t];
     const idx=g.dates.map((_,i)=>i).sort((a,b)=>
@@ -4845,6 +5319,123 @@ function parseGSheetCSV(text){
     grouped[t]={C,O,H,L,V,dates};
   });
   return grouped;
+}
+
+/* ══════════════════════════════════
+   THE PRIVATE ENDPOINT (CFG.API_URL) — SHAPE "sm1"
+   ─────────────────────────────────────────────────
+   The Apps Script Web App returns the same bars the published CSV did, in a
+   columnar form that costs about 70% of the CSV's bytes for India (the key
+   names and the repeated date strings are what an array-of-objects spends
+   most of itself on). The wire shape is documented in full above
+   buildRegionPayload() in script.txt; in brief:
+
+     { status:'success', shape:'sm1', region:'India', updated:'2026-08-04',
+       tickers:['RELIANCE.NS', …],
+       dates  :['2026-08-04', …],          // lookup table, ANY order
+       series :[ {d:[…indexes into dates…], o:[…],h:[…],l:[…],c:[…],v:[…]}, … ] }
+
+   The fallbacks below (`||cNum`, `||0`) are deliberately the same expressions
+   the CSV parser uses, because the two must agree bar for bar: a missing open
+   degrades to a zero-body candle in BOTH paths rather than to NaN in one and
+   0 in the other. */
+function parseAPISeries(p){
+  if(!p || p.shape!=='sm1' || !Array.isArray(p.tickers) || !Array.isArray(p.series)) return null;
+  const dates=Array.isArray(p.dates)?p.dates:[];
+  const grouped={};
+  let badDates=0;
+  for(let i=0;i<p.tickers.length;i++){
+    const t=String(p.tickers[i]==null?'':p.tickers[i]).trim();
+    const s=p.series[i];
+    if(!t || !s || !Array.isArray(s.c)) continue;
+    const g=grouped[t] || (grouped[t]={C:[],O:[],H:[],L:[],V:[],dates:[]});
+    const d=Array.isArray(s.d)?s.d:[];
+    for(let j=0;j<s.c.length;j++){
+      const cNum=Number(s.c[j]);
+      if(!isFinite(cNum)) continue;
+      const iso=normDate(dates[d[j]]);
+      if(!iso){ badDates++; continue; }
+      g.C.push(cNum);
+      g.O.push(Number(s.o&&s.o[j])||cNum);
+      g.H.push(Number(s.h&&s.h[j])||cNum);
+      g.L.push(Number(s.l&&s.l[j])||cNum);
+      g.V.push(parseInt(s.v&&s.v[j])||0);
+      g.dates.push(iso);
+    }
+  }
+  if(badDates) console.warn(`parseAPISeries: skipped ${badDates} bar(s) with an unresolvable date index.`);
+  return finaliseSeries(grouped);
+}
+
+/* Turns a decoded endpoint body into the envelope every caller downstream
+   reads. FOUR OUTCOMES, and they are four because "no data" and "you are not
+   allowed this data" and "you are not signed in" and "the endpoint is broken"
+   need four different things from the user:
+     ok      → data is a ticker map, exactly as the CSV path produces
+     signin  → nobody was identified; sign in and reload
+     denied  → identified, and refused by the Access tab
+     error   → the endpoint answered, but not with usable data */
+function apiEnvelope(obj){
+  if(!obj || typeof obj!=='object')
+    return {status:'error',reason:'bad_body',data:null,
+            message:'The endpoint replied with something that is not a data payload.'};
+  if(obj.status==='denied'){
+    const signin = obj.reason==='not_signed_in';
+    return {status: signin?'signin':'denied', reason: obj.reason||'denied', data:null,
+            message: obj.message || (signin
+              ? 'Sign in with your Google account to load this data.'
+              : 'This Google account is not allowed to read this data.'),
+            email: obj.email||''};
+  }
+  if(obj.status==='error')
+    return {status:'error',reason:obj.reason||'error',data:null,
+            message:obj.message||'The endpoint returned an error.'};
+  const grouped=parseAPISeries(obj);
+  if(!grouped)
+    return {status:'error',reason:'bad_shape',data:null,
+            message:`The endpoint returned shape "${obj.shape||'(none)'}", which this page cannot read. `
+                   +`Re-deploy the Apps Script: the two halves are out of step.`};
+  const n=Object.keys(grouped).length;
+  if(!n)
+    return {status:'error',reason:'empty',data:null,
+            message:'The endpoint answered successfully but with no rows at all — the market tab is probably empty.'};
+  return {status:'ok',reason:'api',data:grouped,message:''};
+}
+
+/* THE ONE PARSE ENTRY POINT — the rest of the app never learns which source it
+   got. Hand it a published-CSV body or an endpoint body and it returns the
+   same envelope either way.
+
+   Only the first 400 characters are inspected to decide which it is. Sniffing
+   by `raw.trim().startsWith(…)` would copy an 8 MB string on every load for
+   the sake of reading four characters. */
+function parseSheetPayload(raw){
+  if(raw==null || raw==='')
+    return {status:'error',reason:'empty',data:null,message:'The data source returned an empty response.'};
+  if(typeof raw==='object') return apiEnvelope(raw);
+  const head=String(raw).slice(0,400).trim();
+  /* AN HTML BODY IS THE SIGN-IN PAGE. A Web App deployed "anyone with a Google
+     account" answers an unauthenticated caller with Google's login page, not
+     with an error — so the single most likely failure looks like a successful
+     HTTP 200 carrying <!DOCTYPE html>. Reading that as "no data" is exactly
+     the confusion this whole change exists to remove. */
+  if(head.startsWith('<'))
+    return {status:'signin',reason:'html_response',data:null,
+            message:'The endpoint replied with a web page instead of data — that is Google\'s sign-in screen. '
+                   +'Open the API URL in a new tab, sign in, then reload this page.'};
+  if(head.startsWith('{')||head.startsWith('[')){
+    let obj=null;
+    try{ obj=JSON.parse(raw); }
+    catch(e){ return {status:'error',reason:'bad_json',data:null,
+                      message:'The endpoint replied with something that is not valid JSON: '+e.message}; }
+    return apiEnvelope(obj);
+  }
+  const grouped=parseGSheetCSV(raw);
+  const n=grouped?Object.keys(grouped).length:0;
+  if(!n)
+    return {status:'error',reason:'empty_csv',data:null,
+            message:'Fetched fine but parsed to 0 tickers — the tab is probably empty, or its columns aren\'t Ticker,Date,Open,High,Low,Close,Volume.'};
+  return {status:'ok',reason:'csv',data:grouped,message:''};
 }
 
 /* Sheet lookup only — no network, no async, no fallback.
@@ -5896,6 +6487,101 @@ function toggleBreadth(){
 }
 
 /* ══════════════════════════════════
+   COLLAPSIBLE SECTIONS — the metric dials and the filter bar
+   ─────────────────────────────────
+   Same contract as the breadth panel above: one localStorage key per section,
+   a caret that mirrors the state, and a one-line summary so a folded section is
+   never opaque. Two keys, not one, because the two sections answer different
+   questions and a user who wants the dials gone rarely wants the filters gone
+   too.
+
+   THE DEFAULT IS VIEWPORT-DEPENDENT, THE PREFERENCE IS NOT. Below the mobile
+   breakpoint the dials plus the filter bar eat most of a phone screen before
+   a single table row appears, so both start folded there. But that is only
+   what happens when the user has never expressed an opinion: lsRead returns
+   null in that case, and any stored '0' or '1' wins outright. A default that
+   overrides a stored choice is not a default, it is a bug that re-folds the
+   panel on every visit.
+══════════════════════════════════ */
+const METRICS_KEY='sm_metrics_collapsed';
+const FILTERS_KEY='sm_filters_collapsed';
+/* 768px is the file's own phone breakpoint — the same one that drops to two
+   metric columns and un-freezes three of the four pinned table columns. Read
+   from one place so the JS default and the CSS layout cannot disagree. */
+const MOBILE_BP=768;
+/* While the tour is running both sections are forced open: five of its seven
+   steps anchor on a control inside the filter bar and the highlight ring around
+   a display:none element is a 0x0 box in the corner of the screen. This is a
+   VIEW override — it never writes the stored preference, so the sections snap
+   back to whatever the user chose when the tour ends. */
+let COLL_TOUR_OPEN=false;
+
+function isMobileView(){
+  try{
+    if(typeof window==='undefined'||!window) return false;
+    // matchMedia is the honest answer (it sees the same px the CSS does).
+    // innerWidth is the fallback for environments without it; false is the
+    // fallback for both, because guessing "phone" on a desktop would fold a
+    // section the user never asked to fold.
+    if(typeof window.matchMedia==='function') return !!window.matchMedia('(max-width:'+MOBILE_BP+'px)').matches;
+    if(typeof window.innerWidth==='number') return window.innerWidth<=MOBILE_BP;
+  }catch(e){}
+  return false;
+}
+
+/* null from lsRead means "never chosen" — and ONLY then does the viewport get
+   a vote. '1'/'0' are the user's own answer and are returned verbatim. */
+function collapsedPref(key){
+  const v=lsRead(key);
+  if(v==='1') return true;
+  if(v==='0') return false;
+  return isMobileView();
+}
+
+// Derived from MDEF, never a literal: adding a dial must not need this edited.
+function metricsSummary(){ return MDEF.length+' metric'+(MDEF.length===1?'':'s'); }
+/* Reuses colfCount(), the counter the status-row chip already reads. A second
+   independent tally would drift from the chip the first time a filter type was
+   added, and then the page would state two different numbers at once. */
+function filtersSummary(){
+  const n=colfCount();
+  return n ? n+' active filter'+(n===1?'':'s') : 'No active filters';
+}
+
+function applyMetricsCollapsed(){
+  const c = !COLL_TOUR_OPEN && collapsedPref(METRICS_KEY);
+  document.body.classList.toggle('metrics-collapsed', c);
+  const car=$('metricsCaret'); if(car) car.textContent=c?'▸':'▾';
+  const hd=$('metricsHd'); if(hd&&hd.setAttribute) hd.setAttribute('aria-expanded', c?'false':'true');
+  const sum=$('metricsSum'); if(sum) sum.textContent=metricsSummary();
+}
+function applyFiltersCollapsed(){
+  const c = !COLL_TOUR_OPEN && collapsedPref(FILTERS_KEY);
+  document.body.classList.toggle('filters-collapsed', c);
+  const car=$('filtersCaret'); if(car) car.textContent=c?'▸':'▾';
+  const hd=$('filtersHd'); if(hd&&hd.setAttribute) hd.setAttribute('aria-expanded', c?'false':'true');
+  const sum=$('filtersSum'); if(sum) sum.textContent=filtersSummary();
+}
+function applyCollapsibles(){ applyMetricsCollapsed(); applyFiltersCollapsed(); }
+
+/* Toggling writes the preference explicitly, including the '0' that means
+   "expanded, and I mean it" — writing only the collapsed state would leave a
+   phone user who opens a section watching it fold itself shut again tomorrow. */
+function toggleMetrics(){
+  lsWrite(METRICS_KEY, collapsedPref(METRICS_KEY)?'0':'1');
+  applyMetricsCollapsed();
+}
+function toggleFilters(){
+  lsWrite(FILTERS_KEY, collapsedPref(FILTERS_KEY)?'0':'1');
+  applyFiltersCollapsed();
+}
+// The filter count moves with the filters; the dial count does not.
+function updateCollSummaries(){
+  const sum=$('filtersSum'); if(sum) sum.textContent=filtersSummary();
+  const m=$('metricsSum');   if(m)   m.textContent=metricsSummary();
+}
+
+/* ══════════════════════════════════
    SCAN STATUS BANNERS
    ─────────────────────────────────
    Driven entirely off GSHEET_STATUS (set by loadGoogleSheetData) and the
@@ -5912,9 +6598,21 @@ function updateScanBanner(market){
   if(st==='loading'){
     el.classList.add('warn','show');
     txt.textContent='🔄 Market scan in progress — downloading the '+CUR.toUpperCase()+' sheet.';
-  } else if((st==='failed'||st==='unconfigured') && CACHE_SHOWN[CUR]){
+  } else if((st==='failed'||st==='unconfigured'||st==='signin'||st==='denied') && CACHE_SHOWN[CUR]){
     el.classList.add('err','show');
-    txt.textContent='⚠️ Showing previous scan data — the '+CUR.toUpperCase()+' sheet could not be loaded, so these numbers are from the last successful scan.';
+    /* STALE-BUT-VISIBLE is the dangerous case, and an auth failure reaches it
+       too: yesterday's cache renders perfectly while today's request was
+       refused, so without naming the reason the screen looks simply fine. */
+    const why = st==='signin' ? 'you are not signed in'
+              : st==='denied' ? 'this Google account is not on the access list'
+              : 'the '+CUR.toUpperCase()+' data could not be loaded';
+    txt.textContent='⚠️ Showing previous scan data — '+why+', so these numbers are from the last successful scan.';
+  } else if(st==='signin'||st==='denied'){
+    /* NOT "no data". The table is empty for a reason the user can act on, and
+       the banner is the one piece of UI they cannot miss. */
+    el.classList.add('err','show');
+    const s=sheetStateMsg(CUR);
+    txt.textContent=(st==='signin'?'🔒 Sign in to continue — ':'⛔ Access denied — ')+s.msg;
   } else if(st==='cached'){
     /* A cache hit is not a failure, but it IS a different thing from a live
        download and the user has to be able to tell. The RS half matters most:
@@ -6242,11 +6940,15 @@ function boxSetup(d){
   return BOX_SETUP_STATES.includes(d.dBoxState);
 }
 
-function getRows(market){
+/* `exclCol` drops ONE column's filter — its own COLF entry AND the toolbar
+   control that mirrors it — so colfOptions() can count "what would narrowing
+   further do" rather than "what does this market contain". Every caller that
+   wants the real table omits it. */
+function getRows(market, exclCol){
   let items=UNI[market].slice();
   const q=SEARCH.toLowerCase().trim();
   if(q) items=items.filter(def=>def.d.toLowerCase().includes(q)||def.sector.toLowerCase().includes(q));
-  if(F_SCT) items=items.filter(def=>def.sector===F_SCT);
+  if(F_SCT && exclCol!=='sector') items=items.filter(def=>def.sector===F_SCT);
 
   // Market cap filter (India + US — both now have per-stock mcap data; ETF skipped, no mcap concept)
   if((market==='india'||market==='us') && MIN_MCAP>0){
@@ -6254,8 +6956,12 @@ function getRows(market){
   }
 
   const segCaps=['LC','MC','SC','Mic'];
+  /* The exclusion is INSIDE the cap branch, not on the else-if chain: F_CAP
+     doubles as the sector segments, and skipping the whole chain would drop a
+     SECTOR screen while excluding the CAP column. It also fell straight into
+     the sector branch, where 'LC' matched no sector and emptied the list. */
   if(segCaps.includes(F_CAP)){
-    items=items.filter(def=>{
+    if(exclCol!=='cap') items=items.filter(def=>{
       const d=SD[def.s]; const cap=d?.g||def.g; return cap===F_CAP;
     });
   } else if(F_CAP!=='All'){
@@ -6267,7 +6973,8 @@ function getRows(market){
                 : items.filter(def=>def.sector.toLowerCase().includes(F_CAP.toLowerCase()));
   }
 
-  if(F_EMA==='bull') items=items.filter(def=>emasAligned(SD[def.s]));
+  if(exclCol==='ema'){ /* the EMA Align column's own filter is being excluded */ }
+  else if(F_EMA==='bull') items=items.filter(def=>emasAligned(SD[def.s]));
   else if(F_EMA==='a20') items=items.filter(def=>{const d=SD[def.s];return d?.e20&&d.price>d.e20;});
   else if(F_EMA==='a200') items=items.filter(def=>{const d=SD[def.s];return d?.e200&&d.price>d.e200;});
 
@@ -6282,22 +6989,31 @@ function getRows(market){
   // list the user curated by hand.
   if(F_WL)    items=items.filter(def=>isWatched(def.s));
 
-  if(F_RSI==='ob') items=items.filter(def=>(SD[def.s]?.rsi14||0)>=70);
+  if(exclCol==='rsi'){ /* the RSI column's own filter is being excluded */ }
+  else if(F_RSI==='ob') items=items.filter(def=>(SD[def.s]?.rsi14||0)>=70);
   else if(F_RSI==='mid') items=items.filter(def=>{const r=SD[def.s]?.rsi14;return r!=null&&r>=50&&r<70;});
   else if(F_RSI==='os') items=items.filter(def=>(SD[def.s]?.rsi14||100)<=40);
 
   /* Two independent AND terms, one per timeframe. Both go through pivMatch(),
      so the daily and weekly screens cannot drift apart, and both are no-ops
      when their dropdown is on the blank option. */
-  if(F_PIV) items=items.filter(def=>{
+  if(F_PIV && exclCol!=='dpiv') items=items.filter(def=>{
     const d=SD[def.s]; return pivMatch(F_PIV, d?.dpz, d?.price??null, d?.dPiv??null);
   });
-  if(F_WPIV) items=items.filter(def=>{
+  if(F_WPIV && exclCol!=='wpiv') items=items.filter(def=>{
     const d=SD[def.s]; return pivMatch(F_WPIV, d?.wpz, d?.price??null, d?.wPiv??null);
   });
 
-  if(F_REV==='none') items=items.filter(def=>!REV[def.s]);
+  if(exclCol==='rev'){ /* the Review column's own filter is being excluded */ }
+  else if(F_REV==='none') items=items.filter(def=>!REV[def.s]);
   else if(F_REV) items=items.filter(def=>REV[def.s]===F_REV);
+
+  /* The per-column header filters. Applied here, in the SAME chain as every
+     other filter, so "what the table is showing" has exactly one definition —
+     the alternative (filtering the rendered rows afterwards) would leave the
+     row count, the breadth panel and the sector view all disagreeing with the
+     table they describe. */
+  items=colfApply(items, exclCol);
 
   // Last in the chain: the advanced screens are the most expensive per row and
   // the most likely to be off entirely (passesAdv short-circuits in that case).
@@ -6443,11 +7159,15 @@ const TOUR=[
 let TOUR_I=0;
 function startTour(i){
   TOUR_I = i||0;
+  // See COLL_TOUR_OPEN: most steps point at a control inside the filter bar,
+  // which is folded by default on a phone. Preference untouched.
+  COLL_TOUR_OPEN=true; applyCollapsibles();
   $('tourVeil').classList.add('open');
   document.addEventListener('keydown',tourKeys);
   renderTour();
 }
 function endTour(dontShowAgain){
+  COLL_TOUR_OPEN=false; applyCollapsibles();   // back to whatever the user chose
   $('tourVeil').classList.remove('open');
   document.removeEventListener('keydown',tourKeys);
   if(dontShowAgain){ try{ localStorage.setItem(TOUR_KEY,'1'); }catch(e){} }
@@ -6634,19 +7354,44 @@ async function loadMarket(market,force=false){
 }
 
 /* Plain-English failure banner. The old code had no equivalent — a failed sheet
-   silently degraded to a fallback and the user saw a slow grind, not a cause. */
+   silently degraded to a fallback and the user saw a slow grind, not a cause.
+
+   IT NO LONGER SAYS ONE THING. When the data moved behind the Web App, three
+   new ways to see an empty table appeared, and all three used to render as
+   "Sheet unavailable" — which sent the user to check a URL when the real
+   answer was "press this link and sign in". sheetStateMsg() decides which of
+   the four it is; this function is only responsible for showing it. */
 function setSheetError(market){
+  const s=sheetStateMsg(market);
   const el=$('srcTag');
   if(el){
     el.className='src-tag';
-    el.textContent='⬤ Sheet unavailable';
-    el.title=`Could not load the ${market.toUpperCase()} tab of the Google Sheet. `
-      +`Nothing is shown because there is no longer a fallback data source. `
-      +`Check the browser console for the exact reason.`;
+    el.textContent=s.tag||'⬤ Sheet unavailable';
+    el.title=s.msg;
   }
   const sub=$('bnrSub');
-  if(sub) sub.innerHTML='&nbsp;·&nbsp;<span style="color:#DC2626">Google Sheet did not load — no data to show. See console.</span>';
+  if(sub){
+    /* The sign-in case gets a LINK, because the fix is one click away and
+       telling somebody to "open the API URL" without giving it to them is not
+       help. rel="noopener" because it is a target=_blank. */
+    const link = (s.kind==='signin' && apiConfigured())
+      ? ` <a href="${CFG.API_URL}" target="_blank" rel="noopener" style="color:#DC2626;text-decoration:underline">Sign in →</a>`
+      : '';
+    const label = s.head || 'Data did not load';
+    sub.innerHTML='&nbsp;·&nbsp;<span style="color:#DC2626">'+label+' — '+escHtml(s.msg)+'</span>'+link;
+  }
   updateScanBanner(market);
+}
+
+/* Messages built above are assembled from server-supplied strings (an email
+   address, an error message), and they are written with innerHTML because the
+   sign-in case needs a real link beside them. Anything that came from the
+   network is escaped on the way in; the markup is added afterwards, by this
+   file, to text that can no longer contain any. */
+function escHtml(s){
+  return String(s==null?'':s)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
 }
 
 function updateStatus(){
@@ -6654,6 +7399,10 @@ function updateStatus(){
   $('vCnt').textContent=Math.min(VISIBLE,rows.length);
   $('tCnt').textContent=UNI[CUR].length;
   $('smLbl').textContent=`Showing ${Math.min(VISIBLE,rows.length)} of ${UNI[CUR].length}`;
+  colfChip();
+  // The collapsed filter header states the same count the chip does, from the
+  // same source, so a folded filter bar can never claim a different number.
+  updateCollSummaries();
 }
 
 
@@ -6697,6 +7446,9 @@ function switchMkt(market){
   F_CAP='All';F_SCT='';F_EMA='';F_RSI='';F_PIV='';F_WPIV='';
   F_ALIGN=false;F_BO=false;F_DWA=false;F_BOX=false;
   $('emaFil').value='';$('rsiFil').value='';$('pivFil').value='';$('wpivFil').value='';
+  // A column filter naming this market's sectors or caps means nothing in the
+  // next market, so it is dropped with the rest of them.
+  COLF={}; colfDeriveAll();
   syncFilterToggles();
   updateMcapUI(market);
   ['india','us','etf'].forEach(m=>$('tab-'+m).classList.toggle('active',m===market));
@@ -6709,7 +7461,9 @@ function switchMkt(market){
 function onSeg(btn,val){
   document.querySelectorAll('#segGrp .seg-btn').forEach(b=>b.classList.remove('active'));
   btn.classList.add('active');
-  F_CAP=val;renderTable(CUR);updateStatus();
+  F_CAP=val;
+  colfFromToolbar();     // the segment buttons ARE the Cap column filter
+  renderTable(CUR);updateStatus();
 }
 function onSearch(){SEARCH=$('searchQ').value.trim();VISIBLE=CFG.INIT;renderTable(CUR);updateStatus();}
 /* Builds both pivot dropdowns from PIV_OPTS. The D:/W: prefix is what keeps
@@ -6724,11 +7478,17 @@ function buildPivSelects(){
   });
 }
 function applyF(){
-  F_SCT=$('sctFil').value;F_EMA=$('emaFil').value;
-  F_RSI=$('rsiFil').value;F_PIV=$('pivFil').value;
-  F_WPIV=$('wpivFil').value;
-  F_REV=$('revFil').value;
+  /* Reads every select on ANY change, so a select currently displaying the
+     column-filter sentinel must keep its existing value rather than hand the
+     sentinel string to a filter branch that would then match nothing. */
+  const rd=(id,cur)=>{ const el=$(id); if(!el) return cur;
+                       const v=el.value; return v===COLF_SENTINEL?cur:v; };
+  F_SCT=rd('sctFil',F_SCT);F_EMA=rd('emaFil',F_EMA);
+  F_RSI=rd('rsiFil',F_RSI);F_PIV=rd('pivFil',F_PIV);
+  F_WPIV=rd('wpivFil',F_WPIV);
+  F_REV=rd('revFil',F_REV);
   MIN_MCAP=parseFloat($('mcapFil').value)||0;
+  colfFromToolbar();     // a dropdown IS the column filter for its column
   VISIBLE=CFG.INIT;
   renderTable(CUR);updateStatus();
 }
@@ -6763,6 +7523,10 @@ function clrF(){
   $('searchQ').value='';$('sctFil').value='';$('emaFil').value='';
   $('rsiFil').value='';$('pivFil').value='';$('wpivFil').value='';
   $('mcapFil').value=MIN_MCAP;$('revFil').value='';
+  /* Column filters go too — including the ones with no toolbar twin. A button
+     labelled "Clear Filters" that leaves a header filter standing is how the
+     table ends up short with nothing on screen explaining why. */
+  COLF={}; colfDeriveAll();
   syncFilterToggles();
   document.querySelectorAll('#segGrp .seg-btn').forEach((b,i)=>b.classList.toggle('active',i===0));
   VISIBLE=CFG.INIT;
@@ -7049,6 +7813,596 @@ function initTips(){
 }
 
 /* ══════════════════════════════════
+   PER-COLUMN HEADER FILTERS
+   ─────────────────────────────────
+   WHY A DECLARATIVE TABLE AND NOT A CHAIN OF ifs: with 51 columns, "which
+   control does this column get" is DATA. COL_FILTERS is keyed by the column's
+   filter key — the <th>'s data-s (its sort key) where it has one, and its
+   data-f where it has no sort key at all (Review, Notes). A future column gets
+   a filter by adding ONE entry here; no other function in this file has to
+   learn about it.
+
+   WHY val(d,def) RATHER THAN REUSING SORT_FN: several sort keys are packed
+   comparables, not values. `align` packs score*100+total, `bofu` is NEGATED so
+   that DESC reads "freshest breakout first", `xstate` folds direction and age
+   into one number. Asking a user for a min/max on those would be asking for
+   bounds on a number the table never prints. The category accessors likewise
+   return the LABEL the cell shows, not the ordinal the sort ranks on.
+
+   THE FOUR TYPES:
+     text  — contains-match, case-insensitive
+     cat   — checkbox list of the values actually present, with counts
+     num   — optional min and optional max, both inclusive
+     none  — the column has no sensible filter (RS Rank History is a sparkline)
+══════════════════════════════════ */
+
+const CAP_CODES=['LC','MC','SC','Mic','ETF'];
+
+const COL_FILTERS={
+  /* ── text ───────────────────────────────────────────────────────── */
+  ticker:  {t:'text', label:'Ticker',  val:(d,def)=>def.d},
+  sector:  {t:'text', label:'Sector',  val:(d,def)=>def.sector},
+  notes:   {t:'text', label:'Notes',   val:(d,def)=>NOTES[def.s]||''},
+
+  /* ── category ───────────────────────────────────────────────────── */
+  cap:     {t:'cat',  label:'Cap',     val:(d,def)=>(d&&d.g)||def.g||null},
+  rev:     {t:'cat',  label:'Review',  val:(d,def)=>REV[def.s]||null},
+  setup:   {t:'cat',  label:'Setup',   val:d=>d?(isQualitySetup(d)?'Quality':'No'):null},
+  status:  {t:'cat',  label:'Status',  val:d=>{
+             const s=d&&d.s2; if(!s||!s.total) return null;
+             const f=s.score/s.total; return f>=0.8?'Stage 2':f>=0.5?'Setup':'Weak'; }},
+  dpiv:    {t:'cat',  label:'D-Pivot', val:d=>{const z=d&&d.dpz; return (!z||z==='—')?null:z;}},
+  wpiv:    {t:'cat',  label:'W-Pivot', val:d=>{const z=d&&d.wpz; return (!z||z==='—')?null:z;}},
+  // Same three buckets emaC() paints, so the chip and the filter can never
+  // disagree about what "Bull" means.
+  ema:     {t:'cat',  label:'EMA Align', val:d=>{
+             const s=d&&d.emaScr; return s==null?null:(s>=0.8?'Bull':s>=0.5?'Part':'Bear'); }},
+  wema:    {t:'cat',  label:'W-EMA',   val:d=>{
+             const s=d&&d.weEmaScr; return s==null?null:(s>=0.8?'Bull':s>=0.5?'Part':'Bear'); }},
+  pattern: {t:'cat',  label:'Pattern', val:d=>(d&&d.pattern)||null},
+  wpattern:{t:'cat',  label:'W-Pattern', val:d=>(d&&d.wPattern)||null},
+  dbox:    {t:'cat',  label:'D-Box',   val:d=>{const s=d&&d.dBoxState; return s?(DBOX_LABEL[s]||s):null;}},
+  wbox:    {t:'cat',  label:'W-Box',   val:d=>{const s=d&&d.wBoxState; return s?(DBOX_LABEL[s]||s):null;}},
+  xstate:  {t:'cat',  label:'EMA Cross', val:d=>{const s=d&&d.xState; return s?(s==='bull'?'Bull':'Bear'):null;}},
+  wxstate: {t:'cat',  label:'W-Cross', val:d=>{const s=d&&d.wxState; return s?(s==='bull'?'Bull':'Bear'):null;}},
+  // "6/9" rather than 6: the denominator is part of the reading — a 6/7 and a
+  // 6/9 are not the same setup, which is why s2C() prints both.
+  s2:      {t:'cat',  label:'Stage 2', val:d=>{
+             const s=d&&d.s2; return (s&&s.total)?(s.score+'/'+s.total):null; }},
+  monthly: {t:'cat',  label:'Monthly Setup', val:d=>{
+             const v=d&&d.monthlySetup; return v==null?null:(v?'Yes':'No'); }},
+  voldry:  {t:'cat',  label:'Vol Dry', val:d=>{
+             const v=d&&d.volDry; return v==null?null:(v?'Dry':'No'); }},
+  fresh:   {t:'cat',  label:'Fresh',   val:d=>{
+             const f=freshFlags(d); return f.length?FRESH_LABEL[f[0].key]:null; }},
+  rst:     {t:'cat',  label:'RS Trend', val:d=>{
+             const v=d&&d.rsTrend; if(!v) return null;
+             const n={'↑':'up','→':'flat','↓':'down'}[v]||v;
+             return {up:'Up',flat:'Flat',down:'Down'}[n]||null; }},
+  // Bucketed on slopeDir, the same field slopeC() draws its arrow from. The raw
+  // % lives in the tooltip; the column reads as a direction, so it filters as one.
+  slope:   {t:'cat',  label:'200EMA Slope', val:d=>{
+             if(!d||d.slope200==null) return null;
+             return {up:'Rising',down:'Falling',flat:'Flat'}[d.slopeDir||'flat']||'Flat'; }},
+
+  /* ── numeric ────────────────────────────────────────────────────── */
+  price:   {t:'num',  label:'Price',   val:d=>d&&d.price},
+  ch1d:    {t:'num',  label:'1D%',     val:d=>d&&d.ch1d},
+  ch1w:    {t:'num',  label:'1W%',     val:d=>d&&d.ch1w},
+  ch1m:    {t:'num',  label:'1M%',     val:d=>d&&d.ch1m},
+  ch3m:    {t:'num',  label:'3M%',     val:d=>d&&d.ch3m},
+  hist:    {t:'num',  label:'Hist. Price', val:(d,def)=>{const h=histFor(def.s); return h?h.price:null;}},
+  histg:   {t:'num',  label:'Gain% since', val:(d,def)=>histGainFor(def.s,d)},
+  rsi:     {t:'num',  label:'RSI',     val:d=>d&&d.rsi14},
+  wrsi:    {t:'num',  label:'W-RSI',   val:d=>d&&d.wRsi},
+  vr:      {t:'num',  label:'Vol Ratio', val:d=>d&&d.vRatio},
+  wvol:    {t:'num',  label:'W-VOL',   val:d=>d&&d.wVolRatio},
+  // Filtered on the DISPLAY unit (₹ Cr / $ M) for the same reason it SORTS on
+  // it: a raw-currency bound would mean two different things in one table.
+  avgval:  {t:'num',  label:'Avg Value', val:d=>avgValDisp(d&&d.avgValue!=null?d.avgValue:null, d&&d.currency)},
+  h52:     {t:'num',  label:'52W High', val:d=>d&&d.h52d},
+  align:   {t:'num',  label:'Align',   val:d=>{const a=dwAlign(d); return a?a.score:null;}},
+  // The RAW age in bars, not SORT_FN's negated form: "broke out in the last 5
+  // days" is min 0 / max 5, which is only true of the number the cell prints.
+  bofu:    {t:'num',  label:'Follow-up', val:d=>d&&d.boAge},
+  bog:     {t:'num',  label:'BO Gain%', val:d=>d&&d.boGain},
+  boc:     {t:'num',  label:'BO Count', val:d=>d&&d.boCnt},
+  ret:     {t:'num',  label:'Retrace%', val:d=>d&&d.retrace},
+  sq:      {t:'num',  label:'Squeeze', val:d=>d&&d.sq},
+  consol:  {t:'num',  label:'Consolidation', val:d=>d&&d.consolDays},
+  mrs:     {t:'num',  label:'MRS Rank', val:d=>d&&d.mrsRank},
+  rs21:    {t:'num',  label:'RS21',    val:d=>d&&d.rs21},
+  rs55:    {t:'num',  label:'RS55',    val:d=>d&&d.rs55},
+  rs10w:   {t:'num',  label:'RS10W',   val:d=>d&&d.rs10w},
+  rsslope: {t:'num',  label:'RS Slope', val:d=>d&&d.rsSlope},
+
+  /* ── explicitly nothing ─────────────────────────────────────────── */
+  /* A 30-point sparkline of the 21-day excess return. Neither a value to match
+     nor a range to bound — RS21/RS55/RS Slope are the columns that answer that
+     question, and they are all numeric above. Spelled out rather than omitted
+     so the coverage test can tell "decided against" from "forgotten". */
+  rshist:  {t:'none', label:'RS Rank History'},
+};
+
+/* Live state, keyed exactly like COL_FILTERS. Shapes, all JSON-safe so a saved
+   screen round-trips them without a custom serialiser:
+     text  {q:'abc'}
+     cat   {sel:['LC','MC']}          '' is the blank/no-value bucket
+     num   {min:10, max:null, blanks:false}
+   ABSENT means "no filter on this column"; that is what colfActive() reports
+   and what the funnel icon, the chip and Clear Filters all read. */
+let COLF={};
+let COLF_OPEN='';          // which column's popover is showing ('' = none)
+
+/* Sentinel <option> value. A select whose column filter cannot be spelled as
+   one of its own options shows this INSTEAD of falling back to its blank
+   "All …" option. A dropdown reading "All Sectors" while a header filter hides
+   most rows is the one contradiction this whole feature must not be able to
+   produce, so the dropdown is made to say something true instead.
+   It is `disabled`, so it can never be CHOSEN; applyF() also ignores it
+   defensively, because applyF reads EVERY select on any change and a sentinel
+   sitting in one of them would otherwise leak into an unrelated filter. */
+const COLF_SENTINEL='__colf__';
+
+/* Key-order-independent serialisation for the object-valued screen fields.
+   screenKey() compares a LIVE capture against one that has been through
+   JSON.parse/stringify, and the comment above screenKey already refuses to bet
+   a UI indicator on key order — so this sorts. */
+function colfStableKey(v){
+  if(v===null||typeof v!=='object') return JSON.stringify(v)===undefined?'':JSON.stringify(v);
+  if(Array.isArray(v)) return '['+v.map(colfStableKey).join(',')+']';
+  return '{'+Object.keys(v).sort().map(k=>JSON.stringify(k)+':'+colfStableKey(v[k])).join(',')+'}';
+}
+
+function colfBlank(v){ return v==null || v==='' || (typeof v==='number' && !isFinite(v)); }
+// One canonical string per category value; the blank bucket is ''.
+function colfCatVal(key,d,def){
+  const c=COL_FILTERS[key]; if(!c) return '';
+  const v=c.val(d,def);
+  return colfBlank(v)?'':String(v);
+}
+function colfActive(key){
+  const c=COL_FILTERS[key], f=COLF[key];
+  if(!c||!f) return false;
+  if(c.t==='text') return typeof f.q==='string' && f.q.trim()!=='';
+  if(c.t==='cat')  return Array.isArray(f.sel);
+  /* NUMERIC: a bound is what makes it a filter. "include blanks" on its own is
+     not a filter — with no min and no max there is nothing for a blank to be
+     excluded from, and treating it as active would light the funnel on a
+     column that is hiding nothing. */
+  if(c.t==='num')  return f.min!=null || f.max!=null;
+  return false;
+}
+function colfActiveKeys(){ return Object.keys(COL_FILTERS).filter(colfActive); }
+function colfCount(){ return colfActiveKeys().length; }
+
+function colfPass(key,d,def){
+  if(!colfActive(key)) return true;
+  const c=COL_FILTERS[key], f=COLF[key], v=c.val(d,def);
+  if(c.t==='text') return String(v==null?'':v).toLowerCase().includes(f.q.trim().toLowerCase());
+  if(c.t==='cat')  return f.sel.indexOf(colfBlank(v)?'':String(v))!==-1;
+  /* NULL HANDLING, the whole point of the `blanks` flag. Many of these columns
+     are legitimately null for a short-history stock — no 200 EMA, no weekly
+     volume ratio, no breakout anywhere in the series. Letting a null slide
+     through a "RSI above 60" filter is a lie, and silently dropping it hides
+     stocks the user never chose to hide. So it is neither: blanks are OUT by
+     default the moment a bound exists, and there is a checkbox to put them back. */
+  const n=colfBlank(v)?null:+v;
+  if(n==null||!isFinite(n)) return !!f.blanks;
+  if(f.min!=null && n<f.min) return false;   // inclusive on both ends
+  if(f.max!=null && n>f.max) return false;
+  return true;
+}
+/* `excl` skips ONE column's own filter, which is how the category counts can
+   say "what would narrowing further do" instead of "what does this market
+   contain". getRows() passes it straight through. */
+function colfApply(items, excl){
+  const keys=colfActiveKeys().filter(k=>k!==excl);
+  if(!keys.length) return items;
+  return items.filter(def=>{ const d=SD[def.s]; return keys.every(k=>colfPass(k,d,def)); });
+}
+
+/* ─────────────────────────────────
+   TWO-WAY SYNC WITH THE TOOLBAR
+   ─────────────────────────────────
+   Six of these columns already had a control in the filter bar. Rather than
+   run two filters that happen to look alike, each pair is declared here ONCE
+   and kept in lockstep in both directions:
+
+     toCol(v)   toolbar value -> the column-filter entry that means the same
+     fromCol(f) column-filter entry -> the toolbar value that means the same,
+                or '' when the toolbar simply cannot say it (two sectors at
+                once, a custom RSI range). '' is what puts the sentinel option
+                in the dropdown, so the control never claims "All".
+     keep(v)    toolbar values this COLUMN cannot express, which must therefore
+                survive a column filter being cleared. "Above 20 EMA" is not a
+                statement about the EMA Align column at all.
+
+   Because getRows() applies BOTH the legacy F_* term and the COLF term, and
+   the two are always either equal or one of them a no-op, the intersection is
+   the same set either way — they cannot disagree about which rows are shown. */
+const PIV_ZONE_SETS={
+  ar1:['R1→R2','R2+'], r2:['R2+'], r1b:['R1→R2'], ppr1:['PP→R1'],
+  pp:['PP'], s1pp:['S1→PP'], s1b:['S2→S1'], s2:['<S2'],
+  // 'nr1' (within 1% of R1) is a PROXIMITY test, not a zone — deliberately
+  // absent, so picking it leaves the D-Pivot column filter alone.
+};
+function colfSetKey(a){ return Array.isArray(a)?a.slice().sort().join(''):null; }
+
+const COLF_MIRROR={
+  sector:{ id:'sctFil', get:()=>F_SCT, set:v=>{F_SCT=v},
+    toCol:v=>v?{q:v}:null,
+    fromCol:f=>{
+      const q=String((f&&f.q)||'').trim(); if(!q) return '';
+      const list=(UNI&&UNI[CUR])||[];
+      if(!list.length) return q;      // nothing loaded to check the spelling against
+      const hit=[...new Set(list.map(x=>x.sector))].filter(s=>String(s).toLowerCase()===q.toLowerCase());
+      return hit.length?hit[0]:'';    // a partial word like "Fin" is not a sector
+    },
+    lbl:f=>'Sector contains "'+((f&&f.q)||'')+'"' },
+
+  cap:{ id:null, get:()=>F_CAP, set:v=>{F_CAP=v||'All'}, dflt:'All',
+    // F_CAP doubles as the SECTOR segment buttons ('IT', 'Healthcare', …).
+    // Those are not a cap filter and must not be wiped by one.
+    keep:v=>!!v && v!=='All' && !CAP_CODES.includes(v),
+    toCol:v=>CAP_CODES.includes(v)?{sel:[v]}:null,
+    fromCol:f=>(Array.isArray(f&&f.sel)&&f.sel.length===1&&CAP_CODES.includes(f.sel[0]))?f.sel[0]:'' },
+
+  rev:{ id:'revFil', get:()=>F_REV, set:v=>{F_REV=v},
+    // '' is the blank bucket in a category selection, and "Unmarked" is exactly
+    // that: a stock with no review on file.
+    toCol:v=>v==='none'?{sel:['']}:(v?{sel:[v]}:null),
+    fromCol:f=>(Array.isArray(f&&f.sel)&&f.sel.length===1)?(f.sel[0]===''?'none':f.sel[0]):'',
+    lbl:f=>'Review: '+((f&&f.sel)||[]).length+' selected' },
+
+  rsi:{ id:'rsiFil', get:()=>F_RSI, set:v=>{F_RSI=v},
+    toCol:v=>({ob:{min:70,max:null,blanks:false},
+               mid:{min:50,max:70,blanks:false},
+               os:{min:null,max:40,blanks:false}}[v]||null),
+    fromCol:f=>{
+      if(!f||f.blanks) return '';     // the dropdown options all exclude blanks
+      const mn=f.min==null?null:+f.min, mx=f.max==null?null:+f.max;
+      if(mn===70&&mx==null) return 'ob';
+      if(mn===50&&mx===70)  return 'mid';
+      if(mn==null&&mx===40) return 'os';
+      return '';
+    },
+    lbl:f=>'RSI '+(f&&f.min!=null?f.min:'')+'–'+(f&&f.max!=null?f.max:'') },
+
+  ema:{ id:'emaFil', get:()=>F_EMA, set:v=>{F_EMA=v},
+    // "Above 20 EMA" / "Above 200 EMA" are questions about ONE moving average;
+    // the EMA Align column reads how many of four the price clears.
+    keep:v=>v==='a20'||v==='a200',
+    toCol:v=>v==='bull'?{sel:['Bull']}:null,
+    fromCol:f=>(Array.isArray(f&&f.sel)&&f.sel.length===1&&f.sel[0]==='Bull')?'bull':'',
+    lbl:f=>'EMA Align: '+((f&&f.sel)||[]).length+' selected' },
+
+  dpiv:{ id:'pivFil', get:()=>F_PIV, set:v=>{F_PIV=v},
+    keep:v=>!!v && !PIV_ZONE_SETS[v],   // 'nr1' and the legacy values
+    toCol:v=>PIV_ZONE_SETS[v]?{sel:PIV_ZONE_SETS[v].slice()}:null,
+    fromCol:f=>{
+      const k=colfSetKey(f&&f.sel); if(k==null) return '';
+      return Object.keys(PIV_ZONE_SETS).find(o=>colfSetKey(PIV_ZONE_SETS[o])===k)||'';
+    },
+    lbl:f=>'D-Pivot: '+((f&&f.sel)||[]).length+' zones' },
+
+  wpiv:{ id:'wpivFil', get:()=>F_WPIV, set:v=>{F_WPIV=v},
+    keep:v=>!!v && !PIV_ZONE_SETS[v],
+    toCol:v=>PIV_ZONE_SETS[v]?{sel:PIV_ZONE_SETS[v].slice()}:null,
+    fromCol:f=>{
+      const k=colfSetKey(f&&f.sel); if(k==null) return '';
+      return Object.keys(PIV_ZONE_SETS).find(o=>colfSetKey(PIV_ZONE_SETS[o])===k)||'';
+    },
+    lbl:f=>'W-Pivot: '+((f&&f.sel)||[]).length+' zones' },
+};
+
+/* Last toolbar value we synced, per mirrored column. colfFromToolbar() only
+   rewrites a column whose control ACTUALLY MOVED, because applyF() re-reads
+   every select on any change: without this, changing the RSI dropdown while a
+   multi-sector header filter is active would read the sector select's sentinel,
+   see "no sector", and silently throw the header filter away. */
+const COLF_TB={};
+function colfSnapTB(){ Object.keys(COLF_MIRROR).forEach(k=>{ COLF_TB[k]=COLF_MIRROR[k].get(); }); }
+
+// Column filters -> toolbar state -> DOM. The direction used after any change
+// made from a header popover.
+function colfToToolbar(){
+  Object.keys(COLF_MIRROR).forEach(k=>{
+    const m=COLF_MIRROR[k], f=COLF[k];
+    if(f && colfActive(k)) m.set(m.fromCol(f) || m.dflt || '');
+    else if(!(m.keep && m.keep(m.get()))) m.set(m.dflt || '');
+  });
+  colfSnapTB();
+  colfSyncDom();
+}
+// Toolbar -> column filters, for the controls that moved. Ends by running the
+// other direction, so the DOM is always painted from the settled state.
+function colfFromToolbar(){
+  Object.keys(COLF_MIRROR).forEach(k=>{
+    const m=COLF_MIRROR[k], v=m.get();
+    if(v===COLF_TB[k]) return;
+    const f=m.toCol(v);
+    if(f) COLF[k]=f; else delete COLF[k];
+  });
+  colfToToolbar();
+}
+/* Force every mirrored column to be re-derived from the toolbar, ignoring the
+   moved-check. Used where the toolbar is authoritative by definition: a market
+   switch, Clear Filters, and a screen saved before column filters existed. */
+function colfDeriveAll(){
+  Object.keys(COLF_MIRROR).forEach(k=>{
+    const m=COLF_MIRROR[k], f=m.toCol(m.get());
+    if(f) COLF[k]=f; else delete COLF[k];
+  });
+  colfSnapTB();
+  colfSyncDom();
+}
+
+function colfSet(key,f){
+  const c=COL_FILTERS[key];
+  if(!c||c.t==='none') return false;
+  if(f==null) delete COLF[key]; else COLF[key]=f;
+  colfToToolbar();
+  return true;
+}
+function colfClear(key){ return colfSet(key,null); }
+/* Clears the column filters AND, through colfToToolbar(), the toolbar controls
+   that mirror them — they are the same filter, so half-clearing them is the
+   contradiction again. Filters with no column of their own (the search box, the
+   toggles, Advanced Filters, min market cap) are Clear Filters' job, not this
+   button's. */
+function colfClearAll(){
+  COLF={};
+  colfToToolbar();
+  VISIBLE=CFG.INIT;
+  renderTable(CUR); updateStatus();
+  if(COLF_OPEN) colfFillPop();
+}
+
+/* ─────────────────────────────────
+   CATEGORY OPTIONS + COUNTS
+   ───────────────────────────────── */
+function colfCmpVal(a,b){
+  if(a===b) return 0;
+  if(a==='') return 1;      // the blank bucket always sits last
+  if(b==='') return -1;
+  return String(a).localeCompare(String(b));
+}
+function colfOptions(key){
+  const c=COL_FILTERS[key];
+  if(!c||c.t!=='cat') return [];
+  // Counted over the rows surviving every OTHER filter — see colfApply().
+  const rows=getRows(CUR,key);
+  const map=new Map();
+  rows.forEach(def=>{
+    const v=colfCatVal(key,SD[def.s],def);
+    map.set(v,(map.get(v)||0)+1);
+  });
+  const sel=COLF[key]&&COLF[key].sel;
+  /* A ticked value with no rows left still has to be OFFERED: if its checkbox
+     vanished the moment its count hit zero, the filter that emptied the table
+     could not be undone from the popover that set it. */
+  if(Array.isArray(sel)) sel.forEach(v=>{ if(!map.has(v)) map.set(v,0); });
+  return [...map.keys()].sort(colfCmpVal).map(v=>({
+    v, label:v===''?'(blank)':v, n:map.get(v),
+    on: !Array.isArray(sel) || sel.indexOf(v)!==-1,
+  }));
+}
+
+/* ─────────────────────────────────
+   THE CONTROL ITSELF
+   ─────────────────────────────────
+   The funnel is INJECTED into each <th> at startup rather than written into
+   the static markup, for two reasons: the header already carries 51 hand-kept
+   cells and duplicating a button across all of them invites them to drift, and
+   the button must contribute NO text — a header's visible text is its label
+   everywhere else in this file and in its tests, so the glyph is drawn by CSS
+   on an empty button.
+
+   THE SORT INTERACTION: every sortable <th> has a click listener that cycles
+   desc -> asc -> default. The funnel sits inside that <th>, so its own handler
+   stops propagation; opening a filter therefore cannot move SORT_C, and
+   nothing in the sort path touches COLF. */
+function colfIcon(key){
+  const c=COL_FILTERS[key];
+  const lbl=escAttr(c?c.label:key);
+  return '<button type="button" class="colf-b" data-k="'+escAttr(key)+'"'
+       + ' aria-label="Filter '+lbl+'" title="Filter this column"'
+       + ' onclick="event.stopPropagation();colfOpen(\''+escAttr(key)+'\',this)"></button>';
+}
+// [key, th] for every header that has a filter. The key is data-s (the sort
+// key) where the column has one, data-f where it has none.
+function colfHeaders(){
+  const out=[];
+  if(!document.querySelectorAll) return out;
+  const list=document.querySelectorAll('#tHead th');
+  const arr=(list&&list.length)?Array.prototype.slice.call(list):[];
+  arr.forEach(th=>{
+    const k=(th.getAttribute&&(th.getAttribute('data-s')||th.getAttribute('data-f')))
+          ||(th.dataset&&(th.dataset.s||th.dataset.f))||'';
+    const c=COL_FILTERS[k];
+    if(k&&c&&c.t!=='none') out.push([k,th]);
+  });
+  return out;
+}
+function colfBuildHeaders(){
+  colfHeaders().forEach(([k,th])=>{
+    if(th.querySelector && th.querySelector('.colf-b')) return;   // idempotent
+    if(th.insertAdjacentHTML) th.insertAdjacentHTML('beforeend', colfIcon(k));
+  });
+  colfSyncDom();
+}
+
+// One human sentence per active filter — the funnel's tooltip, so a filter on
+// a column scrolled off screen can still be read once it is found.
+function colfDesc(key){
+  const c=COL_FILTERS[key], f=COLF[key];
+  if(!c||!colfActive(key)) return '';
+  if(c.t==='text') return c.label+' contains "'+f.q+'"';
+  if(c.t==='cat')  return c.label+': '+(f.sel.length?f.sel.map(v=>v===''?'(blank)':v).join(', '):'nothing selected');
+  const parts=[];
+  if(f.min!=null) parts.push('≥ '+f.min);
+  if(f.max!=null) parts.push('≤ '+f.max);
+  return c.label+' '+parts.join(' and ')+(f.blanks?' (blanks included)':'');
+}
+
+/* WHY A CHIP AND NOT JUST THE FUNNEL: 51 columns do not fit on a screen, so a
+   filter set on a column that is now scrolled away is otherwise completely
+   invisible — the table is short and nothing on screen says why. The chip sits
+   next to "Showing N of M", which is the number the user is already reading
+   when they wonder where the rows went. */
+function colfChip(){
+  const el=$('colfChip'); if(!el) return;
+  const n=colfCount();
+  if(!n){ el.innerHTML=''; if(el.classList) el.classList.remove('on'); return; }
+  if(el.classList) el.classList.add('on');
+  const names=colfActiveKeys().map(k=>colfDesc(k)).join(' · ');
+  el.innerHTML='<span class="colf-chip-t" title="'+escAttr(names)+'">▼ '+n+' column filter'+(n===1?'':'s')+'</span>'
+             + '<button type="button" class="colf-chip-x" onclick="colfClearAll()"'
+             + ' title="Clear every column filter, including the toolbar controls that mirror one">Clear</button>';
+}
+
+/* Paints every control this feature owns from the settled state, never the
+   other way round — the same rule syncFilterToggles() follows. */
+function colfSyncDom(){
+  // 1 · the dropdowns that mirror a column
+  Object.keys(COLF_MIRROR).forEach(k=>{
+    const m=COLF_MIRROR[k]; if(!m.id) return;
+    const el=$(m.id); if(!el) return;
+    const f=COLF[k];
+    const need=!!f && colfActive(k) && !m.fromCol(f);
+    let opt=el.querySelector?el.querySelector('option[value="'+COLF_SENTINEL+'"]'):null;
+    if(need){
+      if(!opt && document.createElement && el.appendChild){
+        opt=document.createElement('option');
+        opt.value=COLF_SENTINEL; opt.disabled=true;
+        el.appendChild(opt);
+      }
+      if(opt) opt.textContent=m.lbl?m.lbl(f):'Column filter';
+      el.value=COLF_SENTINEL;
+    } else {
+      if(opt&&opt.remove) opt.remove();
+      el.value=m.get()||'';
+    }
+  });
+  /* 2 · the cap segment buttons. A two-cap header filter cannot be spelled as
+         one active button, so NO button is lit — rather than "All" sitting
+         there claiming the table is unfiltered. */
+  const capMulti=colfActive('cap') && !COLF_MIRROR.cap.fromCol(COLF.cap);
+  const seg=$('segGrp');
+  if(seg&&seg.classList) seg.classList.toggle('colf-multi', capMulti);
+  if(capMulti) document.querySelectorAll('#segGrp .seg-btn').forEach(b=>b.classList.remove('active'));
+  // 3 · the funnels
+  colfHeaders().forEach(([k,th])=>{
+    const on=colfActive(k);
+    if(th.classList) th.classList.toggle('colf-on', on);
+    const b=th.querySelector?th.querySelector('.colf-b'):null;
+    if(b){
+      if(b.classList) b.classList.toggle('on', on);
+      if(b.setAttribute) b.setAttribute('title', on?('Filtered — '+colfDesc(k)):'Filter this column');
+    }
+  });
+  // 4 · the chip
+  colfChip();
+}
+
+/* ─────────────────────────────────
+   THE POPOVER
+   The three input groups all live in the static markup and are shown or hidden
+   per column type, so every id this code reaches through $() really exists in
+   the page — the startup smoke test asserts exactly that.
+   ───────────────────────────────── */
+function colfOpen(key,btn){
+  const c=COL_FILTERS[key];
+  if(!c||c.t==='none') return false;
+  COLF_OPEN=key;
+  const pop=$('colfPop');
+  colfFillPop();
+  if(pop){
+    if(pop.classList) pop.classList.add('open');
+    if(btn&&btn.getBoundingClientRect&&pop.style){
+      const r=btn.getBoundingClientRect()||{};
+      const w=270, vw=(window&&window.innerWidth)||1200;
+      pop.style.left=Math.max(8,Math.min((r.left||0)-w+(r.width||0), vw-w-8))+'px';
+      pop.style.top=((r.bottom!=null?r.bottom:(r.top||0))+6)+'px';
+    }
+  }
+  return true;
+}
+function colfClose(){
+  COLF_OPEN='';
+  const pop=$('colfPop');
+  if(pop&&pop.classList) pop.classList.remove('open');
+}
+function colfFillPop(){
+  const key=COLF_OPEN, c=COL_FILTERS[key];
+  if(!c) return false;
+  const f=COLF[key]||{};
+  const t=$('colfTitle'); if(t) t.textContent=c.label;
+  const show=(id,on)=>{ const el=$(id); if(el&&el.style) el.style.display=on?'block':'none'; };
+  show('colfTextSec', c.t==='text');
+  show('colfNumSec',  c.t==='num');
+  show('colfCatSec',  c.t==='cat');
+  if(c.t==='text'){ const el=$('colfQ'); if(el) el.value=f.q||''; }
+  if(c.t==='num'){
+    const mn=$('colfMin'), mx=$('colfMax'), bl=$('colfBlanks');
+    if(mn) mn.value=f.min==null?'':f.min;
+    if(mx) mx.value=f.max==null?'':f.max;
+    if(bl) bl.checked=!!f.blanks;
+  }
+  if(c.t==='cat') colfFillCat();
+  return true;
+}
+function colfFillCat(){
+  const box=$('colfList'); if(!box) return false;
+  box.innerHTML=colfOptions(COLF_OPEN).map(o=>
+      '<label class="colf-opt"><input type="checkbox" value="'+escAttr(o.v)+'"'+(o.on?' checked':'')
+    + ' onchange="colfCommit()"><span class="colf-opt-l">'+escHtml(o.label)+'</span>'
+    + '<span class="colf-opt-n">'+o.n+'</span></label>').join('');
+  return true;
+}
+function colfCommit(){
+  const key=COLF_OPEN, c=COL_FILTERS[key];
+  if(!c) return false;
+  if(c.t==='text'){
+    const el=$('colfQ'), q=el?String(el.value==null?'':el.value):'';
+    colfSet(key, q.trim()?{q:q}:null);
+  } else if(c.t==='num'){
+    const num=id=>{ const el=$(id); const v=el?String(el.value==null?'':el.value).trim():'';
+                    if(v==='') return null; const n=parseFloat(v); return isFinite(n)?n:null; };
+    const mn=num('colfMin'), mx=num('colfMax');
+    const bl=!!($('colfBlanks')&&$('colfBlanks').checked);
+    // No bound at all is not a filter — see colfActive(). Storing {min:null,
+    // max:null} would light the funnel on a column hiding nothing.
+    colfSet(key,(mn==null&&mx==null)?null:{min:mn,max:mx,blanks:bl});
+  } else if(c.t==='cat'){
+    const box=$('colfList');
+    const ins=(box&&box.querySelectorAll)?Array.prototype.slice.call(box.querySelectorAll('input')):[];
+    const sel=ins.filter(i=>i.checked).map(i=>String(i.value==null?'':i.value));
+    // Everything ticked means the same rows as no filter; stored as no filter
+    // so the funnel goes dark and the chip count stays honest.
+    colfSet(key,(ins.length && sel.length===ins.length)?null:{sel:sel});
+  }
+  VISIBLE=CFG.INIT;
+  renderTable(CUR); updateStatus();
+  if(c.t==='cat') colfFillCat();   // the counts move as the other filters narrow
+  return true;
+}
+function colfCatAll(on){
+  const key=COLF_OPEN, c=COL_FILTERS[key];
+  if(!c||c.t!=='cat') return false;
+  colfSet(key, on?null:{sel:[]});
+  VISIBLE=CFG.INIT; renderTable(CUR); updateStatus(); colfFillCat();
+  return true;
+}
+function colfClearCur(){
+  if(!COLF_OPEN) return false;
+  colfSet(COLF_OPEN,null);
+  VISIBLE=CFG.INIT; renderTable(CUR); updateStatus(); colfFillPop();
+  return true;
+}
+
+/* ══════════════════════════════════
    SORT HEADERS
 ══════════════════════════════════ */
 /* Back to the composite default. Reachable two ways on purpose: the explicit
@@ -7075,6 +8429,15 @@ document.addEventListener('DOMContentLoaded',()=>{
       th.classList.add(SORT_D==='asc'?'sa':'sd');
       renderTable(CUR);
     });
+  });
+  /* The popover is body-level (it would be clipped inside .tbl-scroll), so it
+     is closed by a document-level click that landed outside it. The funnel's
+     own handler stops propagation, so re-opening never immediately closes. */
+  document.addEventListener('click',e=>{
+    if(!COLF_OPEN) return;
+    const t=e&&e.target;
+    if(t&&t.closest&&(t.closest('#colfPop')||t.closest('.colf-b'))) return;
+    colfClose();
   });
   $('colModal').addEventListener('click',e=>{if(e.target===$('colModal'))$('colModal').classList.remove('open');});
   $('sectorModal').addEventListener('click',e=>{if(e.target===$('sectorModal'))closeSectorBreadth();});
@@ -7199,6 +8562,7 @@ function syncHeaderHeight(){
   syncHistLabel();   // no date chosen yet: writes the plain column headings
   updateAdvBtn();
   applyBreadthCollapsed();
+  applyCollapsibles();   // must precede the first paint, or both sections flash open on a phone
   loadBreadthTF();     // must precede buildBreadthTF/renderBreadth, which read it
   buildBreadthTF();
   // Sync the theme button label with whatever the pre-paint script already applied.
@@ -7210,10 +8574,14 @@ function syncHeaderHeight(){
   buildSegs('india');
   buildSctDropdown('india');
   buildPivSelects();   // before any applyF()/syncScreenToDom() can read their values
+  colfBuildHeaders();  // injects the per-column funnels into the <th> cells
   buildScreenSelect();
   updateScreenUI();
   updateMcapUI('india');
   syncFilterToggles();   // paints the watchlist count from the restored list
+  // Paint the as-of placeholder before any fetch resolves, so the banner never
+  // shows a stale literal from the markup while the first load is in flight.
+  updateDataAsOf('india');
   renderMetrics('india'); // show skeleton cards
   // Deliberately NOT awaited, and deliberately INDIA ONLY — a slow or hung
   // Google Sheet fetch must never block the app from starting, and we don't
