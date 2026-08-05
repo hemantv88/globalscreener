@@ -1403,17 +1403,44 @@ const CFG = {
      that. Once this is working, UNPUBLISH the tabs (see the Operations
      Guide); until you do, both doors are open.
 
-     WHAT TO PASTE: in Apps Script, Deploy > New deployment > type "Web app"
-     > Execute as "Me" > Who has access "Anyone with a Google account" >
-     Deploy. Copy the URL that ends in /exec. It looks like:
-       https://script.google.com/macros/s/AKfycb.../exec
-     Do NOT paste the /dev URL — it only works for you, while the editor is
-     open, and will strand every other reader on "Sign in to continue".
+     HOW TO DEPLOY IT: in Apps Script, Deploy > New deployment > type
+     "Web app" > Execute as "Me" > Who has access "Anyone" > Deploy. Copy
+     the URL it gives you, the one ending in /exec, and paste it below.
 
-     IF THE PAGE SAYS "Sign in to continue": that is this file telling you it
-     reached the endpoint and Google would not say who was asking. Open the
-     URL below in a browser tab, sign in, and reload the page. */
- // API_URL: 'https://script.google.com/macros/s/AKfycbybpXG_SSCriVZLL8Ge04E1WM2H1ry8kVHyFUUUJCXGlWIH2rCG6Rzpj2dbqfcUdvuV/exec',
+     "Who has access" MUST be "Anyone". The other choice, "Anyone with a
+     Google account", reads as the safer one but cannot work here, and this
+     was confirmed live rather than guessed: when this page asks for the
+     data, the browser deliberately does not attach your Google sign-in to a
+     request aimed at a different site, so Google decides nobody is asking
+     and sends its login page back instead of the data — and the browser
+     then refuses to let this page read that reply at all. The failure is
+     identical whether or not you are signed in, and no change in this file
+     can fix it.
+
+     Do NOT paste the /dev URL — it only works for you, while the editor is
+     open, and will strand every other reader on "Sign in to continue". */
+  API_URL: 'https://script.google.com/macros/s/AKfycbybpXG_SSCriVZLL8Ge04E1WM2H1ry8kVHyFUUUJCXGlWIH2rCG6Rzpj2dbqfcUdvuV/exec',
+
+  /* ── THE SAME URL, NOT SPELLED OUT ─────────────────────────────
+     API_URL above is a plain string, so it sits in the page source for
+     anyone who presses Ctrl+U. API_ENC is that same URL XOR'd against a
+     short fixed key and base64'd, so it is not there to be read or grepped.
+     apiBase() prefers API_URL whenever it is non-blank, so a local or dev
+     copy can keep using a readable URL and this stays debuggable. Set ONE
+     of the two.
+
+     BE CLEAR-EYED ABOUT WHAT THIS BUYS. It defeats View Source and casual
+     copy-paste, and that is the entire claim. The key is sitting in plain
+     sight in the snippet below, and the browser's Network tab shows the real
+     URL the instant the page makes its first request. It is a speed bump. The
+     `Access` tab in the workbook is the actual lock.
+
+     TO GENERATE THE VALUE: paste this one line into any browser console,
+     with your own /exec URL in place of the placeholder, and copy what it
+     prints into API_ENC below.
+       (u=>btoa(String.fromCharCode(...[...u].map((c,i)=>c.charCodeAt(0)^'gS7k'.charCodeAt(i%4)))))('PASTE-YOUR-EXEC-URL-HERE')
+  */
+  API_ENC: '',
 
   // Sanity check for the URLs above. A published-CSV gid is just a number —
   // nothing stops the India slot from pointing at the US tab, and the symptom
@@ -3225,8 +3252,8 @@ function applyLiveMcaps(){
 async function loadMktCapData(){
   if(MCAP_LIVE_LOADED) return null;
   MCAP_LIVE_LOADED=true;
-  /* Same two-source rule as the price data: the endpoint when CFG.API_URL is
-     set, the published CSV when it is not. The market caps have to move with
+  /* Same two-source rule as the price data: the endpoint when one is
+     configured, the published CSV when it is not. The caps have to move with
      the prices — leaving this one tab published would keep a public URL alive
      for the sake of a column, and the whole point of the change is that there
      is no public URL left. */
@@ -4875,10 +4902,44 @@ const GSHEET_PROMISE={};     // market -> in-flight/settled promise (shared, nev
 const SHEET_STATE_MSG={};
 let GSHEET_DATA=null;        // pointer to the ACTIVE market's map — what fetchStock() reads
 
+/* The XOR key for CFG.API_ENC. Deliberately short, fixed and visible — see the
+   note beside API_ENC: this hides the URL from View Source and from a grep of
+   the page source, and that is the whole of the claim being made. */
+const API_ENC_KEY='gS7k';
+
+/* THE ONE PLACE THE ENDPOINT URL IS RESOLVED. Every caller goes through this,
+   so there is a single answer to "what is the base URL" and the encoded form
+   cannot drift out of step with the plain one.
+   It NEVER throws. This is the first thing on the data-load path, and an
+   exception raised here for a mistyped setting would take down the whole load
+   rather than degrading to the published-CSV fallback the way a blank does. */
+function apiBase(){
+  const plain=String((CFG&&CFG.API_URL)||'').trim();
+  if(plain) return plain;                 // a readable URL always wins: dev copies, and being able to debug this at all
+  const enc=String((CFG&&CFG.API_ENC)||'').trim();
+  if(!enc) return '';
+  try{
+    const raw=atob(enc);                  // inside the try on purpose: a host without atob must degrade, not explode
+    let out='';
+    for(let i=0;i<raw.length;i++)
+      out+=String.fromCharCode(raw.charCodeAt(i)^API_ENC_KEY.charCodeAt(i%API_ENC_KEY.length));
+    /* Wrong key or truncated input decodes to plausible-looking mojibake in
+       silence, and a garbage URL then fails much later as an unexplained
+       network error. Reject it here, while the cause is still obvious. */
+    if(!/^https:\/\/\S+$/.test(out)) throw new Error('it decoded to something that is not an https URL');
+    return out;
+  }catch(e){
+    console.warn('CFG.API_ENC could not be decoded — '+e.message+'. Treating the endpoint as not configured, '
+      +'so this page falls back to CFG.GSHEET_CSV_URLS. Re-generate the value with the one-line console '
+      +'snippet in the comment beside CFG.API_ENC, or just put the plain URL in CFG.API_URL instead.');
+    return '';
+  }
+}
+
 /* Is the private endpoint configured? A FUNCTION, not a constant captured at
-   load: CFG.API_URL is the one setting a user edits by hand, and a constant
-   would freeze whatever it happened to be when this file was first evaluated. */
-function apiConfigured(){ return !!(CFG.API_URL && String(CFG.API_URL).trim()); }
+   load: this is a setting a user edits by hand, and a constant would freeze
+   whatever it happened to be when this file was first evaluated. */
+function apiConfigured(){ return !!apiBase(); }
 
 /* market key (lowercase, this file's vocabulary) -> region parameter (the Apps
    Script's vocabulary, and the Data_* tab names). Kept as an explicit map
@@ -4888,7 +4949,7 @@ function apiConfigured(){ return !!(CFG.API_URL && String(CFG.API_URL).trim()); 
 const API_REGION={india:'India',us:'US',etf:'ETF'};
 
 function apiURL(action,params){
-  const base=String(CFG.API_URL||'').trim();
+  const base=apiBase();
   if(!base) return '';
   const q=['action='+encodeURIComponent(action)];
   Object.keys(params||{}).forEach(k=>{
@@ -4913,7 +4974,7 @@ function loadGoogleSheetData(market){
     if(!url){
       GSHEET_STATUS[market]='unconfigured';
       GSHEET_BY_MARKET[market]=null;
-      SHEET_STATE_MSG[market]=`No data source is configured for ${market.toUpperCase()}: CFG.API_URL is blank and so is CFG.GSHEET_CSV_URLS.${market}.`;
+      SHEET_STATE_MSG[market]=`No data source is configured for ${market.toUpperCase()}: no Web App endpoint URL is set, and neither is CFG.GSHEET_CSV_URLS.${market}.`;
       console.warn(`[${market}] No Google Sheet URL configured — this market cannot load any data.`);
       setGSheetStatus(market);
       return null;
@@ -4934,11 +4995,11 @@ function loadGoogleSheetData(market){
            to check a URL that was never wrong. */
         if(viaApi && (res.status===401||res.status===403)){
           GSHEET_STATUS[market]='signin';
-          SHEET_STATE_MSG[market]=`The endpoint answered HTTP ${res.status} — Google did not accept the request as signed in. Open the API URL in a tab, sign in with your Google account, then reload.`;
+          SHEET_STATE_MSG[market]=`The endpoint answered HTTP ${res.status} — Google did not accept the request as signed in. Open the API URL in a tab, sign in with your Google account, then reload. If it still fails, the Web App's "Who has access" is set to "Anyone with a Google account", which cannot work from this page — re-deploy it with "Who has access" set to "Anyone".`;
         } else {
           GSHEET_STATUS[market]='failed';
           SHEET_STATE_MSG[market]= viaApi
-            ? `The endpoint returned HTTP ${res.status} after ${ms}ms. Check that CFG.API_URL is the /exec URL of a CURRENT deployment (Deploy > Manage deployments).`
+            ? `The endpoint returned HTTP ${res.status} after ${ms}ms. Check the endpoint URL is the /exec URL of a CURRENT deployment (Deploy > Manage deployments), and that the deployment's "Who has access" is set to "Anyone".`
             : `The Google Sheet tab returned HTTP ${res.status} after ${ms}ms. Check that THIS tab is published (File > Share > Publish to web > pick the tab > CSV) and that the gid in CFG.GSHEET_CSV_URLS.${market} matches.`;
         }
         console.warn(`[${market}] ${SHEET_STATE_MSG[market]}`);
@@ -4979,12 +5040,16 @@ function loadGoogleSheetData(market){
       const ms=Math.round(performance.now()-t0);
       const reason = e.name==='AbortError' ? `timed out after ${CFG.GSHEET_TO/1000}s` : e.message;
       GSHEET_STATUS[market]='failed'; GSHEET_BY_MARKET[market]=null;
-      /* A cross-origin fetch that never completes cannot report WHY — the
-         browser withholds the detail on purpose. When the endpoint is in use
-         the overwhelmingly likely cause is the redirect to Google's sign-in
-         page, so the message names that first instead of pretending to know. */
+      /* A blocked cross-origin fetch cannot report WHY — the browser withholds
+         the detail on purpose, so every one of them surfaces as a bare "Failed
+         to fetch". Established live: a Web App restricted to "Anyone with a
+         Google account" is unreachable from this page whether or not the user
+         is signed in, because the browser will not attach Google's cookies to
+         a request aimed at a different site. The old copy told the user to
+         sign in and to set exactly that option — advice that could never work.
+         Name the setting instead, and the stale-deployment case after it. */
       SHEET_STATE_MSG[market]= viaApi
-        ? `Could not reach the endpoint (${reason}). The usual cause is not being signed in: open the API URL in a tab, sign in with your Google account, then reload. If that is already done, check the deployment is current and set to "Anyone with a Google account".`
+        ? `Could not reach the endpoint (${reason}). The most likely cause is the Web App's "Who has access" setting. If it is "Anyone with a Google account", this page cannot fetch it at all — the browser will not hand your Google sign-in to a different site, so Google replies with its login page, and the browser then refuses to let this page read that reply. Signing in does not change this. Re-deploy the Web App with "Who has access" set to "Anyone". The other common cause is a stale link: check the URL is the /exec URL of a CURRENT deployment (Deploy > Manage deployments).`
         : `The Google Sheet tab could not be fetched (${reason}).`;
       console.warn(`[${market}] Fetch failed: ${reason} (after ${ms}ms) — this market will show no data.`);
       setGSheetStatus(market);
@@ -5075,11 +5140,11 @@ function sheetStateMsg(market){
   if(st==='failed')  return {kind:'failed',  tag: api?'⬤ Endpoint error':'⬤ Sheet unavailable',
     head: api?'Endpoint error':'Sheet unavailable',
     msg: specific || (api
-      ? `${M}: the data endpoint could not be loaded. No data will be shown — there is no fallback source.`
+      ? `${M}: the data endpoint could not be loaded. Check that the Web App's "Who has access" is set to "Anyone", and that the URL is the /exec URL of a current deployment (Deploy > Manage deployments). No data will be shown — there is no fallback source.`
       : `${M}: the Google Sheet tab could not be loaded or is empty. No data will be shown — there is no fallback source.`)};
   if(st==='unconfigured') return {kind:'unconfigured', tag:'⬤ Not configured',
     head:'Not configured',
-    msg: api ? `${M}: CFG.API_URL is set but this market has no region mapping.`
+    msg: api ? `${M}: the endpoint URL is set but this market has no region mapping.`
              : `${M}: no Google Sheet URL is set for this market in CFG.GSHEET_CSV_URLS.`};
   return {kind:'idle', tag:null, head:'', msg:`${M}: not loaded yet — open this tab to fetch it.`};
 }
@@ -5322,7 +5387,7 @@ function finaliseSeries(grouped){
 }
 
 /* ══════════════════════════════════
-   THE PRIVATE ENDPOINT (CFG.API_URL) — SHAPE "sm1"
+   THE PRIVATE ENDPOINT (the Apps Script Web App) — SHAPE "sm1"
    ─────────────────────────────────────────────────
    The Apps Script Web App returns the same bars the published CSV did, in a
    columnar form that costs about 70% of the CSV's bytes for India (the key
@@ -5414,15 +5479,21 @@ function parseSheetPayload(raw){
     return {status:'error',reason:'empty',data:null,message:'The data source returned an empty response.'};
   if(typeof raw==='object') return apiEnvelope(raw);
   const head=String(raw).slice(0,400).trim();
-  /* AN HTML BODY IS THE SIGN-IN PAGE. A Web App deployed "anyone with a Google
-     account" answers an unauthenticated caller with Google's login page, not
-     with an error — so the single most likely failure looks like a successful
-     HTTP 200 carrying <!DOCTYPE html>. Reading that as "no data" is exactly
-     the confusion this whole change exists to remove. */
+  /* AN HTML BODY IS THE SIGN-IN PAGE. A Web App whose access is "Anyone with a
+     Google account" cannot work from this page at all, and this branch is how
+     that announces itself on the rare occasion the reply does reach us: Google
+     answers an unidentified caller with its login page rather than with an
+     error, so the failure arrives as a successful HTTP 200 carrying
+     <!DOCTYPE html>. Reading that as "no data" is exactly the confusion this
+     whole change exists to remove. Far more often the browser blocks the reply
+     before we ever see it and we land in the catch in loadGoogleSheetData()
+     instead; this branch is what is left when it does not. */
   if(head.startsWith('<'))
     return {status:'signin',reason:'html_response',data:null,
             message:'The endpoint replied with a web page instead of data — that is Google\'s sign-in screen. '
-                   +'Open the API URL in a new tab, sign in, then reload this page.'};
+                   +'Open the API URL in a new tab, sign in, then reload this page. If that does not fix it, the '
+                   +'Web App\'s "Who has access" is set to "Anyone with a Google account", which cannot work from '
+                   +'this page — re-deploy it with "Who has access" set to "Anyone".'};
   if(head.startsWith('{')||head.startsWith('[')){
     let obj=null;
     try{ obj=JSON.parse(raw); }
@@ -7375,7 +7446,7 @@ function setSheetError(market){
        telling somebody to "open the API URL" without giving it to them is not
        help. rel="noopener" because it is a target=_blank. */
     const link = (s.kind==='signin' && apiConfigured())
-      ? ` <a href="${CFG.API_URL}" target="_blank" rel="noopener" style="color:#DC2626;text-decoration:underline">Sign in →</a>`
+      ? ` <a href="${apiBase()}" target="_blank" rel="noopener" style="color:#DC2626;text-decoration:underline">Sign in →</a>`
       : '';
     const label = s.head || 'Data did not load';
     sub.innerHTML='&nbsp;·&nbsp;<span style="color:#DC2626">'+label+' — '+escHtml(s.msg)+'</span>'+link;
