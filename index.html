@@ -668,7 +668,7 @@ body.metrics-collapsed #metricsHd,body.filters-collapsed #filtersHd{margin-botto
    and the gain survives down to 480px (group B). */
 .c-wrsi,.c-wvol,.c-wpiv,.c-wema,.c-voldry,.c-retrace,.c-rstrend,.c-notes,
 .c-wcross,.c-wpattern,.c-monthly,.c-rs10w,.c-rsslope,.c-rshist,.c-slope200,
-.c-followup,.c-hist,.c-wbox{display:table-cell}
+.c-followup,.c-hist,.c-wbox,.c-rsp55,.c-rsp21{display:table-cell}
 /* GROUP B — additionally force-hidden at ≤480px */
 .c-vr,.c-align,.c-ema,.c-bocnt,.c-squeeze,.c-mrsrank,.c-setup,
 .c-sector,.c-status,.c-xcross,.c-pattern,.c-consol,.c-rs21,.c-rs55,
@@ -712,6 +712,8 @@ body.hide-rs21    .c-rs21,
 body.hide-rs55    .c-rs55,
 body.hide-rs10w   .c-rs10w,
 body.hide-rsslope .c-rsslope,
+body.hide-rsp55   .c-rsp55,
+body.hide-rsp21   .c-rsp21,
 body.hide-rshist  .c-rshist,
 body.hide-setup   .c-setup,
 body.hide-align   .c-align,
@@ -898,6 +900,11 @@ body.dd-lock{overflow:hidden}
 .dd-tf button.on{background:var(--dark);color:var(--on-dark);border-color:var(--dark)}
 .dd-note{font-size:11px;color:var(--text2)}
 .dd-legend{margin-left:auto;display:flex;gap:10px;font-size:10.5px;font-weight:600}
+/* The Darvas band's label. Muted like the bar-count note beside it — the band
+   itself carries the emphasis on the canvas — with the two LEVELS at full text
+   weight, since those are the numbers a reader actually takes away. */
+.dd-dbox{color:var(--text2);white-space:nowrap}
+.dd-dbox b{color:var(--text)}
 /* A fixed box the canvas fills. The canvas element itself is sized in CSS
    pixels here and in DEVICE pixels by ddDraw(); see ddCanvasCtx() for why. */
 .dd-chart{position:relative;width:100%;height:340px}
@@ -929,7 +936,7 @@ body.dd-lock{overflow:hidden}
   .metrics-row{grid-template-columns:repeat(4,1fr)}
   .c-wrsi,.c-wvol,.c-wpiv,.c-wema,.c-voldry,.c-retrace,.c-rstrend,.c-notes,
   .c-wcross,.c-wpattern,.c-monthly,.c-rs10w,.c-rsslope,.c-rshist,.c-slope200,
-  .c-followup,.c-hist,.c-wbox{display:none!important}
+  .c-followup,.c-hist,.c-wbox,.c-rsp55,.c-rsp21{display:none!important}
 }
 @media (max-width:768px){
   .metrics-row{grid-template-columns:repeat(2,1fr)}
@@ -1215,6 +1222,8 @@ body.dd-lock{overflow:hidden}
             <th class="c-rs55" data-s="rs55" data-tip="55-day excess return over the benchmark, in percentage points. This is the leg MRS Rank is percentile-ranked on.">RS55<span class="sort-ico"></span></th>
             <th class="c-rs10w" data-s="rs10w" data-tip="10-week excess return over the benchmark, computed on weekly bars.">RS10W<span class="sort-ico"></span></th>
             <th class="c-rsslope" data-s="rsslope" data-tip="RS21 minus RS55 — whether relative strength is improving or decaying. Positive means the recent leg is stronger than the longer one.">RS Slope<span class="sort-ico"></span></th>
+            <th class="c-rsp55" data-s="rsp55" style="text-align:center" data-tip="Where the stock-to-benchmark price ratio sits inside its OWN last 55 bars, rescaled so the lowest bar of that window reads 1 and the highest reads 99. Read it as a statement about this stock only: 99 means its strength against the benchmark is at a 55-bar high FOR ITSELF — it does not mean it is stronger than the stock next to it, because two stocks can both read 99 while one has beaten the benchmark by 40% over the window and the other by 2%. That is also why it feeds nothing: not Setup Score, not MRS Rank, not any other composite. A min-max position is not additive and not comparable between rows. It answers a different question from RS55. RS55 is the excess return — by HOW MUCH the stock beat the benchmark. This is where that lead sits in its own recent range, so it turns earlier: the ratio can start making new window highs while the 55-day excess return is still negative. Needs 55 bars that can be paired with a benchmark bar by date; fewer than that, no benchmark, or a perfectly flat ratio with no range to divide by all show a dash rather than an invented number. Sortable like any other column.">RSP 55<span class="sort-ico"></span></th>
+            <th class="c-rsp21" data-s="rsp21" style="text-align:center" data-tip="Where the stock-to-benchmark price ratio sits inside its OWN last 21 bars, rescaled so the lowest bar of that window reads 1 and the highest reads 99. The same reading as RSP 55 over roughly one month, so it turns sooner and whipsaws more. 99 means this stock's strength against the benchmark is at a 21-bar high FOR ITSELF — it says nothing about whether it is stronger than another stock, since two stocks can both read 99 on completely different amounts of outperformance. For that reason it feeds nothing: not Setup Score, not MRS Rank, not any composite. RS21 answers by how much the stock beat the benchmark over 21 days; this answers whether that lead is at its best point within those 21 days, which is why it moves before RS21 does. Needs 21 bars that can be paired with a benchmark bar by date; fewer than that, no benchmark, or a flat ratio with no range shows a dash. Sortable like any other column.">RSP 21<span class="sort-ico"></span></th>
             <th class="c-rshist" data-s="rshist" data-tip="Last ~30 readings of the 21-day excess return, drawn as a sparkline. The grey line is zero — above it the stock was beating the benchmark.">RS Rank History<span class="sort-ico"></span></th>
             <th style="text-align:center" data-tip="Lit up only when all three relative-strength legs — 21-day, 55-day and 10-week — are positive against the benchmark at the same time, i.e. broad outperformance rather than one good stretch.">Lead RS</th>
             <th class="c-rstrend" data-s="rst" data-tip="Bucketed straight from RS Slope, which is RS21 minus RS55: above +0.5 reads Up, below −0.5 reads Down, and anything in between is Flat. Because it compares the 21-day excess return against the 55-day one, Up does not merely mean the stock is beating the benchmark — it means the recent leg of that outperformance is running ahead of the medium-term leg, i.e. relative strength is accelerating.">RS Trend<span class="sort-ico"></span></th>
@@ -1585,7 +1594,14 @@ const CFG = {
      bars ≈ 45 trading days) fits inside a year of data with room to spare. */
   DARVAS: {boxp:5, nearPct:1.0},
 
-  VER:  'gs8',      // gs6 -> gs7: computeTech() returns a WIDER ROW — the Darvas box trio
+  VER:  'gs9',      // gs8 -> gs9: RS is now DATE-ALIGNED against the benchmark, and
+                    // computeTech() returns two new fields (rsDates/rsWkDates) that
+                    // rankRS() cannot work without. A gs8 row carries neither, so a
+                    // returning user would rehydrate yesterday's cache and get blank
+                    // RS columns on the cached path and yesterday's mis-aligned RS
+                    // values everywhere else — i.e. the correctness fix would reach
+                    // nobody who already uses the tool. Orphaning gs8 is the point.
+                    // gs6 -> gs7: computeTech() returns a WIDER ROW — the Darvas box trio
                     // (dBoxTop/dBoxBot/dBoxState and the weekly equivalents), the 20-bar
                     // average traded VALUE (avgValue), and the fresh-momentum flags
                     // (freshFlags/freshAge). A gs6 cache carries none of them, so every
@@ -4083,6 +4099,15 @@ function weeklyResample(C,H,L,V,dates,O){
   });
   const keys=[...wks.keys()].sort();
   return{
+    /* The Monday bucket key re-expressed as the SUNDAY that closes that ISO
+       week. It is a CALENDAR label, deliberately not the last day the ticker
+       actually traded: a stock whose week ended Thursday and a benchmark whose
+       same week ended Friday must yield the IDENTICAL key, or aligning the two
+       weekly series by date would pair the stock's week with the benchmark's
+       PREVIOUS one and understate a whole week of relative strength. */
+    dates:keys.map(k=>{const d=new Date(k+'T00:00:00Z');
+                       d.setUTCDate(d.getUTCDate()+6);
+                       return d.toISOString().slice(0,10);}),
     closes:keys.map(k=>wks.get(k).c),
     opens:keys.map(k=>wks.get(k).o),
     highs:keys.map(k=>wks.get(k).h),
@@ -4140,6 +4165,161 @@ function pctChangeHist(arr,N,count){
     out.push(+((arr[i]/a-1)*100).toFixed(2));
   }
   return out;
+}
+
+/* ══ DATE-ALIGNED BENCHMARK LOOKUP ═══════════════════════════════════════
+   WHY THIS EXISTS. RS used to be pctChange(stock,N) − pctChange(bench,N):
+   two INDEPENDENT walks of arr[len-1-N]..arr[len-1]. That is pure index
+   arithmetic — no dates enter it — so it only compares like with like while
+   the two series happen to share a calendar. They routinely do not. A ticker
+   that is halted or simply stale keeps its old last bar while the benchmark
+   moves on, and the subtraction then measures a stock window ending 24 July
+   against a benchmark window ending 4 August. This sheet has had tickers
+   frozen for weeks while the rest of the market was current, so the two
+   windows really do drift apart in production.
+
+   THE RULE. Measure on the STOCK's own calendar, then price the benchmark on
+   the SAME TWO DATES. Everything benchmark-relative — RS21, RS55, RS10W, the
+   slope, the trend label, the rank and the sparkline — goes through these
+   three functions; there are deliberately no per-call-site lookups, because a
+   second lookup written slightly differently is how one RS column ends up
+   disagreeing with the one next to it.
+
+   COST. The index is built ONCE per benchmark series and then consulted for
+   every one of ~880 tickers, which is why it is a Map plus one sorted array
+   with a binary search rather than a scan of the benchmark per ticker.       */
+function benchIndex(dates,closes){
+  if(!Array.isArray(dates)||!Array.isArray(closes)||!dates.length) return null;
+  const m=new Map(), ds=[];
+  for(let i=0;i<dates.length;i++){
+    const dt=dates[i], c=closes[i];
+    if(!dt||c==null||!isFinite(c)) continue;
+    if(!m.has(dt)) ds.push(dt);
+    m.set(dt,c);   // a duplicated date resolves to the LATER row, which is the
+                   // bar the series' own index arithmetic would have used
+  }
+  if(!ds.length) return null;
+  ds.sort();       // ISO dates sort correctly as strings; see the parser note
+  return {
+    size:ds.length,
+    first:ds[0],
+    last:ds[ds.length-1],
+    /* The benchmark close ON `dt`, or on the most recent bar AT OR BEFORE it.
+       The fallback exists because an exchange holiday or a plain calendar
+       mismatch must not blank a whole column. It returns null — never a
+       guess, and never the stock's own return — when the benchmark's history
+       does not reach back that far, because there is no honest number to
+       report and a raw return wearing an RS label is the exact bug this
+       module was rewritten to make unreachable. */
+    at(dt){
+      if(!dt) return null;
+      const hit=m.get(dt);
+      if(hit!==undefined) return hit;
+      let lo=0,hi=ds.length-1,best=-1;
+      while(lo<=hi){
+        const mid=(lo+hi)>>1;
+        if(ds[mid]<=dt){ best=mid; lo=mid+1; } else { hi=mid-1; }
+      }
+      return best<0?null:m.get(ds[best]);
+    },
+  };
+}
+
+/* The benchmark's % change between two dates taken off the STOCK's calendar.
+   The guards mirror pctChange() exactly — a falsy or non-finite endpoint is
+   "no data", not a 0% change — so that when the two calendars DO match this
+   returns bit-for-bit what the old index arithmetic returned. */
+function benchPctBetween(bi,dStart,dEnd){
+  if(!bi||!dStart||!dEnd) return null;
+  const a=bi.at(dStart), b=bi.at(dEnd);
+  if(a==null||b==null||!a||!isFinite(a)||!isFinite(b)) return null;
+  return (b/a-1)*100;
+}
+
+/* The benchmark leg of an N-bar RS reading, spanning the same dates the
+   stock's own pctChange(C,N) spanned. `tail` is the stock's trailing bar
+   dates, so tail[len-1] is its last bar (D_end) and tail[len-1-N] the bar N
+   STOCK sessions earlier (D_start). The len<N+1 guard is pctChange()'s own
+   N+1 rule, so the stock leg and the benchmark leg become available on
+   exactly the same bar. */
+function benchLegPct(bi,tail,N){
+  if(!bi||!Array.isArray(tail)||tail.length<N+1) return null;
+  return benchPctBetween(bi,tail[tail.length-1-N],tail[tail.length-1]);
+}
+
+/* Same alignment for the sparkline: the benchmark's rolling N-bar change
+   measured at each of the stock's last `count` bars. A single unavailable
+   point nulls the whole series, mirroring pctChangeHist() — a sparkline drawn
+   with holes in it reads as a flat stretch, which is a claim about the market
+   rather than about the data. Rounded per point before the caller subtracts,
+   because pctChangeHist() rounds per point too. */
+function benchLegPctHist(bi,tail,N,count){
+  if(!bi||!Array.isArray(tail)||tail.length<N+count) return null;
+  const out=[], n=tail.length;
+  for(let i=n-count;i<n;i++){
+    const v=benchPctBetween(bi,tail[i-N],tail[i]);
+    if(v==null) return null;
+    out.push(+v.toFixed(2));
+  }
+  return out;
+}
+
+/* ══ RS POSITION (RSP) ═══════════════════════════════════════════════════
+   Ported from the user's TradingView Pine script, which is verbatim:
+
+     rs_raw_mkt = close / bench_market
+     hh1 = ta.highest(rs_raw_mkt, effective_len)
+     ll1 = ta.lowest(rs_raw_mkt, effective_len)
+     rs_mkt := na(hh1 - ll1) or hh1 == ll1 ? float(na)
+             : ((99 - 1) * (rs_raw_mkt - ll1) / (hh1 - ll1)) + 1
+
+   i.e. the stock/benchmark ratio expressed as WHERE IT SITS INSIDE ITS OWN
+   RECENT RANGE, min-max rescaled to 1..99. The lowest bar of the window reads
+   exactly 1 and the highest exactly 99, by construction.
+
+   WHAT IT IS NOT. This is a within-one-stock statement, not a cross-sectional
+   one. Two stocks can both read 99 while one has beaten the benchmark by 40%
+   over the window and the other by 2% — the normalisation throws the MAGNITUDE
+   away and keeps only the position. That makes it useless as an input to any
+   sum, average or rank across stocks, which is why nothing composite reads it:
+   see the deliberate absence of rsp* from isQualitySetup(), the Stage 2 rule
+   list, dwAlign(), sectorStrength() and the mrsRank sort in rankRS().
+
+   ONE DELIBERATE DEPARTURE FROM THE PINE. The script silently degrades a
+   55-bar window to 21 bars when only 21 are available while still labelling
+   the plot 55. That is not copied: fewer than `len` aligned bars returns null
+   and the cell shows a dash. A column headed "RSP 55" that is quietly
+   measuring 21 bars is a column that lies about what it measures.
+
+   The ratio is built through benchIndex(), so every bar pairs the stock's
+   close with the benchmark's close ON THE SAME DATE. Building it by index
+   would reintroduce exactly the misalignment the RS legs were just fixed for,
+   and on a ratio series the damage is worse: a halted stock's flat closes
+   would be divided by a benchmark that kept moving, manufacturing a trend in
+   the ratio out of nothing.                                                 */
+function rsPosition(closes,dates,bi,len){
+  if(!bi||!Array.isArray(closes)||!Array.isArray(dates)) return null;
+  const n=Math.min(closes.length,dates.length);
+  if(!len||n<len) return null;                 // no silent window shrinking
+  const ratio=[];
+  for(let i=n-len;i<n;i++){
+    const c=closes[i], bc=bi.at(dates[i]);
+    // A bar the benchmark cannot price is a HOLE in the window, and a min/max
+    // taken over a window with holes is not the range the label claims.
+    if(c==null||!isFinite(c)||bc==null||!bc||!isFinite(bc)) return null;
+    ratio.push(c/bc);
+  }
+  let hh=-Infinity, ll=Infinity;
+  for(let i=0;i<ratio.length;i++){
+    if(ratio[i]>hh) hh=ratio[i];
+    if(ratio[i]<ll) ll=ratio[i];
+  }
+  // hh===ll is a perfectly flat ratio: the stock tracked the benchmark exactly
+  // across the whole window. The Pine returns na and so does this — guarding
+  // the divide EXPLICITLY rather than letting 0/0 render as NaN.
+  if(!isFinite(hh)||!isFinite(ll)||hh===ll) return null;
+  const cur=ratio[ratio.length-1];
+  return +(((99-1)*(cur-ll)/(hh-ll))+1).toFixed(2);
 }
 
 /* Single-bar candlestick classification against the PREVIOUS bar.
@@ -4583,6 +4763,32 @@ function computeTech(C,H,L,V,dates,sym,O){
   const pc10w=pctChange(wk.closes,10);   // needs 11 weekly bars ≈ 50 daily
   const pcHist21=pctChangeHist(C,21,30); // needs 51 bars
 
+  /* THE BAR DATES THE RS LEGS WERE MEASURED ON, and nothing more.
+     rankRS() runs long after computeTech() — the benchmark is not known here —
+     and it also runs on a CACHED load, where the raw sheet is never downloaded
+     and this row is the only surviving record of the ticker. So the anchor
+     dates have to ride along on the row.
+     56 daily dates is exactly what the widest leg needs: pc55 reaches back to
+     index n-56 and the 30-point pcHist21 reaches back to n-51. Because it is a
+     TAIL, tail-relative arithmetic (tail[len-1-N]) lands on the same bars as
+     the full array's (C[n-1-N]) for every leg here. Carrying the whole `dates`
+     array instead would multiply the cached blob by each ticker's entire
+     history to convey no extra information. */
+  const rsTail    = Math.min(56, n, Array.isArray(dates)?dates.length:0);
+  const rsDates   = rsTail ? dates.slice(-rsTail) : [];
+  /* The closes that go with those dates, sliced to the SAME length off the
+     SAME end so index i of one always describes index i of the other. RS
+     itself does not need them (it uses the pre-computed pc* legs), but RSP
+     does: RSP is built from a stock/benchmark RATIO at every bar in its
+     window, so it needs the bar-by-bar closes, date-paired.
+     This is the one place the row got materially bigger — about 0.5KB per
+     ticker in the day-stamped cache. Paid deliberately: without it RSP simply
+     cannot exist on a cached load, and a column that works only on the day you
+     first download the sheet is worse than no column. saveCache() already
+     treats a quota failure as "no cache", not as an error. */
+  const rsCloses  = rsTail ? C.slice(-rsTail) : [];
+  const rsWkDates = Array.isArray(wk.dates) ? wk.dates.slice(-11) : [];  // pc10w reaches back 10 weekly bars
+
   const currency=sym.endsWith('.NS')?'INR':'USD';
 
   return{
@@ -4597,12 +4803,18 @@ function computeTech(C,H,L,V,dates,sym,O){
     dBoxTop:dBox.top, dBoxBot:dBox.bot, dBoxState:dBox.state,
     wBoxTop:wBox.top, wBoxBot:wBox.bot, wBoxState:wBox.state,
     boGain:bo.gain,boCnt:bo.count,retrace:bo.retrace,
-    // Own returns (inputs to RS, never displayed as RS).
-    pc21,pc55,pc10w,pcHist21,
+    // Own returns (inputs to RS, never displayed as RS), plus the dates they
+    // were measured across so rankRS() can price the benchmark on the SAME
+    // days rather than on its own last N bars.
+    pc21,pc55,pc10w,pcHist21,rsDates,rsCloses,rsWkDates,
     // Filled by rankRS() once the benchmark is known. null until then, and
     // still null afterwards if the benchmark could not be fetched.
     rs21:null,rs55:null,rs10w:null,rsSlope:null,rsTrend:null,rsHist:null,
     rs:null,mrsRank:null,leadRS:null,
+    // RS POSITION. Same "null until rankRS() has a benchmark" contract as the
+    // rs* fields above, and for the same reason: the ratio it is built from
+    // does not exist without one.
+    rsp55:null,rsp21:null,
     currency,
   };
 }
@@ -4625,9 +4837,15 @@ function computeTech(C,H,L,V,dates,sym,O){
    go null and the UI shows a dash and a warning. A dash is a fact; a raw return
    dressed as relative strength is not.
 
-   Alignment note: stock and benchmark % changes are each taken over their OWN
-   last N bars. Both come from the same market tab of the same sheet, so their
-   calendars are effectively identical; no date-by-date alignment is attempted.
+   Alignment: the stock's leg is measured over its OWN last N bars, and the
+   benchmark's leg is then priced on THOSE SAME TWO DATES via benchIndex() —
+   exact match where the benchmark traded that day, otherwise its most recent
+   bar at or before it, and null if its history does not reach back that far.
+   The two series do NOT always share a calendar: a halted or stale ticker
+   stops while the benchmark keeps printing bars, and comparing each series'
+   last N bars by index would then measure two different date ranges. The
+   weekly leg is aligned the same way, by ISO week, on weeklyResample()'s
+   dates.
 ══════════════════════════════════ */
 const RS_CFG_KEY='sm_rs_config';
 let RS_CONFIG={
@@ -4876,16 +5094,25 @@ function rankRS(market){
   if(!items.length) return;
 
   const b=BENCHMARK_DATA[market];
-  const bp21 = b ? pctChange(b.C,21) : null;
-  const bp55 = b ? pctChange(b.C,55) : null;
+  /* Both indexes are built ONCE here and then consulted per ticker — see
+     benchIndex() for why the benchmark is looked up BY DATE instead of by
+     position, and why doing it per call site was not an option. */
+  const bi   = b ? benchIndex(b.dates,b.C) : null;
   const bwk  = b ? weeklyResample(b.C,b.H,b.L,b.V,b.dates) : null;
-  const bp10w= bwk ? pctChange(bwk.closes,10) : null;
-  const bHist= b ? pctChangeHist(b.C,21,30) : null;
+  const bwi  = bwk ? benchIndex(bwk.dates,bwk.closes) : null;
 
   // No benchmark => every RS field stays null. There is deliberately no `else`
   // branch here: the absence of a fallback IS the fix.
   items.forEach(d=>{
     const ex=(own,bench)=> (own!=null && bench!=null) ? +(own-bench).toFixed(2) : null;
+    /* Every benchmark leg is priced across THIS stock's own bar dates, so a
+       stale or halted ticker is scored over the window it actually traded
+       instead of against the benchmark's latest N bars. When the calendars
+       agree — which is most tickers — these are the same numbers as before. */
+    const bp21 = benchLegPct(bi,d.rsDates,21);
+    const bp55 = benchLegPct(bi,d.rsDates,55);
+    const bp10w= benchLegPct(bwi,d.rsWkDates,10);
+    const bHist= benchLegPctHist(bi,d.rsDates,21,30);
     d.rs21 = ex(d.pc21,bp21);
     d.rs55 = ex(d.pc55,bp55);
     d.rs10w= ex(d.pc10w,bp10w);
@@ -4896,6 +5123,14 @@ function rankRS(market){
               ? (d.rs21>0 && d.rs55>0 && d.rs10w>0) : null;
     d.rsHist  = (bHist && d.pcHist21 && d.pcHist21.length===bHist.length)
               ? d.pcHist21.map((v,i)=>+(v-bHist[i]).toFixed(2)) : null;
+    /* RS POSITION. Computed here because it needs the benchmark, and fed
+       through the SAME date aligner as everything above. Written last and
+       read by NOTHING below: rsp* must never reach mrsRank, the Stage 2
+       patch, or any other composite — a min-max-normalised position is not
+       additive and not comparable between stocks. It is a sortable column and
+       nothing more. */
+    d.rsp55 = rsPosition(d.rsCloses,d.rsDates,bi,55);
+    d.rsp21 = rsPosition(d.rsCloses,d.rsDates,bi,21);
     d.rs=null; d.mrsRank=null;
   });
 
@@ -6166,6 +6401,27 @@ function tvSymbol(sym){
   return sym.endsWith('.NS') ? 'NSE:'+sym.slice(0,-3) : sym;
 }
 
+/* CAN THIS SYMBOL BE SHOWN IN A CHART EMBEDDED ON THIS PAGE AT ALL?
+
+   No, for every NSE listing. NSE has not made its price data available to
+   charts placed on other people's websites, so TradingView's embedded chart
+   answers "This symbol is only available on TradingView." for RELIANCE, TCS
+   and every other .NS ticker. The deep link to tradingview.com works perfectly;
+   it is only the embed that does not.
+
+   THIS HAS TO BE A RULE, NOT AN ERROR HANDLER. The refusal happens inside the
+   widget's own frame, which the browser does not let this page read — there is
+   no event, no exception and no pixel we are allowed to inspect. Code that
+   waited to "catch" the failure would wait forever and show a spinner. So the
+   embed is simply not attempted for symbols we know it cannot serve.
+
+   The .NS test is CFG.MARKET_SHAPE's, not a fresh one: that predicate already
+   defines what an Indian ticker is for this file, and a second definition here
+   could drift from it without either one looking wrong. */
+function tvEmbeddable(sym){
+  return !CFG.MARKET_SHAPE.india.test(String(sym||''));
+}
+
 /* The raw URL. encodeURIComponent because five NSE tickers carry an ampersand
    (M&M.NS, ARE&M.NS, GMRP&UI.NS, J&KBANK.NS, GVT&D.NS) and an unencoded & would
    silently truncate the symbol at "M" and turn the rest into a bogus query
@@ -6247,7 +6503,7 @@ function histGC(v){ return fmtCh(v); }
 const SKEL_COLS=['c-setup','c-align','c-fresh','c-sector','','','c-ch1w','c-ch1m','c-ch3m','c-hist','c-histg','c-status','','c-wrsi','c-vr','c-wvol','c-avgval','','c-wpiv','c-dbox','c-wbox','',
   'c-ema','c-wema','c-xcross','c-wcross','c-slope200','c-pattern','c-wpattern','c-consol',
   'c-monthly','','c-bocnt','c-followup','c-voldry','c-retrace','c-squeeze','','c-mrsrank','c-rs21',
-  'c-rs55','c-rs10w','c-rsslope','c-rshist','','c-rstrend','c-notes'];
+  'c-rs55','c-rs10w','c-rsslope','c-rsp55','c-rsp21','c-rshist','','c-rstrend','c-notes'];
 
 function skelRow(def,i){
   const sk=n=>`<div class="skel sk-${n}"></div>`;
@@ -6278,6 +6534,12 @@ function dataRow(def,d,i){
   // Resolved once per row, not once per cell: the price and the Gain% must be
   // measured from the SAME bar, and looking it up twice invites them to drift.
   const hist = histFor(def.s);
+  /* The two RSP cells below render through rsC(), not rsNumC(). RSP is a
+     bounded 1-99 POSITION like MRS Rank, not a signed percentage-point
+     difference: rsNumC() would print it with a leading + and colour it as if
+     0 were the neutral point, which would read as "+62 percentage points
+     ahead of the benchmark" — a completely different, and much better,
+     number than the one being shown. */
   return `<tr id="r-${safeSym}">
     <td class="td-n pin pin1">${i}</td>
     <td class="pin pin2">${revC(def.s)}</td>
@@ -6326,6 +6588,8 @@ function dataRow(def,d,i){
     <td class="c-rs55">${rsNumC(d.rs55)}</td>
     <td class="c-rs10w">${rsNumC(d.rs10w)}</td>
     <td class="c-rsslope">${rsNumC(d.rsSlope)}</td>
+    <td class="c-rsp55" style="text-align:center">${rsC(d.rsp55)}</td>
+    <td class="c-rsp21" style="text-align:center">${rsC(d.rsp21)}</td>
     <td class="c-rshist">${sparkC(d.rsHist)}</td>
     <td>${d.leadRS!=null?ldC(d.leadRS):'<span class="vm">—</span>'}</td>
     <td class="c-rstrend">${rstC(d.rsTrend)}</td>
@@ -6339,7 +6603,7 @@ function errRow(def,i){
     <td class="td-n pin pin1">${i}</td><td class="pin pin2">${revC(def.s)}</td>
     <td class="pin pin3">${capB(def.g)}</td>
     <td class="pin pin4">${watchC(def.s)}<span class="ticker">${def.d}</span><br><span class="sec">${def.sector}</span></td>
-    <td colspan="47" style="color:var(--text3);font-size:11px">
+    <td colspan="49" style="color:var(--text3);font-size:11px">
       ⚠ Not in this market's Google Sheet tab — re-run the Apps Script to backfill it
     </td>
   </tr>`;
@@ -6957,6 +7221,11 @@ const SORT_FN={
   monthly:d=>d?.monthlySetup==null?null:(d.monthlySetup?1:0),
   voldry:d=>d?.volDry==null?null:(d.volDry?1:0),
   rs21:d=>d?.rs21,rs55:d=>d?.rs55,rs10w:d=>d?.rs10w,rsslope:d=>d?.rsSlope,
+  /* Sortable, and ONLY sortable. Sorting is a per-column view of one column's
+     own values, which a min-max position supports perfectly well; ranking
+     maths across columns is what it cannot support, and nothing here does
+     that. */
+  rsp55:d=>d?.rsp55, rsp21:d=>d?.rsp21,
   rshist:d=>Array.isArray(d?.rsHist)&&d.rsHist.length?d.rsHist[d.rsHist.length-1]:null,
   // rsTrend is now the words 'up'/'flat'/'down' (was the arrows ↑/→/↓).
   // The arrow keys are kept so a row rehydrated from an older cache still
@@ -7821,6 +8090,8 @@ const EXPORT_COLS=[
   ['RS55',        (def,d)=>d?.rs55??''],
   ['RS10W',       (def,d)=>d?.rs10w??''],
   ['RS Slope',    (def,d)=>d?.rsSlope??''],
+  ['RSP 55',      (def,d)=>d?.rsp55??''],
+  ['RSP 21',      (def,d)=>d?.rsp21??''],
   // The sparkline's underlying series, joined — a spreadsheet cell can hold the
   // numbers even though it can't hold the drawing.
   ['RS History',  (def,d)=>Array.isArray(d?.rsHist)?d.rsHist.join(' '):''],
@@ -8064,6 +8335,10 @@ const COL_FILTERS={
   rs55:    {t:'num',  label:'RS55',    val:d=>d&&d.rs55},
   rs10w:   {t:'num',  label:'RS10W',   val:d=>d&&d.rs10w},
   rsslope: {t:'num',  label:'RS Slope', val:d=>d&&d.rsSlope},
+  // Bounded 1..99, so a min/max filter reads naturally ("show me everything at
+  // 90+ of its own range"). Still just a filter on one column's own value.
+  rsp55:   {t:'num',  label:'RSP 55',  val:d=>d&&d.rsp55},
+  rsp21:   {t:'num',  label:'RSP 21',  val:d=>d&&d.rsp21},
 
   /* ── explicitly nothing ─────────────────────────────────────────── */
   /* A 30-point sparkline of the 21-day excess return. Neither a value to match
@@ -8637,6 +8912,8 @@ const TOGGLEABLE_COLS=[
   {cls:'rs55',   label:'RS55'},
   {cls:'rs10w',  label:'RS10W'},
   {cls:'rsslope',label:'RS Slope'},
+  {cls:'rsp55',  label:'RSP 55'},
+  {cls:'rsp21',  label:'RSP 21'},
   {cls:'rshist', label:'RS Rank History'},
   {cls:'rstrend',label:'RS Trend'},
   {cls:'notes',  label:'Notes'},
@@ -8777,6 +9054,68 @@ let DD_TFK='6M';          // chosen timeframe, remembered across tickers
 let DD_VIEW={bars:[],ema:[],total:0};   // what is currently drawn
 let DD_HOVER=-1;          // bar index under the pointer, -1 for none
 
+/* ── OPTIONAL CHART LAYERS ──────────────────────────────────────────
+   The chart paints four things: candles, a Darvas band, a volume histogram
+   and the EMA overlays. Only the candles are mandatory — the other three are
+   context, and which context helps depends entirely on what you are looking
+   for. Reading a Darvas break wants the band and nothing else on top of the
+   wicks; judging a trend wants the EMAs and does not care about the box.
+
+   ORDER IN THIS ARRAY IS PRESENTATION ORDER ONLY. The PAINT order is fixed by
+   the sequence of the blocks inside ddDraw() and is deliberately NOT derived
+   from here: the Darvas band must paint behind the candles, and a control
+   whose order could be rearranged into a band drawn over the wicks would be a
+   layer picker that can break the chart it is picking layers for.
+
+   One key per layer rather than one packed key, so a future fourth layer adds
+   a key instead of a migration for everyone's stored string. */
+const DD_LAYERS=[
+  {k:'darvas', key:'sm_chart_darvas', label:'Darvas',
+   title:'The daily Darvas box, drawn as a band behind the candles. Off by preference, not because no box exists — a ticker with no box shows no band either way.'},
+  {k:'emas',   key:'sm_chart_emas',   label:'EMAs',
+   title:'The EMA overlays (10/20/50/200) and their legend entries. Only the periods this ticker has enough history for are ever drawn.'},
+  {k:'volume', key:'sm_chart_volume', label:'Volume',
+   title:'The volume histogram in the lower panel. The panel keeps its space when this is off, so toggling it does not resize the price axis and change where every candle sits.'},
+];
+
+/* DEFAULT ON, AND A STORED PREFERENCE BEATS THE DEFAULT — the same rule
+   collapsedPref() follows, and for the same reason. lsRead returns null only
+   when the user has never expressed an opinion; '0' is an opinion and must
+   survive a reload, so ddToggleLayer() writes '0' explicitly instead of
+   removing the key. Deleting it would read back as null, i.e. "never chosen",
+   and hand the layer back to the user tomorrow after they turned it off. */
+function ddLayerOn(k){
+  const L=DD_LAYERS.find(l=>l.k===k);
+  if(!L) return false;          // an unknown layer is not a layer that is on
+  return lsRead(L.key)!=='0';
+}
+
+/* Reuses .dd-tf — the timeframe control's own class — rather than a new one.
+   These two controls sit side by side in the same toolbar and are the same
+   kind of thing (a small on/off pill), so they should not look like two
+   different widgets; and a shared class cannot drift out of sync with itself
+   the next time the toolbar is restyled. */
+function ddRenderLayers(){
+  const el=$('ddLayers'); if(!el) return;
+  el.innerHTML=DD_LAYERS.map(L=>{
+    const on=ddLayerOn(L.k);
+    return `<button type="button" class="${on?'on':''}" role="switch" aria-checked="${on?'true':'false'}"`
+      +` title="${escAttr(L.title)}" onclick="ddToggleLayer('${escAttr(L.k)}')">${escHtml(L.label)}</button>`;
+  }).join('');
+}
+
+/* Redraws through ddLoadChart() rather than ddDraw() alone: the LEGEND is
+   built there, and a legend still listing "EMA 50" over a chart with no EMA
+   line on it is the same class of lie as a column labelled RS showing a raw
+   return. DD_HOVER is deliberately left alone — toggling a layer does not
+   move the pointer, so the crosshair should not jump. */
+function ddToggleLayer(k){
+  const L=DD_LAYERS.find(l=>l.k===k); if(!L) return;
+  lsWrite(L.key, ddLayerOn(k)?'0':'1');
+  ddRenderLayers();
+  ddLoadChart();
+}
+
 /* Only the options this ticker's own history can actually fill. A freshly
    listed stock with 30 bars gets ONE option, labelled with its real length, so
    the control never claims a range the series does not have. */
@@ -8822,7 +9161,27 @@ function ddSeries(sym,market,count){
                v:(V[i]!=null&&isFinite(V[i]))?V[i]:0});
   }
   const ema=DD_EMA_P.filter(p=>n>=p).map(p=>({p, v:emaSeries(C,p).slice(from)}));
-  return {bars,ema,total:n};
+  /* THE DAILY DARVAS BOX. darvasSeries()/darvasBox() are the D-Box column's own
+     functions, called on the column's own inputs — gd.H/gd.L, NOT the bars[]
+     highs and lows, which are clamped to contain o and c and so are a different
+     series. A second implementation here would look right in a diff and would
+     only be caught when it disagreed with the filter the user traded off.
+
+     Computed over the WHOLE series and only then sliced, exactly as the EMAs
+     are above, and here it is not merely cosmetic: a Darvas box PERSISTS from
+     the bar that formed it until the next one forms, so the box in force inside
+     a 3-month window is very often one that was built before its left edge.
+     Recomputing on the window alone would draw a box the column never saw. */
+  const dser=darvasSeries(H,L,CFG.DARVAS.boxp);
+  const dbox=darvasBox(C,H,L,CFG.DARVAS.boxp,CFG.DARVAS.nearPct);
+  const darvas={
+    tops: dser?dser.tops.slice(from):[],
+    bots: dser?dser.bots.slice(from):[],
+    // The LATEST levels come from darvasBox() itself, rounded exactly as the
+    // column rounds them, so the label and the cell cannot print two numbers.
+    state:dbox.state, top:dbox.top, bot:dbox.bot,
+  };
+  return {bars,ema,darvas,total:n};
 }
 
 /* PURE GEOMETRY — bars and a box in, pixel positions out. Deliberately split
@@ -8856,6 +9215,28 @@ function ddScale(bars,w,h){
     y:p=>priceB-((p-lo)/(hi-lo))*priceH,
     vy:v=>volB-(vmax>0?Math.max(0,v)/vmax:0)*(volB-volT),
     idxAt:px=>{ if(!n) return -1; const i=Math.floor((px-plotL)/step); return i<0?0:(i>=n?n-1:i); }};
+}
+
+/* PURE GEOMETRY, part two: the persisted box as CONTIGUOUS RUNS of bars.
+   tops/bots carry one value per bar and change only on the bar a NEW box
+   forms, so the band is a step function, not a single rectangle — filling one
+   rect from the first non-null bar to the last would invent a box that was
+   never in force over every bar in between. A run therefore breaks on any
+   change of EITHER level, and on any gap (a bar before the first box exists).
+   Kept out of the drawing so it can be tested without a canvas. */
+function ddDarvasBands(tops,bots){
+  const out=[];
+  const n=(tops&&tops.length)||0;
+  if(!n||!bots||bots.length!==n) return out;
+  let cur=null;
+  for(let i=0;i<n;i++){
+    const t=tops[i], b=bots[i];
+    if(t==null||b==null||!isFinite(t)||!isFinite(b)){ cur=null; continue; }
+    if(cur&&cur.top===t&&cur.bot===b){ cur.i1=i; continue; }
+    cur={i0:i,i1:i,top:t,bot:b};
+    out.push(cur);
+  }
+  return out;
 }
 
 /* Colours are READ AT DRAW TIME, never captured once. A canvas holds pixels,
@@ -8919,6 +9300,10 @@ function ddLoadChart(){
   const probe=ddSeries(DD_SYM,CUR,0);            // count 0 -> the whole series
   const total=probe.total;
   ddRenderTf(total);
+  /* Rendered on every load, not once at init: the drilldown markup is static
+     but the pills carry the CURRENT on/off state, and opening the dialog is
+     the moment that state has to be right. */
+  ddRenderLayers();
   const opts=ddTimeframes(total);
   const pick=ddPickTf(opts);
   DD_VIEW=pick?ddSeries(DD_SYM,CUR,pick[1]):{bars:[],ema:[],total:total};
@@ -8932,8 +9317,26 @@ function ddLoadChart(){
     else note.textContent=DD_VIEW.bars.length+' of '+total+' daily bars';
   }
   const lg=$('ddLegend');
-  if(lg) lg.innerHTML=DD_VIEW.ema.map((e,i)=>
-    `<span style="color:var(${DD_EMA_VARS[i%DD_EMA_VARS.length]})">EMA ${e.p}</span>`).join('');
+  if(lg){
+    /* The legend describes WHAT IS ON THE CANVAS, so both halves are gated by
+       the same layer flags the drawing is. A legend entry for a line that is
+       not drawn is worse than no legend: it is a label with nothing under it,
+       and the reader blames the data. */
+    const emaHtml=(ddLayerOn('emas')?DD_VIEW.ema:[]).map((e,i)=>
+      `<span style="color:var(${DD_EMA_VARS[i%DD_EMA_VARS.length]})">EMA ${e.p}</span>`).join('');
+    /* The box label. fmtP() and DBOX_LABEL are the PRICE COLUMN's and the D-Box
+       column's own, so the currency symbol, the 2dp and the wording are the
+       table's — a second formatter here would print ₹1234.5 next to a cell
+       reading ₹1,234.50 for the same number. Absent when no box exists, rather
+       than a label reading "—": an empty legend says "nothing to show" more
+       clearly than a placeholder that looks like a broken value. */
+    const dv=DD_VIEW.darvas, sd=SD[DD_SYM]||null;
+    const boxHtml=(ddLayerOn('darvas')&&dv&&dv.state&&dv.top!=null&&dv.bot!=null)
+      ? `<span class="dd-dbox">Darvas <b>${escHtml(DBOX_LABEL[dv.state]||dv.state)}</b> `
+        + `${escHtml(fmtP(dv.bot,sd&&sd.currency))}&ndash;${escHtml(fmtP(dv.top,sd&&sd.currency))}</span>`
+      : '';
+    lg.innerHTML=boxHtml+emaHtml;
+  }
   ddDraw();
 }
 
@@ -8949,7 +9352,10 @@ function ddDraw(){
   const sc=ddScale(bars,w,h);
   const col={grid:ddCol('--border','#D2DCE1'), text:ddCol('--text3','#54686F'),
              up:ddCol('--green','#146B34'), down:ddCol('--red','#B01818'),
-             cross:ddCol('--text2','#394B53'), surf:ddCol('--surface','#FBFDFE')};
+             cross:ddCol('--text2','#394B53'), surf:ddCol('--surface','#FBFDFE'),
+             // The box band. Read here with the rest, for the same reason: a hex
+             // baked in would leave the band in Classic's palette under Paper.
+             box:ddCol('--border2','#AFC0C7'), boxEdge:ddCol('--text2','#394B53')};
   ctx.clearRect(0,0,w,h);
   ctx.fillStyle=col.surf; ctx.fillRect(0,0,w,h);
   if(!sc.n) return;
@@ -8965,8 +9371,48 @@ function ddDraw(){
   }
   if(empty) return;
 
-  // volume histogram, beneath the price panel and scaled to its own maximum
-  for(let i=0;i<sc.n;i++){
+  /* THE DAILY DARVAS BOX — drawn FIRST, so the candles and the volume bars
+     paint over it. A band on top, however faint, veils exactly the wicks the
+     box is read against. Only the daily box: the chart is daily bars, and the
+     weekly box is a level from a different series that would sit on this axis
+     looking like it belonged to it.
+
+     Nothing is drawn when no box has formed (state null, or fewer than 2*boxp-1
+     bars) — dv.tops is then all-null, ddDarvasBands() returns [], and the loop
+     below simply does not run. */
+  const dv=DD_VIEW.darvas;
+  // The layer gate goes HERE, at the top of the band block and nowhere else,
+  // so the block keeps its position in the paint order. Filtering the layers
+  // into a list and looping it would let "Darvas off, then on" reinsert the
+  // band after the candles instead of behind them.
+  if(ddLayerOn('darvas')&&dv&&dv.state){
+    ctx.save();
+    for(const bd of ddDarvasBands(dv.tops,dv.bots)){
+      const x0=sc.x(bd.i0)-sc.cw/2, x1=sc.x(bd.i1)+sc.cw/2;
+      const yT=sc.y(bd.top), yB=sc.y(bd.bot);
+      ctx.fillStyle=col.box; ctx.globalAlpha=.18;
+      ctx.fillRect(x0,yT,Math.max(1,x1-x0),Math.max(1,yB-yT));
+      ctx.globalAlpha=1;
+      ctx.strokeStyle=col.boxEdge; ctx.lineWidth=1;
+      /* Top solid, bottom dashed. The two edges mean different things — the
+         top is the level a break is measured against, the bottom is where the
+         setup fails — and that difference has to survive greyscale printing
+         and colour blindness, so it is carried by the line, not by hue. */
+      if(ctx.setLineDash) ctx.setLineDash([]);
+      ctx.beginPath(); ctx.moveTo(x0,Math.round(yT)+0.5); ctx.lineTo(x1,Math.round(yT)+0.5); ctx.stroke();
+      if(ctx.setLineDash) ctx.setLineDash([4,3]);
+      ctx.beginPath(); ctx.moveTo(x0,Math.round(yB)+0.5); ctx.lineTo(x1,Math.round(yB)+0.5); ctx.stroke();
+    }
+    if(ctx.setLineDash) ctx.setLineDash([]);
+    ctx.restore();
+  }
+
+  /* volume histogram, beneath the price panel and scaled to its own maximum.
+     Turning it off hides the BARS only — ddScale() still reserves the lower
+     panel, so the price area keeps exactly the height it had and no candle
+     moves. A layer toggle that rescaled the price axis would look like the
+     data had changed. */
+  if(ddLayerOn('volume')) for(let i=0;i<sc.n;i++){
     const b=bars[i]; if(!b||b.c==null) continue;
     const up=b.c>=b.o;
     ctx.fillStyle=up?col.up:col.down;
@@ -8989,7 +9435,7 @@ function ddDraw(){
   }
 
   // EMA overlays — emaSeries(), sliced to this window, never recomputed here
-  (DD_VIEW.ema||[]).forEach((e,k)=>{
+  (ddLayerOn('emas')?(DD_VIEW.ema||[]):[]).forEach((e,k)=>{
     ctx.strokeStyle=ddCol(DD_EMA_VARS[k%DD_EMA_VARS.length],'#1D4ED8');
     ctx.lineWidth=1.4; ctx.beginPath();
     let started=false;
@@ -9074,6 +9520,31 @@ function ddLiveFallback(){
        + tvLink(DD_SYM,'D',TV_TIP_D,'Open in TradingView ↗','tv-lnk dd-tv')+'</p>';
 }
 
+/* WHAT INDIA SEES ON THE LIVE TAB.
+
+   The tab stays VISIBLE and explains itself rather than disappearing. Hiding
+   it would change the dialog's shape depending on which row was clicked, which
+   reads as a glitch, and it would leave the user with no answer to the obvious
+   question — a control that vanishes teaches nothing, while one that says why
+   it cannot help, and hands over the link that can, is a complete answer.
+
+   The wording says what is true (the exchange's data is not available to
+   charts on other sites), does not blame the reader, and does not suggest a
+   setting to change — because there isn't one, at either end. No talk of
+   frames, origins or licences: none of those words help someone decide what to
+   click next. tvLink() builds the link, as everywhere else in this dialog. */
+function ddLiveNoEmbed(){
+  return '<p><b>The live TradingView chart cannot be shown here for Indian stocks.</b></p>'
+       + '<p>India\'s NSE does not make its price data available to charts placed on other '
+       + 'websites, so TradingView can only draw an NSE chart on its own site. This is the '
+       + 'same for every Indian stock in this screener, and there is no setting on either '
+       + 'side that changes it.</p>'
+       + '<p>The full live chart is one click away:</p>'
+       + '<p>'+tvLink(DD_SYM,'D',TV_TIP_D,'Open in TradingView ↗','tv-lnk dd-tv')+'</p>'
+       + '<p>The <b>Chart</b> tab is drawn from data already in this page, and it works for '
+       + 'every stock here.</p>';
+}
+
 function ddTvWidget(){
   const host=$('ddTvBox');
   if(!host||typeof TradingView==='undefined'||!TradingView.widget) return false;
@@ -9092,6 +9563,17 @@ function ddTvWidget(){
 async function ddLoadLive(){
   const box=$('ddTvBox'), msg=$('ddLiveMsg');
   if(!box||DD_TV_BUSY) return;
+  /* INDIA: no request, no widget, no waiting — see tvEmbeddable(). This sits
+     ABOVE the DD_TV_READY shortcut on purpose: in a session that has already
+     loaded the script for a US ticker, the script being present is exactly the
+     circumstance in which an NSE embed would otherwise be attempted and fail.
+     An India-only session never reaches loadScript() at all. */
+  if(!tvEmbeddable(DD_SYM)){
+    box.innerHTML=''; box.style.display='none';   // no empty 420px hole under the text
+    if(msg){ msg.style.display=''; msg.innerHTML=ddLiveNoEmbed(); }
+    return;
+  }
+  box.style.display='';   // restored: the previous ticker may have been Indian
   if(DD_TV_READY && ddTvWidget()) return;    // cached load: no second request
   DD_TV_BUSY=true;
   if(msg){ msg.style.display=''; msg.innerHTML='<p>Loading the live chart from TradingView…</p>'; }
@@ -9286,6 +9768,10 @@ function closeDrill(){
       <div id="ddLocal" role="tabpanel" aria-labelledby="ddTabLocal">
       <div class="dd-tools">
         <div class="dd-tf" id="ddTf"><!-- ddRenderTf() fills this from the bars that exist --></div>
+        <!-- Same .dd-tf pills as the timeframe control beside it: these are the
+             same kind of small on/off control and should not read as a second,
+             unrelated widget. Filled by ddRenderLayers() on every chart load. -->
+        <div class="dd-tf" id="ddLayers" role="group" aria-label="Chart layers"><!-- ddRenderLayers() --></div>
         <div class="dd-note" id="ddNote"></div>
         <div class="dd-legend" id="ddLegend"></div>
       </div>
