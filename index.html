@@ -672,7 +672,12 @@ body.metrics-collapsed #metricsHd,body.filters-collapsed #filtersHd{margin-botto
 /* GROUP B — additionally force-hidden at ≤480px */
 .c-vr,.c-align,.c-ema,.c-bocnt,.c-squeeze,.c-mrsrank,.c-setup,
 .c-sector,.c-status,.c-xcross,.c-pattern,.c-consol,.c-rs21,.c-rs55,
-.c-ch1w,.c-ch1m,.c-ch3m,.c-histg,.c-dbox,.c-avgval,.c-fresh{display:table-cell}
+.c-ch1w,.c-ch1m,.c-ch3m,.c-histg,.c-dbox,.c-avgval,.c-fresh,
+/* ADR% and Risk% are GROUP B, not A: both are sizing inputs you reach for at
+   the moment you are deciding what to buy, which is exactly when a phone is
+   the thing in your hand. They survive down to 480px alongside D-Box, the
+   column Risk% is derived from. */
+.c-adr,.c-risk{display:table-cell}
 
 /* User-controlled column toggles (via the Columns modal, saved to localStorage).
    Adding e.g. "hide-wrsi" to <body> hides every cell tagged .c-wrsi — works
@@ -696,6 +701,8 @@ body.hide-followup .c-followup,
 body.hide-voldry  .c-voldry,
 body.hide-retrace .c-retrace,
 body.hide-squeeze .c-squeeze,
+body.hide-adr     .c-adr,
+body.hide-risk    .c-risk,
 body.hide-mrsrank .c-mrsrank,
 body.hide-rstrend .c-rstrend,
 body.hide-notes   .c-notes,
@@ -918,8 +925,40 @@ body.dd-lock{overflow:hidden}
 .dd-tab:hover{color:var(--text)}
 .dd-tab.on{color:var(--accent);border-bottom-color:var(--accent)}
 .dd-live-msg{padding:8px 0;font-size:12px;color:var(--text2);line-height:1.6}
+/* The short line the Chart tab carries when this market has no Live tab.
+   Same --text2 on --surface pairing as .dd-note and .dd-read directly above,
+   so it reads as one more piece of chart chrome rather than as a warning:
+   nothing is wrong, this exchange simply cannot be embedded. No new token —
+   a new colour here would be a new contrast pair to keep honest in two themes
+   for no gain. */
+.dd-live-note{margin-top:2px;font-size:11px;color:var(--text2);line-height:1.5}
+.dd-live-note b{color:var(--text);font-weight:600}
+.dd-live-note:empty{display:none}
 .dd-live-msg p{margin-bottom:9px}
 .dd-tvbox{width:100%;height:420px}
+/* ─── METRIC HISTORY ──────────────
+   Four rules, because this dialog reuses the drilldown's chrome wholesale —
+   .dd-ov / .dd-modal / .dd-hd / .dd-x / .dd-body / .dd-tools / .dd-tf /
+   .dd-legend / .dd-chart / .dd-read are all above and are not duplicated here.
+   These are only the pieces that genuinely did not exist. */
+.mh-note{margin-top:7px;font-size:11px;color:var(--text2);line-height:1.55}
+.mh-note div{margin-top:4px}
+.mh-note b{color:var(--text);font-weight:600}
+/* Legend keys. The colour is carried by the SWATCH and never by the label
+   text, so both labels stay at --text2 on --surface — one contrast pair to
+   keep honest in two themes instead of one per series. */
+.mh-key{display:inline-flex;align-items:center;gap:5px;color:var(--text2)}
+.mh-sw{display:inline-block;width:14px;height:0;border-top:2px solid var(--accent)}
+/* The benchmark reads MUTED against the metric on purpose: it is context, not
+   the subject of the chart. Same --text3 the canvas draws it in. */
+.mh-sw.mh-bench{border-top-color:var(--text3)}
+/* The dials are controls now, so they have to read as controls and be
+   operable from the keyboard — see .ticker.dd-open directly below, which
+   solves the identical problem for the row's ticker. */
+.mcard.mh-open{cursor:pointer}
+.mcard.mh-open:hover{border-color:var(--accent)}
+.mcard.mh-open:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+
 /* The row's ticker IS the control now, so it has to read as one — and be
    operable from the keyboard, which is why the span carries role="button" and
    tabindex="0" rather than just a click handler. */
@@ -964,7 +1003,8 @@ body.dd-lock{overflow:hidden}
   .metrics-row{grid-template-columns:repeat(2,1fr)}
   .c-vr,.c-align,.c-ema,.c-bocnt,.c-squeeze,.c-mrsrank,.c-setup,
   .c-sector,.c-status,.c-xcross,.c-pattern,.c-consol,.c-rs21,.c-rs55,
-  .c-ch1w,.c-ch1m,.c-ch3m,.c-histg,.c-dbox,.c-avgval,.c-fresh{display:none!important}
+  .c-ch1w,.c-ch1m,.c-ch3m,.c-histg,.c-dbox,.c-avgval,.c-fresh,
+  .c-adr,.c-risk{display:none!important}
   .search-bar input{width:80px}
 }
 </style>
@@ -1012,8 +1052,8 @@ body.dd-lock{overflow:hidden}
 <div class="banner">
   <span class="pulse"></span>
   <strong id="bnrMkt">India (NSE) · Nifty 500</strong>
-  <span id="bnrSub">&nbsp;·&nbsp; Google Sheets · End-of-Day · Client-side Technicals</span>
-  <span class="asof" id="bnrAsOf" data-tip="The newest price bar present in the data currently loaded for this market — the last trading day the sheet itself holds. This is NOT when the page was opened or when the scan ran; the &quot;Last scan&quot; clock under the table says that. Amber means the newest bar is 2–4 trading days old, red means older still; age is counted in trading days, so on a Monday morning Friday's bar is current, not stale.">·&nbsp;Data to —</span>
+  <span id="bnrSub">&nbsp;·&nbsp; End-of-Day Data · Client-side Technicals</span>
+  <span class="asof" id="bnrAsOf" data-tip="The newest price bar present in the data currently loaded for this market — the last trading day the data source itself holds. This is NOT when the page was opened or when the scan ran; the &quot;Last scan&quot; clock under the table says that. Amber means the newest bar is 2–4 trading days old, red means older still; age is counted in trading days, so on a Monday morning Friday's bar is current, not stale.">·&nbsp;Data to —</span>
   <span class="src-tag" id="srcTag">⬤ Checking…</span>
 </div>
 
@@ -1180,7 +1220,7 @@ body.dd-lock{overflow:hidden}
             <th class="c-align" data-s="align" data-tip="How much the daily and the weekly timeframe agree, out of 8 checks: 1. price above the daily 20 EMA · 2. price above the daily 50 EMA · 3. price above the weekly 10 EMA · 4. price above the weekly 20 EMA · 5. daily RSI 50 or above · 6. weekly RSI 50 or above · 7. positive 21-day relative strength · 8. positive 10-week relative strength. A swing trade wants both clocks pointing the same way, so 7 or 8 is the shortlist. Each check needs its own input, and a check that cannot be run is left OUT OF THE TOTAL rather than counted as a failure — that is why some rows read 6/7 instead of 6/8. Sorting puts the higher score first and, on a tie, the row that could be fully measured above the one that could not.">Align<span class="sort-ico"></span></th>
             <th class="c-fresh" data-s="fresh" data-tip="Stocks that have JUST turned, rather than stocks that are merely in a good state. Three events are tested, each with its own lookback and each null-guarding its own inputs: 1. the close crossed ABOVE the 50-day EMA within the last 3 bars · 2. RS21 — the 21-day excess return over the benchmark — crossed above zero within the last 5 bars, read off the same history the RS Rank History sparkline draws · 3. a base breakout, meaning a consolidation of 20 bars or more that broke out within the last 3 bars. The cell names whichever fired most recently and how many bars ago; when more than one fired it shows a count with the freshest named underneath. A dash means none of the three fired, or the inputs for them were not available — a stock with under 51 bars has no 50-EMA cross to report and one with no benchmark has no RS21 history. Sorting puts the freshest first, with the count only breaking ties.">Fresh<span class="sort-ico"></span></th>
             <th class="c-sector" data-s="sector" data-tip="Sector from the built-in universe — for India these are NSE's own macro industry groups, taken from the Nifty Total Market constituent list. It is not cosmetic: the default Setup Score order ranks sectors by the median RS55 of their members, so this label decides which group a stock is judged inside. Sortable, so the table can be grouped by sector without using the sector filter.">Sector<span class="sort-ico"></span></th>
-            <th data-s="price" data-tip="The most recent closing price in the stock's own currency. It comes from the end-of-day data sheet, so it is yesterday's close, not a live quote.">Price<span class="sort-ico"></span></th>
+            <th data-s="price" data-tip="The most recent closing price in the stock's own currency. It comes from the end-of-day data feed, so it is yesterday's close, not a live quote.">Price<span class="sort-ico"></span></th>
             <th data-s="ch1d" data-tip="How much the price moved on its latest trading day, as a percentage of the previous close. Green is up, red is down.">1D%<span class="sort-ico"></span></th>
             <th class="c-ch1w" data-s="ch1w" data-tip="Price change over the last 5 trading bars — one trading week. Measured bar-to-bar, not calendar days, so holidays and weekends never dilute it. Needs at least 6 bars of history; below that it shows a dash rather than pretending the change was zero.">1W%<span class="sort-ico"></span></th>
             <th class="c-ch1m" data-s="ch1m" data-tip="Price change over the last 21 trading bars — roughly one calendar month of sessions. Needs at least 22 bars of history; below that it shows a dash rather than pretending the change was zero.">1M%<span class="sort-ico"></span></th>
@@ -1206,7 +1246,7 @@ body.dd-lock{overflow:hidden}
             <th class="c-xcross" data-s="xstate" data-tip="Whether the fast EMA is above (bullish) or below (bearish) the slow EMA, and how many bars ago that crossover happened."><span id="thXoverLbl">EMA 10×20</span><span class="sort-ico"></span></th>
             <th class="c-wcross" data-s="wxstate" data-tip="Same crossover, measured on weekly bars: the 10-week EMA against the 20-week EMA.">W-Cross<span class="sort-ico"></span></th>
             <th class="c-slope200" data-s="slope" data-tip="% change in the 200-day EMA over the last 20 bars — whether the long-term trend line itself is rising, flat or falling. Needs 220 bars of history.">200EMA Slope<span class="sort-ico"></span></th>
-            <th class="c-pattern" data-s="pattern" data-tip="Candlestick pattern on the latest daily bar: Bull/Bear Engulf, Hammer or Doji. Blank when no pattern is present or the sheet has no Open column.">Pattern<span class="sort-ico"></span></th>
+            <th class="c-pattern" data-s="pattern" data-tip="Candlestick pattern on the latest daily bar: Bull/Bear Engulf, Hammer or Doji. Blank when no pattern is present or the data source has no Open column.">Pattern<span class="sort-ico"></span></th>
             <th class="c-wpattern" data-s="wpattern" data-tip="The same candlestick read on the latest weekly bar, which carries more weight than a single day's shape.">W-Pattern<span class="sort-ico"></span></th>
             <th class="c-consol" data-s="consol" data-tip="Counting back from the latest bar, the longest run of days whose whole high-to-low close range stayed within 10%, followed by the actual range of the full 20-day window. A tight base reads as many days at a small % — 20 days at 4% is a coiled spring, 2 days at 18% is not a base at all.">Consolidation<span class="sort-ico"></span></th>
             <th class="c-monthly" data-s="monthly" data-tip="Above where it traded ~6 months ago AND within 15% of the 52W high — a slow-timeframe trend filter.">Monthly Setup<span class="sort-ico"></span></th>
@@ -1216,6 +1256,8 @@ body.dd-lock{overflow:hidden}
             <th class="c-voldry" data-s="voldry" data-tip="20-day average volume below the 50-day average — volume drying up, which is what a healthy base looks like before a breakout.">Vol Dry<span class="sort-ico"></span></th>
             <th class="c-retrace" data-s="ret" data-tip="How far the latest close sits below the highest close reached since the most recent breakout, as a percentage of that peak — so it is always zero or negative. It is not the fraction of the breakout move given back. A small figure means the move is being held; a large one means most of the follow-through has been surrendered.">Retrace%<span class="sort-ico"></span></th>
             <th class="c-squeeze" data-s="sq" data-tip="A 0–100 compression score, not a yes/no flag: (1 − Bollinger width ÷ Keltner width) × 100, clamped to 0–100. Bollinger width is 4 standard deviations of the closes and Keltner width is 3× the average true range, each divided by the mean close over the full series. A higher score means the Bollinger bands sit further inside the Keltner channel — volatility has contracted, which often precedes an expansion. The bar turns amber above 65.">Squeeze<span class="sort-ico"></span></th>
+            <th class="c-adr" data-s="adr" data-tip="Average Daily Range as a percent of price. THE EXACT DEFINITION: ADR% = 100 &times; ( mean over the last 20 bars of (High / Low) &minus; 1 ). WHY A TRADER CARES: it measures how much this stock typically moves in a single day, so it filters out names too sluggish to produce a swing move &mdash; a 1% ADR stock has to trend for a fortnight to deliver what a 6% ADR stock delivers in two days. It is also a sizing input: position size and stop distance are set in proportion to a stock's OWN volatility rather than to a fixed percentage, so the same money risked buys a larger position in a quiet name and a smaller one in a wild one. Needs 20 usable bars. A bar whose low is zero, negative or not a finite number is skipped and an earlier bar used in its place; if 20 usable bars cannot be found the cell shows a dash rather than an average over fewer. It feeds nothing &mdash; not Setup Score, not MRS Rank, not any composite. Sortable and filterable like any other numeric column.">ADR%<span class="sort-ico"></span></th>
+            <th class="c-risk" data-s="risk" data-tip="Risk% = (box top &minus; box bottom) &divide; box top &times; 100 &mdash; the distance from entry to stop as a percentage of entry, reading the Darvas box as a trade plan: ENTRY at the box TOP, STOP at the box BOTTOM. THIS IS THE BOX'S OWN GEOMETRY, NOT ADVICE. It is arithmetic on two levels the box has already drawn and says nothing about whether the trade is worth taking. The two levels are the SAME ones the D-Box column prints and the same ones drawn on the chart in the drilldown &mdash; one box read three ways, so the three can never disagree. Hover a cell for the whole plan: entry, stop, the risk itself, and where 2R and 3R sit (top + 2&times;(top &minus; bottom) and top + 3&times;(top &minus; bottom)). A dash means no box has formed, one of the two levels is missing, or the top is not a positive price. It feeds nothing &mdash; not Setup Score, not MRS Rank, not any composite.">Risk%<span class="sort-ico"></span></th>
             <th data-s="s2" data-tip="Score on the Stage 2 uptrend checklist — price above the long moving averages, those averages stacked and rising, and price near its 52-week high. A full score is a confirmed uptrend.">Stage 2<span class="sort-ico"></span></th>
             <th class="c-mrsrank" data-s="mrs" style="text-align:center" data-tip="Percentile rank from 1 to 100 of this stock's 55-day excess return against every other stock in the same market that has one. A rank of 90 means it beat roughly 90% of that list. Stocks with too little history to produce an RS55 are left out of the ranking entirely rather than ranked as if flat.">MRS Rank<span class="sort-ico"></span></th>
             <th class="c-rs21" data-s="rs21" data-tip="21-day excess return over the benchmark, in percentage points. Positive = it beat the benchmark over the last month.">RS21<span class="sort-ico"></span></th>
@@ -1240,7 +1282,7 @@ body.dd-lock{overflow:hidden}
 <div class="footer">
   <button class="sm-btn" onclick="showMore()">Show more ↓</button>
   <div class="sm-lbl" id="smLbl">Showing — of —</div>
-  <div class="disc">Data sourced from Google Finance via a published Google Sheet. End-of-day data only. For informational purposes — not investment advice.</div>
+  <div class="disc">End-of-day data only. For informational purposes — not investment advice.</div>
 </div>
 
 <!-- COLUMN FILTER POPOVER
@@ -1338,7 +1380,7 @@ body.dd-lock{overflow:hidden}
       <div id="rsBenchOtherWrap" style="display:none;margin-top:8px">
         <input type="text" id="rsBenchmarkInput" placeholder="e.g. JUNIORBEES.NS or IWM"
           style="width:100%;padding:6px 10px;border-radius:8px;border:1.5px solid var(--border2);font-size:12px;font-family:inherit"/>
-        <p style="margin-top:4px;font-size:10.5px">Any ticker, in the same format the screener already uses (India: SYMBOL.NS, US/ETF: plain symbol). It has to be present in this market's tab of the Google Sheet — add it to the <code>BENCHMARKS</code> list in the Apps Script and re-run it first, or Apply will tell you it cannot be found.</p>
+        <p style="margin-top:4px;font-size:10.5px">Any ticker, in the same format the screener already uses (India: SYMBOL.NS, US/ETF: plain symbol). It has to be present in this market's data source — if the daily data does not carry it, Apply will tell you it cannot be found.</p>
       </div>
       <p id="rsBenchMsg" style="margin-top:8px;font-size:11px;display:none"></p>
       <p style="margin-top:4px;font-size:10.5px">RS is measured as excess return over this series, so the choice sets the bar: benchmarking against Nifty Smallcap 250 during a small-cap rally makes most of your universe read as weak, while Nifty 50 asks the broader "is it beating the market" question.</p>
@@ -1594,7 +1636,14 @@ const CFG = {
      bars ≈ 45 trading days) fits inside a year of data with room to spare. */
   DARVAS: {boxp:5, nearPct:1.0},
 
-  VER:  'gs9',      // gs8 -> gs9: RS is now DATE-ALIGNED against the benchmark, and
+  VER:  'gs10',     // gs9 -> gs10: computeTech() returns two MORE fields, adr (Average
+                    // Daily Range %) and dBoxRisk (the Darvas box's entry-to-stop risk).
+                    // A gs9 row has neither, so without this bump every returning user —
+                    // i.e. exactly the people already using the tool — rehydrates
+                    // yesterday's cache and gets two permanently blank columns, with
+                    // nothing on screen to say why. The cache key is the only thing that
+                    // can orphan those rows.
+                    // gs8 -> gs9: RS is now DATE-ALIGNED against the benchmark, and
                     // computeTech() returns two new fields (rsDates/rsWkDates) that
                     // rankRS() cannot work without. A gs8 row carries neither, so a
                     // returning user would rehydrate yesterday's cache and get blank
@@ -3345,9 +3394,9 @@ async function loadMktCapData(){
   const viaApi=apiConfigured();
   const url=viaApi ? apiURL('getMktCap') : (CFG.GSHEET_CSV_URLS && CFG.GSHEET_CSV_URLS.mktcap);
   if(!url){
-    console.log('[mktcap] No URL set for the "MktCap" tab in CFG.GSHEET_CSV_URLS.mktcap — '+
-      'using the static mcap values built into UNI. To get live caps: publish the '+
-      '"MktCap" tab (File > Share > Publish to web > MktCap > CSV) and paste its URL there.');
+    console.log('[mktcap] No live market-cap source is configured — '+
+      'using the static mcap values built into UNI. Live caps need a market-cap '+
+      'URL in the data source configuration; see the operations guide.');
     return null;
   }
   const ctrl=new AbortController();
@@ -3374,7 +3423,7 @@ async function loadMktCapData(){
        console useless for every other feature on the page. */
     console.log(`[mktcap] ${got} live caps read · ${st.applied} applied `+
       `(${st.fxCorrected} of them recovered by the USD/INR correction`+
-      `${st.usdInr!=null?` at ${st.usdInr}`:', no USDINR rate published'}) · `+
+      `${st.usdInr!=null?` at ${st.usdInr}`:', no USDINR rate available'}) · `+
       `${st.dup+st.ratio+st.etf} rejected (${st.dup} shared-value across ${st.dupValues} `+
       `duplicate figures, ${st.ratio} >${MCAP_MAX_RATIO}x the static number, ${st.etf} ETF) · `+
       `of the rejected stock rows ${st.fellBack} fell back to a static cap and ${st.leftNull} stayed unknown.`);
@@ -3464,7 +3513,7 @@ async function loadReviewsRemote(){
       Object.assign(REV, migrateReviews(remote)); // remote is source of truth once loaded; merges over any local-only marks
       saveReviewsLocal();
       renderTable(CUR);
-      console.log('Loaded', Object.keys(remote).length, 'saved review marks from the Sheet.');
+      console.log('Loaded', Object.keys(remote).length, 'saved review marks from the data source.');
     }
   } catch(e){
     clearTimeout(tid);
@@ -3483,7 +3532,7 @@ function saveReviewRemote(sym, status){
                                              // skips a CORS preflight OPTIONS call, which Apps
                                              // Script Web Apps don't handle
     body: JSON.stringify({ticker:sym, status:status})
-  }).catch(e=>console.warn('Could not save review mark to Sheet (kept locally):', e.message));
+  }).catch(e=>console.warn('Could not save review mark to the data source (kept locally):', e.message));
 }
 
 /* ══════════════════════════════════
@@ -3596,7 +3645,7 @@ function syncWatchlistRemote(){
     headers:{'Content-Type':'text/plain'}, // simple request — no CORS preflight, same as saveReviewRemote
     body: JSON.stringify({action:'saveWatchlist',
       watchlist:Object.keys(WATCH).map(t=>[t,today,''])})
-  }).catch(e=>console.warn('Could not sync the watchlist to the Sheet (kept locally):', e.message));
+  }).catch(e=>console.warn('Could not sync the watchlist to the data source (kept locally):', e.message));
   return true;
 }
 
@@ -4007,8 +4056,13 @@ const PIV_OPTS=[
    but no longer OFFERED. Note 'r1' meant "above R1" then and is a different
    band now, which is exactly why the new values are spelled differently —
    reusing the string would have quietly narrowed every old saved screen. */
+/* "Above the daily pivot" as ONE list. It was written out four times — the
+   Above D-Pivot dial, the sector-breadth column, the legacy screen below, and
+   now the dial's own history chart. Four copies of a band list is how a chart
+   ends up disagreeing with the number it is supposed to explain. */
+const ABOVE_PIV_ZONES=['PP→R1','R1→R2','R2+'];
 const PIV_LEGACY={
-  above: z=>['PP→R1','R1→R2','R2+'].includes(z),
+  above: z=>ABOVE_PIV_ZONES.includes(z),
   r1:    z=>['R1→R2','R2+'].includes(z),
   below: z=>['S1→PP','S2→S1','<S2'].includes(z),
 };
@@ -4360,14 +4414,87 @@ function consolidation(closes,lookback,maxRangePct){
   return {days,range};
 }
 
+/* ══ THREE RULES THAT NOW HAVE EXACTLY ONE IMPLEMENTATION ═══════════════
+   Each of these was written inline TWICE — once inside computeTech() and once
+   inside breakout() — and the metric-history charts have to ask the same three
+   questions again at every past bar. A third copy would drift silently: the
+   chart's last point would disagree with the dial printed directly above it
+   and nothing on the page would say which was right.
+
+   Every one takes an EXCLUSIVE end index, so "what was true on day k" is
+   answered with bars 0..k-1 and nothing else. The no-lookahead guarantee is
+   therefore a property of these signatures rather than of each caller's
+   discipline, which is the only version of that guarantee worth having.
+
+   NaN is propagated, not skipped, exactly as the Math.max(...slice) spread
+   these replace did: a series with a hole in it must report "unknown", not the
+   max of the bars that happen to be readable. */
+
+/* The denominator of BOTH vRatio and breakout()'s volume test: mean volume
+   over the 20 bars before the last one, ignoring zero/blank bars. 0 when
+   nothing usable is in range — which is how both call sites already read it. */
+function volAvg20(V,end){
+  const e=(end==null?((V&&V.length)||0):end);
+  let sum=0,cnt=0;
+  for(let i=Math.max(0,e-21);i<e-1;i++){ const v=V[i]; if(v>0){ sum+=v; cnt++; } }
+  return cnt?sum/cnt:0;
+}
+
+/* 52-week extremes, floored at H52_MIN_BARS — see the note in computeTech()
+   for why a 20-bar "52-week high" is a wrong number and not a shorter window.
+   H52_WIN is ~252 sessions; the sheet holds slightly less, so in practice this
+   is a ~50-week extreme, which the <th> tooltip already says. */
+const H52_MIN_BARS=120, H52_WIN=252;
+function hi52(A,end){
+  const e=(end==null?((A&&A.length)||0):end);
+  if(!(e>=H52_MIN_BARS)) return null;
+  let m=-Infinity;
+  for(let i=e-Math.min(e,H52_WIN);i<e;i++){
+    const v=+A[i]; if(Number.isNaN(v)) return NaN;
+    if(v>m) m=v;
+  }
+  return m;
+}
+function lo52(A,end){
+  const e=(end==null?((A&&A.length)||0):end);
+  if(!(e>=H52_MIN_BARS)) return null;
+  let m=Infinity;
+  for(let i=e-Math.min(e,H52_WIN);i<e;i++){
+    const v=+A[i]; if(Number.isNaN(v)) return NaN;
+    if(v<m) m=v;
+  }
+  return m;
+}
+
+/* The PRICE half of breakout()'s test, bar by bar: did this close exceed every
+   one of the previous BO_LOOKBACK closes. The volume half stays with the
+   caller on purpose — breakout() weighs volume against the average at the END
+   of the series, so the very same price flag qualifies at one bar count and
+   not at another, and folding that in here would bake a moving threshold into
+   a fixed array. Flag i depends only on bars <= i, so the history computes
+   this ONCE per ticker and reuses it for all ~250 days. */
+const BO_LOOKBACK=52;
+function boPriceFlags(closes){
+  const n=(closes&&closes.length)||0;
+  const out=new Array(n).fill(false);
+  for(let i=BO_LOOKBACK;i<n;i++){
+    let ph=-Infinity, bad=false;
+    for(let j=i-BO_LOOKBACK;j<i;j++){
+      const v=+closes[j]; if(Number.isNaN(v)){ bad=true; break; }
+      if(v>ph) ph=v;
+    }
+    out[i]=bad?false:(closes[i]>ph);
+  }
+  return out;
+}
+
 function breakout(closes,volumes){
   const n=closes.length; if(n<55) return{gain:null,count:0,retrace:null};
-  const av=volumes.slice(-21,-1).filter(v=>v>0);
-  const avgV=av.length?av.reduce((a,b)=>a+b,0)/av.length:0;
+  const avgV=volAvg20(volumes,n);
+  const hiFlag=boPriceFlags(closes);
   let lastBO=-1,cnt=0;
-  for(let i=52;i<n-1;i++){
-    const ph=Math.max(...closes.slice(Math.max(0,i-52),i));
-    if(closes[i]>ph&&(volumes[i]||0)>avgV*1.5){cnt++;lastBO=i;}
+  for(let i=BO_LOOKBACK;i<n-1;i++){
+    if(hiFlag[i]&&(volumes[i]||0)>avgV*1.5){cnt++;lastBO=i;}
   }
   if(lastBO<0) return{gain:null,count:cnt,retrace:null};
   const curr=closes[n-1],peak=Math.max(...closes.slice(lastBO));
@@ -4532,6 +4659,60 @@ function darvasBox(C,H,L,boxp,nearPct){
   };
 }
 
+/* AVERAGE DAILY RANGE, AS A PERCENT OF PRICE.
+
+     ADR% = 100 x ( mean over the last 20 bars of (High / Low) - 1 )
+
+   This exact form and no other. The two common near-misses both look right and
+   are not: a mean of (High - Low) / Close measures the same thing against a
+   different denominator and drifts from every published ADR% a user can check
+   this column against, and averaging the ratio THEN subtracting 1 (which is
+   what this does) is not the same as averaging (High/Low - 1) rounded per bar.
+
+   BAD BARS ARE SKIPPED, NOT ZEROED. A low of 0 makes High/Low infinite and one
+   such bar would drag the mean to Infinity for the whole stock; a low of 0 is
+   also not a price, it is a hole in the data. So the window walks BACKWARDS
+   collecting usable bars until it has 20 — a single bad bar costs one bar of
+   depth, not the whole column. If 20 usable bars do not exist anywhere in the
+   series the answer is null, because an average over 14 bars presented as a
+   20-bar average is a lie that nothing on screen could reveal. */
+const ADR_WIN=20;
+function adrPct(H,L,win){
+  const w=win||ADR_WIN;
+  const n=Math.min((H&&H.length)||0,(L&&L.length)||0);
+  if(n<w) return null;                       // cannot have 20 usable bars if there are not 20
+  let sum=0, used=0;
+  for(let i=n-1;i>=0&&used<w;i--){
+    const h=+H[i], l=+L[i];
+    if(!isFinite(h)||!isFinite(l)||l<=0) continue;   // a hole, not a price
+    sum+=h/l; used++;
+  }
+  if(used<w) return null;
+  return +((sum/used-1)*100).toFixed(2);
+}
+
+/* THE DARVAS BOX AS A TRADE PLAN: entry at the top, stop at the bottom.
+
+     Risk% = (top - bottom) / top x 100
+
+   NOTHING IS RECOMPUTED HERE. This takes the two levels darvasBox() already
+   returned and does arithmetic on them, so the number under Risk% and the
+   range printed in the D-Box column are the same two prices by construction
+   rather than by agreement. A second darvasSeries() call with the same inputs
+   would be correct today and is exactly how two columns start disagreeing
+   after somebody changes CFG.DARVAS.boxp in one place.
+
+   null, not 0, when there is no box or either level is missing: "no plan" and
+   "a plan with no risk" are different facts. top <= 0 is rejected because it
+   is the denominator — a non-positive entry price is not a price, and dividing
+   by it produces a signed nonsense figure rather than an error. */
+function boxRiskPct(top,bot){
+  if(top==null||bot==null) return null;
+  const t=+top, b=+bot;
+  if(!isFinite(t)||!isFinite(b)||t<=0) return null;
+  return +((t-b)/t*100).toFixed(2);
+}
+
 /* Sort ordinal. `break` and `near` sit at the TOP because they are the two
    actionable states — the stock is at the line right now. `above` ranks BELOW
    `inside` on purpose: the user's stated screen is "consolidating inside the
@@ -4628,8 +4809,9 @@ function computeTech(C,H,L,V,dates,sym,O){
   const wRsi=wk.closes.length>=15?rsi(wk.closes,14):null;
 
   const todV=V[n-1]||0;
-  const vArr=V.slice(-21,-1).filter(v=>v>0);
-  const avgV=vArr.length?vArr.reduce((a,b)=>a+b,0)/vArr.length:0;
+  // volAvg20() — the same 20-bar average breakout() weighs volume against, and
+  // the same one the dial history asks for at every past bar.
+  const avgV=volAvg20(V,n);
   const vRatio=avgV>0?+(todV/avgV).toFixed(2):null;
   /* vRatio IS the RVol the brief describes — today's volume over the 20-bar
      average EXCLUDING today. It is not duplicated as a second column. */
@@ -4644,11 +4826,13 @@ function computeTech(C,H,L,V,dates,sym,O){
      Floor it at 120 bars (~6 months) — below that the figure is too far from
      "52 week" to print, so it nulls out and the cell shows an honest dash.
      NOTE even at the full window this is ~250 bars, not 252, because the sheet
-     holds ~1 trading year. It is a ~50-week high. The <th> tooltip says so. */
-  const H52_MIN_BARS=120;
-  const win=Math.min(n,252);
-  const h52 = n>=H52_MIN_BARS ? Math.max(...H.slice(-win)) : null;
-  const l52 = n>=H52_MIN_BARS ? Math.min(...L.slice(-win)) : null;
+     holds ~1 trading year. It is a ~50-week high. The <th> tooltip says so.
+     The floor and the window now live in hi52()/lo52() so the Near 52W High
+     history asks for the extreme AS IT WAS on each past bar through the very
+     same code — including the floor, which is what makes that metric's short
+     depth a fact about the rule rather than about the chart. */
+  const h52 = hi52(H,n);
+  const l52 = lo52(L,n);
   const h52d = h52 ? +((price/h52-1)*100).toFixed(1) : null;
 
   /* The LEVELS are kept, not just the zone label. pivZone() answers "which band
@@ -4722,6 +4906,13 @@ function computeTech(C,H,L,V,dates,sym,O){
      highest WEEKLY high, which is a max-of-maxes, not a max over 5*boxp days. */
   const dBox=darvasBox(C,H,L,CFG.DARVAS.boxp,CFG.DARVAS.nearPct);
   const wBox=darvasBox(wk.closes,wk.highs,wk.lows,CFG.DARVAS.boxp,CFG.DARVAS.nearPct);
+  /* Risk% off the DAILY box, from the levels dBox already carries above — it
+     does not build a second box of its own. See boxRiskPct(). */
+  const dBoxRisk=boxRiskPct(dBox.top,dBox.bot);
+
+  /* ADR% off the raw daily H/L. Independent of every other column here: it is
+     a volatility MEASURE, and deliberately not an input to any of them. */
+  const adr=adrPct(H,L,ADR_WIN);
 
   /* Candlestick patterns. hasO distinguishes "the sheet has no Open column"
      from "the open happens to equal the close": without it, a missing-Open
@@ -4802,6 +4993,10 @@ function computeTech(C,H,L,V,dates,sym,O){
     dpz,wpz,dPiv,wPiv,s2,sq,wVolRatio,
     dBoxTop:dBox.top, dBoxBot:dBox.bot, dBoxState:dBox.state,
     wBoxTop:wBox.top, wBoxBot:wBox.bot, wBoxState:wBox.state,
+    /* Both new with gs10. They are read by the two new columns, by sorting, by
+       the column filters and by the export — and by NOTHING that scores,
+       ranks or blends. See the note on each function. */
+    dBoxRisk, adr,
     boGain:bo.gain,boCnt:bo.count,retrace:bo.retrace,
     // Own returns (inputs to RS, never displayed as RS), plus the dates they
     // were measured across so rankRS() can price the benchmark on the SAME
@@ -4935,7 +5130,7 @@ async function fetchBenchmark(market){
   BENCHMARK_FAILED[market]=ticker||'(none configured)';
   console.warn(`Benchmark ${ticker} unavailable for ${market} — RS columns will be blank for this load.`);
   const el=document.getElementById('bnrSub');
-  if(el && market===CUR) el.innerHTML=`&nbsp;·&nbsp;<span style="color:var(--red,#DC2626)">RS unavailable — benchmark ${ticker||'not set'} is not in the sheet</span>`;
+  if(el && market===CUR) el.innerHTML=`&nbsp;·&nbsp;<span style="color:var(--red,#DC2626)">RS unavailable — benchmark ${ticker||'not set'} is not in the data source</span>`;
   // Reflect it in the banner too, so a cached load that cannot compute RS says
   // so in the loudest place on the page rather than only in the small subtitle.
   updateScanBanner(market);
@@ -4948,7 +5143,7 @@ async function fetchBenchmark(market){
    is a warning nobody believes. */
 function clearBenchmarkWarning(market){
   const el=document.getElementById('bnrSub');
-  if(el && market===CUR) el.innerHTML='&nbsp;·&nbsp; Google Sheets · End-of-Day · Client-side Technicals';
+  if(el && market===CUR) el.innerHTML='&nbsp;·&nbsp; End-of-Day Data · Client-side Technicals';
 }
 
 /* THE BENCHMARK MENU — one table, filtered per market.
@@ -5058,10 +5253,10 @@ async function applyRSConfig(){
      modal open, keeps the previous benchmark working, and says what is wrong. */
   if(!benchmarkAvailable(CUR,chosen)){
     const cachedOnly = GSHEET_STATUS[CUR]==='cached' || !GSHEET_BY_MARKET[CUR];
-    setRSMsg(`${chosen} is not in the ${CUR.toUpperCase()} tab of the sheet`
+    setRSMsg(`${chosen} is not in the ${CUR.toUpperCase()} data source`
       + (cachedOnly
-          ? ', and this tab is showing cached data, so the sheet has not been downloaded to check properly. Press ↻ Refresh first, then pick it again.'
-          : '. RS would be blank for every row, so the previous benchmark has been kept. Add it to the BENCHMARKS list in the Apps Script and re-run it, or pick one from the list.'),
+          ? ', and this tab is showing cached data, so the data source has not been downloaded to check properly. Press ↻ Refresh first, then pick it again.'
+          : '. RS would be blank for every row, so the previous benchmark has been kept. Pick one from the list, or ask for it to be added to the daily data.'),
       true);
     return;
   }
@@ -5234,7 +5429,7 @@ function apiBase(){
     return out;
   }catch(e){
     console.warn('CFG.API_ENC could not be decoded — '+e.message+'. Treating the endpoint as not configured, '
-      +'so this page falls back to CFG.GSHEET_CSV_URLS. Re-generate the value with the one-line console '
+      +'so this page falls back to the secondary data source URL. Re-generate the value with the one-line console '
       +'snippet in the comment beside CFG.API_ENC, or just put the plain URL in CFG.API_URL instead.');
     return '';
   }
@@ -5267,6 +5462,11 @@ function apiURL(action,params){
    callers and repeated tab switches share a single network request. */
 function loadGoogleSheetData(market){
   if(GSHEET_PROMISE[market]) return GSHEET_PROMISE[market];
+  /* Every write to GSHEET_BY_MARKET happens inside this function, so this is
+     the ONE place the breadth-history caches can go stale. Dropped here rather
+     than at each of the five assignment sites below, because a chart drawn
+     from bars that have since been replaced looks perfectly normal. */
+  mhInvalidate();
   GSHEET_PROMISE[market]=(async()=>{
     /* ONE fetch, ONE parse, TWO possible sources. Everything below this pair of
        lines is identical whichever source is in force — which is the property
@@ -5278,8 +5478,8 @@ function loadGoogleSheetData(market){
     if(!url){
       GSHEET_STATUS[market]='unconfigured';
       GSHEET_BY_MARKET[market]=null;
-      SHEET_STATE_MSG[market]=`No data source is configured for ${market.toUpperCase()}: no Web App endpoint URL is set, and neither is CFG.GSHEET_CSV_URLS.${market}.`;
-      console.warn(`[${market}] No Google Sheet URL configured — this market cannot load any data.`);
+      SHEET_STATE_MSG[market]=`No data source is configured for ${market.toUpperCase()}: neither the primary endpoint URL nor the fallback data URL is set.`;
+      console.warn(`[${market}] No data source URL configured — this market cannot load any data.`);
       setGSheetStatus(market);
       return null;
     }
@@ -5304,7 +5504,7 @@ function loadGoogleSheetData(market){
           GSHEET_STATUS[market]='failed';
           SHEET_STATE_MSG[market]= viaApi
             ? `The endpoint returned HTTP ${res.status} after ${ms}ms. Check the endpoint URL is the /exec URL of a CURRENT deployment (Deploy > Manage deployments), and that the deployment's "Who has access" is set to "Anyone".`
-            : `The Google Sheet tab returned HTTP ${res.status} after ${ms}ms. Check that THIS tab is published (File > Share > Publish to web > pick the tab > CSV) and that the gid in CFG.GSHEET_CSV_URLS.${market} matches.`;
+            : `The ${market.toUpperCase()} data source did not respond (HTTP ${res.status} after ${ms}ms). Press ↻ Refresh to retry; if it keeps happening the daily data for this market needs attention.`;
         }
         console.warn(`[${market}] ${SHEET_STATE_MSG[market]}`);
         GSHEET_BY_MARKET[market]=null;
@@ -5330,7 +5530,7 @@ function loadGoogleSheetData(market){
       GSHEET_BY_MARKET[market]=parsed;
       GSHEET_STATUS[market]='ok';
       SHEET_STATE_MSG[market]='';
-      console.log(`[${market}] ${viaApi?'Endpoint':'Sheet'} OK in ${ms}ms — ${(text.length/1024/1024).toFixed(2)} MB, ${n} tickers.`);
+      console.log(`[${market}] ${viaApi?'Endpoint':'Data source'} OK in ${ms}ms — ${(text.length/1024/1024).toFixed(2)} MB, ${n} tickers.`);
       // Late arrival still helps: if the bounded race in loadMarket() already
       // gave up and moved on, repoint the live pointer here so every ticker
       // fetched from this moment onward sees the data.
@@ -5354,7 +5554,7 @@ function loadGoogleSheetData(market){
          Name the setting instead, and the stale-deployment case after it. */
       SHEET_STATE_MSG[market]= viaApi
         ? `Could not reach the endpoint (${reason}). The most likely cause is the Web App's "Who has access" setting. If it is "Anyone with a Google account", this page cannot fetch it at all — the browser will not hand your Google sign-in to a different site, so Google replies with its login page, and the browser then refuses to let this page read that reply. Signing in does not change this. Re-deploy the Web App with "Who has access" set to "Anyone". The other common cause is a stale link: check the URL is the /exec URL of a CURRENT deployment (Deploy > Manage deployments).`
-        : `The Google Sheet tab could not be fetched (${reason}).`;
+        : `The ${market.toUpperCase()} data source could not be fetched (${reason}, after ${ms}ms).`;
       console.warn(`[${market}] Fetch failed: ${reason} (after ${ms}ms) — this market will show no data.`);
       setGSheetStatus(market);
       return null;
@@ -5380,14 +5580,13 @@ function verifyMarketShape(market){
   const pct=Math.round(good/tickers.length*100);
   if(pct>=80) return;                       // normal; a few odd names are fine
   SHEET_MISROUTED[market]=true;
-  const msg=`[${market}] WRONG TAB? Expected ${shape.desc}, but only ${pct}% of the `
-    + `${tickers.length} tickers in this CSV look like that. `
-    + `CFG.GSHEET_CSV_URLS.${market} is probably pointing at a different tab of the `
-    + `workbook. Open the Sheet, click the Data_${market==='india'?'India':market.toUpperCase()} `
-    + `tab, and copy the gid=NNN number out of your browser's address bar.`;
+  const msg=`[${market}] WRONG DATA SET? Expected ${shape.desc}, but only ${pct}% of the `
+    + `${tickers.length} tickers received look like that. The data source for `
+    + `${market.toUpperCase()} is probably serving another market's rows; see the `
+    + `operations guide for how to repoint it.`;
   console.error(msg);
   const el=document.getElementById('srcTag');
-  if(el && market===CUR){ el.className='src-tag'; el.textContent='⬤ Wrong sheet tab?'; el.title=msg; }
+  if(el && market===CUR){ el.className='src-tag'; el.textContent='⬤ Wrong data set?'; el.title=msg; }
 }
 const SHEET_MISROUTED={};
 
@@ -5404,10 +5603,10 @@ function reportSheetCoverage(market){
   const extra=[...inSheet].filter(t=>!inHtml.has(t)).sort();
   const thin=[...inHtml].filter(t=>inSheet.has(t)&&data[t].C.length<50)
                         .map(t=>`${t}(${data[t].C.length})`).sort();
-  console.groupCollapsed(`[${market}] Sheet coverage — HTML ${inHtml.size} / sheet ${inSheet.size} · missing ${missing.length} · sheet-only ${extra.length} · thin ${thin.length}`);
-  console.log('MISSING from sheet (HTML has them, tab does not):', missing.length?missing.join(', '):'none');
-  console.log('SHEET-ONLY (tab has them, HTML does not):', extra.length?extra.join(', '):'none');
-  console.log('THIN history (<50 bars in sheet):', thin.length?thin.join(', '):'none');
+  console.groupCollapsed(`[${market}] Data coverage — page ${inHtml.size} / source ${inSheet.size} · missing ${missing.length} · source-only ${extra.length} · thin ${thin.length}`);
+  console.log('MISSING from the data source (the page lists them, the feed does not):', missing.length?missing.join(', '):'none');
+  console.log('SOURCE-ONLY (the feed has them, the page does not):', extra.length?extra.join(', '):'none');
+  console.log('THIN history (<50 bars in the data source):', thin.length?thin.join(', '):'none');
   console.groupEnd();
   SHEET_COVERAGE[market]={missing,extra,thin};
 }
@@ -5432,8 +5631,8 @@ function sheetStateMsg(market){
   const n=GSHEET_BY_MARKET[market]?Object.keys(GSHEET_BY_MARKET[market]).length:0;
   const specific=SHEET_STATE_MSG[market]||'';
   const api=apiConfigured();
-  if(st==='ok')      return {kind:'ok',      tag:null, head:'', msg:`${M}: ${api?'loaded from the private endpoint':'Google Sheet loaded'} — ${n} tickers.`};
-  if(st==='loading') return {kind:'loading', tag:null, head:'', msg:`${M}: downloading the ${api?'data from the endpoint':'Google Sheet tab'}…`};
+  if(st==='ok')      return {kind:'ok',      tag:null, head:'', msg:`${M}: ${api?'loaded from the private endpoint':'data source loaded'} — ${n} tickers.`};
+  if(st==='loading') return {kind:'loading', tag:null, head:'', msg:`${M}: downloading the ${api?'data from the endpoint':'daily data'}…`};
   if(st==='cached')  return {kind:'cached',  tag:null, head:'', msg:`${M}: served from today's cache — nothing was re-downloaded.`};
   if(st==='signin')  return {kind:'signin',  tag:'⬤ Sign in to continue',
     head:'Sign in to continue',
@@ -5441,15 +5640,15 @@ function sheetStateMsg(market){
   if(st==='denied')  return {kind:'denied',  tag:'⬤ Access denied',
     head:'Access denied',
     msg: specific || `${M}: your Google account is not on the access list for this screener.`};
-  if(st==='failed')  return {kind:'failed',  tag: api?'⬤ Endpoint error':'⬤ Sheet unavailable',
-    head: api?'Endpoint error':'Sheet unavailable',
+  if(st==='failed')  return {kind:'failed',  tag: api?'⬤ Endpoint error':'⬤ Data unavailable',
+    head: api?'Endpoint error':'Data unavailable',
     msg: specific || (api
       ? `${M}: the data endpoint could not be loaded. Check that the Web App's "Who has access" is set to "Anyone", and that the URL is the /exec URL of a current deployment (Deploy > Manage deployments). No data will be shown — there is no fallback source.`
-      : `${M}: the Google Sheet tab could not be loaded or is empty. No data will be shown — there is no fallback source.`)};
+      : `${M}: the data source could not be loaded or is empty. No data will be shown — there is no fallback source.`)};
   if(st==='unconfigured') return {kind:'unconfigured', tag:'⬤ Not configured',
     head:'Not configured',
     msg: api ? `${M}: the endpoint URL is set but this market has no region mapping.`
-             : `${M}: no Google Sheet URL is set for this market in CFG.GSHEET_CSV_URLS.`};
+             : `${M}: no data source URL is set for this market.`};
   return {kind:'idle', tag:null, head:'', msg:`${M}: not loaded yet — open this tab to fetch it.`};
 }
 
@@ -5474,9 +5673,9 @@ function setGSheetStatus(market){
   updateDataAsOf(market);
   const s=sheetStateMsg(market);
   if(st==='cached'){
-    el.title=`${market.toUpperCase()}: served from today's cache — the sheet tab was NOT re-downloaded. `
+    el.title=`${market.toUpperCase()}: served from today's cache — the data source was NOT re-downloaded. `
             + (BENCHMARK_DATA[market] ? `RS is measured against the cached ${BENCHMARK_DATA[market].sym} series.`
-                                      : `The benchmark series is not cached either, so RS columns are blank. Press ↻ Refresh to download the tab.`);
+                                      : `The benchmark series is not cached either, so RS columns are blank. Press ↻ Refresh to download the daily data.`);
     return;
   }
   el.title=s.msg;
@@ -5653,7 +5852,7 @@ function parseGSheetCSV(text){
     g.V.push(parseInt(v)||0);
     g.dates.push(iso);   // ISO from here on — never the raw DD/MM/YYYY
   }
-  if(badDates) console.warn(`parseGSheetCSV: skipped ${badDates} row(s) with an unparseable date.`);
+  if(badDates) console.warn(`Data parse: skipped ${badDates} row(s) with an unparseable date.`);
   return finaliseSeries(grouped);
 }
 
@@ -5809,7 +6008,7 @@ function parseSheetPayload(raw){
   const n=grouped?Object.keys(grouped).length:0;
   if(!n)
     return {status:'error',reason:'empty_csv',data:null,
-            message:'Fetched fine but parsed to 0 tickers — the tab is probably empty, or its columns aren\'t Ticker,Date,Open,High,Low,Close,Volume.'};
+            message:'Fetched fine but parsed to 0 tickers — the data source is probably empty, or its columns aren\'t Ticker,Date,Open,High,Low,Close,Volume.'};
   return {status:'ok',reason:'csv',data:grouped,message:''};
 }
 
@@ -5929,8 +6128,17 @@ function calcMetrics(market){
     a20:  items.filter(d=>d.e20&&d.price>d.e20).length,
     a200: items.filter(d=>d.e200&&d.price>d.e200).length,
     rhi:  items.filter(d=>d.rsi14!=null&&d.rsi14>=60).length,
-    apiv: items.filter(d=>['PP→R1','R1→R2','R2+'].includes(d.dpz)).length,
-    n52:  items.filter(d=>d.h52d>=-10).length,
+    apiv: items.filter(d=>ABOVE_PIV_ZONES.includes(d.dpz)).length,
+    /* `d.h52d>=-10` alone is a TRUE for a stock with no 52-week high at all:
+       h52d is null below hi52()'s 120-bar floor and `null>=-10` coerces to
+       `0>=-10`. Every recently listed ticker was therefore counted as trading
+       near a high that had never been measured. The explicit null test is the
+       rule calcSectorBreadth() has always used for the same quantity one panel
+       away — the two disagreed, and this dial was the one that was wrong. It
+       matters twice over now: the history charts unmeasurable days as "did not
+       qualify", so without this the dial and its own chart's last point would
+       differ by exactly the young tickers. */
+    n52:  items.filter(d=>d.h52d!=null&&d.h52d>=-10).length,
     vexp: items.filter(d=>d.vRatio!=null&&d.vRatio>=1.5).length,
     bo:   items.filter(d=>d.boGain!=null&&d.boCnt>0).length,
     total:n,
@@ -5980,7 +6188,7 @@ function calcSectorBreadth(market){
       advPct: pct(items.filter(d=>d.ch1d!=null&&d.ch1d>0).length),
       rsiHi: pct(items.filter(d=>d.rsi14!=null&&d.rsi14>=60).length),
       avgVol: avg(vals('vRatio')),
-      abovePivot: pct(items.filter(d=>['PP→R1','R1→R2','R2+'].includes(d.dpz)).length),
+      abovePivot: pct(items.filter(d=>ABOVE_PIV_ZONES.includes(d.dpz)).length),
       near52h: pct(items.filter(d=>d.h52d!=null&&d.h52d>=-10).length),
       bo10d: pct(items.filter(d=>d.boGain!=null&&d.boCnt>0).length),
       // mrsRank, not the `rs` alias: `rs` exists only for backwards
@@ -6104,7 +6312,12 @@ function renderMetrics(market){
     }
     const cnt=mx[m.key], tot=mx.total;
     const pct=tot?Math.round(cnt/tot*100):0;
-    return `<div class="mcard ${m.color}" data-tip="${cnt} of ${tot} stocks">
+    /* A CONTROL, not a readout — but only once there are numbers behind it:
+       the skeleton branch above stays inert, because opening a history for a
+       market that has not computed yet can only show an empty chart. */
+    return `<div class="mcard mh-open ${m.color}" data-tip="${cnt} of ${tot} stocks — click for this metric's daily history"
+      role="button" tabindex="0" aria-label="${escAttr(m.label)}: ${cnt} of ${tot} stocks. Show daily history."
+      onclick="openMetricHist('${escAttr(m.key)}')" onkeydown="mhCardKey(event,'${escAttr(m.key)}')">
       ${ringHTML(pct,m.color)}
       <div class="minfo">
         <div class="mlabel">${m.label}</div>
@@ -6112,6 +6325,620 @@ function renderMetrics(market){
       </div>
     </div>`;
   }).join('');
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   METRIC HISTORY — each dial, recomputed for every session the sheet holds
+   ─────────────────────────────────────────────────────────────────────────
+   Nothing on this page stores breadth history, and none is downloaded. The
+   daily series below is RECOMPUTED from the raw OHLCV already sitting in
+   GSHEET_BY_MARKET, by asking each metric's own rule the same question at
+   every past bar. Three properties are worth stating plainly, because each is
+   a place this could have quietly lied:
+
+   1. NO LOOKAHEAD. Every rule is evaluated through something that can only see
+      bars up to the day being asked about — emaSeries()' index-aligned output,
+      rsi() on a prefix, hi52()/volAvg20()/boPriceFlags()' exclusive `end`. A
+      breadth line that peeked at tomorrow would look uncannily predictive and
+      be worth precisely nothing. t18 truncates the input series and asserts
+      that the earlier points do not move.
+
+   2. NO SECOND IMPLEMENTATION. Every rule goes through the very function the
+      dial itself uses. The last point of each history therefore EQUALS the
+      number on the dial above it — asserted in t18, not hoped for. A parallel
+      implementation that drifted would be invisible: two plausible numbers,
+      no error, no way to tell which is right.
+
+   3. REAL DEPTH, NOT A ROUND NUMBER. A 200-EMA consumes 200 bars before it has
+      a first value; hi52()'s floor consumes 120. Those warm-ups are NOT hidden
+      by starting the line wherever data happens to appear: the series is cut
+      to the run of days on which the metric is actually measurable for most of
+      the market, and the modal says in words how many days that left and why.
+      Nothing here is hardcoded per metric — the depth and the warm-up are both
+      read back off the computed flags.
+══════════════════════════════════════════════════════════════════════════ */
+
+/* Per-bar verdict. Three states, not two: "cannot be evaluated yet" and
+   "evaluated, did not qualify" are different facts. The first is what decides
+   how deep the chart can honestly go; the second is a real reading. Collapsing
+   them is exactly how a chart of 40 real days and 210 warm-up days would end
+   up drawn as 250 days of market breadth. */
+const MH_NA=0, MH_NO=1, MH_YES=2;
+
+/* One ticker, one metric, every bar. `gd` is the sheet's raw row for the
+   symbol. Each branch calls the SAME function computeTech() calls for that
+   metric — see the header note; there is no arithmetic in here that is not
+   already in the file. */
+function mhFlags(key,gd){
+  const C=(gd&&gd.C)||[], H=(gd&&gd.H)||[], L=(gd&&gd.L)||[], V=(gd&&gd.V)||[];
+  const n=C.length;
+  const out=new Uint8Array(n);
+  if(!n) return out;
+  if(key==='a20'||key==='a200'){
+    /* emaSeries() is null-filled until its seed completes, which is the same
+       bar count ema() needs — so "measurable" falls out of the series itself
+       rather than being asserted here as 20 or 200. */
+    const es=emaSeries(C,key==='a20'?20:200);
+    for(let i=0;i<n;i++){ const e=es[i]; if(!e) continue; out[i]=C[i]>e?MH_YES:MH_NO; }
+    return out;
+  }
+  if(key==='rhi'){
+    /* rsi() on the PREFIX, not a rolling re-derivation of Wilder smoothing:
+       rsi(C.slice(0,i+1)) is by construction the RSI as it stood on bar i, and
+       it is the identical code path the column uses. O(n²), which for ~250
+       bars is a few tens of thousands of operations per ticker — see
+       mhSeries() for why that is affordable and where it is paid. */
+    for(let i=0;i<n;i++){ const r=rsi(C.slice(0,i+1),14); if(r==null) continue; out[i]=r>=60?MH_YES:MH_NO; }
+    return out;
+  }
+  if(key==='apiv'){
+    // pivots() off YESTERDAY's bar and pivZone() against today's close — the
+    // same two calls, in the same order, as computeTech()'s dpz.
+    for(let i=1;i<n;i++){
+      out[i]=ABOVE_PIV_ZONES.includes(pivZone(C[i],pivots(H[i-1],L[i-1],C[i-1])))?MH_YES:MH_NO;
+    }
+    return out;
+  }
+  if(key==='n52'){
+    for(let i=0;i<n;i++){
+      const h=hi52(H,i+1); if(!h) continue;      // below hi52()'s 120-bar floor
+      const d=+((C[i]/h-1)*100).toFixed(1);      // h52d, rounded exactly as the row rounds it
+      out[i]=d>=-10?MH_YES:MH_NO;
+    }
+    return out;
+  }
+  if(key==='vexp'){
+    for(let i=0;i<n;i++){
+      const avg=volAvg20(V,i+1); if(!(avg>0)) continue;
+      out[i]=+((V[i]||0)/avg).toFixed(2)>=1.5?MH_YES:MH_NO;
+    }
+    return out;
+  }
+  if(key==='bo'){
+    /* breakout()'s two halves, applied the way breakout() applies them. The
+       price flags are computed ONCE for the whole series — flag i depends only
+       on bars <= i — while the volume threshold is re-read at every bar count,
+       because breakout() weighs volume against the average at the END of the
+       series it is given. Reusing one threshold for all days would be faster
+       and would not be what the dial does. */
+    const fl=boPriceFlags(C);
+    for(let i=54;i<n;i++){                       // breakout() returns nothing below 55 bars
+      const avg=volAvg20(V,i+1);
+      let hit=false;
+      for(let j=BO_LOOKBACK;j<i;j++){ if(fl[j]&&(V[j]||0)>avg*1.5){ hit=true; break; } }
+      out[i]=hit?MH_YES:MH_NO;
+    }
+    return out;
+  }
+  return out;   // an unknown key charts nothing rather than throwing
+}
+
+/* ── CAP BUCKETS, BY RANK — AND WHY THEY ARE NAMED LIKE THIS ─────────────
+   These bucket the market by MARKET-CAP RANK: the 100 largest, the next 150,
+   the next 250, everything after that. The table's Cap column does something
+   different — capTierFromMcap() cuts on FIXED thresholds (>= Rs 50,000cr and
+   so on), so its "Large" is a size, not a position in a queue, and the two
+   populations genuinely differ.
+
+   That is why nothing here is called Large/Mid/Small. Two different meanings
+   for "Large Cap" one panel apart is the sort of quiet inconsistency nobody
+   ever catches, because both readings are plausible; LC100 vs Large cannot be
+   confused by accident. The counts mirror how NSE builds its indices, but
+   membership here is computed from this page's own market-cap numbers and is
+   NOT official index membership. The modal says so, in those words.
+
+   Anything past the first 500 by rank lands in the remainder bucket, which is
+   why it keeps the Micro250 name even though it is not capped at 250. */
+const MH_BANDS=[
+  {key:'all',   label:'All',      take:0},
+  {key:'lc100', label:'LC100',    take:100},
+  {key:'mc150', label:'MC150',    take:150},
+  {key:'sc250', label:'SC250',    take:250},
+  {key:'micro', label:'Micro250', take:0},
+];
+const MH_RANK_BANDS=MH_BANDS.filter(b=>b.take>0);
+function mhBandOf(rank){
+  if(!(rank>=0)) return 'micro';
+  let lo=0;
+  for(let i=0;i<MH_RANK_BANDS.length;i++){
+    if(rank<lo+MH_RANK_BANDS[i].take) return MH_RANK_BANDS[i].key;
+    lo+=MH_RANK_BANDS[i].take;
+  }
+  return 'micro';
+}
+
+/* 0-based rank by market cap, largest first — for the PRICED tickers only.
+   UNKNOWN CAP IS NOT RANKED AT ALL, and lands in the remainder bucket by being
+   absent from this Map. 145 India tickers and most of the US list carry
+   mcap:null (see the MktCap tab note), and there is no honest place to guess
+   them into: putting them at the top would hand LC100 to whatever the sheet
+   failed to price. Sorting them to the BACK of one combined ranking was the
+   first attempt and is subtly wrong — in a market where fewer than 100 tickers
+   are priced, "last" is still inside LC100, so an unpriced ticker would be
+   charted as a large cap on a market with a short MktCap tab. Excluding them
+   makes the documented promise ("unknown cap lands in the remainder bucket")
+   true by construction rather than true only when the priced list happens to
+   be long enough. The remainder bucket is the one bucket whose membership
+   makes no size claim at all, which is why it is the honest home.
+   Ties break on the symbol so the split is stable across reloads instead of
+   depending on the order UNI happens to be written in. */
+function mhRank(defs){
+  const priced=defs.filter(d=>d.mcap!=null&&isFinite(d.mcap));
+  const order=priced.slice().sort((a,b)=>{
+    const am=+a.mcap, bm=+b.mcap;
+    if(am!==bm) return bm-am;
+    return a.s<b.s?-1:a.s>b.s?1:0;
+  });
+  const out=new Map();
+  order.forEach((d,i)=>out.set(d.s,i));
+  return out;
+}
+
+/* ── THE SHARED DATE AXIS ────────────────────────────────────────────────
+   Tickers do not share a calendar: one is halted, one listed in March, one is
+   simply stale. Walking each series by INDEX would line up bar 40 of a stock
+   that stopped trading in May with bar 40 of one that did not, which is the
+   same class of bug benchIndex() exists to prevent on the benchmark side.
+   So the axis is the union of every date present, and each ticker records,
+   per axis day, the index of its LAST bar at or before that day — "at or
+   before", so a stale ticker keeps reporting its final reading exactly as the
+   dial does today rather than dropping out of the denominator.
+
+   Cached once per market and reused by every metric and every cap chip: it is
+   the only O(tickers x days) structure here that does not depend on which
+   metric is being charted. */
+const MH_AXIS_CACHE={};
+function mhUniverse(market){
+  if(MH_AXIS_CACHE[market]) return MH_AXIS_CACHE[market];
+  const map=GSHEET_BY_MARKET[market]||null;
+  const all=UNI[market]||[];
+  /* calcMetrics() counts every ticker that has COMPUTED data; the history
+     needs the RAW BARS behind it, and a cache-hit load has SD populated from
+     localStorage with GSHEET_BY_MARKET empty. Both counts come back so the
+     modal can say which case it is in instead of charting a different
+     universe than the dial and saying nothing. */
+  const withData=all.filter(def=>SD[def.s]);
+  const defs=withData.filter(def=>{
+    const gd=map&&map[def.s];
+    return !!(gd&&Array.isArray(gd.C)&&gd.C.length&&Array.isArray(gd.dates));
+  });
+  const rank=mhRank(defs);
+  const dset=new Set();
+  defs.forEach(def=>{ const ds=map[def.s].dates; for(let i=0;i<ds.length;i++) if(ds[i]) dset.add(ds[i]); });
+  const axis=[...dset].sort();   // ISO dates sort correctly as strings
+  const rows=defs.map(def=>{
+    const ds=map[def.s].dates;
+    const at=new Int32Array(axis.length);
+    let j=0;
+    for(let m=0;m<axis.length;m++){
+      while(j<ds.length && ds[j]<=axis[m]) j++;
+      at[m]=j-1;                 // -1 = this ticker had not started trading yet
+    }
+    return {sym:def.s, cap:mhBandOf(rank.has(def.s)?rank.get(def.s):-1), at};
+  });
+  return (MH_AXIS_CACHE[market]={market,axis,rows,dialTotal:withData.length,
+                                 missing:withData.length-defs.length});
+}
+
+/* Per-ticker flags for one metric, cached per (market, metric). This is the
+   expensive pass — the one the "calculating" state exists for — and it is
+   deliberately independent of the cap chips, so switching LC100 -> Micro250
+   re-buckets an array that is already in hand instead of recomputing 880
+   series. */
+const MH_FLAG_CACHE={};
+function mhTickerFlags(market,key){
+  const ck=market+'|'+key;
+  if(MH_FLAG_CACHE[ck]) return MH_FLAG_CACHE[ck];
+  const u=mhUniverse(market), map=GSHEET_BY_MARKET[market]||{};
+  return (MH_FLAG_CACHE[ck]=u.rows.map(r=>mhFlags(key,map[r.sym])));
+}
+
+/* Every cache this feature owns, dropped together. Called whenever the bars or
+   the computed rows change — a new download, a market switch that refetches, a
+   benchmark change. One function rather than three call sites clearing two of
+   the three maps, which is how a chart ends up drawn from last week's bars. */
+function mhInvalidate(){
+  for(const k in MH_AXIS_CACHE) delete MH_AXIS_CACHE[k];
+  for(const k in MH_FLAG_CACHE) delete MH_FLAG_CACHE[k];
+  for(const k in MH_SERIES_CACHE) delete MH_SERIES_CACHE[k];
+}
+
+/* THE COVERAGE FLOOR. A day is chartable when the metric is measurable for at
+   least this share of the tickers trading that day. Below it the number stops
+   being a statement about the market and becomes a statement about how much
+   history the sheet holds — at 210 days back almost nothing has a 200-EMA, so
+   "Above 200 EMA" would read 2% and look like a crash instead of a warm-up.
+   This is a POLICY constant, not a per-metric depth: no metric's length is
+   written down anywhere in this file. Because nearly every ticker shares the
+   same ~250-bar window, coverage jumps from near 0 to near 1 within a bar or
+   two of each rule's warm-up, so the exact value here moves the cut by days,
+   not by weeks. */
+const MH_MIN_COV=0.5;
+const MH_SERIES_CACHE={};
+
+/* One aggregated line: market x metric x cap bucket.
+   The percentage is pass / TICKERS TRADING THAT DAY, which is the dial's own
+   denominator (calcMetrics divides by every ticker with data, not by the ones
+   the rule could be evaluated on). A day a rule cannot be evaluated therefore
+   counts as "did not qualify" — the same way the dial counts a stock with no
+   200-EMA — and it is the coverage floor above, not the denominator, that
+   keeps warm-up out of the chart. */
+function mhSeries(market,key,cap){
+  const ck=market+'|'+key+'|'+cap;
+  if(MH_SERIES_CACHE[ck]) return MH_SERIES_CACHE[ck];
+  const u=mhUniverse(market);
+  const flags=mhTickerFlags(market,key);
+  const sel=[];
+  for(let i=0;i<u.rows.length;i++) if(cap==='all'||u.rows[i].cap===cap) sel.push(i);
+  const A=u.axis, M=A.length;
+  const base=new Array(M).fill(0), meas=new Array(M).fill(0), pass=new Array(M).fill(0);
+  for(let s=0;s<sel.length;s++){
+    const at=u.rows[sel[s]].at, f=flags[sel[s]];
+    for(let m=0;m<M;m++){
+      const i=at[m]; if(i<0) continue;
+      base[m]++;
+      const v=f[i];
+      if(v!==MH_NA){ meas[m]++; if(v===MH_YES) pass[m]++; }
+    }
+  }
+  /* The MAXIMAL SUFFIX that clears the floor, walked backwards from today.
+     A suffix rather than "the first day that clears it": a single thin holiday
+     in the middle must not be allowed to unlock two hundred earlier days that
+     are still all warm-up. If today itself does not clear it, the series is
+     empty and the modal explains rather than drawing an axis with nothing on
+     it. */
+  let start=M;
+  for(let m=M-1;m>=0;m--){
+    if(base[m]>0 && meas[m]>=base[m]*MH_MIN_COV) start=m; else break;
+  }
+  /* The warm-up, READ BACK off the flags: the fewest bars any ticker in this
+     bucket needed before the rule first said anything. Derived, so a change to
+     any indicator's minimum history shows up here without this file being
+     edited. */
+  let warm=null;
+  for(let s=0;s<sel.length;s++){
+    const f=flags[sel[s]];
+    for(let i=0;i<f.length;i++){ if(f[i]!==MH_NA){ if(warm==null||i+1<warm) warm=i+1; break; } }
+  }
+  const dates=A.slice(start);
+  const out={
+    market,key,cap,
+    dates,
+    pct:  dates.map((d,i)=>base[start+i]?+(pass[start+i]/base[start+i]*100).toFixed(2):null),
+    pass: pass.slice(start),
+    base: base.slice(start),
+    meas: meas.slice(start),
+    axisLen:M, cut:start,
+    universe:sel.length, dialTotal:u.dialTotal, missing:u.missing,
+    warmBars:warm,
+  };
+  return (MH_SERIES_CACHE[ck]=out);
+}
+
+/* The benchmark leg, aligned BY DATE through benchIndex() — the same helper
+   every RS number on the page goes through. Walking the benchmark by index
+   instead would slide the two lines apart by however many sessions the two
+   calendars differ, and the drift is invisible on a chart. Returns null when
+   no benchmark series is loaded at all; the caller draws the metric alone and
+   says so. */
+function mhBench(market,dates){
+  const b=BENCHMARK_DATA[market];
+  if(!b||!Array.isArray(b.dates)||!Array.isArray(b.C)) return null;
+  const bi=benchIndex(b.dates,b.C);
+  if(!bi) return null;
+  const vals=dates.map(d=>{ const v=bi.at(d); return (v!=null&&isFinite(v))?v:null; });
+  if(!vals.some(v=>v!=null)) return null;
+  return {sym:b.sym, label:mhBenchLabel(market), vals,
+          covered:vals.filter(v=>v!=null).length};
+}
+
+/* WHAT THE LINE IS CALLED. The TICKER first, always. This series is a tracking
+   ETF: Google serves no history for the NSE indices themselves, which is the
+   whole reason the sheet fetches NIFTYBEES/MONIFTY500/HDFCSML250 at all. A
+   legend reading "Nifty 500" would be a claim about an index this page has
+   never seen a single bar of. The index it tracks is named second, as a
+   tracking claim, which is what it is. */
+function mhBenchLabel(market){
+  const b=BENCHMARK_DATA[market];
+  if(!b||!b.sym) return null;
+  const opt=(BENCHMARK_OPTS[market]||[]).find(o=>o.ticker===b.sym);
+  if(!opt) return b.sym;
+  /* The US/ETF menu already writes its options as "SPY — S&P 500", so pasting
+     the ticker in front again produced "SPY — tracks SPY — S&P 500". Strip a
+     leading copy of the ticker off the option label rather than editing the
+     menu: those labels are what the RS settings dropdown shows, and they read
+     correctly there. */
+  const idx=opt.label.replace(new RegExp('^\\s*'+b.sym.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+'\\s*[\u2014-]\\s*'),'');
+  return b.sym+' — tracks '+idx;
+}
+
+/* Plain language about depth. Every number in here is read off the series that
+   was actually computed; none of it is a per-metric literal. */
+function mhDepthNote(s,label){
+  if(!s) return '';
+  if(!s.universe){
+    return s.dialTotal
+      ? 'The raw daily bars are not in memory for this market — this load came from today\'s saved cache, which stores the computed columns but not the price series behind them. Press ↻ Refresh to download the sheet, and this chart can be built.'
+      : 'No stocks with computed data in this market yet.';
+  }
+  const M=s.axisLen, N=s.dates.length;
+  const holds=M+' session'+(M===1?'':'s');
+  if(!N){
+    return s.warmBars==null
+      ? label+' never becomes measurable on the history this sheet holds ('+holds+'), so there is nothing to chart. Nothing has been drawn rather than an empty axis.'
+      : label+' needs '+s.warmBars+' sessions of history before it can produce its first reading, and the sheet holds '+holds+' — so no day in this window has enough of the market measured to chart honestly.';
+  }
+  if(s.cut>0){
+    return label+' needs '+(s.warmBars==null?'a long run of':s.warmBars)+' sessions of history before its first reading, so only '+N+' of the '+holds+' the sheet holds can be charted. The earlier days are warm-up, not market breadth, and are left off rather than drawn as a low reading.';
+  }
+  return 'All '+holds+' the sheet holds are charted.';
+}
+
+/* ── THE DIALOG ──────────────────────────────────────────────────────────
+   DELIBERATELY NOT A SECOND DIALOG SYSTEM. The overlay, its z-index, the
+   scroll lock, the modal box, the header, the ✕, the chip pills, the chart
+   box and the footer line are the .dd-* rules the chart drilldown already
+   owns; the Tab trap is ddTrapKeys(), which both dialogs call; the colours
+   come from ddCol() and the canvas from ddCanvasCtx(). A second overlay with
+   its own z-index and its own Esc handling is a second set of the same four
+   bugs, found separately, months apart. Everything below is state, wording
+   and drawing — there is no new chrome here at all. */
+let MH_KEY=null;        // the metric being charted, null when the dialog is shut
+let MH_CAP='all';
+let MH_PREV=null;       // the element focus is handed back to on close
+let MH_VIEW=null;       // {s,bench} — exactly what is on the canvas right now
+
+function mhDef(key){ return MDEF.find(m=>m.key===key)||null; }
+function mhCapLabel(cap){ const b=MH_BANDS.find(x=>x.key===cap); return b?b.label:cap; }
+
+/* The rank-bucket disclaimer, in one place because it is said in two: the
+   chip group's tooltip and the note under the chart. Two wordings of one
+   caveat is how the weaker one ends up being the only one anybody reads. */
+const MH_BUCKET_NOTE='Buckets are by market-cap RANK inside this market — largest 100, next 150, next 250, then everything else. '
+  +'That mirrors how the indices are built but is NOT official index membership, and it is deliberately a different rule from the '
+  +'table\'s Cap column, which cuts on fixed size thresholds. Tickers with no market cap on the sheet are not ranked at all and fall into Micro250.';
+
+function openMetricHist(key){
+  const ov=$('mhOv'); if(!ov) return;
+  const def=mhDef(key); if(!def) return;
+  MH_KEY=key; MH_CAP='all'; MH_VIEW=null;
+  MH_PREV=document.activeElement||null;
+  hideTip();   // a card tooltip left hanging would otherwise sit over the dialog
+  $('mhTitle').textContent=def.label;
+  $('mhSub').textContent=CUR.toUpperCase()+' · one point per session, recomputed from the price bars already in memory';
+  mhRenderCaps();
+  const lg=$('mhLegend'); if(lg) lg.innerHTML='';
+  const ft=$('mhFoot');   if(ft) ft.innerHTML='';
+  /* PAINT FIRST, COMPUTE SECOND. The first open of a metric walks every
+     ticker's whole series, and RSI's rule is O(bars²) per ticker, so it can
+     take the better part of a second on the India tab. Showing the dialog with
+     this line and yielding once means the click has a visible effect
+     immediately; without it the page simply stops responding for a moment and
+     the user clicks again. Re-checked after the yield because Esc can close
+     the dialog inside that window. */
+  const nt=$('mhNote');
+  if(nt) nt.innerHTML='<div><b>Calculating…</b> recomputing this metric for every session the sheet holds.</div>';
+  const cv=$('mhCanvas'); if(cv&&cv.getContext) mhDraw();   // clear the previous metric's pixels
+  ov.classList.add('open');
+  ov.setAttribute('aria-hidden','false');
+  document.body.classList.add('dd-lock');
+  document.addEventListener('keydown',mhKeys);
+  window.addEventListener('resize',mhResize);
+  const x=$('mhX'); if(x&&x.focus) x.focus();
+  setTimeout(()=>{ if(MH_KEY===key) mhRender(); },0);
+}
+
+function closeMetricHist(){
+  const ov=$('mhOv'); if(!ov) return;
+  ov.classList.remove('open');
+  ov.setAttribute('aria-hidden','true');
+  /* Only when the OTHER dialog is not also up. Both share one body class, and
+     an unconditional remove here would unlock the page behind an open chart. */
+  if(DD_SYM==null) document.body.classList.remove('dd-lock');
+  document.removeEventListener('keydown',mhKeys);
+  window.removeEventListener('resize',mhResize);
+  MH_KEY=null; MH_VIEW=null;
+  // Cleared BEFORE focus(), so a handler on the restored element cannot see a
+  // stale opener and bounce focus back into a closed dialog.
+  const p=MH_PREV; MH_PREV=null;
+  if(p&&p.focus) p.focus();
+}
+
+function mhKeys(e){
+  if(MH_KEY==null) return;
+  ddTrapKeys(e,'mhModal',closeMetricHist);
+}
+/* Enter / Space on a dial. The cards are <div role="button">, which gets click
+   for free but NOT keyboard activation — without this the whole feature is
+   unreachable without a mouse. Same shape as ddKey() on the row's ticker. */
+function mhCardKey(e,key){
+  if(e.key==='Enter'||e.key===' '||e.key==='Spacebar'){
+    if(e.preventDefault) e.preventDefault();
+    openMetricHist(key);
+  }
+}
+/* Resize and theme both invalidate pixels and neither changes the data, so
+   both are a redraw and not a recompute. Registered only while open. */
+function mhResize(){ if(MH_KEY!=null) mhDraw(); }
+
+function mhRenderCaps(){
+  const el=$('mhCaps'); if(!el) return;
+  el.title=MH_BUCKET_NOTE;
+  el.innerHTML=MH_BANDS.map(b=>
+    `<button type="button" class="${b.key===MH_CAP?'on':''}" aria-pressed="${b.key===MH_CAP}"`
+    +` onclick="mhSetCap('${escAttr(b.key)}')">${escHtml(b.label)}</button>`).join('');
+}
+
+/* A chip change RE-BUCKETS. mhTickerFlags() is cached per (market, metric) and
+   is the expensive half, so switching All -> Micro250 re-aggregates flags that
+   are already in hand rather than recomputing 880 series. */
+function mhSetCap(cap){
+  if(MH_KEY==null) return;
+  MH_CAP=cap;
+  mhRenderCaps();
+  mhRender();
+}
+
+function mhRender(){
+  if(MH_KEY==null) return;
+  const def=mhDef(MH_KEY); if(!def) return;
+  const s=mhSeries(CUR,MH_KEY,MH_CAP);
+  const bench=s.dates.length?mhBench(CUR,s.dates):null;
+  MH_VIEW={s,bench};
+  const N=s.dates.length;
+
+  const lg=$('mhLegend');
+  if(lg) lg.innerHTML=
+    (bench?`<span class="mh-key"><i class="mh-sw mh-bench"></i>${escHtml(bench.label||bench.sym)}</span>`:'')
+    +`<span class="mh-key"><i class="mh-sw"></i>${escHtml(def.label)}</span>`;
+
+  const ft=$('mhFoot');
+  if(ft) ft.innerHTML = N
+    ? `${N} data point${N===1?'':'s'} · <b>${escHtml(def.label)}</b> (${escHtml(mhCapLabel(MH_CAP))}) · ${escHtml(s.dates[0])} → ${escHtml(s.dates[N-1])}`
+    : `0 data points · <b>${escHtml(def.label)}</b> (${escHtml(mhCapLabel(MH_CAP))})`;
+
+  const bits=[];
+  const depth=mhDepthNote(s,def.label);
+  if(depth) bits.push(escHtml(depth));
+  if(s.universe) bits.push(`Measured across <b>${s.universe}</b> stock${s.universe===1?'':'s'} in ${escHtml(mhCapLabel(MH_CAP))}`
+    +(s.missing?`; ${s.missing} more are on the dial but have no price bars in memory, so they are not in this line`:'')+'.');
+  // Said only when it is true, and said plainly: a legend with one line and no
+  // explanation reads as a chart that forgot to draw something.
+  if(N&&!bench) bits.push('No benchmark series is loaded for this market, so the metric is drawn on its own.');
+  bits.push(escHtml(MH_BUCKET_NOTE));
+  const nt=$('mhNote');
+  if(nt) nt.innerHTML=bits.map(t=>'<div>'+t+'</div>').join('');
+
+  mhDraw();
+}
+
+/* Benchmark axis labels. Its own formatter and not fmtP(): this is a level on
+   an unlabelled right-hand axis, not a price in a currency, and printing
+   "₹1,234.00" beside a percentage axis invites reading the two as one scale. */
+function mhAxisNum(v){
+  const a=Math.abs(v);
+  return a>=1000?String(Math.round(v)):a>=10?v.toFixed(1):v.toFixed(2);
+}
+
+function mhDraw(){
+  const cv=$('mhCanvas'); if(!cv||!cv.getContext) return;
+  const box=$('mhChart');
+  const w=Math.max(200,(box&&box.clientWidth)||cv.clientWidth||600);
+  const h=Math.max(120,(box&&box.clientHeight)||cv.clientHeight||340);
+  const ctx=ddCanvasCtx(cv,w,h); if(!ctx) return;
+  /* READ AT DRAW TIME, never captured — see ddCol(). This is why a theme
+     switch only has to call this function again. */
+  const col={grid:ddCol('--border','#D2DCE1'),  text:ddCol('--text3','#54686F'),
+             line:ddCol('--accent','#0C6A82'),  bench:ddCol('--text3','#54686F'),
+             ref: ddCol('--border2','#AFC0C7'), surf:ddCol('--surface','#FBFDFE')};
+  ctx.clearRect(0,0,w,h);
+  ctx.fillStyle=col.surf; ctx.fillRect(0,0,w,h);
+  const v=MH_VIEW, s=v&&v.s;
+  /* Nothing drawn at all when there are no points — not an empty axis. An axis
+     with no line on it looks like a chart that failed; mhNote() has the reason
+     in words directly underneath. */
+  if(!s||!s.dates.length) return;
+
+  const n=s.dates.length;
+  const padL=40, padR=(v.bench?56:16), padT=14, padB=22;
+  const L=padL, R=Math.max(padL+10,w-padR), T=padT, B=Math.max(padT+10,h-padB);
+  const X=i=> n===1 ? (L+R)/2 : L+(R-L)*i/(n-1);
+  const Y=p=> B-(B-T)*(p/100);
+
+  // 0-100% gridlines and the LEFT axis: the metric's own scale.
+  ctx.font='10px system-ui,sans-serif'; ctx.textBaseline='middle'; ctx.lineWidth=1;
+  if(ctx.setLineDash) ctx.setLineDash([]);
+  for(let g=0;g<=4;g++){
+    const p=g*25, y=Math.round(Y(p))+0.5;
+    ctx.strokeStyle=col.grid;
+    ctx.beginPath(); ctx.moveTo(L,y); ctx.lineTo(R,y); ctx.stroke();
+    ctx.fillStyle=col.text; ctx.textAlign='right';
+    ctx.fillText(p+'%',L-5,y);
+  }
+  /* The 50% reference, dashed and drawn OVER the gridline it shares. Dashed
+     rather than coloured, so "half the market" survives greyscale and colour
+     blindness the same way the Darvas box's two edges do. */
+  {
+    const y=Math.round(Y(50))+0.5;
+    ctx.save();
+    ctx.strokeStyle=col.ref;
+    if(ctx.setLineDash) ctx.setLineDash([4,3]);
+    ctx.beginPath(); ctx.moveTo(L,y); ctx.lineTo(R,y); ctx.stroke();
+    ctx.restore();
+  }
+
+  /* The benchmark, on its OWN scale and its own right-hand axis. It is a price
+     level and the metric is a percentage of the market: forcing them onto one
+     axis would either flatten the benchmark to a horizontal line or push the
+     metric off the top, and either one is a picture of the axis rather than of
+     the data. */
+  if(v.bench){
+    let lo=Infinity, hi=-Infinity;
+    for(let i=0;i<n;i++){ const x=v.bench.vals[i]; if(x==null) continue; if(x<lo)lo=x; if(x>hi)hi=x; }
+    if(!(hi>lo)){ const m=isFinite(lo)?lo:0; lo=m-1; hi=m+1; }
+    const BY=x=>B-(B-T)*((x-lo)/(hi-lo));
+    ctx.strokeStyle=col.bench; ctx.lineWidth=1.4;
+    if(ctx.setLineDash) ctx.setLineDash([]);
+    ctx.beginPath();
+    let st=false;
+    for(let i=0;i<n;i++){
+      const x=v.bench.vals[i]; if(x==null) continue;      // a benchmark holiday breaks the line rather than bridging it
+      const px=X(i), py=BY(x);
+      if(st) ctx.lineTo(px,py); else { ctx.moveTo(px,py); st=true; }
+    }
+    if(st) ctx.stroke();
+    ctx.fillStyle=col.text; ctx.textAlign='left';
+    for(let g=0;g<=4;g++){ const x=lo+(hi-lo)*g/4; ctx.fillText(mhAxisNum(x),R+5,Math.round(BY(x))+0.5); }
+  }
+
+  // The metric itself, in the accent, on the left axis.
+  ctx.strokeStyle=col.line; ctx.lineWidth=1.8;
+  if(ctx.setLineDash) ctx.setLineDash([]);
+  ctx.beginPath();
+  let started=false, lastI=-1;
+  for(let i=0;i<n;i++){
+    const p=s.pct[i]; if(p==null) continue;
+    lastI=i;
+    const px=X(i), py=Y(p);
+    if(started) ctx.lineTo(px,py); else { ctx.moveTo(px,py); started=true; }
+  }
+  if(started) ctx.stroke();
+  /* The current reading, printed at the right-hand end. The number a reader
+     actually wants off a breadth chart is today's, and reading it off a
+     gridline is a guess. Clamped inside the plot so it cannot be drawn off the
+     top when the line ends at 100%. */
+  if(lastI>=0){
+    const p=s.pct[lastI], px=X(lastI), py=Y(p);
+    ctx.fillStyle=col.line;
+    ctx.beginPath(); ctx.arc(px,py,3,0,Math.PI*2); ctx.fill();
+    ctx.font='bold 11px system-ui,sans-serif'; ctx.textAlign='right'; ctx.textBaseline='bottom';
+    ctx.fillText(Math.round(p)+'%', px, Math.max(T+11,py-6));
+  }
+
+  // The window, in dates, at the two ends it actually spans.
+  ctx.font='10px system-ui,sans-serif'; ctx.textBaseline='top'; ctx.fillStyle=col.text;
+  ctx.textAlign='left';  ctx.fillText(s.dates[0],L,B+5);
+  if(n>1){ ctx.textAlign='right'; ctx.fillText(s.dates[n-1],R,B+5); }
 }
 
 /* ══════════════════════════════════
@@ -6185,6 +7012,35 @@ function dboxC(state,top,bot){
   return `<span class="dbx dbx-${state}">${DBOX_LABEL[state]||state}</span>`
        + `<br><span class="dbx-rng">${n(bot)}–${n(top)}</span>`;
 }
+/* ADR% renders flat: a number and a percent sign, two decimals like Retrace%
+   and 1D% beside it. NO COLOUR ON PURPOSE — "high ADR" is not good or bad, it
+   is a property of the instrument, and a green/red split here would invent a
+   threshold the tooltip cannot defend. The filter and the sort are how a user
+   states their own threshold. */
+function adrC(v){
+  if(v==null) return '<span class="vm">—</span>';
+  return `<span>${v.toFixed(2)}%</span>`;
+}
+
+/* Risk% renders the number and carries the WHOLE PLAN in its own tooltip.
+
+   fmtP() — the price column's formatter, passed the row's own currency — is
+   used for all four prices rather than a local toFixed. A trade plan whose
+   entry reads 1234.5 while the Price cell two columns away reads Rs 1,234.50
+   invites the reader to wonder which one is the real number, and there is no
+   good answer to that question. */
+function riskC(v,top,bot,cur){
+  if(v==null) return '<span class="vm">—</span>';
+  const R=top-bot;
+  const tip='Box geometry, not advice — this is arithmetic on the Darvas box, not a recommendation. '
+          + `Entry (box top) ${fmtP(top,cur)} · Stop (box bottom) ${fmtP(bot,cur)} · `
+          + `Risk ${v.toFixed(2)}% of entry. `
+          + `2R ${fmtP(top+2*R,cur)} · 3R ${fmtP(top+3*R,cur)}, `
+          + 'where 2R = top + 2×(top − bottom) and 3R = top + 3×(top − bottom). '
+          + 'These are the same two levels the D-Box column prints and the same box drawn on the chart.';
+  return `<span data-tip="${escAttr(tip)}">${v.toFixed(2)}%</span>`;
+}
+
 function emaC(sc){
   if(sc==null) return '<span class="vm">—</span>';
   if(sc>=0.8) return '<span class="ema-b">▲ Bull</span>';
@@ -6502,7 +7358,7 @@ function histGC(v){ return fmtCh(v); }
    rows' cells get hidden. Length must equal (th count − 4). */
 const SKEL_COLS=['c-setup','c-align','c-fresh','c-sector','','','c-ch1w','c-ch1m','c-ch3m','c-hist','c-histg','c-status','','c-wrsi','c-vr','c-wvol','c-avgval','','c-wpiv','c-dbox','c-wbox','',
   'c-ema','c-wema','c-xcross','c-wcross','c-slope200','c-pattern','c-wpattern','c-consol',
-  'c-monthly','','c-bocnt','c-followup','c-voldry','c-retrace','c-squeeze','','c-mrsrank','c-rs21',
+  'c-monthly','','c-bocnt','c-followup','c-voldry','c-retrace','c-squeeze','c-adr','c-risk','','c-mrsrank','c-rs21',
   'c-rs55','c-rs10w','c-rsslope','c-rsp55','c-rsp21','c-rshist','','c-rstrend','c-notes'];
 
 function skelRow(def,i){
@@ -6582,6 +7438,8 @@ function dataRow(def,d,i){
     <td class="c-voldry">${boolC(d.volDry,'✓ Dry','✗ No')}</td>
     <td class="c-retrace">${retC(d.retrace)}</td>
     <td class="c-squeeze">${sqC(d.sq)}</td>
+    <td class="c-adr">${adrC(d.adr)}</td>
+    <td class="c-risk">${riskC(d.dBoxRisk,d.dBoxTop,d.dBoxBot,d.currency)}</td>
     <td>${s2C(d.s2)}</td>
     <td class="c-mrsrank" style="text-align:center">${rsC(d.mrsRank)}</td>
     <td class="c-rs21">${rsNumC(d.rs21)}</td>
@@ -6603,8 +7461,8 @@ function errRow(def,i){
     <td class="td-n pin pin1">${i}</td><td class="pin pin2">${revC(def.s)}</td>
     <td class="pin pin3">${capB(def.g)}</td>
     <td class="pin pin4">${watchC(def.s)}<span class="ticker">${def.d}</span><br><span class="sec">${def.sector}</span></td>
-    <td colspan="49" style="color:var(--text3);font-size:11px">
-      ⚠ Not in this market's Google Sheet tab — re-run the Apps Script to backfill it
+    <td colspan="51" style="color:var(--text3);font-size:11px">
+      ⚠ Not in this market's data source — it will appear once the daily data carries it
     </td>
   </tr>`;
 }
@@ -7006,7 +7864,7 @@ function updateScanBanner(market){
   el.classList.remove('warn','err','show');
   if(st==='loading'){
     el.classList.add('warn','show');
-    txt.textContent='🔄 Market scan in progress — downloading the '+CUR.toUpperCase()+' sheet.';
+    txt.textContent='🔄 Market scan in progress — downloading the '+CUR.toUpperCase()+' data.';
   } else if((st==='failed'||st==='unconfigured'||st==='signin'||st==='denied') && CACHE_SHOWN[CUR]){
     el.classList.add('err','show');
     /* STALE-BUT-VISIBLE is the dangerous case, and an auth failure reaches it
@@ -7032,8 +7890,8 @@ function updateScanBanner(market){
     el.classList.add('warn','show');
     const bad=BENCHMARK_FAILED[CUR];
     txt.textContent = bad
-      ? `💾 Served from today's cache — the ${CUR.toUpperCase()} sheet was not re-downloaded, and the benchmark ${bad} was not cached with it, so the RS columns are blank. Press ↻ Refresh to download the tab and restore RS.`
-      : `💾 Served from today's cache — the ${CUR.toUpperCase()} sheet was not re-downloaded. RS is measured against the cached ${(BENCHMARK_DATA[CUR]&&BENCHMARK_DATA[CUR].sym)||'benchmark'} series. Press ↻ Refresh for a fresh download.`;
+      ? `💾 Served from today's cache — the ${CUR.toUpperCase()} data was not re-downloaded, and the benchmark ${bad} was not cached with it, so the RS columns are blank. Press ↻ Refresh to download the daily data and restore RS.`
+      : `💾 Served from today's cache — the ${CUR.toUpperCase()} data was not re-downloaded. RS is measured against the cached ${(BENCHMARK_DATA[CUR]&&BENCHMARK_DATA[CUR].sym)||'benchmark'} series. Press ↻ Refresh for a fresh download.`;
   }
 }
 
@@ -7226,6 +8084,12 @@ const SORT_FN={
      maths across columns is what it cannot support, and nothing here does
      that. */
   rsp55:d=>d?.rsp55, rsp21:d=>d?.rsp21,
+  /* Sortable and filterable, and that is the whole of their reach. Neither is
+     an input to isQualitySetup(), rankRS(), dwAlign() or any sector score —
+     ADR% is a volatility measure and Risk% is box geometry, and blending
+     either into a quality score would double-count what the D-Box and Squeeze
+     columns already say. */
+  adr:d=>d?.adr, risk:d=>d?.dBoxRisk,
   rshist:d=>Array.isArray(d?.rsHist)&&d.rsHist.length?d.rsHist[d.rsHist.length-1]:null,
   // rsTrend is now the words 'up'/'flat'/'down' (was the arrows ↑/→/↓).
   // The arrow keys are kept so a row rehydrated from an older cache still
@@ -7512,9 +8376,9 @@ function setTag(mode){
   if(mode==='live'){
     el.className='src-tag live';
     const st=GSHEET_STATUS[CUR];
-    const src = (GSHEET_DATA && Object.keys(GSHEET_DATA).length>0) ? 'Google Sheets'
-              : st==='loading' ? 'Downloading sheet…'
-              : 'Google Sheets';
+    const src = (GSHEET_DATA && Object.keys(GSHEET_DATA).length>0) ? 'End-of-Day Data'
+              : st==='loading' ? 'Downloading data…'
+              : 'End-of-Day Data';
     el.textContent=`⬤ Live (${src})`;
   }
   if(mode==='cached'){el.className='src-tag cached';  el.textContent=`⬤ Cached (${today()})`;}
@@ -7535,6 +8399,9 @@ function applyTheme(t){
      itself the instant the data-theme attribute changes; the chart has to be
      told, or it stays painted in the palette it was drawn with. */
   if(DD_SYM!=null) ddDraw();
+  // ...and the breadth-history canvas, for exactly the same reason. Both read
+  // their colours through ddCol() at draw time, so a redraw is all it takes.
+  if(MH_KEY!=null) mhDraw();
   try{ localStorage.setItem(THEME_KEY,t); }catch(e){ /* private mode — session-only is fine */ }
 }
 function toggleTheme(){ applyTheme(currentTheme()==='paper'?'classic':'paper'); }
@@ -7724,7 +8591,7 @@ async function loadMarket(market,force=false){
   // FULL await, no race. There is no fallback to start early any more, so
   // there is nothing to gain by proceeding without the data — and a lot to
   // lose, since every ticker would miss and report "no data".
-  setPrg(0,defs.length,'Downloading '+market.toUpperCase()+' data from Google Sheets… (large tab, can take a minute)');
+  setPrg(0,defs.length,'Downloading '+market.toUpperCase()+' end-of-day data… (large data set, can take a minute)');
   await loadGoogleSheetData(market);
   GSHEET_DATA = GSHEET_BY_MARKET[market] || null;
 
@@ -7784,7 +8651,7 @@ function setSheetError(market){
   const el=$('srcTag');
   if(el){
     el.className='src-tag';
-    el.textContent=s.tag||'⬤ Sheet unavailable';
+    el.textContent=s.tag||'⬤ Data unavailable';
     el.title=s.msg;
   }
   const sub=$('bnrSub');
@@ -7958,7 +8825,7 @@ function clrRev(){
       method:'POST',
       headers:{'Content-Type':'text/plain'},
       body: JSON.stringify({action:'clearAll'})
-    }).catch(e=>console.warn('Could not clear reviews on the Sheet (cleared locally):', e.message));
+    }).catch(e=>console.warn('Could not clear reviews on the data source (cleared locally):', e.message));
   }
   renderTable(CUR);
 }
@@ -8085,6 +8952,11 @@ const EXPORT_COLS=[
   ['Follow-up (d)',(def,d)=>d?.boAge??''],
   ['Retrace%',    (def,d)=>d?.retrace??''],
   ['Squeeze',     (def,d)=>d?.sq??''],
+  ['ADR%',        (def,d)=>d?.adr??''],
+  // The risk figure AND the two levels it came from: a bare 8.4 in a
+  // spreadsheet cannot be checked, and the whole claim of this column is that
+  // it is the D-Box levels and nothing else.
+  ['Risk%',       (def,d)=>d?.dBoxRisk??''],
   ['MRS Rank',    (def,d)=>d?.mrsRank??''],
   ['RS21',        (def,d)=>d?.rs21??''],
   ['RS55',        (def,d)=>d?.rs55??''],
@@ -8339,6 +9211,10 @@ const COL_FILTERS={
   // 90+ of its own range"). Still just a filter on one column's own value.
   rsp55:   {t:'num',  label:'RSP 55',  val:d=>d&&d.rsp55},
   rsp21:   {t:'num',  label:'RSP 21',  val:d=>d&&d.rsp21},
+  // "Show me everything that moves at least 4% a day" and "nothing where the
+  // box makes me risk more than 8%" are the two screens these exist for.
+  adr:     {t:'num',  label:'ADR%',    val:d=>d&&d.adr},
+  risk:    {t:'num',  label:'Risk%',   val:d=>d&&d.dBoxRisk},
 
   /* ── explicitly nothing ─────────────────────────────────────────── */
   /* A 30-point sparkline of the 21-day excess return. Neither a value to match
@@ -8907,6 +9783,8 @@ const TOGGLEABLE_COLS=[
   {cls:'voldry', label:'Vol Dry'},
   {cls:'retrace',label:'Retrace %'},
   {cls:'squeeze',label:'Squeeze'},
+  {cls:'adr',    label:'ADR%'},
+  {cls:'risk',   label:'Risk% (Darvas)'},
   {cls:'mrsrank',label:'MRS Rank'},
   {cls:'rs21',   label:'RS21'},
   {cls:'rs55',   label:'RS55'},
@@ -8996,8 +9874,8 @@ let DD_PREV=null;  // the element that opened it; focus goes back here on close
 /* Focusable controls inside the dialog, in DOM order. Recomputed on every Tab
    rather than captured at open time, because the dialog's contents change
    while it is open — a cached list would trap focus on nodes that are gone. */
-function ddFocusables(){
-  const m=$('ddModal');
+function ddFocusables(modalId){
+  const m=$(modalId||'ddModal');
   if(!m||!m.querySelectorAll) return [];
   return Array.prototype.slice.call(m.querySelectorAll(
     'a[href],button:not([disabled]),select,input:not([disabled]),[tabindex]:not([tabindex="-1"])'));
@@ -9005,17 +9883,25 @@ function ddFocusables(){
 
 /* Esc closes, Tab cycles. Bound on DOCUMENT rather than on the dialog: a trap
    bound to the dialog only sees keys while focus is already inside it, which
-   is the one situation where a trap is not needed. */
-function ddKeys(e){
-  if(DD_SYM==null) return;
-  if(e.key==='Escape'){ if(e.preventDefault) e.preventDefault(); closeDrill(); return; }
+   is the one situation where a trap is not needed.
+
+   PARAMETERISED BY MODAL, and called by both dialogs on this page. The metric
+   history dialog needs exactly this behaviour, and a second copy of it is a
+   second place for shift-Tab-off-the-first-element to be got wrong — the two
+   would then differ only under a keyboard, which is the least-tested path. */
+function ddTrapKeys(e,modalId,close){
+  if(e.key==='Escape'){ if(e.preventDefault) e.preventDefault(); close(); return; }
   if(e.key!=='Tab') return;
-  const f=ddFocusables();
+  const f=ddFocusables(modalId);
   if(!f.length) return;
   const first=f[0], last=f[f.length-1], a=document.activeElement;
   if(e.shiftKey){
     if(a===first||f.indexOf(a)<0){ if(e.preventDefault) e.preventDefault(); last.focus(); }
   }else if(a===last){ if(e.preventDefault) e.preventDefault(); first.focus(); }
+}
+function ddKeys(e){
+  if(DD_SYM==null) return;
+  ddTrapKeys(e,'ddModal',closeDrill);
 }
 
 /* Enter / Space on the row's ticker. A <span role="button"> gets click for
@@ -9309,7 +10195,7 @@ function ddLoadChart(){
   DD_VIEW=pick?ddSeries(DD_SYM,CUR,pick[1]):{bars:[],ema:[],total:total};
   const note=$('ddNote');
   if(note){
-    if(!total) note.textContent='No price history for this ticker in the sheet.';
+    if(!total) note.textContent='No price history for this ticker in the data source.';
     /* A short history is LABELLED, not blanked. An IPO with 30 bars still has
        a chart worth looking at; what it must not do is pretend to be a year. */
     else if(!opts.length||opts[0][1]>total) note.textContent=total+' daily bars available';
@@ -9497,6 +10383,14 @@ let DD_TV_READY=false;   // cached: the script is loaded ONCE per page, not per 
 let DD_TV_BUSY=false;    // a second click while the first load is in flight is a no-op
 
 function ddTab(name){
+  /* Defence in depth. The Live button is not rendered for India, so nothing in
+     the UI can ask for it — but ddTab('live') is also reachable from a stale
+     onclick left over from the previous ticker, and the one thing that must
+     never happen is a TradingView request in an India-only session. Two
+     independent gates (this one and the tvEmbeddable() check at the top of
+     ddLoadLive) rather than one, because either alone is a single point of
+     failure for a promise made to the owner. */
+  if(name==='live' && !tvEmbeddable(DD_SYM)) name='local';
   DD_TAB=(name==='live')?'live':'local';
   const lb=$('ddTabLocal'), vb=$('ddTabLive'), lp=$('ddLocal'), vp=$('ddLive');
   if(lb){ lb.className='dd-tab'+(DD_TAB==='local'?' on':''); lb.setAttribute('aria-selected',DD_TAB==='local'?'true':'false'); }
@@ -9507,6 +10401,52 @@ function ddTab(name){
      width; coming back it has to be measured and repainted, not just revealed. */
   if(DD_TAB==='local') ddDraw();
   else ddLoadLive();
+}
+
+/* THE TAB STRIP, BUILT PER TICKER.
+
+   ONE definition of each button, here, rendered on open — not two buttons in
+   the markup with one hidden. "Hidden" is not "absent": a display:none button
+   still answers querySelectorAll, so it stays in ddFocusables() and Tab still
+   stops on it, and its role="tab" still claims a panel the user can never
+   select. The owner asked for the tab to be GONE for India, and gone means out
+   of the DOM.
+
+   ARIA, when there is only one view: there is no tab strip and no tab
+   semantics. A lone role="tab" is a control with nothing to switch between,
+   and a role="tabpanel" whose aria-labelledby names a button that was never
+   rendered is a dangling reference that screen readers report as a broken
+   label. So #ddLocal becomes a plain labelled region instead. */
+function ddTabsHTML(){
+  return '<button type="button" class="dd-tab on" id="ddTabLocal" role="tab"'
+       + ' aria-selected="true" aria-controls="ddLocal" onclick="ddTab(\'local\')">Chart</button>'
+       + '<button type="button" class="dd-tab" id="ddTabLive" role="tab"'
+       + ' aria-selected="false" aria-controls="ddLive" onclick="ddTab(\'live\')">Live</button>';
+}
+
+function ddApplyTabs(){
+  const live=tvEmbeddable(DD_SYM);
+  const strip=$('ddTabs'), lp=$('ddLocal'), vp=$('ddLive'), note=$('ddLiveNote');
+  if(strip){
+    strip.innerHTML = live ? ddTabsHTML() : '';
+    strip.style.display = live ? '' : 'none';
+    if(live) strip.setAttribute('role','tablist'); else strip.removeAttribute('role');
+  }
+  if(lp){
+    if(live){ lp.setAttribute('role','tabpanel'); lp.setAttribute('aria-labelledby','ddTabLocal'); }
+    else{ lp.setAttribute('role','region'); lp.setAttribute('aria-label','Chart'); lp.removeAttribute('aria-labelledby'); }
+    lp.style.display='';
+  }
+  if(vp){
+    if(live){ vp.setAttribute('role','tabpanel'); vp.setAttribute('aria-labelledby','ddTabLive'); }
+    else{ vp.style.display='none'; vp.removeAttribute('role'); vp.removeAttribute('aria-labelledby'); }
+  }
+  /* Nothing may be left alive inside a panel that no longer has a tab. Without
+     this, a US ticker's widget survives into the next Indian dialog — hidden,
+     but still an iframe streaming a chart nobody can see. */
+  const box=$('ddTvBox');
+  if(box && !live){ box.innerHTML=''; box.style.display='none'; }
+  if(note) note.innerHTML = live ? '' : ddLiveNote();
 }
 
 /* What the user reads when the widget cannot be had. Plain English about the
@@ -9520,29 +10460,35 @@ function ddLiveFallback(){
        + tvLink(DD_SYM,'D',TV_TIP_D,'Open in TradingView ↗','tv-lnk dd-tv')+'</p>';
 }
 
-/* WHAT INDIA SEES ON THE LIVE TAB.
+/* WHAT INDIA SEES INSTEAD OF THE LIVE TAB.
 
-   The tab stays VISIBLE and explains itself rather than disappearing. Hiding
-   it would change the dialog's shape depending on which row was clicked, which
-   reads as a glitch, and it would leave the user with no answer to the obvious
-   question — a control that vanishes teaches nothing, while one that says why
-   it cannot help, and hands over the link that can, is a complete answer.
+   HISTORY, because the reasoning reversed and the old reasoning still reads
+   convincingly. This used to be a full panel on a Live tab that stayed VISIBLE
+   and explained itself, on the argument that a control which vanishes teaches
+   nothing. The owner overruled it: a tab that exists only to say it cannot
+   help is a tab that every Indian user clicks exactly once and resents, and
+   India is most of the universe. So the tab is gone and the answer moved to
+   where it is still discoverable — one line on the Chart tab, which is the
+   only tab those users now have.
 
-   The wording says what is true (the exchange's data is not available to
+   The wording rules survive the move unchanged, because they were never about
+   the tab. It says what is true (the exchange's data is not available to
    charts on other sites), does not blame the reader, and does not suggest a
    setting to change — because there isn't one, at either end. No talk of
    frames, origins or licences: none of those words help someone decide what to
-   click next. tvLink() builds the link, as everywhere else in this dialog. */
-function ddLiveNoEmbed(){
-  return '<p><b>The live TradingView chart cannot be shown here for Indian stocks.</b></p>'
-       + '<p>India\'s NSE does not make its price data available to charts placed on other '
-       + 'websites, so TradingView can only draw an NSE chart on its own site. This is the '
-       + 'same for every Indian stock in this screener, and there is no setting on either '
-       + 'side that changes it.</p>'
-       + '<p>The full live chart is one click away:</p>'
-       + '<p>'+tvLink(DD_SYM,'D',TV_TIP_D,'Open in TradingView ↗','tv-lnk dd-tv')+'</p>'
-       + '<p>The <b>Chart</b> tab is drawn from data already in this page, and it works for '
-       + 'every stock here.</p>';
+   click next.
+
+   NO SECOND LINK IS BUILT HERE. The dialog header already renders tvLink() for
+   this very ticker and is on screen the whole time; a duplicate anchor two
+   inches below it is the kind of redundancy that later drifts out of step. The
+   line points AT the header button instead. */
+function ddLiveNote(){
+  return '<b>Live chart:</b> India\'s NSE does not make its price data available to charts '
+       + 'placed on other websites, so a live NSE chart can only be drawn on TradingView\'s '
+       + 'own site. This is the same for every Indian stock in this screener, and there is no '
+       + 'setting on either side that changes it. Use <b>Open in TradingView ↗</b> at the top '
+       + 'of this dialog for the full live chart. The chart above is drawn from data already '
+       + 'in this page and works for every stock here.';
 }
 
 function ddTvWidget(){
@@ -9569,8 +10515,14 @@ async function ddLoadLive(){
      circumstance in which an NSE embed would otherwise be attempted and fail.
      An India-only session never reaches loadScript() at all. */
   if(!tvEmbeddable(DD_SYM)){
-    box.innerHTML=''; box.style.display='none';   // no empty 420px hole under the text
-    if(msg){ msg.style.display=''; msg.innerHTML=ddLiveNoEmbed(); }
+    /* Unreachable from the UI now — the Live button is not rendered for India
+       and ddTab() re-routes 'live' anyway — and kept exactly because of that.
+       This is the last gate before loadScript(), and the promise it keeps (no
+       TradingView request in an India-only session) is worth more than the
+       four lines it costs. Nothing is written into the live panel: there is no
+       longer a tab that can show it. */
+    box.innerHTML=''; box.style.display='none';
+    if(msg){ msg.style.display='none'; msg.innerHTML=''; }
     return;
   }
   box.style.display='';   // restored: the previous ticker may have been Indian
@@ -9620,6 +10572,9 @@ function openDrill(sym){
   const rd=$('ddRead'); if(rd) rd.innerHTML='';
   const lm=$('ddLiveMsg'); if(lm){ lm.innerHTML=''; lm.style.display='none'; }
   const tb=$('ddTvBox'); if(tb) tb.innerHTML='';   // the previous ticker's widget, if any
+  /* BEFORE ddTab(): ddTab() looks its buttons up by id, and for a US ticker
+     opened straight after an Indian one those buttons do not exist yet. */
+  ddApplyTabs();
   ddTab('local');   // ALWAYS the local tab: no network on open, ever
   ddLoadChart();
   const x=$('ddX'); if(x&&x.focus) x.focus();
@@ -9759,13 +10714,16 @@ function closeDrill(){
     <div class="dd-body" id="ddBody">
       <!-- The LOCAL tab is first and selected in the markup, so the dialog is
            useful the instant it opens and no network is touched to get there. -->
-      <div class="dd-tabs" role="tablist" aria-label="Chart source">
-        <button type="button" class="dd-tab on" id="ddTabLocal" role="tab"
-                aria-selected="true" aria-controls="ddLocal" onclick="ddTab('local')">Chart</button>
-        <button type="button" class="dd-tab" id="ddTabLive" role="tab"
-                aria-selected="false" aria-controls="ddLive" onclick="ddTab('live')">Live</button>
-      </div>
-      <div id="ddLocal" role="tabpanel" aria-labelledby="ddTabLocal">
+      <!-- The strip is EMPTY in the markup and rendered by ddApplyTabs() on
+           every open, because which tabs exist depends on the ticker: India has
+           no Live tab at all. Baking both buttons in here and hiding one for
+           India would leave a hidden button that is still in the DOM, still in
+           ddFocusables(), and still an orphan role="tab" pointing at a panel
+           nobody can select. #ddLocal's role is set from there too, for the
+           same reason: a tabpanel with no tab to select it is a dangling
+           aria-labelledby, so with one view there are no tab semantics at all. -->
+      <div class="dd-tabs" id="ddTabs" aria-label="Chart source"></div>
+      <div id="ddLocal">
       <div class="dd-tools">
         <div class="dd-tf" id="ddTf"><!-- ddRenderTf() fills this from the bars that exist --></div>
         <!-- Same .dd-tf pills as the timeframe control beside it: these are the
@@ -9775,6 +10733,9 @@ function closeDrill(){
         <div class="dd-note" id="ddNote"></div>
         <div class="dd-legend" id="ddLegend"></div>
       </div>
+      <!-- Empty for every market whose charts CAN be embedded. Filled by
+           ddApplyTabs() with the one line that used to be the whole Live tab. -->
+      <div class="dd-live-note" id="ddLiveNote"></div>
       <div class="dd-chart" id="ddChart">
         <canvas id="ddCanvas" onmousemove="ddHover(event)" onmouseleave="ddHover(null)"></canvas>
       </div>
@@ -9783,10 +10744,37 @@ function closeDrill(){
       <!-- Empty until the Live tab is clicked. The TradingView script is not
            referenced anywhere in this markup, on purpose: naming it here would
            make it a page-load dependency again. -->
-      <div id="ddLive" role="tabpanel" aria-labelledby="ddTabLive" style="display:none">
+      <div id="ddLive" style="display:none">
         <div class="dd-live-msg" id="ddLiveMsg"></div>
         <div class="dd-tvbox" id="ddTvBox"></div>
       </div>
+    </div>
+  </div>
+</div>
+<!-- METRIC HISTORY — same .dd-* chrome as the drilldown above, on purpose:
+     one overlay class, one z-index, one scroll lock, one focus trap. -->
+<div class="dd-ov" id="mhOv" role="dialog" aria-modal="true" aria-labelledby="mhTitle"
+     aria-hidden="true" onclick="if(event.target===this)closeMetricHist()">
+  <div class="dd-modal" id="mhModal">
+    <div class="dd-hd">
+      <div class="dd-id">
+        <div class="dd-title" id="mhTitle">&mdash;</div>
+        <div class="dd-sub" id="mhSub"></div>
+      </div>
+      <button class="dd-x" id="mhX" onclick="closeMetricHist()" aria-label="Close metric history">&#10005;</button>
+    </div>
+    <div class="dd-body">
+      <div class="dd-tools">
+        <!-- Filled by mhRenderCaps() from MH_BANDS, so adding a bucket is one
+             array entry and not a markup edit. -->
+        <div class="dd-tf" id="mhCaps" role="group" aria-label="Market-cap rank bucket"></div>
+        <div class="dd-legend" id="mhLegend"></div>
+      </div>
+      <div class="dd-chart" id="mhChart">
+        <canvas id="mhCanvas"></canvas>
+      </div>
+      <div class="dd-read" id="mhFoot"></div>
+      <div class="mh-note" id="mhNote"></div>
     </div>
   </div>
 </div>
