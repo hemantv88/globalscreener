@@ -673,11 +673,10 @@ body.metrics-collapsed #metricsHd,body.filters-collapsed #filtersHd{margin-botto
 .c-vr,.c-align,.c-ema,.c-bocnt,.c-squeeze,.c-mrsrank,.c-setup,
 .c-sector,.c-status,.c-xcross,.c-pattern,.c-consol,.c-rs21,.c-rs55,
 .c-ch1w,.c-ch1m,.c-ch3m,.c-histg,.c-dbox,.c-avgval,.c-fresh,
-/* ADR% and Risk% are GROUP B, not A: both are sizing inputs you reach for at
-   the moment you are deciding what to buy, which is exactly when a phone is
-   the thing in your hand. They survive down to 480px alongside D-Box, the
-   column Risk% is derived from. */
-.c-adr,.c-risk{display:table-cell}
+/* ADR% is GROUP B, not A: it is a sizing input you reach for at the moment you
+   are deciding what to buy, which is exactly when a phone is the thing in your
+   hand. It survives down to 480px alongside D-Box. */
+.c-adr{display:table-cell}
 
 /* User-controlled column toggles (via the Columns modal, saved to localStorage).
    Adding e.g. "hide-wrsi" to <body> hides every cell tagged .c-wrsi — works
@@ -702,7 +701,6 @@ body.hide-voldry  .c-voldry,
 body.hide-retrace .c-retrace,
 body.hide-squeeze .c-squeeze,
 body.hide-adr     .c-adr,
-body.hide-risk    .c-risk,
 body.hide-mrsrank .c-mrsrank,
 body.hide-rstrend .c-rstrend,
 body.hide-notes   .c-notes,
@@ -739,6 +737,18 @@ body.hide-fresh   .c-fresh{display:none!important}
 .modal-check{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text);cursor:pointer;user-select:none}
 .modal-check input{cursor:pointer;width:14px;height:14px;flex-shrink:0}
 
+/* WATCHLIST COPY — the fallback textarea, and nothing else.
+   The dialog itself is .overlay/.modal, the same two classes the four existing
+   dialogs use, so this feature adds ONE rule rather than a private dialog
+   system with its own z-index and its own idea of what a card looks like.
+   Monospace because a broker watchlist is a column of tickers and a
+   proportional font makes a mis-pasted line hard to spot; --text on --surface2
+   is the same text-on-inset-panel pairing the rest of the file uses. */
+.wlx-ta{width:100%;height:190px;margin-top:12px;padding:8px;
+  font:12px/1.5 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  color:var(--text);background:var(--surface2);
+  border:1.5px solid var(--border2);border-radius:var(--r);resize:vertical}
+
 /* Sector Breadth — wider modal, holds a full data table */
 .sector-modal{width:920px;max-width:94vw;max-height:82vh;display:flex;flex-direction:column}
 .sector-table-wrap{margin-top:12px;overflow:auto;flex:1;border:1.5px solid var(--border);border-radius:var(--r)}
@@ -765,7 +775,7 @@ body.hide-fresh   .c-fresh{display:none!important}
 /* ─── SETUP SCORE BADGE ───────── */
 .setup-badge{display:inline-flex;align-items:center;gap:3px;padding:2px 7px;border-radius:var(--rs);
   font-size:10px;font-weight:700;background:var(--green-bg);color:var(--green);
-  border:1px solid var(--green)}
+  border:1px solid var(--green);white-space:nowrap}
 
 /* ─── TOOLTIP ─────────────────── */
 /* WHY a body-level fixed box instead of `::after` on the element itself:
@@ -1004,7 +1014,7 @@ body.dd-lock{overflow:hidden}
   .c-vr,.c-align,.c-ema,.c-bocnt,.c-squeeze,.c-mrsrank,.c-setup,
   .c-sector,.c-status,.c-xcross,.c-pattern,.c-consol,.c-rs21,.c-rs55,
   .c-ch1w,.c-ch1m,.c-ch3m,.c-histg,.c-dbox,.c-avgval,.c-fresh,
-  .c-adr,.c-risk{display:none!important}
+  .c-adr{display:none!important}
   .search-bar input{width:80px}
 }
 </style>
@@ -1157,6 +1167,7 @@ body.dd-lock{overflow:hidden}
     <button class="ctag" onclick="clrNotes()" data-tip="Delete every note you have typed against any stock, in every market. Asks first, because notes are not recoverable once cleared.">✕ Clear Notes</button>
     <button class="ref-btn" id="refBtn" onclick="forceRefresh()">↻ Refresh</button>
     <button class="csv-btn" id="csvBtn" onclick="doExport()" data-tip="Download everything currently filtered as an Excel file, with all columns included">⬇ Excel</button>
+    <button class="csv-btn" id="wlCopyBtn" onclick="copyWatchlist()" data-tip="Copy the ticker of every row currently on screen to the clipboard, one per line — the format the Zerodha and Upstox watchlist importers expect. It follows the table exactly: every filter, every column filter and the current sort order, in the order you are looking at them. Indian tickers are copied without the .NS suffix, because that is what an Indian broker's watchlist box accepts; US stocks and ETFs are copied unchanged. If your browser blocks the clipboard, the list opens in a box you can select and copy by hand instead.">⧉ Copy Tickers</button>
   </div>
 </section>
 
@@ -1216,9 +1227,9 @@ body.dd-lock{overflow:hidden}
             <th class="pin pin2" data-f="rev" data-tip="Your own verdict on the stock — bull, bear or neutral. It is saved in this browser and drives the Review filter, so names you have already judged can be hidden.">Review</th>
             <th class="pin pin3" data-s="cap" data-tip="Size bucket taken from market capitalisation: Large, Mid, Small or Micro. Larger companies generally move more slowly and are easier to buy or sell in quantity. Where no market cap is on file the stock is shown as Small rather than blank, so treat SC on a name with no ₹ figure underneath the ticker as unknown, not measured.">Cap<span class="sort-ico"></span></th>
             <th class="pin pin4" data-s="ticker" data-tip="The exchange symbol, with the sector and market capitalisation printed underneath it. The star to its left adds the stock to your watchlist, which is saved in this browser and shared across all three markets. Sorting on this column puts the list in alphabetical order.">Ticker<span class="sort-ico"></span></th>
-            <th class="c-setup" data-s="setup" data-tip="A star marks a quality setup — all four of these are true at once: within 30% of its 52-week high, price above every moving average that could be calculated, positive relative strength against the benchmark, and a full Stage 2 uptrend score. These rows sort to the top by default.">Setup<span class="sort-ico"></span></th>
+            <th class="c-setup" data-s="setup" data-tip="A star marks a quality setup — all four of these are true at once: within 30% of its 52-week high, price above every moving average that could be calculated, positive relative strength against the benchmark, and a full Stage 2 uptrend score. These rows sort to the top by default. THE NUMBER BESIDE THE STAR IS THE AGE: how many consecutive sessions, ending with the latest bar, all four have been true without a break. Read it as an anti-chasing check — a setup that first appeared today still has its stop close underneath it, while one that has been lit for nine sessions has already given up the easy move and widened the risk for whatever is left. Each past session is judged by this very rule, on that day&#39;s data only, never on anything that came after it. THE MAXIMUM IS 30d, and it is a limit of the data, not of the stock: the sheet holds about a year of sessions, the Stage 2 trend rule spends 220 of them before it can be answered at all, and the relative-strength half can only be looked up across the 30 sessions of history the row carries. A streak that fills that window shows as 30d+ — it started at least 30 sessions ago and this page cannot honestly say when. No age at all means the age could not be measured (no benchmark loaded), not that the setup is new.">Setup<span class="sort-ico"></span></th>
             <th class="c-align" data-s="align" data-tip="How much the daily and the weekly timeframe agree, out of 8 checks: 1. price above the daily 20 EMA · 2. price above the daily 50 EMA · 3. price above the weekly 10 EMA · 4. price above the weekly 20 EMA · 5. daily RSI 50 or above · 6. weekly RSI 50 or above · 7. positive 21-day relative strength · 8. positive 10-week relative strength. A swing trade wants both clocks pointing the same way, so 7 or 8 is the shortlist. Each check needs its own input, and a check that cannot be run is left OUT OF THE TOTAL rather than counted as a failure — that is why some rows read 6/7 instead of 6/8. Sorting puts the higher score first and, on a tie, the row that could be fully measured above the one that could not.">Align<span class="sort-ico"></span></th>
-            <th class="c-fresh" data-s="fresh" data-tip="Stocks that have JUST turned, rather than stocks that are merely in a good state. Three events are tested, each with its own lookback and each null-guarding its own inputs: 1. the close crossed ABOVE the 50-day EMA within the last 3 bars · 2. RS21 — the 21-day excess return over the benchmark — crossed above zero within the last 5 bars, read off the same history the RS Rank History sparkline draws · 3. a base breakout, meaning a consolidation of 20 bars or more that broke out within the last 3 bars. The cell names whichever fired most recently and how many bars ago; when more than one fired it shows a count with the freshest named underneath. A dash means none of the three fired, or the inputs for them were not available — a stock with under 51 bars has no 50-EMA cross to report and one with no benchmark has no RS21 history. Sorting puts the freshest first, with the count only breaking ties.">Fresh<span class="sort-ico"></span></th>
+            <th class="c-fresh" data-s="fresh" data-tip="Stocks that have JUST turned, rather than stocks that are merely in a good state. Four events are tested, each with its own lookback and each null-guarding its own inputs: 1. the close crossed ABOVE the 50-day EMA within the last 3 bars · 2. RS21 — the 21-day excess return over the benchmark — crossed above zero within the last 5 bars, read off the same history the RS Rank History sparkline draws · 3. a base breakout, meaning a consolidation of 20 bars or more that broke out within the last 3 bars · 4. RSP ↑90: RS Position — where the stock-to-benchmark ratio sits inside its own last 21 bars, rescaled 1 to 99 — crossed UP through 90 within the last 5 bars, having been at or under 80 somewhere in the 5 bars before that crossing. READ 4 AND 2 AS A PAIR. They measure the same 21 sessions and answer different halves of one question: RS21 is by HOW MUCH the stock beat the benchmark, RSP is whether that lead is at the top of its own recent range. The ratio makes new range-highs before the excess return turns positive, so RSP is the EARLY WARNING and RS21 is the CONFIRMATION — seeing RSP ↑90 today and RS21 + a few sessions later is the sequence, not two independent signals. The 80 floor is what keeps it honest: RSP is a bounded position that pins near its ceiling in any strong trend, so without it a reading wobbling 89/91/89 would report a fresh crossing every other session. The cell names whichever fired most recently and how many bars ago; when more than one fired it shows a count with the freshest named underneath. A dash means none of the four fired, or the inputs for them were not available — a stock with under 51 bars has no 50-EMA cross to report and one with no benchmark has neither an RS21 history nor an RS Position. Sorting puts the freshest first, with the count only breaking ties.">Fresh<span class="sort-ico"></span></th>
             <th class="c-sector" data-s="sector" data-tip="Sector from the built-in universe — for India these are NSE's own macro industry groups, taken from the Nifty Total Market constituent list. It is not cosmetic: the default Setup Score order ranks sectors by the median RS55 of their members, so this label decides which group a stock is judged inside. Sortable, so the table can be grouped by sector without using the sector filter.">Sector<span class="sort-ico"></span></th>
             <th data-s="price" data-tip="The most recent closing price in the stock's own currency. It comes from the end-of-day data feed, so it is yesterday's close, not a live quote.">Price<span class="sort-ico"></span></th>
             <th data-s="ch1d" data-tip="How much the price moved on its latest trading day, as a percentage of the previous close. Green is up, red is down.">1D%<span class="sort-ico"></span></th>
@@ -1257,7 +1268,6 @@ body.dd-lock{overflow:hidden}
             <th class="c-retrace" data-s="ret" data-tip="How far the latest close sits below the highest close reached since the most recent breakout, as a percentage of that peak — so it is always zero or negative. It is not the fraction of the breakout move given back. A small figure means the move is being held; a large one means most of the follow-through has been surrendered.">Retrace%<span class="sort-ico"></span></th>
             <th class="c-squeeze" data-s="sq" data-tip="A 0–100 compression score, not a yes/no flag: (1 − Bollinger width ÷ Keltner width) × 100, clamped to 0–100. Bollinger width is 4 standard deviations of the closes and Keltner width is 3× the average true range, each divided by the mean close over the full series. A higher score means the Bollinger bands sit further inside the Keltner channel — volatility has contracted, which often precedes an expansion. The bar turns amber above 65.">Squeeze<span class="sort-ico"></span></th>
             <th class="c-adr" data-s="adr" data-tip="Average Daily Range as a percent of price. THE EXACT DEFINITION: ADR% = 100 &times; ( mean over the last 20 bars of (High / Low) &minus; 1 ). WHY A TRADER CARES: it measures how much this stock typically moves in a single day, so it filters out names too sluggish to produce a swing move &mdash; a 1% ADR stock has to trend for a fortnight to deliver what a 6% ADR stock delivers in two days. It is also a sizing input: position size and stop distance are set in proportion to a stock's OWN volatility rather than to a fixed percentage, so the same money risked buys a larger position in a quiet name and a smaller one in a wild one. Needs 20 usable bars. A bar whose low is zero, negative or not a finite number is skipped and an earlier bar used in its place; if 20 usable bars cannot be found the cell shows a dash rather than an average over fewer. It feeds nothing &mdash; not Setup Score, not MRS Rank, not any composite. Sortable and filterable like any other numeric column.">ADR%<span class="sort-ico"></span></th>
-            <th class="c-risk" data-s="risk" data-tip="Risk% = (box top &minus; box bottom) &divide; box top &times; 100 &mdash; the distance from entry to stop as a percentage of entry, reading the Darvas box as a trade plan: ENTRY at the box TOP, STOP at the box BOTTOM. THIS IS THE BOX'S OWN GEOMETRY, NOT ADVICE. It is arithmetic on two levels the box has already drawn and says nothing about whether the trade is worth taking. The two levels are the SAME ones the D-Box column prints and the same ones drawn on the chart in the drilldown &mdash; one box read three ways, so the three can never disagree. Hover a cell for the whole plan: entry, stop, the risk itself, and where 2R and 3R sit (top + 2&times;(top &minus; bottom) and top + 3&times;(top &minus; bottom)). A dash means no box has formed, one of the two levels is missing, or the top is not a positive price. It feeds nothing &mdash; not Setup Score, not MRS Rank, not any composite.">Risk%<span class="sort-ico"></span></th>
             <th data-s="s2" data-tip="Score on the Stage 2 uptrend checklist — price above the long moving averages, those averages stacked and rising, and price near its 52-week high. A full score is a confirmed uptrend.">Stage 2<span class="sort-ico"></span></th>
             <th class="c-mrsrank" data-s="mrs" style="text-align:center" data-tip="Percentile rank from 1 to 100 of this stock's 55-day excess return against every other stock in the same market that has one. A rank of 90 means it beat roughly 90% of that list. Stocks with too little history to produce an RS55 are left out of the ranking entirely rather than ranked as if flat.">MRS Rank<span class="sort-ico"></span></th>
             <th class="c-rs21" data-s="rs21" data-tip="21-day excess return over the benchmark, in percentage points. Positive = it beat the benchmark over the last month.">RS21<span class="sort-ico"></span></th>
@@ -1333,6 +1343,23 @@ body.dd-lock{overflow:hidden}
       <button onclick="resetColumnVisibility()"
         style="padding:6px 12px;border-radius:8px;border:1.5px solid var(--border2);font-size:11.5px;font-weight:500;color:var(--text2);cursor:pointer">Show All</button>
       <button onclick="$('colModal').classList.remove('open')"
+        style="padding:6px 14px;border-radius:8px;background:#1E293B;color:var(--surface2);font-size:12px;font-weight:600;cursor:pointer">Done</button>
+    </div>
+  </div>
+</div>
+
+<!-- WATCHLIST COPY FALLBACK. Hidden until a clipboard write is refused. A
+     browser may block navigator.clipboard for reasons the page cannot see or
+     fix (insecure origin, a permission the user denied, an iframe), and the
+     one thing this control must never do is look like it worked. -->
+<div class="overlay" id="wlxModal">
+  <div class="modal">
+    <button class="modal-x" onclick="closeWlx()">✕</button>
+    <h3>⧉ Copy Tickers</h3>
+    <p id="wlxMsg">Your browser would not let the page write to the clipboard. The list is below — select it all and copy it by hand.</p>
+    <textarea class="wlx-ta" id="wlxTa" readonly aria-label="Ticker list to copy"></textarea>
+    <div style="margin-top:14px;display:flex;gap:8px;justify-content:flex-end;align-items:center">
+      <button onclick="closeWlx()"
         style="padding:6px 14px;border-radius:8px;background:#1E293B;color:var(--surface2);font-size:12px;font-weight:600;cursor:pointer">Done</button>
     </div>
   </div>
@@ -1636,7 +1663,27 @@ const CFG = {
      bars ≈ 45 trading days) fits inside a year of data with room to spare. */
   DARVAS: {boxp:5, nearPct:1.0},
 
-  VER:  'gs10',     // gs9 -> gs10: computeTech() returns two MORE fields, adr (Average
+  VER:  'gs12',     // gs11 -> gs12: the SETUP AGE arrived, and with it a fourth Fresh flag.
+                    // computeTech() returns one more field, setupBaseAge (the price-only
+                    // half of the setup streak), and rankRS() writes one more, rspHist21
+                    // (the RS-Position history the new flag reads). setupBaseAge is the
+                    // one that FORCES the bump: it is written by computeTech() and is
+                    // therefore CACHED, so a gs11 row rehydrated into a gs12 renderer
+                    // shows a Setup badge with no age beside it and nothing on the page
+                    // can tell that apart from "the age is not measurable here".
+                    // rspHist21 is rebuilt by rankRS() on every load, cached or not, so
+                    // it could never go stale on its own; it is named here because the
+                    // two shipped together and one version describes one row shape.
+                    // gs10 -> gs11: the Risk% column was REMOVED, so computeTech() no
+                    // longer returns dBoxRisk. A bump is needed for a removal for the
+                    // same reason it is needed for an addition — the cached row and the
+                    // renderer must describe the same shape. A gs10 row still carries
+                    // dBoxRisk; nothing reads it any more, so it is dead weight in every
+                    // returning user's localStorage and, worse, it makes the cache look
+                    // current to any future check that only asks "is the field there?".
+                    // Orphaning gs10 keeps "what the cache holds" and "what the table
+                    // renders" one fact rather than two.
+                    // gs9 -> gs10: computeTech() returns two MORE fields, adr (Average
                     // Daily Range %) and dBoxRisk (the Darvas box's entry-to-stop risk).
                     // A gs9 row has neither, so without this bump every returning user —
                     // i.e. exactly the people already using the tool — rehydrates
@@ -4376,6 +4423,41 @@ function rsPosition(closes,dates,bi,len){
   return +(((99-1)*(cur-ll)/(hh-ll))+1).toFixed(2);
 }
 
+/* THE SAME READING, AT THE LAST FEW BARS, so a turn in it can be dated.
+
+   WHY A HISTORY EXISTS AT ALL. rsp21/rsp55 are single numbers — where the
+   ratio sits TODAY. "It has just crossed up through 90" is a statement about
+   two bars, and no single number can answer it. The Fresh column's fourth flag
+   needs the short run leading up to today and nothing more.
+
+   WHY IT CALLS rsPosition() PER BAR RATHER THAN COMPUTING ANYTHING. This is
+   deliberately not a second, faster implementation of the min-max rescale. The
+   whole reason the RSP columns exist in the shape they do is that the Pine
+   script has ONE definition and this file has ONE port of it; a "history"
+   function that re-derived hh/ll itself would be a second port, and the column
+   and the flag would drift apart with nothing on screen saying which was
+   right. rsPosition() reads the LAST `len` bars of whatever it is handed, so
+   the reading as it stood `k` bars ago is just the same call on a shorter
+   series — same date alignment, same hole rule, same null.
+
+   `bars` readings ending at the latest bar, oldest first, index-aligned with
+   nothing (it is a short tail, not a per-bar series). null entries are kept
+   rather than dropped: a bar the benchmark could not price is a HOLE, and
+   silently closing the gap would move a crossing to the wrong date.        */
+function rspHistory(closes,dates,bi,len,bars){
+  if(!bi||!Array.isArray(closes)||!Array.isArray(dates)) return null;
+  const n=Math.min(closes.length,dates.length);
+  if(!len||!bars||n<len) return null;
+  const out=[];
+  // k counts BACK from the latest bar; k=0 is today, and must reproduce the
+  // rsp column's own value exactly (t5 asserts that equality).
+  for(let k=Math.min(bars,n-len+1)-1;k>=0;k--){
+    const end=n-k;
+    out.push(rsPosition(closes.slice(0,end),dates.slice(0,end),bi,len));
+  }
+  return out.length?out:null;
+}
+
 /* Single-bar candlestick classification against the PREVIOUS bar.
    Engulfing is checked first because it is the stronger, two-bar signal and a
    large engulfing bar frequently also satisfies the hammer geometry — checking
@@ -4691,28 +4773,6 @@ function adrPct(H,L,win){
   return +((sum/used-1)*100).toFixed(2);
 }
 
-/* THE DARVAS BOX AS A TRADE PLAN: entry at the top, stop at the bottom.
-
-     Risk% = (top - bottom) / top x 100
-
-   NOTHING IS RECOMPUTED HERE. This takes the two levels darvasBox() already
-   returned and does arithmetic on them, so the number under Risk% and the
-   range printed in the D-Box column are the same two prices by construction
-   rather than by agreement. A second darvasSeries() call with the same inputs
-   would be correct today and is exactly how two columns start disagreeing
-   after somebody changes CFG.DARVAS.boxp in one place.
-
-   null, not 0, when there is no box or either level is missing: "no plan" and
-   "a plan with no risk" are different facts. top <= 0 is rejected because it
-   is the denominator — a non-positive entry price is not a price, and dividing
-   by it produces a signed nonsense figure rather than an error. */
-function boxRiskPct(top,bot){
-  if(top==null||bot==null) return null;
-  const t=+top, b=+bot;
-  if(!isFinite(t)||!isFinite(b)||t<=0) return null;
-  return +((t-b)/t*100).toFixed(2);
-}
-
 /* Sort ordinal. `break` and `near` sit at the TOP because they are the two
    actionable states — the stock is at the line right now. `above` ranks BELOW
    `inside` on purpose: the user's stated screen is "consolidating inside the
@@ -4897,6 +4957,12 @@ function computeTech(C,H,L,V,dates,sym,O){
   const weEmaScr=wec?+(weu/wec).toFixed(2):null;
 
   const s2=stage2(price,C,h52,l52,we20,sma50,sma150,sma200);
+  /* The price-only half of the Setup Age. Computed HERE and not at render
+     time because the raw OHLCV is gone on a cached load — this row is then the
+     only surviving record of the ticker — and a badge that drops its age on
+     every day but the one you first downloaded the sheet is worse than no
+     badge. One integer per ticker; see the note on setupBaseAge(). */
+  const setupBaseA=setupBaseAge(C,H,L,V,dates,O);
   const sq=squeeze(C.slice(-20),H.slice(-20),L.slice(-20));
   const bo=breakout(C,V);
 
@@ -4906,10 +4972,6 @@ function computeTech(C,H,L,V,dates,sym,O){
      highest WEEKLY high, which is a max-of-maxes, not a max over 5*boxp days. */
   const dBox=darvasBox(C,H,L,CFG.DARVAS.boxp,CFG.DARVAS.nearPct);
   const wBox=darvasBox(wk.closes,wk.highs,wk.lows,CFG.DARVAS.boxp,CFG.DARVAS.nearPct);
-  /* Risk% off the DAILY box, from the levels dBox already carries above — it
-     does not build a second box of its own. See boxRiskPct(). */
-  const dBoxRisk=boxRiskPct(dBox.top,dBox.bot);
-
   /* ADR% off the raw daily H/L. Independent of every other column here: it is
      a volatility MEASURE, and deliberately not an input to any of them. */
   const adr=adrPct(H,L,ADR_WIN);
@@ -4989,14 +5051,18 @@ function computeTech(C,H,L,V,dates,sym,O){
     xFast:XF,xSlow:XS,xFastEma,xSlowEma,xState,xBars,wxState,e50CrossUpAge,
     pattern,wPattern,
     consolDays:cons.days,consolRange:cons.range,volDry,monthlySetup,
+    // The price-only half of the Setup Age. The RS leg is applied later, at
+    // render time, from rsHist — see the note above setupBaseAge().
+    setupBaseAge:setupBaseA,
     we10,we20,weEmaScr,wxBars,wxApplicable,
     dpz,wpz,dPiv,wPiv,s2,sq,wVolRatio,
     dBoxTop:dBox.top, dBoxBot:dBox.bot, dBoxState:dBox.state,
     wBoxTop:wBox.top, wBoxBot:wBox.bot, wBoxState:wBox.state,
-    /* Both new with gs10. They are read by the two new columns, by sorting, by
-       the column filters and by the export — and by NOTHING that scores,
-       ranks or blends. See the note on each function. */
-    dBoxRisk, adr,
+    /* adr arrived with gs10 (alongside dBoxRisk, which gs11 removed with the
+       Risk% column). It is read by the ADR% column, by sorting, by the column
+       filters and by the export — and by NOTHING that scores, ranks or
+       blends. See the note on adrPct(). */
+    adr,
     boGain:bo.gain,boCnt:bo.count,retrace:bo.retrace,
     // Own returns (inputs to RS, never displayed as RS), plus the dates they
     // were measured across so rankRS() can price the benchmark on the SAME
@@ -5326,6 +5392,14 @@ function rankRS(market){
        nothing more. */
     d.rsp55 = rsPosition(d.rsCloses,d.rsDates,bi,55);
     d.rsp21 = rsPosition(d.rsCloses,d.rsDates,bi,21);
+    /* The short tail of the 21-bar position, for the Fresh column's fourth
+       flag. Written HERE, beside the column it belongs to, because it needs
+       the same benchmark index and the same date aligner — and rebuilt on
+       every load, cached or not, so unlike setupBaseAge it can never be a
+       stale shape in someone's localStorage. It feeds the flag and nothing
+       else: a min-max position still may not reach mrsRank, the Stage 2 patch
+       or any other composite. */
+    d.rspHist21 = rspHistory(d.rsCloses,d.rsDates,bi,FRESH_RSP_LEN,FRESH_RSP_HIST);
     d.rs=null; d.mrsRank=null;
   });
 
@@ -7022,25 +7096,6 @@ function adrC(v){
   return `<span>${v.toFixed(2)}%</span>`;
 }
 
-/* Risk% renders the number and carries the WHOLE PLAN in its own tooltip.
-
-   fmtP() — the price column's formatter, passed the row's own currency — is
-   used for all four prices rather than a local toFixed. A trade plan whose
-   entry reads 1234.5 while the Price cell two columns away reads Rs 1,234.50
-   invites the reader to wonder which one is the real number, and there is no
-   good answer to that question. */
-function riskC(v,top,bot,cur){
-  if(v==null) return '<span class="vm">—</span>';
-  const R=top-bot;
-  const tip='Box geometry, not advice — this is arithmetic on the Darvas box, not a recommendation. '
-          + `Entry (box top) ${fmtP(top,cur)} · Stop (box bottom) ${fmtP(bot,cur)} · `
-          + `Risk ${v.toFixed(2)}% of entry. `
-          + `2R ${fmtP(top+2*R,cur)} · 3R ${fmtP(top+3*R,cur)}, `
-          + 'where 2R = top + 2×(top − bottom) and 3R = top + 3×(top − bottom). '
-          + 'These are the same two levels the D-Box column prints and the same box drawn on the chart.';
-  return `<span data-tip="${escAttr(tip)}">${v.toFixed(2)}%</span>`;
-}
-
 function emaC(sc){
   if(sc==null) return '<span class="vm">—</span>';
   if(sc>=0.8) return '<span class="ema-b">▲ Bull</span>';
@@ -7195,9 +7250,19 @@ function alignC(d){
     +` · ${list}`;
   return `<span class="algn ${cls}" data-tip="${escAttr(tip)}">${a.score}/${a.total}</span>`;
 }
+/* The badge, plus HOW LONG it has been lit. The verdict still comes from
+   isQualitySetup() alone — the age is a qualifier on it, never a second
+   opinion — so a row whose age cannot be measured (no benchmark, or a row
+   cached before setupBaseAge existed) shows the star exactly as it always did.
+   A streak that fills the measurable window prints "30d+": the data cannot
+   say where it actually began, and a bare "30d" would claim it did. */
 function setupC(d){
   if(!d) return '<span class="vm">—</span>';
-  return isQualitySetup(d) ? '<span class="setup-badge">★ Setup</span>' : '<span class="vm">—</span>';
+  if(!isQualitySetup(d)) return '<span class="vm">—</span>';
+  const a=setupAge(d);
+  if(a==null) return '<span class="setup-badge">★ Setup</span>';
+  const sat=a>=setupAgeWindow(d) ? '+' : '';
+  return `<span class="setup-badge">★ Setup · ${a}d${sat}</span>`;
 }
 function capB(cap){
   const cls={LC:'blc',MC:'bmc',SC:'bsc',Mic:'bmic',ETF:'betf'}[cap]||'berr';
@@ -7358,7 +7423,7 @@ function histGC(v){ return fmtCh(v); }
    rows' cells get hidden. Length must equal (th count − 4). */
 const SKEL_COLS=['c-setup','c-align','c-fresh','c-sector','','','c-ch1w','c-ch1m','c-ch3m','c-hist','c-histg','c-status','','c-wrsi','c-vr','c-wvol','c-avgval','','c-wpiv','c-dbox','c-wbox','',
   'c-ema','c-wema','c-xcross','c-wcross','c-slope200','c-pattern','c-wpattern','c-consol',
-  'c-monthly','','c-bocnt','c-followup','c-voldry','c-retrace','c-squeeze','c-adr','c-risk','','c-mrsrank','c-rs21',
+  'c-monthly','','c-bocnt','c-followup','c-voldry','c-retrace','c-squeeze','c-adr','','c-mrsrank','c-rs21',
   'c-rs55','c-rs10w','c-rsslope','c-rsp55','c-rsp21','c-rshist','','c-rstrend','c-notes'];
 
 function skelRow(def,i){
@@ -7439,7 +7504,6 @@ function dataRow(def,d,i){
     <td class="c-retrace">${retC(d.retrace)}</td>
     <td class="c-squeeze">${sqC(d.sq)}</td>
     <td class="c-adr">${adrC(d.adr)}</td>
-    <td class="c-risk">${riskC(d.dBoxRisk,d.dBoxTop,d.dBoxBot,d.currency)}</td>
     <td>${s2C(d.s2)}</td>
     <td class="c-mrsrank" style="text-align:center">${rsC(d.mrsRank)}</td>
     <td class="c-rs21">${rsNumC(d.rs21)}</td>
@@ -7461,7 +7525,7 @@ function errRow(def,i){
     <td class="td-n pin pin1">${i}</td><td class="pin pin2">${revC(def.s)}</td>
     <td class="pin pin3">${capB(def.g)}</td>
     <td class="pin pin4">${watchC(def.s)}<span class="ticker">${def.d}</span><br><span class="sec">${def.sector}</span></td>
-    <td colspan="51" style="color:var(--text3);font-size:11px">
+    <td colspan="50" style="color:var(--text3);font-size:11px">
       ⚠ Not in this market's data source — it will appear once the daily data carries it
     </td>
   </tr>`;
@@ -7930,6 +7994,162 @@ function isQualitySetup(d){
   return true;
 }
 
+/* ══ SETUP AGE ══════════════════════════════════════════════════════════
+   HOW LONG has this stock qualified, without a break? A star that first
+   appeared today and a star that has been lit for nine sessions are the same
+   badge and completely different trades: by day nine the easy move is behind
+   you, the stop sits further away, and the risk per unit of remaining upside
+   has widened. That number is the anti-chasing signal, so it goes INSIDE the
+   Setup cell — the table is already wide enough and this is not a new fact
+   about the stock, it is a qualifier on the one the cell already states.
+
+   THE RULE IS NOT RE-STATED HERE. Every past bar is judged by
+   isQualitySetup() itself, called on a pseudo-row built from that bar's own
+   inputs. A second copy of the four conditions would drift, and the drift
+   would be invisible: the badge and the age would simply disagree, with
+   nothing on the page saying which was right.
+
+   WHY THE RS LEG ARRIVES IN TWO PIECES. isQualitySetup() reads rs21 twice —
+   directly ("positive relative strength") and through Stage 2 rule 8, which
+   rankRS() patches with the identical rs21>0 test. Neither is knowable inside
+   computeTech(): one stock in isolation has no benchmark. So computeTech()
+   answers everything that IS knowable from price alone — by calling
+   isQualitySetup() with the RS leg HELD TRUE — and stores how far back that
+   half has held; the RS leg is applied afterwards from rsHist, the per-bar
+   excess-return history rankRS() already builds for the RS sparkline. Because rs21 enters
+   the predicate ONLY as the sign test rs21>0, in exactly those two places,
+
+       qualified(bar)  ===  base(bar) AND rs21(bar) > 0
+
+   holds exactly. t5 asserts it against a full isQualitySetup() call on an
+   assembled row rather than taking it on trust.
+
+   WHY NOT CARRY THE RAW PER-BAR INPUTS INSTEAD. h52d, price, five EMAs and a
+   Stage 2 verdict per bar is ~8 numbers x 30 bars x ~900 tickers in the
+   day-stamped cache — megabytes, against one integer a ticker for the streak.
+   saveCache() treats a quota failure as "no cache", so the expensive shape
+   would not fail loudly, it would silently stop caching.
+
+   NO LOOKAHEAD. Bar i is judged on C.slice(0,i+1) and on hi52()/lo52()'s
+   EXCLUSIVE `end` — bars 0..i and nothing after. Same discipline, and mostly
+   the same functions, as the metric-history charts. t5 truncates the series
+   and asserts the earlier bars do not move.
+
+   THE CEILING IS REAL, AND IT IS 30. The sheet holds ~250 sessions; Stage 2's
+   "SMA 200 trending up for a month" rule consumes 220 of them; and the RS leg
+   can only be answered across the 30 points rsHist carries. So 30 is the
+   honest maximum however much price history exists, a streak that fills the
+   window renders as "30d+" instead of pretending to know where it started,
+   and the Setup <th> tooltip says so in words. */
+const SETUP_AGE_MAX=30;
+
+/* THE BASE STREAK: how many consecutive most-recent bars would have qualified
+   if relative strength were positive. A NUMBER, not a per-bar array, and it is
+   walked BACKWARDS from the latest bar and stopped at the first bar that
+   fails.
+
+   Both of those are the same decision. The streak is contiguous by definition,
+   so nothing before the first failure can ever lengthen it — and the walk is
+   the expensive part of computeTech(): each bar re-slices the closes, re-runs
+   three SMAs and a 52-week extreme. Evaluating all 30 bars for every ticker
+   roughly DOUBLED the whole compute pass (measured: 3.2ms of a 6.4ms
+   computeTech, ~900 tickers, i.e. about three seconds of blocked main thread
+   on a desktop and far worse on a phone) to answer a question that is settled
+   at the first bar for the large majority of the market, which does not
+   qualify today at all. Storing one integer instead of 30 flags also keeps the
+   day-stamped cache the size it was.
+
+   Capped at SETUP_AGE_MAX: past that the RS leg cannot be answered anyway. */
+function setupBaseAge(C,H,L,V,dates,O){
+  const n=(C&&C.length)||0;
+  if(n<2) return 0;
+  const wk=weeklyResample(C,H,L,V,dates,O);
+  /* Weekly bucket count per daily bar, so the weekly EMA 20 can be read AS IT
+     STOOD on bar i without resampling a prefix once per bar — that is n Date
+     parses per bar per ticker, and across ~900 tickers it is seconds. Every
+     week BEFORE the one bar i sits in is complete and therefore identical to
+     the full-series resample; the week bar i sits in closes at C[i] by
+     definition, and that single substituted close is the entire difference. */
+  const wkOf=new Array(n).fill(0);
+  {
+    const seen=new Set(); let cnt=0;
+    for(let i=0;i<n;i++){
+      const dt=dates&&dates[i];
+      if(dt&&C[i]!=null){
+        const d=new Date(dt+'T00:00:00Z');
+        const mon=new Date(d); mon.setUTCDate(d.getUTCDate()-((d.getUTCDay()+6)%7));
+        const k=mon.toISOString().slice(0,10);
+        if(!seen.has(k)){ seen.add(k); cnt++; }
+      }
+      wkOf[i]=cnt;
+    }
+  }
+  // emaSeries() is index-aligned and null until its seed completes, so
+  // es[p][i] IS ema(C.slice(0,i+1),p) — one O(n) pass instead of one per bar.
+  const es={};
+  for(const p of [10,20,50,100,200]) es[p]=emaSeries(C,p);
+  let age=0;
+  for(let i=n-1; i>=1 && age<SETUP_AGE_MAX; i--){
+    const price=C[i];
+    if(price==null||!isFinite(price)) break;
+    const pref=C.slice(0,i+1);
+    const h52=hi52(H,i+1), l52=lo52(L,i+1);
+    const h52d=h52?+((price/h52-1)*100).toFixed(1):null;   // rounded exactly as the row rounds it
+    const wc=wk.closes.slice(0,Math.max(0,wkOf[i]-1)).concat([price]);
+    const s2=stage2(price,pref,h52,l52,ema(wc,20),sma(pref,50),sma(pref,150),sma(pref,200));
+    /* rs21:1 is a SIGN, never a magnitude — nothing in isQualitySetup()
+       compares rs21 against anything but zero. s2.score+1 applies the same
+       held-true RS to Stage 2 rule 8, which stage2() leaves false for
+       rankRS() to patch. See the header note for why this is exact. */
+    const q=isQualitySetup({
+      h52d, price,
+      e10:es[10][i], e20:es[20][i], e50:es[50][i], e100:es[100][i], e200:es[200][i],
+      rs21:1,
+      s2:{score:s2.score+1, total:s2.total, details:s2.details},
+    });
+    if(!q) break;
+    age++;
+  }
+  return age;
+}
+
+/* How many of the most recent sessions the age can be measured over AT ALL:
+   SETUP_AGE_MAX, or fewer when the RS history is shorter. 0 when the row has
+   no RS history (no benchmark loaded) or no base streak (a row cached before
+   this existed) — and 0 makes the cell show the badge with no age, rather than
+   an age of zero, which would read as "it stopped qualifying today". */
+function setupAgeWindow(d){
+  const b=d&&d.setupBaseAge, h=d&&d.rsHist;
+  if(typeof b!=='number'||!isFinite(b)) return 0;
+  if(!Array.isArray(h)||!h.length) return 0;
+  return Math.min(SETUP_AGE_MAX,h.length);
+}
+
+/* Consecutive most-recent sessions on which the stock qualified, ending at the
+   latest bar: the shorter of the base streak and the run of positive readings
+   at the end of rsHist. null — not 0 — when the latest bar does not qualify,
+   so "the streak is over" and "the streak is one day old" stay different
+   values.
+
+   Deliberately NOT short-circuited on isQualitySetup(d): the whole point of
+   the check t5 runs is that this history's latest verdict equals the badge's
+   own, and a short-circuit would make that assertion vacuous. setupC() still
+   paints the badge from isQualitySetup(d), so on the one input where the two
+   could part company — an rs21 whose 2dp rounding straddles zero — the cell
+   falls back to the badge alone and never contradicts itself. */
+function setupAge(d){
+  const w=setupAgeWindow(d);
+  if(!w) return null;
+  const h=d.rsHist;
+  let rs=0;
+  for(let k=0;k<w;k++){
+    const r=h[h.length-1-k];
+    if(!(r!=null && isFinite(r) && r>0)) break;
+    rs++;
+  }
+  return Math.min(d.setupBaseAge, rs) || null;
+}
+
 /* ══════════════════════════════════
    DAILY + WEEKLY ALIGNMENT
    ────────────────────────────────────
@@ -8084,12 +8304,11 @@ const SORT_FN={
      maths across columns is what it cannot support, and nothing here does
      that. */
   rsp55:d=>d?.rsp55, rsp21:d=>d?.rsp21,
-  /* Sortable and filterable, and that is the whole of their reach. Neither is
+  /* Sortable and filterable, and that is the whole of its reach. It is not
      an input to isQualitySetup(), rankRS(), dwAlign() or any sector score —
-     ADR% is a volatility measure and Risk% is box geometry, and blending
-     either into a quality score would double-count what the D-Box and Squeeze
-     columns already say. */
-  adr:d=>d?.adr, risk:d=>d?.dBoxRisk,
+     ADR% is a volatility measure, and blending it into a quality score would
+     double-count what the D-Box and Squeeze columns already say. */
+  adr:d=>d?.adr,
   rshist:d=>Array.isArray(d?.rsHist)&&d.rsHist.length?d.rsHist[d.rsHist.length-1]:null,
   // rsTrend is now the words 'up'/'flat'/'down' (was the arrows ↑/→/↓).
   // The arrow keys are kept so a row rehydrated from an older cache still
@@ -8139,8 +8358,49 @@ function hasBreakout(d){ return (d?.boCnt||0)>0; }
 
    EACH CHECK NULL-GUARDS ITS OWN INPUT and is simply absent when its data is
    missing — a row with no benchmark still reports its EMA50 cross. */
-const FRESH_LOOKBACK={ema50:3, rs21:5, bo:3};
-const FRESH_LABEL={ema50:'EMA50 ↑', rs21:'RS21 +', bo:'Base BO'};
+const FRESH_LOOKBACK={ema50:3, rs21:5, bo:3, rsp:5};
+
+/* ── THE FOURTH FLAG'S THREE NUMBERS ───────────────────────────────
+   WHICH WINDOW (21, not 55). The flag is deliberately the EARLY sibling of the
+   rs21 flag directly above it, and the pair is only readable as a pair if both
+   measure the same 21 sessions. RS21 asks BY HOW MUCH the stock beat the
+   benchmark over those 21 days; RS Position asks whether that lead is at the
+   top of its own 21-day range. The ratio makes new range-highs while the
+   excess return is still negative, so the position turns first — which is the
+   entire point of carrying both. A 55-bar position would turn first as well,
+   but against a different window, and "early" would then be confounded with
+   "slower measure".
+
+   WHERE THE LINE SITS (90). RSP is min-max rescaled to 1..99 over the window,
+   so the top of its own range is 99 by construction, not by strength. 90 is
+   the top tenth of the range: the ratio is within 10% of its best point in the
+   window. Lower and it fires on ordinary strength; higher and it only fires
+   once the move is already at the literal high, which is the lateness the
+   Fresh column exists to avoid.
+
+   WHAT COUNTS AS "MEANINGFULLY BELOW" (80, within 5 bars). Without a floor,
+   a reading that oscillates 89 / 91 / 89 / 91 registers a fresh crossing every
+   other session — the same failure the rs21 flag guards with "the last reading
+   positive AND a sign flip inside the window", which on its own is not enough
+   here because RSP is a bounded position that hugs its ceiling in any strong
+   trend. Requiring the ratio to have been at or under 80 somewhere in the five
+   bars BEFORE the crossing means it genuinely left the top decile and came
+   back, rather than jittering across the line. 80/90 also matches the RSP
+   cell's own colour break at 80, so what the column paints "high" and what the
+   flag treats as "already up there" are one number.                        */
+const FRESH_RSP_LEN=21;    // which RSP window the flag watches
+const FRESH_RSP_HI=90;     // the level it must cross UP through
+const FRESH_RSP_LO=80;     // ...having been at or under this beforehand
+const FRESH_RSP_BASE=5;    // how many bars before the cross that dip may sit in
+/* Exactly the tail freshFlags() reads, derived rather than pinned: the
+   crossing may be up to FRESH_LOOKBACK.rsp bars old, and the dip up to
+   FRESH_RSP_BASE bars before that, plus the latest bar itself. */
+const FRESH_RSP_HIST=FRESH_LOOKBACK.rsp+FRESH_RSP_BASE+1;
+
+// The label quotes the constant instead of repeating it, so the chip and the
+// rule cannot drift apart the way a hardcoded "RSP 90" would.
+const FRESH_LABEL={ema50:'EMA50 ↑', rs21:'RS21 +', bo:'Base BO',
+                   rsp:`RSP ↑${FRESH_RSP_HI}`};
 
 function freshFlags(d){
   if(!d) return [];
@@ -8179,6 +8439,35 @@ function freshFlags(d){
   const ba=d.boAge;
   if(d.consolDays!=null && d.consolDays>=20 && ba!=null && ba!==undefined && isFinite(ba)
      && ba<=FRESH_LOOKBACK.bo) out.push({key:'bo',age:ba});
+
+  /* 4 · RS POSITION crossed UP through FRESH_RSP_HI — the early warning that
+        the rs21 flag above later confirms. Same discipline as that flag, for
+        the same reason: the LATEST reading must be above the line AND there
+        must be a genuine crossing inside the window, because a series that sat
+        above 90 throughout has not "just turned". One extra condition it does
+        not need — RSP is a bounded 1..99 position that pins to its ceiling in
+        any strong trend, so a crossing is only real if the reading had
+        actually left the top of its range first: see FRESH_RSP_LO.
+
+        Read off rspHist21, which rankRS() builds by calling rsPosition()
+        itself. Nothing here recomputes a position. */
+  const rh=d.rspHist21;
+  if(Array.isArray(rh) && rh.length>=2){
+    const up=rh.map(v=>v!=null&&isFinite(v)&&v>FRESH_RSP_HI);
+    if(up[up.length-1]){
+      for(let i=up.length-1;i>0;i--){
+        if(up[i]!==up[i-1]){                     // i is the first bar above the line
+          const age=(up.length-1)-i;
+          // The dip has to be BEFORE the crossing, not anywhere in the tail:
+          // a stock that pulls back to 75 after crossing has not re-crossed.
+          const pre=rh.slice(Math.max(0,i-FRESH_RSP_BASE),i).filter(v=>v!=null&&isFinite(v));
+          if(age<=FRESH_LOOKBACK.rsp && pre.length && Math.min(...pre)<=FRESH_RSP_LO)
+            out.push({key:'rsp',age});
+          break;
+        }
+      }
+    }
+  }
 
   // Freshest first; ties broken by the order above, which is the order of
   // conviction (a trend cross beats a relative-strength blip).
@@ -8435,7 +8724,7 @@ const TOUR=[
   {el:'boxTog',    t:'4 · The Darvas boxes',
    b:'The D-Box and W-Box columns draw a box around each stock — a ceiling set by a high that held, and a floor under it — on daily bars and on weekly bars, then say where the price is sitting: Inside it, Near the top, Break through it, Above it, or Below it. Break and Near are the two you can still act on, while Above means the move has already gone and a fresh entry there is late. This 📦 Box Setup button keeps only the stocks in a confirmed uptrend that are still Inside, Near or Breaking, so the extended names never reach your list.'},
   {el:'tHead',     t:'5 · Fresh, or already late?',
-   b:'A strong stock can still be a bad entry, and several columns exist to tell those apart: 52W High% is how far below its 52-week high it is trading, Retrace% is how much it has given back from its recent peak, Follow-up counts the trading days since its last breakout, and Consolidation shows how long it has been coiling quietly. The Fresh column answers the other half of that question by naming the stocks that have only just turned — back above the 50-day average within the last three bars, relative strength flipping positive within the last five, or a first breakout out of a base that had been building for twenty bars or more — together with how many days ago it happened. Fresh and tight beats extended and stretched.'},
+   b:'A strong stock can still be a bad entry, and several columns exist to tell those apart: 52W High% is how far below its 52-week high it is trading, Retrace% is how much it has given back from its recent peak, Follow-up counts the trading days since its last breakout, and Consolidation shows how long it has been coiling quietly. The Fresh column answers the other half of that question by naming the stocks that have only just turned — back above the 50-day average within the last three bars, relative strength flipping positive within the last five, a first breakout out of a base that had been building for twenty bars or more, or RS Position crossing up through 90 within the last five, which is the early warning that the relative-strength flip usually confirms a few sessions later — together with how many days ago it happened. Fresh and tight beats extended and stretched.'},
   {el:'advBtn',    t:'6 · Narrowing the list',
    b:'Sector View breaks the whole market down by sector so you can see which groups are actually working, and clicking a row filters the table to it. Advanced Filters adds screens the dropdowns do not cover — consolidation length, distance from the 52-week high, breakout age, volume, and a minimum on Avg Value, the average daily turnover in rupees or dollars, which matters because an 8/8 setup you cannot get filled in at your size is useless. And the D / W / D+W breadth toggle tells you how much of the market is rising on the daily, the weekly, or both, which is the fastest read on whether to be buying at all today.'},
   {el:'screenSel', t:'7 · Keeping your work',
@@ -8953,10 +9242,6 @@ const EXPORT_COLS=[
   ['Retrace%',    (def,d)=>d?.retrace??''],
   ['Squeeze',     (def,d)=>d?.sq??''],
   ['ADR%',        (def,d)=>d?.adr??''],
-  // The risk figure AND the two levels it came from: a bare 8.4 in a
-  // spreadsheet cannot be checked, and the whole claim of this column is that
-  // it is the D-Box levels and nothing else.
-  ['Risk%',       (def,d)=>d?.dBoxRisk??''],
   ['MRS Rank',    (def,d)=>d?.mrsRank??''],
   ['RS21',        (def,d)=>d?.rs21??''],
   ['RS55',        (def,d)=>d?.rs55??''],
@@ -9016,6 +9301,84 @@ function doCSV(){
   a.href='data:text/csv;charset=utf-8,'+encodeURIComponent(aoa.map(r=>r.map(esc).join(',')).join('\n'));
   a.download=`GlobalScreener_${CUR}_${today()}.csv`;
   document.body.appendChild(a); a.click(); a.remove();
+}
+
+/* ══ WATCHLIST EXPORT — the plain symbol list ═══════════════════════════
+   A broker's watchlist importer wants one thing: bare tickers, one per line.
+   Zerodha's and Upstox's import boxes both take exactly that, and both choke
+   on a header row, a comma, or a ".NS".
+
+   IT DERIVES FROM getRows(), THE SAME CALL THE TABLE AND THE EXCEL EXPORT MAKE.
+   Not "the same filters applied again" — the same array. Every filter, the
+   per-column header filters, the advanced screens and the current sort all
+   live inside getRows(), so re-deriving the list anywhere else would be a
+   second definition of "what is on screen" that agrees today and drifts the
+   first time a filter is added. Reuse is what makes the copied list match the
+   table BY CONSTRUCTION rather than by inspection.
+
+   AND NOT renderTable()'s SLICE. renderTable() cuts to VISIBLE, which is the
+   infinite-scroll budget — a rendering cost control, not a filter. Scrolling
+   further does not change what passed the screen, so a watchlist that only
+   held the first VISIBLE rows would silently depend on how far the user had
+   scrolled. The Excel export made the same call for the same reason.
+
+   THE .NS STRIP IS NOT DONE HERE. Every universe entry already carries `d`,
+   the display ticker (M&M for M&M.NS), which is what the Ticker column paints
+   and what TradingView's deep link is built from. Stripping the suffix again
+   would be a second implementation of the same rule, so the export simply
+   reads the field — and t6 asserts the invariant it depends on, that no `d`
+   in any market ends in .NS while every `s` in India does. US and ETF symbols
+   have no suffix to lose and come through untouched.                       */
+function watchlistTickers(){
+  return getRows(CUR).map(def=>def.d).filter(Boolean);
+}
+
+/* Say what happened, ON the control that did it. There is no toast layer in
+   this file and a confirmation is not worth inventing one for; the button
+   already changes its own label during an export, so this is the language the
+   toolbar speaks. The timer is module-level so a second click restarts it
+   instead of restoring a stale label over a fresh message. */
+let WLX_T=null;
+function wlFlash(msg){
+  const btn=$('wlCopyBtn'); if(!btn) return;
+  if(WLX_T) clearTimeout(WLX_T);
+  if(btn.dataset.label==null) btn.dataset.label=btn.innerHTML;
+  btn.innerHTML=msg;
+  WLX_T=setTimeout(()=>{ btn.innerHTML=btn.dataset.label||'⧉ Copy Tickers'; WLX_T=null; },2600);
+}
+
+/* THE FALLBACK, AND WHY IT IS NOT OPTIONAL. navigator.clipboard can be absent
+   or refuse for reasons the page can neither see nor fix — an insecure origin,
+   a permission the user denied once, an embedding frame. The failure mode to
+   avoid is not "no clipboard", it is a control that looks like it worked. So a
+   refusal opens the list in a selectable box and SAYS nothing was copied. */
+function wlxShow(text,n){
+  const ta=$('wlxTa'), msg=$('wlxMsg'), box=$('wlxModal');
+  if(!ta||!box){ console.warn('Clipboard blocked and no fallback box in the page.'); return; }
+  ta.value=text;
+  if(msg) msg.textContent=`Your browser would not let this page write to the clipboard, so nothing has been copied. `
+    +`Here ${n===1?'is the 1 ticker':`are the ${n} tickers`} currently on screen — select all of it and copy it by hand.`;
+  box.classList.add('open');
+  if(ta.focus) ta.focus();
+  if(ta.select) ta.select();   // the stub DOM in the test harness has no select()
+}
+function closeWlx(){ const b=$('wlxModal'); if(b) b.classList.remove('open'); }
+
+async function copyWatchlist(){
+  const syms=watchlistTickers();
+  /* An empty screen is a real answer, not an error — and writing an empty
+     string to the clipboard would destroy whatever the user had in it. */
+  if(!syms.length){ wlFlash('— no rows on screen'); return; }
+  const text=syms.join('\n');
+  try{
+    if(typeof navigator==='undefined' || !navigator.clipboard || !navigator.clipboard.writeText)
+      throw new Error('clipboard API unavailable');
+    await navigator.clipboard.writeText(text);
+    wlFlash(`✓ ${syms.length} ticker${syms.length===1?'':'s'} copied`);
+  }catch(e){
+    console.warn('Clipboard write refused ('+e.message+') — showing the list to copy by hand.');
+    wlxShow(text,syms.length);
+  }
 }
 
 /* ══════════════════════════════════
@@ -9211,10 +9574,9 @@ const COL_FILTERS={
   // 90+ of its own range"). Still just a filter on one column's own value.
   rsp55:   {t:'num',  label:'RSP 55',  val:d=>d&&d.rsp55},
   rsp21:   {t:'num',  label:'RSP 21',  val:d=>d&&d.rsp21},
-  // "Show me everything that moves at least 4% a day" and "nothing where the
-  // box makes me risk more than 8%" are the two screens these exist for.
+  // "Show me everything that moves at least 4% a day" is the screen this
+  // exists for.
   adr:     {t:'num',  label:'ADR%',    val:d=>d&&d.adr},
-  risk:    {t:'num',  label:'Risk%',   val:d=>d&&d.dBoxRisk},
 
   /* ── explicitly nothing ─────────────────────────────────────────── */
   /* A 30-point sparkline of the 21-day excess return. Neither a value to match
@@ -9784,7 +10146,6 @@ const TOGGLEABLE_COLS=[
   {cls:'retrace',label:'Retrace %'},
   {cls:'squeeze',label:'Squeeze'},
   {cls:'adr',    label:'ADR%'},
-  {cls:'risk',   label:'Risk% (Darvas)'},
   {cls:'mrsrank',label:'MRS Rank'},
   {cls:'rs21',   label:'RS21'},
   {cls:'rs55',   label:'RS55'},
