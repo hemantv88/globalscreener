@@ -8968,11 +8968,24 @@ function escHtml(s){
     .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
 }
 
+/* THE DENOMINATOR IS THE FILTERED COUNT, NOT THE UNIVERSE.
+   -------------------------------------------------------
+   This line used to read "Showing 50 of 881", where 50 counted rows PASSING the
+   filters and 881 counted the whole universe — two different populations in one
+   sentence. The sector panel totals `getRows()` (the filtered set), so the two
+   could never agree, and India always has a market-cap filter on by default, so
+   they disagreed permanently on every market. Reported by the user as "the
+   number of stocks in the table and the sector view do not match on all 3 tabs".
+   Both now count the same array. The universe size is still shown, but labelled
+   as what it is, so nothing is lost. */
 function updateStatus(){
   const rows=getRows(CUR);
-  $('vCnt').textContent=Math.min(VISIBLE,rows.length);
-  $('tCnt').textContent=UNI[CUR].length;
-  $('smLbl').textContent=`Showing ${Math.min(VISIBLE,rows.length)} of ${UNI[CUR].length}`;
+  const shown=Math.min(VISIBLE,rows.length), matching=rows.length, universe=UNI[CUR].length;
+  $('vCnt').textContent=shown;
+  $('tCnt').textContent=matching;
+  $('smLbl').textContent = matching===universe
+    ? `Showing ${shown} of ${matching}`
+    : `Showing ${shown} of ${matching} matching · ${universe} total`;
   colfChip();
   // The collapsed filter header states the same count the chip does, from the
   // same source, so a folded filter bar can never claim a different number.
