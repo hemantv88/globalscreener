@@ -668,15 +668,27 @@ body.metrics-collapsed #metricsHd,body.filters-collapsed #filtersHd{margin-botto
    and the gain survives down to 480px (group B). */
 .c-wrsi,.c-wvol,.c-wpiv,.c-wema,.c-voldry,.c-retrace,.c-rstrend,.c-notes,
 .c-wcross,.c-wpattern,.c-monthly,.c-rs10w,.c-rsslope,.c-rshist,.c-slope200,
-.c-followup,.c-hist,.c-wbox,.c-rsp55,.c-rsp21{display:table-cell}
+.c-followup,.c-hist,.c-wbox,.c-rsp55,.c-rsp21,
+/* %50E and %200E are GROUP A, not B: they answer "which regime am I in", which
+   is the WORKING behind the decision rather than the decision itself. The one
+   of the three that is a live stop level — %20E — is in group B below. */
+.c-pct50e,.c-pct200e{display:table-cell}
 /* GROUP B — additionally force-hidden at ≤480px */
 .c-vr,.c-align,.c-ema,.c-bocnt,.c-squeeze,.c-mrsrank,.c-setup,
 .c-sector,.c-status,.c-xcross,.c-pattern,.c-consol,.c-rs21,.c-rs55,
 .c-ch1w,.c-ch1m,.c-ch3m,.c-histg,.c-dbox,.c-avgval,.c-fresh,
+/* %20E is GROUP B for the same reason ADR% is: in a normal market the 20 EMA
+   is where the stop goes, so the distance to it is read at the moment of
+   deciding what to buy — which is exactly when a phone is the thing in hand. */
+.c-pct20e,
 /* ADR% is GROUP B, not A: it is a sizing input you reach for at the moment you
    are deciding what to buy, which is exactly when a phone is the thing in your
    hand. It survives down to 480px alongside D-Box. */
-.c-adr{display:table-cell}
+/* Tight and Days Up are GROUP B for the same reason ADR% and %20E are: both
+   answer "is THIS a good entry, right now", which is the question being asked
+   at the moment a phone is the thing in hand. Tight sits beside ADR% because
+   ADR% is its denominator. */
+.c-adr,.c-tight,.c-daysup{display:table-cell}
 
 /* User-controlled column toggles (via the Columns modal, saved to localStorage).
    Adding e.g. "hide-wrsi" to <body> hides every cell tagged .c-wrsi — works
@@ -701,6 +713,11 @@ body.hide-voldry  .c-voldry,
 body.hide-retrace .c-retrace,
 body.hide-squeeze .c-squeeze,
 body.hide-adr     .c-adr,
+body.hide-pct20e  .c-pct20e,
+body.hide-pct50e  .c-pct50e,
+body.hide-pct200e .c-pct200e,
+body.hide-tight   .c-tight,
+body.hide-daysup  .c-daysup,
 body.hide-mrsrank .c-mrsrank,
 body.hide-rstrend .c-rstrend,
 body.hide-notes   .c-notes,
@@ -985,7 +1002,8 @@ body.dd-lock{overflow:hidden}
   .metrics-row{grid-template-columns:repeat(4,1fr)}
   .c-wrsi,.c-wvol,.c-wpiv,.c-wema,.c-voldry,.c-retrace,.c-rstrend,.c-notes,
   .c-wcross,.c-wpattern,.c-monthly,.c-rs10w,.c-rsslope,.c-rshist,.c-slope200,
-  .c-followup,.c-hist,.c-wbox,.c-rsp55,.c-rsp21{display:none!important}
+  .c-followup,.c-hist,.c-wbox,.c-rsp55,.c-rsp21,
+  .c-pct50e,.c-pct200e{display:none!important}
 }
 @media (max-width:768px){
   .metrics-row{grid-template-columns:repeat(2,1fr)}
@@ -1014,7 +1032,7 @@ body.dd-lock{overflow:hidden}
   .c-vr,.c-align,.c-ema,.c-bocnt,.c-squeeze,.c-mrsrank,.c-setup,
   .c-sector,.c-status,.c-xcross,.c-pattern,.c-consol,.c-rs21,.c-rs55,
   .c-ch1w,.c-ch1m,.c-ch3m,.c-histg,.c-dbox,.c-avgval,.c-fresh,
-  .c-adr{display:none!important}
+  .c-pct20e,.c-adr,.c-tight,.c-daysup{display:none!important}
   .search-bar input{width:80px}
 }
 </style>
@@ -1250,6 +1268,9 @@ body.dd-lock{overflow:hidden}
             <th class="c-wbox" data-s="wbox" data-tip="The same Darvas Box construction run on WEEKLY bars, so both the box and the states describe months rather than days. A weekly box needs 9 weekly bars (roughly 45 trading days) before it can exist, and it moves far less often than the daily one — a weekly Break is a much rarer and heavier signal than a daily one. The five states mean exactly what they mean in the D-Box column.">W-Box<span class="sort-ico"></span></th>
             <th data-s="h52" data-tip="% below the highest high in the available window. The data source holds ~1 trading year (~250 bars), so in practice this is a ~50-week high, not a full 52. Shows — for stocks with under 120 bars of history.">52W High<span class="sort-ico"></span></th>
             <th class="c-ema" data-s="ema" data-tip="How many of the 10, 20, 50 and 200-day moving averages the price is trading above, one badge each. All four green is the textbook shape of a healthy uptrend.">EMA Align<span class="sort-ico"></span></th>
+            <th class="c-pct20e" data-s="pct20e" data-tip="How far the latest close sits above or below the 20-day EMA, as a percentage of that EMA. THE EXACT DEFINITION: %20E = 100 &times; ( Close &minus; EMA20 ) / EMA20. WHY THE OWNER READS IT: in a NORMAL market the 20 EMA is the stop level &mdash; the stop is placed a 2% buffer UNDER the 20 EMA, so this number is how far the trade would have to go against you before that stop is reached, before the buffer is added. Near zero, or a little above, is a low-risk entry; a large positive number means the move has already extended away from the average and the stop is now a long way down. In a WEAK market the stop moves out to the 50 EMA instead &mdash; that is the %50E column. A POSITIVE number means the close is ABOVE the moving average; a NEGATIVE number means it is BELOW it, and the minus sign is the whole point of the column. It reuses the very same EMA the EMA Align badges beside it are drawn from &mdash; no moving average is recomputed for this column, so the two can never disagree. A dash means the moving average could not be computed on the history available (the 200 EMA needs 200 bars), or it came back zero or negative, or there is no price &mdash; never a zero, because zero is a real reading: it means the close is sitting exactly on the average. Sortable and filterable like any other numeric column.">%20E<span class="sort-ico"></span></th>
+            <th class="c-pct50e" data-s="pct50e" data-tip="How far the latest close sits above or below the 50-day EMA, as a percentage of that EMA. THE EXACT DEFINITION: %50E = 100 &times; ( Close &minus; EMA50 ) / EMA50. WHY THE OWNER READS IT: in a WEAK market the 50 EMA is the stop level, not the 20. A pullback that cuts through the 20 EMA in a bad tape is ordinary behaviour and stopping out on it just pays the spread twice; the 50 is the line that decides whether the trend is still intact. Read it together with %20E: negative %20E with positive %50E is a stock pulling back inside its trend, and negative on both is a stock that has left it. A POSITIVE number means the close is ABOVE the moving average; a NEGATIVE number means it is BELOW it, and the minus sign is the whole point of the column. It reuses the very same EMA the EMA Align badges beside it are drawn from &mdash; no moving average is recomputed for this column, so the two can never disagree. A dash means the moving average could not be computed on the history available (the 200 EMA needs 200 bars), or it came back zero or negative, or there is no price &mdash; never a zero, because zero is a real reading: it means the close is sitting exactly on the average. Sortable and filterable like any other numeric column.">%50E<span class="sort-ico"></span></th>
+            <th class="c-pct200e" data-s="pct200e" data-tip="How far the latest close sits above or below the 200-day EMA, as a percentage of that EMA. THE EXACT DEFINITION: %200E = 100 &times; ( Close &minus; EMA200 ) / EMA200. WHY THE OWNER READS IT: the 200 EMA is the REGIME line, not a stop &mdash; it is never where the exit goes (that is the 20 EMA in a normal market and the 50 EMA in a weak one). Its job here is to disqualify: a stock below its 200 EMA is not a long candidate however good the shorter-term shape looks, so a negative reading is a veto rather than a measurement. A small positive number on a stock that has just reclaimed it is a different situation from a large one on a stock that never lost it. A POSITIVE number means the close is ABOVE the moving average; a NEGATIVE number means it is BELOW it, and the minus sign is the whole point of the column. It reuses the very same EMA the EMA Align badges beside it are drawn from &mdash; no moving average is recomputed for this column, so the two can never disagree. A dash means the moving average could not be computed on the history available (the 200 EMA needs 200 bars), or it came back zero or negative, or there is no price &mdash; never a zero, because zero is a real reading: it means the close is sitting exactly on the average. Sortable and filterable like any other numeric column.">%200E<span class="sort-ico"></span></th>
             <th class="c-wema" data-s="wema" data-tip="The same alignment check on the weekly chart: price against the 10-week and 20-week moving averages.">W-EMA<span class="sort-ico"></span></th>
             <!-- Label is written by syncXoverLabel() from CFG.XOVER, so changing
                  the pair in Advanced Filters renames the column instead of
@@ -1268,6 +1289,8 @@ body.dd-lock{overflow:hidden}
             <th class="c-retrace" data-s="ret" data-tip="How far the latest close sits below the highest close reached since the most recent breakout, as a percentage of that peak — so it is always zero or negative. It is not the fraction of the breakout move given back. A small figure means the move is being held; a large one means most of the follow-through has been surrendered.">Retrace%<span class="sort-ico"></span></th>
             <th class="c-squeeze" data-s="sq" data-tip="A 0–100 compression score, not a yes/no flag: (1 − Bollinger width ÷ Keltner width) × 100, clamped to 0–100. Bollinger width is 4 standard deviations of the closes and Keltner width is 3× the average true range, each divided by the mean close over the full series. A higher score means the Bollinger bands sit further inside the Keltner channel — volatility has contracted, which often precedes an expansion. The bar turns amber above 65.">Squeeze<span class="sort-ico"></span></th>
             <th class="c-adr" data-s="adr" data-tip="Average Daily Range as a percent of price. THE EXACT DEFINITION: ADR% = 100 &times; ( mean over the last 20 bars of (High / Low) &minus; 1 ). WHY A TRADER CARES: it measures how much this stock typically moves in a single day, so it filters out names too sluggish to produce a swing move &mdash; a 1% ADR stock has to trend for a fortnight to deliver what a 6% ADR stock delivers in two days. It is also a sizing input: position size and stop distance are set in proportion to a stock's OWN volatility rather than to a fixed percentage, so the same money risked buys a larger position in a quiet name and a smaller one in a wild one. Needs 20 usable bars. A bar whose low is zero, negative or not a finite number is skipped and an earlier bar used in its place; if 20 usable bars cannot be found the cell shows a dash rather than an average over fewer. It feeds nothing &mdash; not Setup Score, not MRS Rank, not any composite. Sortable and filterable like any other numeric column.">ADR%<span class="sort-ico"></span></th>
+            <th class="c-tight" data-s="tight" data-tip="How narrow the last 3 daily bars are compared with what is NORMAL FOR THIS STOCK. THE EXACT DEFINITION: Tight = 100 &times; ( mean over the last 3 bars of the bar's own high-to-low range as a percent of its close, i.e. 100 &times; (High &minus; Low) / Close ) / ADR%. HOW TO READ IT: 100 means the last 3 bars have been exactly as wide as this stock's normal day. LOWER IS BETTER &mdash; this is the one column in the table where a SMALL number is the good one &mdash; and below about 60 is meaningfully tight, i.e. the range has contracted to well under half of normal, which is what a coiled base looks like just before it moves. Above 100 the range is EXPANDING, which is the opposite of a setup. WHY THIS EXISTS WHEN CONSOLIDATION IS ALREADY HERE: Consolidation measures the range of CLOSING prices, so a bar with long wicks reads as tighter than it really is &mdash; a stock swinging 8% intraday and closing flat every day looks like a perfect base to it. This measures the TRUE high-to-low range instead, and it measures it against the stock's own ADR%, so a 3% range means something different on a sleepy large cap than on a 9% ADR small cap. The two columns answer different questions and are meant to be read together, not swapped. It REUSES the ADR% column's own value as the denominator &mdash; nothing is recomputed, so the two can never disagree. A dash, never a zero, when ADR% itself is unavailable or not positive, when there are fewer than 3 usable bars, or when any of those 3 bars has a close, high or low that is missing or not a positive finite number. Sortable and filterable like any other numeric column.">Tight<span class="sort-ico"></span></th>
+            <th class="c-daysup" data-s="daysup" data-tip="How many sessions IN A ROW, counting back from the latest bar, closed HIGHER than the session before. THE EXACT DEFINITION: walking back from the newest bar, count each bar whose close is strictly greater than the previous bar's close, and stop at the first one that is not. 0 means the latest close was NOT above the one before it &mdash; a flat close and a down close both read 0, because neither is an up day. Only a run that reaches the LATEST bar counts: three up days followed by a down day reads 0, not 3. WHY THE OWNER READS IT: he does not want to enter a stock that has already run 3 or 4 days. Every extra up day puts more distance between the price and the moving average the stop sits under, so the entry risk WIDENS with each one &mdash; the same move is available for a worse price and a bigger loss if it fails. 0 to 2 is the window; 3 and above is chasing, and the cell says so in red. Needs 2 bars to answer at all; below that, or when either of the last two closes is missing or not a finite number, it shows a dash rather than a zero &mdash; zero is a real reading here and must not double as "unmeasurable". Sortable and filterable like any other numeric column.">Days Up<span class="sort-ico"></span></th>
             <th data-s="s2" data-tip="Score on the Stage 2 uptrend checklist — price above the long moving averages, those averages stacked and rising, and price near its 52-week high. A full score is a confirmed uptrend.">Stage 2<span class="sort-ico"></span></th>
             <th class="c-mrsrank" data-s="mrs" style="text-align:center" data-tip="Percentile rank from 1 to 100 of this stock's 55-day excess return against every other stock in the same market that has one. A rank of 90 means it beat roughly 90% of that list. Stocks with too little history to produce an RS55 are left out of the ranking entirely rather than ranked as if flat.">MRS Rank<span class="sort-ico"></span></th>
             <th class="c-rs21" data-s="rs21" data-tip="21-day excess return over the benchmark, in percentage points. Positive = it beat the benchmark over the last month.">RS21<span class="sort-ico"></span></th>
@@ -1663,7 +1686,18 @@ const CFG = {
      bars ≈ 45 trading days) fits inside a year of data with room to spare. */
   DARVAS: {boxp:5, nearPct:1.0},
 
-  VER:  'gs12',     // gs11 -> gs12: the SETUP AGE arrived, and with it a fourth Fresh flag.
+  VER:  'gs13',     // gs12 -> gs13: computeTech() returns FIVE more fields — pct20e/pct50e/
+                    // pct200e (the close's distance from the 20/50/200 EMA), daysUp (the
+                    // run of consecutive up-closes) and tight (recent true range against
+                    // the stock's own ADR%). All five are written by computeTech() and are
+                    // therefore CACHED, so a gs12 row rehydrated into a gs13 renderer
+                    // would show five permanently blank columns with nothing on screen to
+                    // say why — for exactly the people already using the tool, and for
+                    // nobody testing in a fresh browser. Orphaning gs12 is the only thing
+                    // that can prevent it. No EMA was recomputed for the first three: they
+                    // read e20/e50/e200, which gs12 rows already carry — but the DERIVED
+                    // fields are what the renderer reads, and those are new.
+                    // gs11 -> gs12: the SETUP AGE arrived, and with it a fourth Fresh flag.
                     // computeTech() returns one more field, setupBaseAge (the price-only
                     // half of the setup streak), and rankRS() writes one more, rspHist21
                     // (the RS-Position history the new flag reads). setupBaseAge is the
@@ -3893,6 +3927,180 @@ function updateScreenUI(){
     : `Showing the saved screen "${ACTIVE_SCREEN}".`;
 }
 
+/* ══════════════════════════════════
+   TWO PRE-BUILT SCREENS
+   ────────────────────────────────
+   Shipped as ORDINARY SAVED SCREENS — same object shape, same SCREENS map,
+   same localStorage key, same picker, same Save/Delete buttons. There is
+   deliberately no second mechanism: a "built-in screen" that could not be
+   edited or deleted like the user's own would be a different feature wearing
+   the same name, and the moment the owner wanted to nudge one of these numbers
+   he would have nowhere to put the change.
+
+   THE TWO SCREENS ARE STARTING POINTS. Every bound below is a plain inclusive
+   min/max on a column filter, editable from that column's own header funnel
+   and re-savable under the same name.
+
+   WHY NOT THE `Setup` FLAG. isQualitySetup() requires the price to be above
+   EVERY EMA it can compute, so the Setup star can never light on a stock
+   trading below its 20 EMA — which is exactly the population both of these
+   screens exist to find. So the quality leg is expressed as Stage 2 + positive
+   RS21 + a rising 200 EMA instead. isQualitySetup() is unchanged; it answers a
+   different question and the Setup column still answers it.
+══════════════════════════════════ */
+
+/* ── THE LIQUIDITY FLOOR, PER MARKET AND NOT ONE NUMBER ────────────────
+   The Avg Value column filters and sorts on the DISPLAY unit, and that unit
+   is NOT the same in every market: avgValDisp() divides by AVG_VAL_DIV, which
+   is 10^7 for INR rows (₹ CRORE) and 10^6 for everything else ($ MILLION).
+   A single literal 5 would therefore mean ₹5 crore ≈ US$0.6M on the India tab
+   and US$5M ≈ ₹43 crore on the US tab — two completely different screens
+   wearing one number, which is precisely the units bug SORT_FN.avgval's own
+   comment warns about.
+
+   india — ₹5 crore/day, the owner's own floor: enough turnover that a personal
+     swing position is not the reason the price moved.
+   us / etf — $10M/day. NOT ₹5 crore converted (that would be ~$0.6M, thin
+     enough on US exchanges to sit in a name nobody can get out of); the number
+     is chosen for the same ROLE in that market rather than for numerical
+     equality, which is the whole reason this is a map.
+
+   ONE HONEST CAVEAT, stated because it cannot be designed away: a saved screen
+   holds ONE COLF.avgval bound, not three. The bound seeded is the one for the
+   market the app starts in (CUR is 'india' at that point), and switching tabs
+   re-reads that same number in the new tab's unit. Editing it per market is
+   what the header funnel and Save Screen are for. */
+const SCREEN_LIQ_FLOOR={india:5, us:10, etf:10};
+
+/* The neutral toolbar state a seeded screen is built on top of, so that each
+   screen is defined ONLY by its column filters and carries no accidental
+   sector, cap or search term. MIN_MCAP is the market's own default rather than
+   0, matching what clearFilters() restores — a screen that silently dropped
+   the India ₹2,000 Cr floor would widen itself by a few thousand micro caps.
+   Keyed by SCREEN_FIELDS name so this cannot drift from what applyScreen()
+   restores. */
+function screenSeedBase(){
+  return {
+    F_CAP:'All', F_SCT:'', F_EMA:'', F_RSI:'', F_PIV:'', F_WPIV:'', F_REV:'',
+    F_ALIGN:false, F_BO:false, F_DWA:false, F_BOX:false,
+    MIN_MCAP:(MCAP_DEFAULTS[CUR] ?? 0), SEARCH:'', SORT_C:'', SORT_D:'desc',
+    COLF:{}, HIST_DATE:'',
+  };
+}
+
+/* Builds one screen in EXACTLY the shape captureScreen() produces: every
+   SCREEN_FIELDS key plus ADV. The loop is over SCREEN_FIELDS — the same list
+   capture and restore both read — rather than over a hand-written key list, so
+   a filter added to the app later lands in these two screens as well instead
+   of coming back `undefined` from applyScreen(). A field with no seed value
+   falls back to the live getter, which at startup IS that field's default. */
+function seedScreenObj(colf){
+  const base=screenSeedBase(), sc={};
+  SCREEN_FIELDS.forEach(f=>{
+    sc[f] = Object.prototype.hasOwnProperty.call(base,f)
+      ? JSON.parse(JSON.stringify(base[f]))
+      : SCREEN_GET[f]();
+  });
+  sc.COLF=JSON.parse(JSON.stringify(colf));
+  sc.ADV=cloneAdv(ADV_DEFAULTS);   // deep, for the same reason captureScreen clones
+  return sc;
+}
+
+/* THE TWO SCREENS. `colf` is built per call from the floor so nothing about
+   them is frozen at parse time.
+
+   A NOTE ON "GREATER THAN 0". Column filter bounds are INCLUSIVE at both ends
+   (see colfPass), so "greater than 0" is spelled `min:0`. That additionally
+   admits a row sitting exactly ON the average — a 0.00 reading, i.e. within
+   half a basis point of the line, since these fields are rounded to two
+   decimals. Choosing 0.01 instead would hard-wire that rounding into the
+   screen; 0 is the honest bound and the difference is not a stock anyone would
+   want excluded on a technicality. */
+const SCREEN_SEEDS=[
+  {
+    name:'Near 20 EMA',
+    /* THE NORMAL-MARKET ENTRY. A stock in an uptrend that has come back to the
+       line the stop goes under, before it has run away again. */
+    colf:floor=>({
+      // At or just under the 20 EMA, out to 5% above it: close enough that the
+      // stop (2% under the 20 EMA) is still a tolerable distance from entry.
+      pct20e:  {min:-2, max:5,    blanks:false},
+      pct200e: {min:0,  max:null, blanks:false},   // above the regime line
+      status:  {sel:['Stage 2']},                  // the quality leg, not the Setup flag
+      rs21:    {min:0,  max:null, blanks:false},   // beating the benchmark
+      slope:   {sel:['Rising']},                   // the 200 EMA itself pointing up
+      // Not already extended — the anti-chasing leg, using the same constant
+      // the Days Up cell colours on, so the screen and the colour agree.
+      daysup:  {min:null, max:DAYSUP_MAX_OK, blanks:false},
+      avgval:  {min:floor, max:null, blanks:false},
+    }),
+  },
+  {
+    name:'Weak Market',
+    /* THE BAD-TAPE VERSION. A good stock pulling back THROUGH the 20 EMA but
+       holding the 50, in a market where that is ordinary behaviour rather than
+       a breakdown.
+
+       DELIBERATELY NOT STAGE 2, and this is the one decision in this file most
+       likely to be "fixed" by a later reader. Several Stage 2 rules are
+       position tests against moving averages and the 52-week range, and in a
+       weak tape a perfectly good leader temporarily fails one or two of them —
+       which is exactly when this screen is wanted. Requiring Stage 2 here
+       would empty the screen precisely on the days it exists for. The quality
+       floor is instead carried by three things that survive a market-wide
+       pullback: still above the 50 and the 200 EMA, still beating the
+       benchmark on RS21, and a 200 EMA that is still rising. */
+    colf:floor=>({
+      pct20e:  {min:null, max:0,    blanks:false},  // has lost the 20...
+      pct50e:  {min:0,    max:null, blanks:false},  // ...but is holding the 50
+      pct200e: {min:0,    max:null, blanks:false},
+      rs21:    {min:0,    max:null, blanks:false},
+      slope:   {sel:['Rising']},
+      avgval:  {min:floor, max:null, blanks:false},
+    }),
+  },
+];
+
+/* SEEDED ONCE, AND NEVER OVER THE TOP OF ANYTHING.
+   Two independent guards, because they stop two different accidents:
+
+     1. A screen already in SCREENS under that name is left completely alone.
+        The user's own "Weak Market" is the user's; overwriting it on a page
+        load would be data loss with no undo.
+     2. A name recorded in SCREEN_SEED_KEY is never seeded again. Without this,
+        DELETING a seeded screen would only delete it until the next reload,
+        and the brief that these behave "like any other screen" would be false
+        for the one operation people actually notice.
+
+   The consequence of (2) is deliberate and worth stating: once deleted, a
+   seeded screen stays deleted. Clearing this browser's storage brings both
+   back, which is the same rule every other persisted thing here follows. */
+const SCREEN_SEED_KEY='sm_seeded_screens_v1';
+function seededScreenNames(){
+  try{
+    const raw=lsRead(SCREEN_SEED_KEY);
+    if(!raw) return [];
+    const a=JSON.parse(raw);
+    return Array.isArray(a)?a.filter(x=>typeof x==='string'):[];
+  } catch(e){ return []; /* corrupt marker: treat as "never seeded" */ }
+}
+function seedDefaultScreens(){
+  const already=seededScreenNames();
+  const floor=(SCREEN_LIQ_FLOOR[CUR]!=null)?SCREEN_LIQ_FLOOR[CUR]:SCREEN_LIQ_FLOOR.india;
+  const added=[];
+  SCREEN_SEEDS.forEach(sd=>{
+    if(already.indexOf(sd.name)!==-1) return;                                  // guard 2
+    if(Object.prototype.hasOwnProperty.call(SCREENS, sd.name)) return;         // guard 1
+    SCREENS[sd.name]=seedScreenObj(sd.colf(floor));
+    added.push(sd.name);
+  });
+  if(added.length){
+    saveScreensLocal();
+    lsWrite(SCREEN_SEED_KEY, JSON.stringify(already.concat(added)));
+  }
+  return added;
+}
+
 // 'rs' (the old blend's rank) is gone as a column and as a sort key; MRS Rank
 // is the same percentile and is what the table now opens sorted by.
 /* SORT_C empty = no explicit column sort, which is what selects the composite
@@ -4784,6 +4992,109 @@ const DBOX_RANK={break:5, near:4, inside:3, above:2, below:1};
    When it is absent every open falls back to the close, which makes every bar
    a zero-body doji; rather than emit a page full of bogus 'Doji' the pattern
    fields null out entirely in that case. */
+/* ── DISTANCE FROM A MOVING AVERAGE ────────────────────────────────────
+     pctFromEma = ( price − ema ) / ema × 100
+
+   WHY THE EMA IS THE DENOMINATOR, not the price. The number exists to be
+   compared against a STOP, and the stop is quoted against the moving average
+   ("2% under the 20 EMA"), never against today's close. Dividing by price
+   would answer a subtly different question and would drift from the stop rule
+   by exactly the amount the stock has already run — i.e. it would be wrong by
+   the most when it matters most.
+
+   NULL, NEVER 0, when it cannot be measured. Zero is a real and tradeable
+   reading here — the close sitting exactly on the average — so it must not
+   double as "no answer". A missing EMA (the 200 needs 200 bars), a
+   non-positive EMA, or a missing price all return null and the cell shows a
+   dash. The ema<=0 guard cannot fire on real price data; it is there because
+   dividing by it would produce ±Infinity, which would render as a coloured
+   number rather than as the failure it is.
+
+   Two decimals, fixed at the source rather than at render time, so the sort,
+   the filter bounds, the export and the cell are all reading one number. */
+/* ── CONSECUTIVE UP CLOSES ─────────────────────────────────────────────
+   How many sessions in a row, ENDING WITH THE LATEST BAR, closed above the
+   session before. Not "how many up days in the last N" — a run that does not
+   reach the newest bar is over, and counting it would report a stock as
+   extended days after it stopped being so.
+
+   STRICTLY GREATER, so a flat close ends the run. A flat day is not an up day
+   and pretending otherwise would let a dead-money stretch read as momentum.
+
+   NULL, NEVER 0, below 2 bars or when either of the last two closes is
+   unusable. 0 is the single most common REAL answer this can give (the latest
+   bar closed down), so it must not also mean "no data" — a 0 that might be
+   either is worth nothing to a filter. A hole earlier in the series simply
+   ends the run there: the bars after it are still countable and are still the
+   answer to the question asked. */
+function upDayStreak(C){
+  if(!Array.isArray(C)) return null;
+  const n=C.length; if(n<2) return null;
+  const fin=v=>typeof v==='number'&&isFinite(v);
+  if(!fin(C[n-1])||!fin(C[n-2])) return null;
+  let k=0;
+  for(let i=n-1;i>0;i--){
+    if(!fin(C[i])||!fin(C[i-1])) break;
+    if(C[i]>C[i-1]) k++; else break;
+  }
+  return k;
+}
+
+/* ── RANGE CONTRACTION, AGAINST THE STOCK'S OWN NORMAL DAY ─────────────
+     Tight = 100 × ( mean over the last TIGHT_WIN bars of 100×(High−Low)/Close ) / ADR%
+
+   so 100 means "the last three bars have been exactly as wide as this stock's
+   normal day", and the scale is a PERCENTAGE OF NORMAL rather than a raw
+   width. That normalisation is the entire point: a 3% daily range is a coiled
+   spring on a sleepy large cap and a quiet-but-unremarkable day on a 9% ADR
+   small cap, and an un-normalised range column cannot tell those apart.
+
+   ADR% IS PASSED IN, NOT RECOMPUTED. It is already computed once per ticker by
+   adrPct() and already rendered in the column immediately to the left; a
+   second computation here would be a second source of truth for the
+   denominator, and the ratio would eventually disagree with the two numbers a
+   user can see.
+
+   WHY THIS AND NOT Consolidation. consolidation() only ever sees `closes` —
+   check its signature — so it measures the spread of CLOSING prices. A stock
+   swinging 8% intraday and closing flat every day is a perfect base by that
+   measure and an untradeable mess in reality. This reads the true high-to-low
+   range instead. Both columns stay: they answer different questions.
+
+   NULL, NEVER 0, AND NO BAR IS SKIPPED. This deliberately differs from
+   adrPct(), which walks back past a bad bar to find 20 usable ones. The window
+   here is only three bars and it is anchored to the PRESENT — "the last three
+   bars" with one silently swapped for an older one is not the statistic the
+   column claims, and over a 3-bar mean a single substitution moves the answer
+   by a third. So one unusable bar in the window is a dash. */
+const TIGHT_WIN=3;
+/* Below this, the contraction is meaningful rather than incidental: the recent
+   range is under ~60% of the stock's own normal day. Named once, and read by
+   BOTH the cell's colour and the tooltip's wording, so the two cannot drift. */
+const TIGHT_GOOD=60;
+function tightness(C,H,L,adr,win){
+  const w=win||TIGHT_WIN;
+  if(adr==null||!isFinite(adr)||adr<=0) return null;
+  if(!Array.isArray(C)||!Array.isArray(H)||!Array.isArray(L)) return null;
+  const n=Math.min(C.length,H.length,L.length);
+  if(n<w) return null;
+  let sum=0;
+  for(let i=n-w;i<n;i++){
+    const cl=C[i], hi=H[i], lo=L[i];
+    if(!(typeof cl==='number'&&isFinite(cl)&&cl>0)) return null;
+    if(!(typeof hi==='number'&&isFinite(hi))) return null;
+    if(!(typeof lo==='number'&&isFinite(lo))) return null;
+    sum+=(hi-lo)/cl*100;
+  }
+  return +(100*(sum/w)/adr).toFixed(2);
+}
+
+function pctFromEma(price,ema){
+  if(price==null||!isFinite(price)) return null;
+  if(ema==null||!isFinite(ema)||ema<=0) return null;
+  return +((price-ema)/ema*100).toFixed(2);
+}
+
 function computeTech(C,H,L,V,dates,sym,O){
   // A 2-row stock (e.g. IPO'd a few days ago)
   // is real data, not a failure. Every derived indicator below (RSI, EMA,
@@ -4976,6 +5287,25 @@ function computeTech(C,H,L,V,dates,sym,O){
      a volatility MEASURE, and deliberately not an input to any of them. */
   const adr=adrPct(H,L,ADR_WIN);
 
+  /* %20E / %50E / %200E — the close's distance from three of the EMAs that
+     were computed ONCE at the top of this function. They are READ here, never
+     recomputed: a second ema(C,20) call would be a second source of truth for
+     the same line the EMA Align badges, the Stage 2 rules and isQualitySetup()
+     all read, and the two copies would eventually disagree with nothing on the
+     page able to say which was right. e100 and e10 are deliberately not given
+     columns — neither is a stop level for this owner. */
+  /* Days Up and Tight. Both are "what have the last few bars done", which is
+     why they are computed here rather than at render time: the raw OHLCV is
+     gone on a cached load and the row is then the only surviving record.
+     tightness() is handed `adr` — the value computed three lines above and
+     rendered in the ADR% column — so the denominator is read, never remade. */
+  const daysUp=upDayStreak(C);
+  const tight=tightness(C,H,L,adr,TIGHT_WIN);
+
+  const pct20e=pctFromEma(price,e20);
+  const pct50e=pctFromEma(price,e50);
+  const pct200e=pctFromEma(price,e200);
+
   /* Candlestick patterns. hasO distinguishes "the sheet has no Open column"
      from "the open happens to equal the close": without it, a missing-Open
      sheet reports a perfect Doji on literally every bar of every stock. */
@@ -5063,6 +5393,18 @@ function computeTech(C,H,L,V,dates,sym,O){
        filters and by the export — and by NOTHING that scores, ranks or
        blends. See the note on adrPct(). */
     adr,
+    /* The EMA-distance trio arrived with gs13. Same contract as adr: read by
+       their own column, by sorting, by the column filters and by the export,
+       and by NOTHING that scores, ranks or blends — isQualitySetup() already
+       asks its own price-above-every-EMA question and must keep asking it in
+       one place. Cached with the row, which is what forces the CFG.VER bump. */
+    pct20e,pct50e,pct200e,
+    /* daysUp and tight shipped with the same gs13 bump. Same contract again:
+       their own columns, the sort, the column filters and the export — and
+       nothing that scores, ranks or blends. `tight` in particular must never
+       become an input to a composite: it is already a RATIO of two things the
+       table shows, and folding it into a score would count ADR% twice. */
+    daysUp,tight,
     boGain:bo.gain,boCnt:bo.count,retrace:bo.retrace,
     // Own returns (inputs to RS, never displayed as RS), plus the dates they
     // were measured across so rankRS() can price the benchmark on the SAME
@@ -7096,6 +7438,55 @@ function adrC(v){
   return `<span>${v.toFixed(2)}%</span>`;
 }
 
+/* %20E / %50E / %200E share one cell renderer, so the three can never drift
+   apart in formatting or in colour. COLOURED ON THE SIGN, the same rule 1D%
+   (fmtCh) and RS21 (rsNumC) already use: above the average is green, below is
+   red, exactly on it is neutral. Deliberately NOT bucketed by magnitude —
+   "8% above the 20 EMA" is bad for an entry and good for an open position, so
+   any band drawn here would be picking a side the column cannot defend. The
+   filter and the sort are how the user states their own threshold, which is
+   the same answer ADR% gives to the same question.
+   fmtCh() is not reused despite the identical colour rule: it prints the raw
+   value, and these need a FIXED two decimals to line up with ADR%, Retrace%
+   and 1D% in the same row of cells. */
+/* Days Up cell. COLOURED AGAINST THE OWNER'S OWN RULE rather than by sign:
+   0, 1 and 2 are the window he will enter in and are left plain, and anything
+   at or above DAYSUP_MAX_OK+1 is red because by then the entry risk has
+   widened — the stop is under a moving average that the price has spent three
+   sessions walking away from. There is no green tier on purpose: 0 up days is
+   not GOOD, it is merely not disqualifying, and painting it green would read
+   as a buy signal on a stock that closed down yesterday. */
+const DAYSUP_MAX_OK=2;
+function daysUpC(v){
+  if(v==null) return '<span class="vm">—</span>';
+  const c=v>DAYSUP_MAX_OK?'vr':'';
+  return `<span class="${c}">${v}</span>`;
+}
+
+/* Tight cell. THE COLOUR RUNS THE OPPOSITE WAY TO EVERY OTHER COLUMN in this
+   table, which is exactly why it is worth being explicit about: a SMALL number
+   is the good one. Under TIGHT_GOOD the range has contracted to well under
+   half of this stock's normal day — green. Between there and 100 it is quieter
+   than normal but not remarkably so — plain, no colour, because inventing a
+   second good tier there would imply a precision the statistic does not have.
+   Above 100 the range is WIDER than normal, i.e. expanding rather than
+   coiling, which is the opposite of the setup — red.
+   Three bands with vg / plain / vr is the same shape vrC() (Vol Ratio) uses,
+   so the table has one visual grammar even where the direction is inverted.
+   Printed with two decimals and NO percent sign: it is an index where 100 is
+   the stock's own normal day, not a percentage of price like ADR% beside it. */
+function tightC(v){
+  if(v==null) return '<span class="vm">—</span>';
+  const c=v<=TIGHT_GOOD?'vg':v>100?'vr':'';
+  return `<span class="${c}">${v.toFixed(2)}</span>`;
+}
+
+function pctEmaC(v){
+  if(v==null) return '<span class="vm">—</span>';
+  const c=v>0?'vg':v<0?'vr':'vm';
+  return `<span class="${c}">${v>0?'+':''}${v.toFixed(2)}%</span>`;
+}
+
 function emaC(sc){
   if(sc==null) return '<span class="vm">—</span>';
   if(sc>=0.8) return '<span class="ema-b">▲ Bull</span>';
@@ -7422,8 +7813,8 @@ function histGC(v){ return fmtCh(v); }
    skeleton rows WIDER than the data rows underneath, because only the data
    rows' cells get hidden. Length must equal (th count − 4). */
 const SKEL_COLS=['c-setup','c-align','c-fresh','c-sector','','','c-ch1w','c-ch1m','c-ch3m','c-hist','c-histg','c-status','','c-wrsi','c-vr','c-wvol','c-avgval','','c-wpiv','c-dbox','c-wbox','',
-  'c-ema','c-wema','c-xcross','c-wcross','c-slope200','c-pattern','c-wpattern','c-consol',
-  'c-monthly','','c-bocnt','c-followup','c-voldry','c-retrace','c-squeeze','c-adr','','c-mrsrank','c-rs21',
+  'c-ema','c-pct20e','c-pct50e','c-pct200e','c-wema','c-xcross','c-wcross','c-slope200','c-pattern','c-wpattern','c-consol',
+  'c-monthly','','c-bocnt','c-followup','c-voldry','c-retrace','c-squeeze','c-adr','c-tight','c-daysup','','c-mrsrank','c-rs21',
   'c-rs55','c-rs10w','c-rsslope','c-rsp55','c-rsp21','c-rshist','','c-rstrend','c-notes'];
 
 function skelRow(def,i){
@@ -7489,6 +7880,9 @@ function dataRow(def,d,i){
     <td class="c-wbox">${dboxC(d.wBoxState,d.wBoxTop,d.wBoxBot)}</td>
     <td>${h52C(d.h52d)}</td>
     <td class="c-ema">${emaBadgeRow(d.price,[['10',d.e10],['20',d.e20],['50',d.e50],['200',d.e200]])}</td>
+    <td class="c-pct20e">${pctEmaC(d.pct20e)}</td>
+    <td class="c-pct50e">${pctEmaC(d.pct50e)}</td>
+    <td class="c-pct200e">${pctEmaC(d.pct200e)}</td>
     <td class="c-wema">${emaBadgeRow(d.price,[['10',d.we10],['20',d.we20]])}</td>
     <td class="c-xcross">${xoverC(d)}</td>
     <td class="c-wcross">${wxC(d.wxState,d.wxBars,d.wxApplicable)}</td>
@@ -7504,6 +7898,8 @@ function dataRow(def,d,i){
     <td class="c-retrace">${retC(d.retrace)}</td>
     <td class="c-squeeze">${sqC(d.sq)}</td>
     <td class="c-adr">${adrC(d.adr)}</td>
+    <td class="c-tight">${tightC(d.tight)}</td>
+    <td class="c-daysup">${daysUpC(d.daysUp)}</td>
     <td>${s2C(d.s2)}</td>
     <td class="c-mrsrank" style="text-align:center">${rsC(d.mrsRank)}</td>
     <td class="c-rs21">${rsNumC(d.rs21)}</td>
@@ -7525,7 +7921,7 @@ function errRow(def,i){
     <td class="td-n pin pin1">${i}</td><td class="pin pin2">${revC(def.s)}</td>
     <td class="pin pin3">${capB(def.g)}</td>
     <td class="pin pin4">${watchC(def.s)}<span class="ticker">${def.d}</span><br><span class="sec">${def.sector}</span></td>
-    <td colspan="50" style="color:var(--text3);font-size:11px">
+    <td colspan="55" style="color:var(--text3);font-size:11px">
       ⚠ Not in this market's data source — it will appear once the daily data carries it
     </td>
   </tr>`;
@@ -8309,6 +8705,17 @@ const SORT_FN={
      ADR% is a volatility measure, and blending it into a quality score would
      double-count what the D-Box and Squeeze columns already say. */
   adr:d=>d?.adr,
+  /* The EMA-distance trio. Sortable ASCENDING is the useful direction for
+     %20E — "closest to my stop level first" — which the header's second click
+     gives; nothing has to be negated to make that work, unlike bofu, because
+     the number the cell prints IS the number to rank on. */
+  pct20e:d=>d?.pct20e, pct50e:d=>d?.pct50e, pct200e:d=>d?.pct200e,
+  /* NOT NEGATED, even though "lower is better" for Tight. bofu is negated
+     because its first click has one obviously-right meaning; here both
+     directions are wanted — ascending finds the coiled ones, descending finds
+     the ones that have just expanded out of a base — and negating would make
+     the arrow lie about which way the column is ordered. */
+  tight:d=>d?.tight, daysup:d=>d?.daysUp,
   rshist:d=>Array.isArray(d?.rsHist)&&d.rsHist.length?d.rsHist[d.rsHist.length-1]:null,
   // rsTrend is now the words 'up'/'flat'/'down' (was the arrows ↑/→/↓).
   // The arrow keys are kept so a row rehydrated from an older cache still
@@ -9231,6 +9638,12 @@ const EXPORT_COLS=[
   ['EMA20',       (def,d)=>d?.e20??''],
   ['EMA50',       (def,d)=>d?.e50??''],
   ['EMA200',      (def,d)=>d?.e200??''],
+  /* Exported NEXT TO the raw EMA levels on purpose: these three are a
+     division of two columns already in the sheet, so a reader can audit them
+     in place instead of taking them on trust. */
+  ['%20E',        (def,d)=>d?.pct20e??''],
+  ['%50E',        (def,d)=>d?.pct50e??''],
+  ['%200E',       (def,d)=>d?.pct200e??''],
   ['SMA50',       (def,d)=>d?.sma50??''],
   ['SMA150',      (def,d)=>d?.sma150??''],
   ['SMA200',      (def,d)=>d?.sma200??''],
@@ -9255,6 +9668,10 @@ const EXPORT_COLS=[
   ['Retrace%',    (def,d)=>d?.retrace??''],
   ['Squeeze',     (def,d)=>d?.sq??''],
   ['ADR%',        (def,d)=>d?.adr??''],
+  // Next to ADR%, which is Tight's denominator — the same audit-in-place
+  // argument as the EMA-distance trio sitting beside the raw EMA levels.
+  ['Tight',       (def,d)=>d?.tight??''],
+  ['Days Up',     (def,d)=>d?.daysUp??''],
   ['MRS Rank',    (def,d)=>d?.mrsRank??''],
   ['RS21',        (def,d)=>d?.rs21??''],
   ['RS55',        (def,d)=>d?.rs55??''],
@@ -9590,6 +10007,19 @@ const COL_FILTERS={
   // "Show me everything that moves at least 4% a day" is the screen this
   // exists for.
   adr:     {t:'num',  label:'ADR%',    val:d=>d&&d.adr},
+  /* "Within 5% of the 20 EMA" (min -2, max 5) is the entry screen this exists
+     for, and "above the 200 EMA" (min 0) is the regime filter. Both are plain
+     inclusive bounds on the number the cell prints, so a saved screen carrying
+     them means the same thing to a reader as the header funnel does. */
+  pct20e:  {t:'num',  label:'%20E',    val:d=>d&&d.pct20e},
+  pct50e:  {t:'num',  label:'%50E',    val:d=>d&&d.pct50e},
+  pct200e: {t:'num',  label:'%200E',   val:d=>d&&d.pct200e},
+  /* "max 60" (coiled) and "max 2 days up" (not yet chased) are the two screens
+     these exist for, and both are plain inclusive bounds on the printed value.
+     Note daysUp is the FIELD and daysup is the key: the key must match the
+     <th>'s data-s, which is lower-case throughout the header. */
+  tight:   {t:'num',  label:'Tight',   val:d=>d&&d.tight},
+  daysup:  {t:'num',  label:'Days Up', val:d=>d&&d.daysUp},
 
   /* ── explicitly nothing ─────────────────────────────────────────── */
   /* A 30-point sparkline of the 21-day excess return. Neither a value to match
@@ -10145,6 +10575,9 @@ const TOGGLEABLE_COLS=[
   {cls:'dbox',   label:'D-Box (Darvas)'},
   {cls:'wbox',   label:'W-Box (Darvas)'},
   {cls:'ema',    label:'EMA Align'},
+  {cls:'pct20e', label:'%20E'},
+  {cls:'pct50e', label:'%50E'},
+  {cls:'pct200e',label:'%200E'},
   {cls:'wema',   label:'W-EMA'},
   {cls:'xcross', label:'EMA Cross'},
   {cls:'wcross', label:'W-Cross'},
@@ -10159,6 +10592,8 @@ const TOGGLEABLE_COLS=[
   {cls:'retrace',label:'Retrace %'},
   {cls:'squeeze',label:'Squeeze'},
   {cls:'adr',    label:'ADR%'},
+  {cls:'tight',  label:'Tight'},
+  {cls:'daysup', label:'Days Up'},
   {cls:'mrsrank',label:'MRS Rank'},
   {cls:'rs21',   label:'RS21'},
   {cls:'rs55',   label:'RS55'},
@@ -10978,6 +11413,9 @@ function closeDrill(){
   loadNotesLocal();   // ditto — notes are browser-local and must precede the first render
   loadWatchLocal();
   loadScreensLocal();
+  // Must follow loadScreensLocal (it checks what the user already has) and
+  // precede buildScreenSelect() below, which paints the picker.
+  seedDefaultScreens();
   loadRSConfig();
   // Before anything renders: loadAdvFilters can change CFG.XOVER, which the
   // indicator pass and the column header both read.
