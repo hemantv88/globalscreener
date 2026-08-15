@@ -205,6 +205,24 @@ input{font-family:inherit}
    by the word itself — the colour has to stay free to carry the age. */
 .asof.cached{font-style:italic;font-weight:500}
 
+/* MARKET CONDITION. Its own element for exactly the reason .asof is: the
+   benchmark-failure path rewrites #bnrSub's innerHTML wholesale, and this line
+   must survive that — a failed benchmark is precisely when a reader needs to
+   know the market read is missing rather than merely quiet.
+   EMPTY COLLAPSES ENTIRELY. With no benchmark loaded there is nothing honest
+   to say, so updateMarketCond() writes an empty string and :empty removes the
+   element from the flex row — no stray separator, no guessed state.
+   THE COLOURS ARE .asof's COLOURS, not a traffic light, and that is deliberate.
+   Strong is the plain --on-dark the rest of the banner is written in rather
+   than a green GO; the palette carries no on-dark green anyway, and inventing
+   one would give a two-moving-average check the visual weight of a signal.
+   Mixed borrows the amber "pay attention", Weak the red "something is off" —
+   the same grammar the data-age stamp two elements to the left already uses. */
+.mktcond{font-weight:600;color:var(--on-dark);white-space:nowrap;cursor:help}
+.mktcond:empty{display:none}
+.mktcond.mixed{color:var(--on-dark-warn)}
+.mktcond.weak{color:var(--on-dark-bad)}
+
 /* ─── PROGRESS ────────────────── */
 #prgSec{display:none;padding:8px 16px 4px;background:var(--surface);border-bottom:1px solid var(--border)}
 .prg-track{height:5px;background:var(--border);border-radius:3px;overflow:hidden}
@@ -674,9 +692,19 @@ body.metrics-collapsed #metricsHd,body.filters-collapsed #filtersHd{margin-botto
    of the three that is a live stop level — %20E — is in group B below. */
 .c-pct50e,.c-pct200e{display:table-cell}
 /* GROUP B — additionally force-hidden at ≤480px */
+/* Vol Spike is GROUP B, with Vol Ratio: the two are read together (one says
+   what today did, the other what the last two weeks did) and dropping one of
+   the pair on a narrow screen leaves half an answer. */
+.c-volspike,
 .c-vr,.c-align,.c-ema,.c-bocnt,.c-squeeze,.c-mrsrank,.c-setup,
 .c-sector,.c-status,.c-xcross,.c-pattern,.c-consol,.c-rs21,.c-rs55,
 .c-ch1w,.c-ch1m,.c-ch3m,.c-histg,.c-dbox,.c-avgval,.c-fresh,
+/* %10E is GROUP B for the same reason %20E is, and it is listed FIRST because
+   it sits first in the table: the owner reads the 10 and the 20 as a PAIR —
+   the pullback zone after a fast, high-volume move — so dropping one of the
+   two on a narrow screen would leave half of a comparison on the phone, which
+   is worse than leaving neither. The 10 is the tighter of the two. */
+.c-pct10e,
 /* %20E is GROUP B for the same reason ADR% is: in a normal market the 20 EMA
    is where the stop goes, so the distance to it is read at the moment of
    deciding what to buy — which is exactly when a phone is the thing in hand. */
@@ -700,6 +728,7 @@ body.hide-hist    .c-hist,
 body.hide-histg   .c-histg,
 body.hide-wrsi    .c-wrsi,
 body.hide-vr      .c-vr,
+body.hide-volspike .c-volspike,
 body.hide-wvol    .c-wvol,
 body.hide-avgval  .c-avgval,
 body.hide-wpiv    .c-wpiv,
@@ -713,6 +742,7 @@ body.hide-voldry  .c-voldry,
 body.hide-retrace .c-retrace,
 body.hide-squeeze .c-squeeze,
 body.hide-adr     .c-adr,
+body.hide-pct10e  .c-pct10e,
 body.hide-pct20e  .c-pct20e,
 body.hide-pct50e  .c-pct50e,
 body.hide-pct200e .c-pct200e,
@@ -1029,10 +1059,10 @@ body.dd-lock{overflow:hidden}
 }
 @media (max-width:480px){
   .metrics-row{grid-template-columns:repeat(2,1fr)}
-  .c-vr,.c-align,.c-ema,.c-bocnt,.c-squeeze,.c-mrsrank,.c-setup,
+  .c-volspike,.c-vr,.c-align,.c-ema,.c-bocnt,.c-squeeze,.c-mrsrank,.c-setup,
   .c-sector,.c-status,.c-xcross,.c-pattern,.c-consol,.c-rs21,.c-rs55,
   .c-ch1w,.c-ch1m,.c-ch3m,.c-histg,.c-dbox,.c-avgval,.c-fresh,
-  .c-pct20e,.c-adr,.c-tight,.c-daysup{display:none!important}
+  .c-pct10e,.c-pct20e,.c-adr,.c-tight,.c-daysup{display:none!important}
   .search-bar input{width:80px}
 }
 </style>
@@ -1082,6 +1112,7 @@ body.dd-lock{overflow:hidden}
   <strong id="bnrMkt">India (NSE) · Nifty 500</strong>
   <span id="bnrSub">&nbsp;·&nbsp; End-of-Day Data · Client-side Technicals</span>
   <span class="asof" id="bnrAsOf" data-tip="The newest price bar present in the data currently loaded for this market — the last trading day the data source itself holds. This is NOT when the page was opened or when the scan ran; the &quot;Last scan&quot; clock under the table says that. Amber means the newest bar is 2–4 trading days old, red means older still; age is counted in trading days, so on a Monday morning Friday's bar is current, not stale.">·&nbsp;Data to —</span>
+  <span class="mktcond" id="bnrMktCond" data-tip="Whether the BENCHMARK&rsquo;s own latest close is above its own 10-day and 20-day EMA. Strong = above both. Weak = below both. Mixed = above one and below the other. A close sitting exactly ON an average counts as NOT above it. THAT IS THE ENTIRE TEST, and it is worth being blunt about what it is not: it is ONE index-tracking fund measured against TWO of its own moving averages. It is NOT a breadth study &mdash; it says nothing about how many stocks are participating, nothing about advancers against decliners, nothing about new highs against new lows, and nothing about any index other than the one named in the line itself. The ticker shown is the fund whose bars were actually used, not the index it tracks. This is context for reading the table &mdash; it is not a signal, not a score, and not a recommendation to buy, sell, or stay out of anything."></span>
   <span class="src-tag" id="srcTag">⬤ Checking…</span>
 </div>
 
@@ -1260,6 +1291,7 @@ body.dd-lock{overflow:hidden}
             <th data-s="rsi" data-tip="14-day Relative Strength Index — a 0 to 100 momentum gauge. Above 60 means buyers have been in control recently; below 40 means sellers have.">RSI<span class="sort-ico"></span></th>
             <th class="c-wrsi" data-s="wrsi" data-tip="The same 14-period momentum gauge measured on weekly bars, so it describes months rather than days and is much slower to change direction.">W-RSI<span class="sort-ico"></span></th>
             <th class="c-vr" data-s="vr" data-tip="The latest day's traded volume divided by the average of the 20 days before it (today itself is excluded, so a spike cannot dilute its own baseline). 2.0x means twice the usual number of shares changed hands — genuine interest rather than drift.">Vol Ratio<span class="sort-ico"></span></th>
+            <th class="c-volspike" data-s="volspike" data-tip="The BIGGEST volume bar of the last 10 sessions, measured against its OWN trailing 20-day average volume, and how many sessions ago it happened (0d = today). THE EXACT DEFINITION: for each of the last 10 bars, volume on that bar divided by the average volume of the 20 bars before it; the column shows the largest such multiple and its age. WHY THE OWNER READS IT: Vol Ratio beside it only ever describes TODAY, so by the time a stock has spiked on huge volume and then pulled back into the 10/20 EMA zone &mdash; which is the entry &mdash; today&rsquo;s volume is back to normal and Vol Ratio reads about 1.0x, indistinguishable from a stock that never moved at all. This column remembers the move. Read it with %10E and %20E: a big multiple a few sessions ago plus a close back near the 10/20 EMA is the &ldquo;moved hard, now resting&rdquo; shape. EVERY BAR IS PRICED AGAINST ITS OWN PAST &mdash; the 20-day average used for a bar is built only from the bars BEFORE it, never from the whole series, so an old bar is never flattered by volume that had not happened yet. A dash means the biggest multiple in the window was under 1.5x (nothing worth calling a spike), or there are fewer than 21 bars of history, which is the minimum for a 20-day baseline plus one bar to measure. Sorting and filtering work on the MULTIPLE, not on the age.">Vol Spike<span class="sort-ico"></span></th>
             <th class="c-wvol" data-s="wvol" data-tip="The same volume comparison on weekly bars: the latest week's total volume against the average of the 10 weeks before it, which smooths out one-day spikes. Needs 11 weekly bars, so it shows — for anything younger.">W-VOL<span class="sort-ico"></span></th>
             <th class="c-avgval" data-s="avgval" data-tip="Average daily traded VALUE over the last 20 trading bars — the mean of close × volume — shown in ₹ crore for Indian stocks and $ million for US stocks and ETFs. This is the tradability check, and it is deliberately value and not share volume: 100,000 shares of a ₹12 stock is ₹12 lakh of turnover while 100,000 shares of a ₹4,000 stock is ₹40 crore, so raw volume cannot be compared across names. Green above ₹25 Cr / $25M, red below ₹1 Cr / $1M, where a position of any size would move the price against you. Needs 20 bars; below that it shows a dash rather than a zero. The Advanced Filters modal has a minimum on this figure.">Avg Value<span class="sort-ico"></span></th>
             <th data-s="dpiv" data-tip="Where the price sits among the classic daily pivot levels, from below S2 (weakest) up to above R2 (strongest). Anything above the pivot point is the bullish half of the day's range.">D-Pivot<span class="sort-ico"></span></th>
@@ -1268,6 +1300,7 @@ body.dd-lock{overflow:hidden}
             <th class="c-wbox" data-s="wbox" data-tip="The same Darvas Box construction run on WEEKLY bars, so both the box and the states describe months rather than days. A weekly box needs 9 weekly bars (roughly 45 trading days) before it can exist, and it moves far less often than the daily one — a weekly Break is a much rarer and heavier signal than a daily one. The five states mean exactly what they mean in the D-Box column.">W-Box<span class="sort-ico"></span></th>
             <th data-s="h52" data-tip="% below the highest high in the available window. The data source holds ~1 trading year (~250 bars), so in practice this is a ~50-week high, not a full 52. Shows — for stocks with under 120 bars of history.">52W High<span class="sort-ico"></span></th>
             <th class="c-ema" data-s="ema" data-tip="How many of the 10, 20, 50 and 200-day moving averages the price is trading above, one badge each. All four green is the textbook shape of a healthy uptrend.">EMA Align<span class="sort-ico"></span></th>
+            <th class="c-pct10e" data-s="pct10e" data-tip="How far the latest close sits above or below the 10-day EMA, as a percentage of that EMA. THE EXACT DEFINITION: %10E = 100 &times; ( Close &minus; EMA10 ) / EMA10. WHY THE OWNER READS IT: the 10 and the 20 EMA are read TOGETHER, as the PULLBACK ZONE a stock drops back into after a fast, high-volume move &mdash; and the 10 is the TIGHTER of the two. A stock that has run hard and is now sitting on its 10 EMA has barely given anything back; one that has cut through the 10 and is resting on the 20 has pulled back further but is still inside the zone. Read this column beside %20E rather than on its own: the gap between the two numbers IS the depth of the pullback. It is NOT a stop level &mdash; the stop goes under the 20 EMA in a normal market and the 50 EMA in a weak one, which is what %20E and %50E are for. A POSITIVE number means the close is ABOVE the moving average; a NEGATIVE number means it is BELOW it, and the minus sign is the whole point of the column. It reuses the very same EMA the EMA Align badges beside it are drawn from &mdash; no moving average is recomputed for this column, so the two can never disagree. A dash means the moving average could not be computed on the history available, or it came back zero or negative, or there is no price &mdash; never a zero, because zero is a real reading: it means the close is sitting exactly on the average. Sortable and filterable like any other numeric column.">%10E<span class="sort-ico"></span></th>
             <th class="c-pct20e" data-s="pct20e" data-tip="How far the latest close sits above or below the 20-day EMA, as a percentage of that EMA. THE EXACT DEFINITION: %20E = 100 &times; ( Close &minus; EMA20 ) / EMA20. WHY THE OWNER READS IT: in a NORMAL market the 20 EMA is the stop level &mdash; the stop is placed a 2% buffer UNDER the 20 EMA, so this number is how far the trade would have to go against you before that stop is reached, before the buffer is added. Near zero, or a little above, is a low-risk entry; a large positive number means the move has already extended away from the average and the stop is now a long way down. In a WEAK market the stop moves out to the 50 EMA instead &mdash; that is the %50E column. A POSITIVE number means the close is ABOVE the moving average; a NEGATIVE number means it is BELOW it, and the minus sign is the whole point of the column. It reuses the very same EMA the EMA Align badges beside it are drawn from &mdash; no moving average is recomputed for this column, so the two can never disagree. A dash means the moving average could not be computed on the history available (the 200 EMA needs 200 bars), or it came back zero or negative, or there is no price &mdash; never a zero, because zero is a real reading: it means the close is sitting exactly on the average. Sortable and filterable like any other numeric column.">%20E<span class="sort-ico"></span></th>
             <th class="c-pct50e" data-s="pct50e" data-tip="How far the latest close sits above or below the 50-day EMA, as a percentage of that EMA. THE EXACT DEFINITION: %50E = 100 &times; ( Close &minus; EMA50 ) / EMA50. WHY THE OWNER READS IT: in a WEAK market the 50 EMA is the stop level, not the 20. A pullback that cuts through the 20 EMA in a bad tape is ordinary behaviour and stopping out on it just pays the spread twice; the 50 is the line that decides whether the trend is still intact. Read it together with %20E: negative %20E with positive %50E is a stock pulling back inside its trend, and negative on both is a stock that has left it. A POSITIVE number means the close is ABOVE the moving average; a NEGATIVE number means it is BELOW it, and the minus sign is the whole point of the column. It reuses the very same EMA the EMA Align badges beside it are drawn from &mdash; no moving average is recomputed for this column, so the two can never disagree. A dash means the moving average could not be computed on the history available (the 200 EMA needs 200 bars), or it came back zero or negative, or there is no price &mdash; never a zero, because zero is a real reading: it means the close is sitting exactly on the average. Sortable and filterable like any other numeric column.">%50E<span class="sort-ico"></span></th>
             <th class="c-pct200e" data-s="pct200e" data-tip="How far the latest close sits above or below the 200-day EMA, as a percentage of that EMA. THE EXACT DEFINITION: %200E = 100 &times; ( Close &minus; EMA200 ) / EMA200. WHY THE OWNER READS IT: the 200 EMA is the REGIME line, not a stop &mdash; it is never where the exit goes (that is the 20 EMA in a normal market and the 50 EMA in a weak one). Its job here is to disqualify: a stock below its 200 EMA is not a long candidate however good the shorter-term shape looks, so a negative reading is a veto rather than a measurement. A small positive number on a stock that has just reclaimed it is a different situation from a large one on a stock that never lost it. A POSITIVE number means the close is ABOVE the moving average; a NEGATIVE number means it is BELOW it, and the minus sign is the whole point of the column. It reuses the very same EMA the EMA Align badges beside it are drawn from &mdash; no moving average is recomputed for this column, so the two can never disagree. A dash means the moving average could not be computed on the history available (the 200 EMA needs 200 bars), or it came back zero or negative, or there is no price &mdash; never a zero, because zero is a real reading: it means the close is sitting exactly on the average. Sortable and filterable like any other numeric column.">%200E<span class="sort-ico"></span></th>
@@ -1686,7 +1719,21 @@ const CFG = {
      bars ≈ 45 trading days) fits inside a year of data with room to spare. */
   DARVAS: {boxp:5, nearPct:1.0},
 
-  VER:  'gs13',     // gs12 -> gs13: computeTech() returns FIVE more fields — pct20e/pct50e/
+  VER:  'gs14',     // gs13 -> gs14: computeTech() returns THREE more fields — pct10e (the
+                    // close's distance from the 10 EMA, the tighter half of the 10/20
+                    // pullback zone), volSpike (the largest volume-vs-its-own-20-day-
+                    // average multiple in the last VOL_SPIKE_WIN sessions) and volSpikeAge
+                    // (how many sessions ago that was). All three are written by
+                    // computeTech() and are therefore CACHED, so a gs13 row rehydrated into
+                    // a gs14 renderer would show two permanently blank columns with
+                    // nothing on screen to say why.
+                    // (Two columns, three fields: the age shares Vol Spike's cell.)
+                    // pct10e recomputes no EMA — it reads e10, which gs13 rows already
+                    // carry — but the DERIVED field is what the renderer reads, and it is
+                    // new. volSpike genuinely needs the raw volume series, which a cached
+                    // row does NOT carry, so a gs13 row could not be repaired at render
+                    // time even in principle. Orphaning gs13 is the only thing that works.
+                    // gs12 -> gs13: computeTech() returns FIVE more fields — pct20e/pct50e/
                     // pct200e (the close's distance from the 20/50/200 EMA), daysUp (the
                     // run of consecutive up-closes) and tight (recent true range against
                     // the stock's own ADR%). All five are written by computeTech() and are
@@ -4730,6 +4777,80 @@ function volAvg20(V,end){
   return cnt?sum/cnt:0;
 }
 
+/* ── VOLUME SPIKE IN THE RECENT PAST, AND HOW LONG AGO ─────────────────
+     volSpike = the LARGEST value of  volume[i] / volAvg20(V, i+1)
+                over the last VOL_SPIKE_WIN bars, plus how many sessions ago
+                that bar was (0 = the latest bar).
+
+   WHY THIS AND NOT Vol Ratio. Vol Ratio answers one question — "is TODAY
+   busy" — and it answers it about today only. The pattern the owner is
+   actually hunting is "this thing moved on enormous volume a week ago and has
+   since gone quiet and pulled back", and Vol Ratio is structurally incapable
+   of expressing it: by the time the pullback is worth buying, today's volume
+   is back to normal and Vol Ratio reads ~1.0, which is indistinguishable from
+   a stock that never did anything at all. This column carries the memory.
+
+   NO LOOKAHEAD, AND IT IS THE WHOLE CORRECTNESS ARGUMENT. Bar i's multiple is
+   measured against the 20-bar average AS OF BAR i — volAvg20(V,i+1), which by
+   its own signature reads bars 0..i-1 and nothing else. Using ONE average for
+   the whole window (the average over all the data, or the average as of the
+   LATEST bar) would price every old bar against a baseline built partly out of
+   its own future. On any stock whose volume has grown, that makes ordinary old
+   bars read as spikes; on any stock whose volume has faded, it hides real
+   ones. Both directions produce a screener that looks uncannily good on
+   history and finds nothing on the day. The guarantee here is structural, not
+   a matter of care at the call site: truncate the series anywhere and every
+   surviving bar's multiple is bit-for-bit unchanged.
+
+   THE SAME DENOMINATOR AS Vol Ratio. volAvg20() is the function vRatio and
+   breakout()'s volume test already use, so today's bar in this window and the
+   Vol Ratio cell beside it are the same arithmetic on the same baseline — they
+   cannot disagree.
+
+   NEEDS 20 BARS OF BASELINE PLUS AT LEAST ONE BAR TO MEASURE, i.e. 21. Below
+   that the window has nothing it can honestly price and the cell is a dash.
+   Bars earlier than index 20 are SKIPPED rather than priced against a short
+   average: a "20-day average" built from six days is a different statistic
+   wearing the same label, and it would read as a spike almost every time.
+
+   NULL, NEVER 0, BELOW THE THRESHOLD. A window whose best bar is 1.2x has a
+   real and perfectly good answer — "nothing happened" — and the column says
+   that with a dash rather than by printing a number that invites sorting on
+   noise. The comparison is made on the ROUNDED value so that what is printed
+   and what was tested are the same number. */
+const VOL_SPIKE_WIN=10;
+/* Below this the "spike" is inside the ordinary day-to-day variation of
+   volume and is not evidence of anything. Named once and read by BOTH the
+   compute and the <th> tooltip's wording, so the two cannot drift. */
+const VOL_SPIKE_MULT=1.5;
+/* The green tier, deliberately the SAME 2x vrC() paints Vol Ratio green at,
+   so the two volume columns share one visual grammar rather than each having
+   its own idea of "big". */
+const VOL_SPIKE_BIG=2;
+function volSpike(V,win,mult){
+  const w=(win==null?VOL_SPIKE_WIN:win), m=(mult==null?VOL_SPIKE_MULT:mult);
+  const none={mult:null,age:null};
+  if(!Array.isArray(V)) return none;
+  const n=V.length;
+  if(n<21) return none;            // 20 bars of baseline + at least 1 to measure
+  let best=null,bestI=-1;
+  for(let i=Math.max(20,n-w);i<n;i++){
+    const v=V[i];
+    if(!(typeof v==='number'&&isFinite(v)&&v>0)) continue;
+    const base=volAvg20(V,i+1);    // bars 0..i-1 only — see the note above
+    if(!(base>0)) continue;
+    const r=v/base;
+    // Strictly greater, so the OLDEST bar wins a tie. A tie means the older
+    // one is the move and the newer one is a repeat of it, and the older date
+    // is the one that dates the setup.
+    if(best==null||r>best){ best=r; bestI=i; }
+  }
+  if(best==null) return none;
+  const rounded=+best.toFixed(2);
+  if(rounded<m) return none;
+  return {mult:rounded, age:(n-1)-bestI};
+}
+
 /* 52-week extremes, floored at H52_MIN_BARS — see the note in computeTech()
    for why a 20-bar "52-week high" is a wrong number and not a shorter window.
    H52_WIN is ~252 sessions; the sheet holds slightly less, so in practice this
@@ -5186,6 +5307,12 @@ function computeTech(C,H,L,V,dates,sym,O){
   const vRatio=avgV>0?+(todV/avgV).toFixed(2):null;
   /* vRatio IS the RVol the brief describes — today's volume over the 20-bar
      average EXCLUDING today. It is not duplicated as a second column. */
+  /* Vol Spike. The SAME volAvg20() baseline, asked at every bar of the last
+     VOL_SPIKE_WIN sessions instead of only at the latest one — which is the
+     one thing vRatio above cannot be made to say. Computed here, not at render
+     time, because the raw volume series is gone on a cached load and the row
+     is then the only surviving record of it. */
+  const vSpike=volSpike(V);
   const avgValue=avgTradedValue(C,V,AVG_VAL_BARS);
 
   /* 52-week high/low.
@@ -5292,8 +5419,12 @@ function computeTech(C,H,L,V,dates,sym,O){
      recomputed: a second ema(C,20) call would be a second source of truth for
      the same line the EMA Align badges, the Stage 2 rules and isQualitySetup()
      all read, and the two copies would eventually disagree with nothing on the
-     page able to say which was right. e100 and e10 are deliberately not given
-     columns — neither is a stop level for this owner. */
+     page able to say which was right. e100 is deliberately not given a column —
+     it is not a stop level and not part of the pullback zone for this owner.
+     e10 GAINED a column (%10E) with gs14: it is not a stop level either, but it
+     is the tighter half of the 10/20 pullback zone the owner reads as a pair,
+     which is a different question from "where does the stop go". It is READ
+     here on the same terms as the other three — never recomputed. */
   /* Days Up and Tight. Both are "what have the last few bars done", which is
      why they are computed here rather than at render time: the raw OHLCV is
      gone on a cached load and the row is then the only surviving record.
@@ -5302,6 +5433,9 @@ function computeTech(C,H,L,V,dates,sym,O){
   const daysUp=upDayStreak(C);
   const tight=tightness(C,H,L,adr,TIGHT_WIN);
 
+  /* %10E reads e10 — the SAME EMA computed at the top of this function and
+     already drawn as the first EMA Align badge. Nothing is recomputed. */
+  const pct10e=pctFromEma(price,e10);
   const pct20e=pctFromEma(price,e20);
   const pct50e=pctFromEma(price,e50);
   const pct200e=pctFromEma(price,e200);
@@ -5376,6 +5510,12 @@ function computeTech(C,H,L,V,dates,sym,O){
 
   return{
     sym,price,ch1d,ch1w,ch1m,ch3m,volume:todV,avgV,vRatio,avgValue,h52d,h52,l52,
+    /* The Vol Spike pair. Same contract as adr and the EMA-distance columns:
+       read by its own column, the sort, the column filters and the export, and
+       by NOTHING that scores, ranks or blends. It is a RECENCY-weighted read of
+       a thing breakout() already tests its own way; folding it into a score
+       would count the same volume twice. */
+    volSpike:vSpike.mult, volSpikeAge:vSpike.age,
     rsi14,wRsi,e10,e20,e50,e100,e150,e200,emaScr,
     sma50,sma150,sma200,slope200,slopeDir,
     xFast:XF,xSlow:XS,xFastEma,xSlowEma,xState,xBars,wxState,e50CrossUpAge,
@@ -5398,7 +5538,7 @@ function computeTech(C,H,L,V,dates,sym,O){
        and by NOTHING that scores, ranks or blends — isQualitySetup() already
        asks its own price-above-every-EMA question and must keep asking it in
        one place. Cached with the row, which is what forces the CFG.VER bump. */
-    pct20e,pct50e,pct200e,
+    pct10e,pct20e,pct50e,pct200e,
     /* daysUp and tight shipped with the same gs13 bump. Same contract again:
        their own columns, the sort, the column filters and the export — and
        nothing that scores, ranks or blends. `tight` in particular must never
@@ -5677,6 +5817,10 @@ async function applyRSConfig(){
   rankRS(CUR);
   renderTable(CUR);
   updateStatus();
+  // The ONE path updateScanBanner() cannot see: changing the benchmark from
+  // the RS settings dialog swaps the series the market read is computed from
+  // without any load or status transition happening at all.
+  updateMarketCond(CUR);
 }
 
 function resetRSConfig(){
@@ -6198,6 +6342,74 @@ function updateDataAsOf(market){
     el.classList.toggle('old',   st.level==='old');
     el.classList.toggle('cached',!!st.cached);
   }
+}
+
+/* ── IS THE BROAD MARKET STRONG? ───────────────────────────────────────
+   THE OWNER'S OWN DEFINITION, and no more than it:
+
+     Strong = the benchmark's latest close is above BOTH its own 10 EMA and
+              its own 20 EMA.
+     Weak   = below both.
+     Mixed  = above one, below the other.
+
+   WHY THE BENCHMARK'S OWN EMAs, not the universe's. This is the same question
+   the %10E / %20E columns ask of a single stock, asked of the thing the whole
+   table is measured against. It uses ema() — the one EMA in this file — on
+   BENCHMARK_DATA's close series, so the market line and every stock's EMA
+   column are computed by the same code.
+
+   WHAT IT IS NOT, and the tooltip says this too: it is one fund against two
+   moving averages. It is not breadth, not participation, not advance/decline,
+   not new-highs/new-lows, and not a recommendation. Anything that reads this
+   value must not treat it as a score — nothing does, and nothing should.
+
+   STRICTLY GREATER, so a close sitting exactly on an average is NOT above it.
+   The same rule emaBadgeRow() and the Stage 2 position tests already use, so a
+   reader cannot find the badges and this line disagreeing on the same bar.
+
+   NULL — AND THE ELEMENT COLLAPSES — WHEN THERE IS NO BENCHMARK, or when the
+   series is too short for a 20 EMA. There is no honest fallback here: guessing
+   from the universe would be a different statistic wearing this one's label,
+   and a state of "unknown" printed as "Weak" is the worst of the three errors.
+
+   THE SYMBOL PRINTED IS b.sym — the TICKER whose bars were used. Never the
+   BENCHMARK_OPTS label: those labels are index names ("Nifty 500") while the
+   series is an ETF that tracks it (MONIFTY500.NS), and printing "Nifty 500"
+   over ETF bars would claim a source that was never read. */
+const MKT_COND_FAST=10, MKT_COND_SLOW=20;
+const MKT_COND_WORD={strong:'Strong', weak:'Weak', mixed:'Mixed'};
+function marketCondState(market){
+  const m=market||CUR;
+  const b=BENCHMARK_DATA[m];
+  if(!b||!Array.isArray(b.C)||!b.C.length) return null;
+  const C=b.C, close=C[C.length-1];
+  if(typeof close!=='number'||!isFinite(close)) return null;
+  const fast=ema(C,MKT_COND_FAST), slow=ema(C,MKT_COND_SLOW);
+  if(fast==null||slow==null||!isFinite(fast)||!isFinite(slow)) return null;
+  const aF=close>fast, aS=close>slow;
+  const level = (aF&&aS) ? 'strong' : (!aF&&!aS) ? 'weak' : 'mixed';
+  const where = level==='strong' ? `above its ${MKT_COND_FAST} & ${MKT_COND_SLOW} EMA`
+              : level==='weak'   ? `below its ${MKT_COND_FAST} & ${MKT_COND_SLOW} EMA`
+              : aF ? `above its ${MKT_COND_FAST} EMA, below its ${MKT_COND_SLOW} EMA`
+                   : `below its ${MKT_COND_FAST} EMA, above its ${MKT_COND_SLOW} EMA`;
+  return {level, sym:b.sym, close, fast, slow, aboveFast:aF, aboveSlow:aS,
+          text:`Market: ${MKT_COND_WORD[level]} — ${b.sym} ${where}`};
+}
+
+function updateMarketCond(market){
+  const el=$('bnrMktCond'); if(!el) return;
+  const m=market||CUR;
+  if(m!==CUR) return;          // a background market's benchmark is not what the banner is about
+  const st=marketCondState(m);
+  if(el.classList){
+    // 'strong' gets NO class: it is the element's default --on-dark, so there
+    // is no .mktcond.strong rule and nothing renders a class without one.
+    el.classList.toggle('mixed', !!st && st.level==='mixed');
+    el.classList.toggle('weak',  !!st && st.level==='weak');
+  }
+  // Empty string, not a placeholder dash: :empty collapses the element, which
+  // is the "show nothing rather than guess" rule expressed in one place.
+  el.textContent = st ? '· '+st.text : '';
 }
 
 /* Normalise a sheet date cell to ISO 'YYYY-MM-DD'.
@@ -7383,6 +7595,21 @@ function vrC(r){
   const c=r>=2?'vg':r<0.7?'vr':'';
   return `<span class="${c}">${r}x</span>`;
 }
+/* Vol Spike cell. VALUE PLUS AGE IN ONE CELL, which is the shape wxC() (the
+   W-Cross column) already uses — chip text, then ` · Nw`. Same separator,
+   same "the age lives beside the value" idea, so the table has one way of
+   saying "this happened, and this long ago" rather than two. The unit here is
+   d (sessions) rather than w, because the window is daily bars.
+   Thresholds come from the named constants, never re-typed here: the number
+   the cell refuses to print below is VOL_SPIKE_MULT, and the number it paints
+   green at is VOL_SPIKE_BIG. */
+function volSpikeC(v,age){
+  if(v==null) return '<span class="vm">—</span>';
+  const c=v>=VOL_SPIKE_BIG?'vg':'';
+  const a=age==null?'':` · ${age}d`;
+  return `<span class="${c}" title="Biggest volume bar in the last ${VOL_SPIKE_WIN} sessions was ${v}× its own trailing 20-day average${age==null?'':`, ${age} session(s) ago`}">${v}×${a}</span>`;
+}
+
 /* Average traded value, in the unit the market is actually discussed in.
    Green above ₹25 Cr / $25M (institutionally liquid), red below ₹1 Cr / $1M
    (where a position of any size moves the price against you). */
@@ -7812,8 +8039,8 @@ function histGC(v){ return fmtCh(v); }
    reason: without them a table loading with columns switched off renders
    skeleton rows WIDER than the data rows underneath, because only the data
    rows' cells get hidden. Length must equal (th count − 4). */
-const SKEL_COLS=['c-setup','c-align','c-fresh','c-sector','','','c-ch1w','c-ch1m','c-ch3m','c-hist','c-histg','c-status','','c-wrsi','c-vr','c-wvol','c-avgval','','c-wpiv','c-dbox','c-wbox','',
-  'c-ema','c-pct20e','c-pct50e','c-pct200e','c-wema','c-xcross','c-wcross','c-slope200','c-pattern','c-wpattern','c-consol',
+const SKEL_COLS=['c-setup','c-align','c-fresh','c-sector','','','c-ch1w','c-ch1m','c-ch3m','c-hist','c-histg','c-status','','c-wrsi','c-vr','c-volspike','c-wvol','c-avgval','','c-wpiv','c-dbox','c-wbox','',
+  'c-ema','c-pct10e','c-pct20e','c-pct50e','c-pct200e','c-wema','c-xcross','c-wcross','c-slope200','c-pattern','c-wpattern','c-consol',
   'c-monthly','','c-bocnt','c-followup','c-voldry','c-retrace','c-squeeze','c-adr','c-tight','c-daysup','','c-mrsrank','c-rs21',
   'c-rs55','c-rs10w','c-rsslope','c-rsp55','c-rsp21','c-rshist','','c-rstrend','c-notes'];
 
@@ -7872,6 +8099,7 @@ function dataRow(def,d,i){
     <td>${rsiC(d.rsi14)}</td>
     <td class="c-wrsi">${rsiC(d.wRsi)}</td>
     <td class="c-vr">${vrC(d.vRatio)}</td>
+    <td class="c-volspike">${volSpikeC(d.volSpike,d.volSpikeAge)}</td>
     <td class="c-wvol">${vrC(d.wVolRatio)}</td>
     <td class="c-avgval">${avgValC(d.avgValue,d.currency)}</td>
     <td>${pivC(d.dpz)}</td>
@@ -7880,6 +8108,7 @@ function dataRow(def,d,i){
     <td class="c-wbox">${dboxC(d.wBoxState,d.wBoxTop,d.wBoxBot)}</td>
     <td>${h52C(d.h52d)}</td>
     <td class="c-ema">${emaBadgeRow(d.price,[['10',d.e10],['20',d.e20],['50',d.e50],['200',d.e200]])}</td>
+    <td class="c-pct10e">${pctEmaC(d.pct10e)}</td>
     <td class="c-pct20e">${pctEmaC(d.pct20e)}</td>
     <td class="c-pct50e">${pctEmaC(d.pct50e)}</td>
     <td class="c-pct200e">${pctEmaC(d.pct200e)}</td>
@@ -7921,7 +8150,7 @@ function errRow(def,i){
     <td class="td-n pin pin1">${i}</td><td class="pin pin2">${revC(def.s)}</td>
     <td class="pin pin3">${capB(def.g)}</td>
     <td class="pin pin4">${watchC(def.s)}<span class="ticker">${def.d}</span><br><span class="sec">${def.sector}</span></td>
-    <td colspan="55" style="color:var(--text3);font-size:11px">
+    <td colspan="57" style="color:var(--text3);font-size:11px">
       ⚠ Not in this market's data source — it will appear once the daily data carries it
     </td>
   </tr>`;
@@ -8317,6 +8546,16 @@ function updateCollSummaries(){
 ══════════════════════════════════ */
 const CACHE_SHOWN={};   // market -> true once a cached render has been painted
 function updateScanBanner(market){
+  /* The market read is repainted from HERE rather than from each caller for
+     the same reason the as-of stamp is repainted from setGSheetStatus():
+     every path that resolves — or fails to resolve — a benchmark passes
+     through this function afterwards (the cached load, the fresh load, and
+     fetchBenchmark's own failure branch). Hooking the call sites individually
+     is how one of them gets missed and the banner keeps describing the
+     previous market. It is placed BEFORE the early returns below so that a
+     background market still short-circuits inside updateMarketCond() itself,
+     on the same CUR test, rather than on two different ones. */
+  updateMarketCond(market);
   const el=$('scanBanner'), txt=$('scanBannerTxt');
   if(!el||!txt) return;
   if(market && market!==CUR) return;
@@ -8650,6 +8889,11 @@ const SORT_FN={
      inventing an order. */
   hist:(_,def)=>histFor(def.s)?.price??null,
   histg:(d,def)=>histGain(d?.price??null, histFor(def.s)),
+  /* SORTS ON THE MULTIPLE, not on the rendered string and not on the age.
+     "2.4x · 6d" sorted as text puts 10x below 2x, and sorting on the age would
+     answer a question nobody asked — the age is context for the multiple, not
+     a ranking. Descending (the first click) is the useful direction. */
+  volspike:d=>d?.volSpike,
   vr:d=>d?.vRatio,wvol:d=>d?.wVolRatio,h52:d=>d?.h52d,ema:d=>d?.emaScr,wema:d=>d?.weEmaScr,
   /* Sorted on the DISPLAY unit (₹ Cr / $M), not the raw currency amount. A
      table holding both INR and USD rows would otherwise rank a ₹1 Cr Indian
@@ -8709,7 +8953,7 @@ const SORT_FN={
      %20E — "closest to my stop level first" — which the header's second click
      gives; nothing has to be negated to make that work, unlike bofu, because
      the number the cell prints IS the number to rank on. */
-  pct20e:d=>d?.pct20e, pct50e:d=>d?.pct50e, pct200e:d=>d?.pct200e,
+  pct10e:d=>d?.pct10e, pct20e:d=>d?.pct20e, pct50e:d=>d?.pct50e, pct200e:d=>d?.pct200e,
   /* NOT NEGATED, even though "lower is better" for Tight. bofu is negated
      because its first click has one obviously-right meaning; here both
      directions are wanted — ascending finds the coiled ones, descending finds
@@ -9612,6 +9856,11 @@ const EXPORT_COLS=[
   ['RSI',         (def,d)=>d?.rsi14??''],
   ['W-RSI',       (def,d)=>d?.wRsi??''],
   ['VolRatio',    (def,d)=>d?.vRatio??''],
+  /* Exported as TWO columns, because a spreadsheet has no reason to inherit
+     the table's one-cell constraint and "2.4x · 6d" is not a number anything
+     downstream can sort or filter on. */
+  ['Vol Spike',   (def,d)=>d?.volSpike??''],
+  ['Vol Spike Age',(def,d)=>d?.volSpikeAge??''],
   ['W-Vol',       (def,d)=>d?.wVolRatio??''],
   /* Both the raw figure and the screening unit go out. The raw one is what the
      currency-agnostic arithmetic needs; the ₹Cr/$M one is what the filter box
@@ -9641,6 +9890,7 @@ const EXPORT_COLS=[
   /* Exported NEXT TO the raw EMA levels on purpose: these three are a
      division of two columns already in the sheet, so a reader can audit them
      in place instead of taking them on trust. */
+  ['%10E',        (def,d)=>d?.pct10e??''],
   ['%20E',        (def,d)=>d?.pct20e??''],
   ['%50E',        (def,d)=>d?.pct50e??''],
   ['%200E',       (def,d)=>d?.pct200e??''],
@@ -9981,6 +10231,12 @@ const COL_FILTERS={
   rsi:     {t:'num',  label:'RSI',     val:d=>d&&d.rsi14},
   wrsi:    {t:'num',  label:'W-RSI',   val:d=>d&&d.wRsi},
   vr:      {t:'num',  label:'Vol Ratio', val:d=>d&&d.vRatio},
+  /* FILTERS ON THE MULTIPLE, for the same reason the sort does. "min 2" —
+     "something really moved in the last two weeks" — is the screen this
+     exists for, and it is a plain inclusive bound on the number the cell
+     prints. Note volSpike is the FIELD and volspike is the key: the key must
+     match the <th>'s data-s, which is lower-case throughout the header. */
+  volspike:{t:'num',  label:'Vol Spike', val:d=>d&&d.volSpike},
   wvol:    {t:'num',  label:'W-VOL',   val:d=>d&&d.wVolRatio},
   // Filtered on the DISPLAY unit (₹ Cr / $ M) for the same reason it SORTS on
   // it: a raw-currency bound would mean two different things in one table.
@@ -10011,6 +10267,9 @@ const COL_FILTERS={
      for, and "above the 200 EMA" (min 0) is the regime filter. Both are plain
      inclusive bounds on the number the cell prints, so a saved screen carrying
      them means the same thing to a reader as the header funnel does. */
+  /* "within 3% of the 10 EMA" is the pullback-zone screen this exists for —
+     the same plain inclusive bounds on the printed number that %20E carries. */
+  pct10e:  {t:'num',  label:'%10E',    val:d=>d&&d.pct10e},
   pct20e:  {t:'num',  label:'%20E',    val:d=>d&&d.pct20e},
   pct50e:  {t:'num',  label:'%50E',    val:d=>d&&d.pct50e},
   pct200e: {t:'num',  label:'%200E',   val:d=>d&&d.pct200e},
@@ -10569,12 +10828,14 @@ const TOGGLEABLE_COLS=[
   {cls:'histg',  label:'Gain% since'},
   {cls:'wrsi',   label:'W-RSI'},
   {cls:'vr',     label:'Vol Ratio'},
+  {cls:'volspike',label:'Vol Spike'},
   {cls:'wvol',   label:'W-VOL'},
   {cls:'avgval', label:'Avg Value'},
   {cls:'wpiv',   label:'W-Pivot'},
   {cls:'dbox',   label:'D-Box (Darvas)'},
   {cls:'wbox',   label:'W-Box (Darvas)'},
   {cls:'ema',    label:'EMA Align'},
+  {cls:'pct10e', label:'%10E'},
   {cls:'pct20e', label:'%20E'},
   {cls:'pct50e', label:'%50E'},
   {cls:'pct200e',label:'%200E'},
@@ -11444,6 +11705,9 @@ function closeDrill(){
   // Paint the as-of placeholder before any fetch resolves, so the banner never
   // shows a stale literal from the markup while the first load is in flight.
   updateDataAsOf('india');
+  // Paint the market read at startup too, so it is empty-and-collapsed rather
+  // than showing the markup's placeholder until the first benchmark resolves.
+  updateMarketCond('india');
   renderMetrics('india'); // show skeleton cards
   // Deliberately NOT awaited, and deliberately INDIA ONLY — a slow or hung
   // Google Sheet fetch must never block the app from starting, and we don't
