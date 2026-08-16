@@ -201,6 +201,11 @@ input{font-family:inherit}
 .asof{font-weight:600;color:var(--on-dark);white-space:nowrap;cursor:help}
 .asof.stale{color:var(--on-dark-warn)}
 .asof.old{color:var(--on-dark-bad)}
+/* Rewound is not an age, so it does not borrow the age ramp's meaning — it
+   borrows the warn colour the strip above uses, so the two elements read as one
+   statement. --on-dark-warn on --dark measures 7.88:1 (Classic) / 9.39:1
+   (Paper); it is already the token this banner uses for "pay attention". */
+.asof.rewound{color:var(--on-dark-warn);font-weight:700}
 /* Cache is a SOURCE state, not an age, so it is signalled by weight/slant and
    by the word itself — the colour has to stay free to carry the age. */
 .asof.cached{font-style:italic;font-weight:500}
@@ -613,6 +618,32 @@ body.metrics-collapsed #metricsHd,body.filters-collapsed #filtersHd{margin-botto
 .scan-banner.show{display:flex}
 .scan-banner.warn{background:var(--orange-bg);color:var(--orange);border-bottom:1.5px solid #FCD34D}
 .scan-banner.err{background:var(--red-bg);color:var(--red);border-bottom:1.5px solid #FCA5A5}
+/* ─── AS-OF (REWOUND) STRIP ─────
+   Every colour is an existing token, so a theme switch repaints it with no JS:
+   --orange / --orange-bg / --accent-ct live in the SEMANTIC :root block that
+   both themes share. Measured: --orange on --orange-bg is 5.55:1 and
+   --accent-ct on --orange is 6.18:1, both over the 4.5:1 AA floor.
+   Thicker rules than .scan-banner and a filled badge, because this one is not a
+   status note — it is the difference between reading history and reading the
+   market, and it has to win at a glance. */
+.asof-banner{display:none;align-items:center;gap:10px;padding:9px 16px;
+  background:var(--orange-bg);color:var(--orange);
+  border-top:3px solid var(--orange);border-bottom:3px solid var(--orange);
+  font-size:12px;font-weight:600;flex-wrap:wrap}
+.asof-banner.show{display:flex}
+.asof-badge{background:var(--orange);color:var(--accent-ct);padding:2px 8px;
+  border-radius:var(--rs);font-size:10.5px;font-weight:700;letter-spacing:.6px;white-space:nowrap}
+.asof-note{font-weight:500;flex:1 1 260px;min-width:0}
+.asof-live{margin-left:auto;background:var(--orange);color:var(--accent-ct);
+  border:none;padding:4px 12px;border-radius:var(--r);font-size:11.5px;
+  font-weight:700;cursor:pointer;white-space:nowrap}
+.asof-live:hover{background:var(--dark)}
+/* The strip scrolls away; the table's own header does not. This keeps the
+   warning on screen for as long as there is a row to misread. */
+body.asof-on th{border-bottom:3px solid var(--orange)}
+body.asof-on .tbl-wrap{outline:3px solid var(--orange)}
+.asof-go.on{background:var(--orange);color:var(--accent-ct)}
+.asof-msg{font-size:10.5px;font-weight:600;display:none;max-width:340px}
 
 /* ─── ADVANCED FILTERS MODAL ──── */
 .adv-modal{width:460px}
@@ -810,6 +841,18 @@ body.hide-fresh   .c-fresh{display:none!important}
 .sector-table th:hover{background:var(--accent-bg)}
 .sector-table th:first-child{text-align:left}
 .sector-table td{padding:6px 9px;border-bottom:1px solid var(--border);border-right:1px solid var(--border)}
+/* NUMBERS RIGHT, LABELS LEFT — the convention the main table already follows.
+   Every column here except the sector name is a number, a percentage or a
+   multiple, and left-aligning those left the digits ragged: "5" and "139" no
+   longer shared a units place, so the eye could not scan a column for the
+   biggest value without reading every row. Right-aligning puts the units under
+   the units. Centring was the other option and is worse for exactly the same
+   reason — it misaligns the digits in BOTH directions. The first cell is the
+   sector name, which is a label, so it stays left with its existing weight. */
+.sector-table th,
+.sector-table td{text-align:right}
+.sector-table th:first-child,
+.sector-table td:first-child{text-align:left}
 .sector-table tr.sector-row{cursor:pointer;transition:background .1s}
 .sector-table tr.sector-row:hover{background:var(--blue-bg)}
 .sector-table tr.sector-row td:first-child{font-weight:600;color:var(--text)}
@@ -856,7 +899,7 @@ body.hide-fresh   .c-fresh{display:none!important}
      then overflows one edge or the other whichever way showTip() flips it.
      showTip() sets an exact max-height in px from the live window height; this
      is the static backstop for anything that renders before that runs. */
-  max-height:calc(100vh - 16px);overflow-y:auto;overscroll-behavior:contain;
+  max-height:min(42vh,340px);overflow-y:auto;overscroll-behavior:contain;
   padding:9px 12px;border-radius:var(--r);pointer-events:none;box-shadow:0 8px 22px rgba(0,0,0,.34)}
 
 /* ─── PER-COLUMN HEADER FILTERS ───
@@ -1106,6 +1149,18 @@ body.dd-lock{overflow:hidden}
   <div class="mtab" id="tab-etf" onclick="switchMkt('etf')">📊 ETFs</div>
 </div>
 
+<!-- AS-OF (REWOUND) BANNER — the loudest element on the page, on purpose.
+     A screener showing three-week-old numbers that LOOK live is the one failure
+     mode of this feature, so the indicator is a full-width strip in the warning
+     ramp with its own badge, not a small label, and it carries the way back to
+     live inside it. Painted only by syncAsOfUI(). -->
+<div class="asof-banner" id="asofBanner">
+  <span class="asof-badge">&#9194; REWOUND</span>
+  <span id="asofBannerTxt"></span>
+  <span class="asof-note" id="asofNote"></span>
+  <button class="asof-live" id="asofLiveBtn" onclick="exitAsOf()">&#9679; Back to live</button>
+</div>
+
 <!-- BANNER -->
 <div class="banner">
   <span class="pulse"></span>
@@ -1201,6 +1256,13 @@ body.dd-lock{overflow:hidden}
       <span class="mcap-label">Hist. from</span>
       <input type="date" id="histDate" onkeydown="if(event.key==='Enter')applyHistDate()"/>
       <button class="hist-go" id="histGoBtn" onclick="applyHistDate()">Go</button>
+      <!-- SAME DATE BOX, second question. "Go" answers "what was it worth then
+           and what has it done since"; this one rewinds every column on the page
+           to that date and turns the pair beside it into the forward return. One
+           input, because two date boxes a centimetre apart is how you end up
+           screening one date and measuring from another. -->
+      <button class="hist-go asof-go" id="asofBtn" onclick="ASOF_DATE?exitAsOf():applyAsOfDate()" data-tip="Rewind the WHOLE table to the date in the box: every column — Setup, Fresh, Align, tightness, RS, the lot — is recomputed from price bars that stop on that day, exactly as if you had opened the page that morning. The Hist. Price and Gain% since pair then flips to show that day's close and the return FROM it to the latest close, so you can screen on what fired and read what happened next. Maximum 50 trading days back: the feed holds about 250 bars and the 200 EMA needs 200 of them, so further back those columns would empty out. A further date is clamped and the reason is stated in the banner.">&#9194; As of</button>
+      <span class="asof-msg" id="asofMsg"></span>
     </div>
     <div class="fsep"></div>
     <!-- SAVED SCREENS — name the current filter combination and come back to it -->
@@ -1276,34 +1338,34 @@ body.dd-lock{overflow:hidden}
             <th class="pin pin2" data-f="rev" data-tip="Your own verdict on the stock — bull, bear or neutral. It is saved in this browser and drives the Review filter, so names you have already judged can be hidden.">Review</th>
             <th class="pin pin3" data-s="cap" data-tip="Size bucket taken from market capitalisation: Large, Mid, Small or Micro. Larger companies generally move more slowly and are easier to buy or sell in quantity. Where no market cap is on file the stock is shown as Small rather than blank, so treat SC on a name with no ₹ figure underneath the ticker as unknown, not measured.">Cap<span class="sort-ico"></span></th>
             <th class="pin pin4" data-s="ticker" data-tip="The exchange symbol, with the sector and market capitalisation printed underneath it. The star to its left adds the stock to your watchlist, which is saved in this browser and shared across all three markets. Sorting on this column puts the list in alphabetical order.">Ticker<span class="sort-ico"></span></th>
-            <th class="c-setup" data-s="setup" data-tip="A star marks a quality setup — all four of these are true at once: within 30% of its 52-week high, price above every moving average that could be calculated, positive relative strength against the benchmark, and a full Stage 2 uptrend score. These rows sort to the top by default. THE NUMBER BESIDE THE STAR IS THE AGE: how many consecutive sessions, ending with the latest bar, all four have been true without a break. Read it as an anti-chasing check — a setup that first appeared today still has its stop close underneath it, while one that has been lit for nine sessions has already given up the easy move and widened the risk for whatever is left. Each past session is judged by this very rule, on that day&#39;s data only, never on anything that came after it. THE MAXIMUM IS 30d, and it is a limit of the data, not of the stock: the sheet holds about a year of sessions, the Stage 2 trend rule spends 220 of them before it can be answered at all, and the relative-strength half can only be looked up across the 30 sessions of history the row carries. A streak that fills that window shows as 30d+ — it started at least 30 sessions ago and this page cannot honestly say when. No age at all means the age could not be measured (no benchmark loaded), not that the setup is new.">Setup<span class="sort-ico"></span></th>
+            <th class="c-setup" data-s="setup" data-tip="A star marks a quality setup, all four true at once: within 30% of its 52-week high, price above every moving average that could be computed, positive relative strength against the benchmark, and a full Stage 2 uptrend score. They sort to the top by default. THE NUMBER BESIDE THE STAR IS THE AGE: how many consecutive sessions, ending with the latest bar, all four have been true. Read it as an anti-chasing check — a setup lit today still has its stop close underneath it, while one lit for nine sessions has given up the easy move and widened the risk. Each past session is judged by this same rule, never on anything that came after it. THE MAXIMUM IS 30d, a limit of the data not the stock: only about 30 sessions of relative-strength history are carried, so a streak filling that window shows as 30d+. No age at all means it could not be measured (no benchmark), not that the setup is new.">Setup<span class="sort-ico"></span></th>
             <th class="c-align" data-s="align" data-tip="How much the daily and the weekly timeframe agree, out of 8 checks: 1. price above the daily 20 EMA · 2. price above the daily 50 EMA · 3. price above the weekly 10 EMA · 4. price above the weekly 20 EMA · 5. daily RSI 50 or above · 6. weekly RSI 50 or above · 7. positive 21-day relative strength · 8. positive 10-week relative strength. A swing trade wants both clocks pointing the same way, so 7 or 8 is the shortlist. Each check needs its own input, and a check that cannot be run is left OUT OF THE TOTAL rather than counted as a failure — that is why some rows read 6/7 instead of 6/8. Sorting puts the higher score first and, on a tie, the row that could be fully measured above the one that could not.">Align<span class="sort-ico"></span></th>
-            <th class="c-fresh" data-s="fresh" data-tip="Stocks that have JUST turned, rather than stocks that are merely in a good state. Four events are tested, each with its own lookback and each null-guarding its own inputs: 1. the close crossed ABOVE the 50-day EMA within the last 3 bars · 2. RS21 — the 21-day excess return over the benchmark — crossed above zero within the last 5 bars, read off the same history the RS Rank History sparkline draws · 3. a base breakout, meaning a consolidation of 20 bars or more that broke out within the last 3 bars · 4. RSP ↑90: RS Position — where the stock-to-benchmark ratio sits inside its own last 21 bars, rescaled 1 to 99 — crossed UP through 90 within the last 5 bars, having been at or under 80 somewhere in the 5 bars before that crossing. READ 4 AND 2 AS A PAIR. They measure the same 21 sessions and answer different halves of one question: RS21 is by HOW MUCH the stock beat the benchmark, RSP is whether that lead is at the top of its own recent range. The ratio makes new range-highs before the excess return turns positive, so RSP is the EARLY WARNING and RS21 is the CONFIRMATION — seeing RSP ↑90 today and RS21 + a few sessions later is the sequence, not two independent signals. The 80 floor is what keeps it honest: RSP is a bounded position that pins near its ceiling in any strong trend, so without it a reading wobbling 89/91/89 would report a fresh crossing every other session. The cell names whichever fired most recently and how many bars ago; when more than one fired it shows a count with the freshest named underneath. A dash means none of the four fired, or the inputs for them were not available — a stock with under 51 bars has no 50-EMA cross to report and one with no benchmark has neither an RS21 history nor an RS Position. Sorting puts the freshest first, with the count only breaking ties.">Fresh<span class="sort-ico"></span></th>
+            <th class="c-fresh" data-s="fresh" data-tip="Stocks that have JUST turned, not ones merely in a good state. Four events: 1. close crossed ABOVE the 50-day EMA (last 3 bars) · 2. RS21 (21-day excess return) crossed above zero (last 5 bars) · 3. base breakout: a 20-bar-plus consolidation broke out (last 3 bars) · 4. RSP ↑90: RS Position, the stock/benchmark ratio's place in its own last 21 bars, crossed UP through 90 within the last 5 bars, having been at or under 80 in the 5 bars before that crossing. READ 4 AND 2 AS A PAIR: the ratio makes new range-highs before the excess return turns positive, so RSP is the EARLY WARNING and RS21 the CONFIRMATION, not two independent signals. The 80 floor matters: RSP pins near its ceiling in a trend. The cell names the most recent flag and its age. A dash means none fired, or an input was missing: under 51 bars has no 50-EMA cross, no benchmark means no RS21 or RS Position. Freshest sorts first.">Fresh<span class="sort-ico"></span></th>
             <th class="c-sector" data-s="sector" data-tip="Sector from the built-in universe — for India these are NSE's own macro industry groups, taken from the Nifty Total Market constituent list. It is not cosmetic: the default Setup Score order ranks sectors by the median RS55 of their members, so this label decides which group a stock is judged inside. Sortable, so the table can be grouped by sector without using the sector filter.">Sector<span class="sort-ico"></span></th>
             <th data-s="price" data-tip="The most recent closing price in the stock's own currency. It comes from the end-of-day data feed, so it is yesterday's close, not a live quote.">Price<span class="sort-ico"></span></th>
             <th data-s="ch1d" data-tip="How much the price moved on its latest trading day, as a percentage of the previous close. Green is up, red is down.">1D%<span class="sort-ico"></span></th>
             <th class="c-ch1w" data-s="ch1w" data-tip="Price change over the last 5 trading bars — one trading week. Measured bar-to-bar, not calendar days, so holidays and weekends never dilute it. Needs at least 6 bars of history; below that it shows a dash rather than pretending the change was zero.">1W%<span class="sort-ico"></span></th>
             <th class="c-ch1m" data-s="ch1m" data-tip="Price change over the last 21 trading bars — roughly one calendar month of sessions. Needs at least 22 bars of history; below that it shows a dash rather than pretending the change was zero.">1M%<span class="sort-ico"></span></th>
             <th class="c-ch3m" data-s="ch3m" data-tip="Price change over the last 63 trading bars — roughly one quarter of sessions. Needs at least 64 bars of history; below that it shows a dash rather than pretending the change was zero.">3M%<span class="sort-ico"></span></th>
-            <th class="c-hist" data-s="hist" data-tip="The stock's closing price on the date chosen in the &quot;Hist. from&quot; box in the filter bar. If that date was a weekend or a market holiday there is no close for it, so the most recent trading day AT OR BEFORE it is used instead — the date actually used is printed underneath, in amber when it differs from the one you asked for. A dash means the date falls before this stock's earliest bar in the data: a stock that listed later has no price on that day, and showing its oldest available close instead would be a made-up answer."><span id="thHistLbl">Hist. Price</span><span class="sort-ico"></span></th>
-            <th class="c-histg" data-s="histg" data-tip="Percentage change from the historical close in the previous column to the current price — (current ÷ historical − 1) × 100. It uses the same resolved bar, so on a weekend or holiday it is measured from the most recent trading day at or before the date you picked, not from that calendar date. A dash means there is no historical price to measure from."><span id="thHistGainLbl">Gain% since</span><span class="sort-ico"></span></th>
+            <th class="c-hist" id="thHist" data-s="hist" data-tip="The stock's closing price on the date chosen in the &quot;Hist. from&quot; box in the filter bar. If that date was a weekend or a market holiday there is no close for it, so the most recent trading day AT OR BEFORE it is used instead — the date actually used is printed underneath, in amber when it differs from the one you asked for. A dash means the date falls before this stock's earliest bar in the data: a stock that listed later has no price on that day, and showing its oldest available close instead would be a made-up answer."><span id="thHistLbl">Hist. Price</span><span class="sort-ico"></span></th>
+            <th class="c-histg" id="thHistGain" data-s="histg" data-tip="Percentage change from the historical close in the previous column to the current price — (current ÷ historical − 1) × 100. It uses the same resolved bar, so on a weekend or holiday it is measured from the most recent trading day at or before the date you picked, not from that calendar date. A dash means there is no historical price to measure from."><span id="thHistGainLbl">Gain% since</span><span class="sort-ico"></span></th>
             <th class="c-status" data-s="status" data-tip="One-glance verdict from the Stage 2 score: Stage 2 = at least 80% of the rules pass, Setup = at least half, Weak = below that.">Status<span class="sort-ico"></span></th>
             <th data-s="rsi" data-tip="14-day Relative Strength Index — a 0 to 100 momentum gauge. Above 60 means buyers have been in control recently; below 40 means sellers have.">RSI<span class="sort-ico"></span></th>
             <th class="c-wrsi" data-s="wrsi" data-tip="The same 14-period momentum gauge measured on weekly bars, so it describes months rather than days and is much slower to change direction.">W-RSI<span class="sort-ico"></span></th>
             <th class="c-vr" data-s="vr" data-tip="The latest day's traded volume divided by the average of the 20 days before it (today itself is excluded, so a spike cannot dilute its own baseline). 2.0x means twice the usual number of shares changed hands — genuine interest rather than drift.">Vol Ratio<span class="sort-ico"></span></th>
-            <th class="c-volspike" data-s="volspike" data-tip="The BIGGEST volume bar of the last 10 sessions, measured against its OWN trailing 20-day average volume, and how many sessions ago it happened (0d = today). THE EXACT DEFINITION: for each of the last 10 bars, volume on that bar divided by the average volume of the 20 bars before it; the column shows the largest such multiple and its age. WHY THE OWNER READS IT: Vol Ratio beside it only ever describes TODAY, so by the time a stock has spiked on huge volume and then pulled back into the 10/20 EMA zone &mdash; which is the entry &mdash; today&rsquo;s volume is back to normal and Vol Ratio reads about 1.0x, indistinguishable from a stock that never moved at all. This column remembers the move. Read it with %10E and %20E: a big multiple a few sessions ago plus a close back near the 10/20 EMA is the &ldquo;moved hard, now resting&rdquo; shape. EVERY BAR IS PRICED AGAINST ITS OWN PAST &mdash; the 20-day average used for a bar is built only from the bars BEFORE it, never from the whole series, so an old bar is never flattered by volume that had not happened yet. A dash means the biggest multiple in the window was under 1.5x (nothing worth calling a spike), or there are fewer than 21 bars of history, which is the minimum for a 20-day baseline plus one bar to measure. Sorting and filtering work on the MULTIPLE, not on the age.">Vol Spike<span class="sort-ico"></span></th>
+            <th class="c-volspike" data-s="volspike" data-tip="The BIGGEST volume bar of the last 10 sessions, measured against its OWN trailing 20-day average volume, and how many sessions ago it happened (0d = today). THE EXACT DEFINITION: for each of the last 10 bars, that bar's volume over the average volume of the 20 bars before it; the column shows the largest such multiple and its age. WHY IT EXISTS: Vol Ratio beside it only ever describes TODAY, so once a stock has spiked and pulled back into the 10/20 EMA zone — which is the entry — today's volume is normal again and Vol Ratio reads about 1.0x. This column remembers the move. Every bar is priced against its own past: the 20-day average for a bar is built only from the bars BEFORE it, never from the whole series. A dash means the biggest multiple in the window was under 1.5x, or there are fewer than 21 bars of history. Sorting and filtering work on the MULTIPLE, not on the age.">Vol Spike<span class="sort-ico"></span></th>
             <th class="c-wvol" data-s="wvol" data-tip="The same volume comparison on weekly bars: the latest week's total volume against the average of the 10 weeks before it, which smooths out one-day spikes. Needs 11 weekly bars, so it shows — for anything younger.">W-VOL<span class="sort-ico"></span></th>
             <th class="c-avgval" data-s="avgval" data-tip="Average daily traded VALUE over the last 20 trading bars — the mean of close × volume — shown in ₹ crore for Indian stocks and $ million for US stocks and ETFs. This is the tradability check, and it is deliberately value and not share volume: 100,000 shares of a ₹12 stock is ₹12 lakh of turnover while 100,000 shares of a ₹4,000 stock is ₹40 crore, so raw volume cannot be compared across names. Green above ₹25 Cr / $25M, red below ₹1 Cr / $1M, where a position of any size would move the price against you. Needs 20 bars; below that it shows a dash rather than a zero. The Advanced Filters modal has a minimum on this figure.">Avg Value<span class="sort-ico"></span></th>
             <th data-s="dpiv" data-tip="Where the price sits among the classic daily pivot levels, from below S2 (weakest) up to above R2 (strongest). Anything above the pivot point is the bullish half of the day's range.">D-Pivot<span class="sort-ico"></span></th>
             <th class="c-wpiv" data-s="wpiv" data-tip="The same pivot zones calculated from weekly bars — a slower read on whether the stock is holding the strong side of its range.">W-Pivot<span class="sort-ico"></span></th>
-            <th class="c-dbox" data-s="dbox" data-tip="Darvas Box on daily bars, box length 5. HOW THE BOX IS BUILT: a bar whose high beats the highest high of the previous 5 bars sets a candidate top; if the next 3 bars then make no new high, that candidate high becomes the box TOP and the lowest low of the 5 bars up to the confirming bar becomes the box BOTTOM. Once built the box PERSISTS until the next one forms, so it is a level to trade against, not a one-bar flag. THE STATES: Break = the close crossed above the top on the latest bar and was below it the day before — the freshest and most actionable · Near = below the top but within 1% of it · Inside = between the bottom and the top, i.e. still consolidating · Above = already trading over the top, so the move is under way and a new entry is late · Below = under the box bottom, the setup has failed · a dash means no box has formed yet or there are fewer than 9 bars of history. Sorting puts Break and Near first, then Inside, because those are the ones you can still act on.">D-Box<span class="sort-ico"></span></th>
+            <th class="c-dbox" data-s="dbox" data-tip="Darvas Box on daily bars, box length 5. HOW IT IS BUILT: a bar whose high beats the highest high of the previous 5 bars sets a candidate top; if the next 3 bars make no new high, that high becomes the box TOP and the lowest low of the 5 bars up to the confirming bar becomes the box BOTTOM. The box PERSISTS until the next one forms — a level to trade against, not a one-bar flag. THE STATES: Break = the close crossed above the top on the latest bar and was below it the day before — the freshest · Near = below the top but within 1% of it · Inside = between the bottom and the top, still consolidating · Above = already over the top, so the move is under way and a new entry is late · Below = under the box bottom, the setup has failed · a dash means no box has formed yet or there are fewer than 9 bars of history. Sorting puts Break and Near first, then Inside — the ones you can still act on.">D-Box<span class="sort-ico"></span></th>
             <th class="c-wbox" data-s="wbox" data-tip="The same Darvas Box construction run on WEEKLY bars, so both the box and the states describe months rather than days. A weekly box needs 9 weekly bars (roughly 45 trading days) before it can exist, and it moves far less often than the daily one — a weekly Break is a much rarer and heavier signal than a daily one. The five states mean exactly what they mean in the D-Box column.">W-Box<span class="sort-ico"></span></th>
             <th data-s="h52" data-tip="% below the highest high in the available window. The data source holds ~1 trading year (~250 bars), so in practice this is a ~50-week high, not a full 52. Shows — for stocks with under 120 bars of history.">52W High<span class="sort-ico"></span></th>
             <th class="c-ema" data-s="ema" data-tip="How many of the 10, 20, 50 and 200-day moving averages the price is trading above, one badge each. All four green is the textbook shape of a healthy uptrend.">EMA Align<span class="sort-ico"></span></th>
-            <th class="c-pct10e" data-s="pct10e" data-tip="How far the latest close sits above or below the 10-day EMA, as a percentage of that EMA. THE EXACT DEFINITION: %10E = 100 &times; ( Close &minus; EMA10 ) / EMA10. WHY THE OWNER READS IT: the 10 and the 20 EMA are read TOGETHER, as the PULLBACK ZONE a stock drops back into after a fast, high-volume move &mdash; and the 10 is the TIGHTER of the two. A stock that has run hard and is now sitting on its 10 EMA has barely given anything back; one that has cut through the 10 and is resting on the 20 has pulled back further but is still inside the zone. Read this column beside %20E rather than on its own: the gap between the two numbers IS the depth of the pullback. It is NOT a stop level &mdash; the stop goes under the 20 EMA in a normal market and the 50 EMA in a weak one, which is what %20E and %50E are for. A POSITIVE number means the close is ABOVE the moving average; a NEGATIVE number means it is BELOW it, and the minus sign is the whole point of the column. It reuses the very same EMA the EMA Align badges beside it are drawn from &mdash; no moving average is recomputed for this column, so the two can never disagree. A dash means the moving average could not be computed on the history available, or it came back zero or negative, or there is no price &mdash; never a zero, because zero is a real reading: it means the close is sitting exactly on the average. Sortable and filterable like any other numeric column.">%10E<span class="sort-ico"></span></th>
-            <th class="c-pct20e" data-s="pct20e" data-tip="How far the latest close sits above or below the 20-day EMA, as a percentage of that EMA. THE EXACT DEFINITION: %20E = 100 &times; ( Close &minus; EMA20 ) / EMA20. WHY THE OWNER READS IT: in a NORMAL market the 20 EMA is the stop level &mdash; the stop is placed a 2% buffer UNDER the 20 EMA, so this number is how far the trade would have to go against you before that stop is reached, before the buffer is added. Near zero, or a little above, is a low-risk entry; a large positive number means the move has already extended away from the average and the stop is now a long way down. In a WEAK market the stop moves out to the 50 EMA instead &mdash; that is the %50E column. A POSITIVE number means the close is ABOVE the moving average; a NEGATIVE number means it is BELOW it, and the minus sign is the whole point of the column. It reuses the very same EMA the EMA Align badges beside it are drawn from &mdash; no moving average is recomputed for this column, so the two can never disagree. A dash means the moving average could not be computed on the history available (the 200 EMA needs 200 bars), or it came back zero or negative, or there is no price &mdash; never a zero, because zero is a real reading: it means the close is sitting exactly on the average. Sortable and filterable like any other numeric column.">%20E<span class="sort-ico"></span></th>
-            <th class="c-pct50e" data-s="pct50e" data-tip="How far the latest close sits above or below the 50-day EMA, as a percentage of that EMA. THE EXACT DEFINITION: %50E = 100 &times; ( Close &minus; EMA50 ) / EMA50. WHY THE OWNER READS IT: in a WEAK market the 50 EMA is the stop level, not the 20. A pullback that cuts through the 20 EMA in a bad tape is ordinary behaviour and stopping out on it just pays the spread twice; the 50 is the line that decides whether the trend is still intact. Read it together with %20E: negative %20E with positive %50E is a stock pulling back inside its trend, and negative on both is a stock that has left it. A POSITIVE number means the close is ABOVE the moving average; a NEGATIVE number means it is BELOW it, and the minus sign is the whole point of the column. It reuses the very same EMA the EMA Align badges beside it are drawn from &mdash; no moving average is recomputed for this column, so the two can never disagree. A dash means the moving average could not be computed on the history available (the 200 EMA needs 200 bars), or it came back zero or negative, or there is no price &mdash; never a zero, because zero is a real reading: it means the close is sitting exactly on the average. Sortable and filterable like any other numeric column.">%50E<span class="sort-ico"></span></th>
-            <th class="c-pct200e" data-s="pct200e" data-tip="How far the latest close sits above or below the 200-day EMA, as a percentage of that EMA. THE EXACT DEFINITION: %200E = 100 &times; ( Close &minus; EMA200 ) / EMA200. WHY THE OWNER READS IT: the 200 EMA is the REGIME line, not a stop &mdash; it is never where the exit goes (that is the 20 EMA in a normal market and the 50 EMA in a weak one). Its job here is to disqualify: a stock below its 200 EMA is not a long candidate however good the shorter-term shape looks, so a negative reading is a veto rather than a measurement. A small positive number on a stock that has just reclaimed it is a different situation from a large one on a stock that never lost it. A POSITIVE number means the close is ABOVE the moving average; a NEGATIVE number means it is BELOW it, and the minus sign is the whole point of the column. It reuses the very same EMA the EMA Align badges beside it are drawn from &mdash; no moving average is recomputed for this column, so the two can never disagree. A dash means the moving average could not be computed on the history available (the 200 EMA needs 200 bars), or it came back zero or negative, or there is no price &mdash; never a zero, because zero is a real reading: it means the close is sitting exactly on the average. Sortable and filterable like any other numeric column.">%200E<span class="sort-ico"></span></th>
+            <th class="c-pct10e" data-s="pct10e" data-tip="How far the latest close sits above or below the 10-day EMA, as a percentage of that EMA: %10E = 100 &times; ( Close &minus; EMA10 ) / EMA10. ITS ROLE: with the 20 EMA it marks the PULLBACK ZONE a stock drops into after a fast, high-volume move; the 10 is the tighter of the two, so the gap between them is the depth of the pullback. It is not a stop level — that is %20E in a normal market, %50E in a weak one. A POSITIVE number means the close is ABOVE the average, a NEGATIVE number means it is BELOW it. It reuses the EMA the EMA Align badges beside it are drawn from — no moving average is recomputed. A dash means the EMA could not be computed on the history available, or came back zero or negative; never a zero, because zero is a real reading: the close sitting exactly on the average. Sortable and filterable.">%10E<span class="sort-ico"></span></th>
+            <th class="c-pct20e" data-s="pct20e" data-tip="How far the latest close sits above or below the 20-day EMA, as a percentage of that EMA: %20E = 100 &times; ( Close &minus; EMA20 ) / EMA20. ITS ROLE: in a NORMAL market the 20 EMA is the stop level, the stop sitting a 2% buffer UNDER the 20 EMA — so this is how far the trade can move against you before it is hit. Near zero is a low-risk entry; a large positive number means the move has already extended. In a WEAK market the stop moves out to the 50 EMA, which is %50E. A POSITIVE number means the close is ABOVE the average, a NEGATIVE number means it is BELOW it. It reuses the EMA the EMA Align badges beside it are drawn from — no moving average is recomputed. A dash means the EMA could not be computed on the history available, or came back zero or negative; never a zero, because zero is a real reading: the close sitting exactly on the average. Sortable and filterable.">%20E<span class="sort-ico"></span></th>
+            <th class="c-pct50e" data-s="pct50e" data-tip="How far the latest close sits above or below the 50-day EMA, as a percentage of that EMA: %50E = 100 &times; ( Close &minus; EMA50 ) / EMA50. ITS ROLE: in a WEAK market the 50 EMA is the stop level, not the 20 — a pullback through the 20 EMA in a bad tape is ordinary behaviour, and the 50 is the line that says whether the trend is still intact. Read it with %20E: negative %20E and positive %50E is a pullback inside the trend, negative on both has left it. A POSITIVE number means the close is ABOVE the average, a NEGATIVE number means it is BELOW it. It reuses the EMA the EMA Align badges beside it are drawn from — no moving average is recomputed. A dash means the EMA could not be computed on the history available, or came back zero or negative; never a zero, because zero is a real reading: the close sitting exactly on the average. Sortable and filterable.">%50E<span class="sort-ico"></span></th>
+            <th class="c-pct200e" data-s="pct200e" data-tip="How far the latest close sits above or below the 200-day EMA, as a percentage of that EMA: %200E = 100 &times; ( Close &minus; EMA200 ) / EMA200. ITS ROLE: the 200 EMA is the REGIME line, not a stop — the exit goes at the 20 EMA in a normal market and the 50 in a weak one. Its job here is to disqualify: a stock below its 200 EMA is not a long candidate however good the shorter-term shape looks, so a negative reading is a veto rather than a measurement. A POSITIVE number means the close is ABOVE the average, a NEGATIVE number means it is BELOW it. It reuses the EMA the EMA Align badges beside it are drawn from — no moving average is recomputed. A dash means the EMA could not be computed on the history available, or came back zero or negative; never a zero, because zero is a real reading: the close sitting exactly on the average. Sortable and filterable.">%200E<span class="sort-ico"></span></th>
             <th class="c-wema" data-s="wema" data-tip="The same alignment check on the weekly chart: price against the 10-week and 20-week moving averages.">W-EMA<span class="sort-ico"></span></th>
             <!-- Label is written by syncXoverLabel() from CFG.XOVER, so changing
                  the pair in Advanced Filters renames the column instead of
@@ -1321,17 +1383,17 @@ body.dd-lock{overflow:hidden}
             <th class="c-voldry" data-s="voldry" data-tip="20-day average volume below the 50-day average — volume drying up, which is what a healthy base looks like before a breakout.">Vol Dry<span class="sort-ico"></span></th>
             <th class="c-retrace" data-s="ret" data-tip="How far the latest close sits below the highest close reached since the most recent breakout, as a percentage of that peak — so it is always zero or negative. It is not the fraction of the breakout move given back. A small figure means the move is being held; a large one means most of the follow-through has been surrendered.">Retrace%<span class="sort-ico"></span></th>
             <th class="c-squeeze" data-s="sq" data-tip="A 0–100 compression score, not a yes/no flag: (1 − Bollinger width ÷ Keltner width) × 100, clamped to 0–100. Bollinger width is 4 standard deviations of the closes and Keltner width is 3× the average true range, each divided by the mean close over the full series. A higher score means the Bollinger bands sit further inside the Keltner channel — volatility has contracted, which often precedes an expansion. The bar turns amber above 65.">Squeeze<span class="sort-ico"></span></th>
-            <th class="c-adr" data-s="adr" data-tip="Average Daily Range as a percent of price. THE EXACT DEFINITION: ADR% = 100 &times; ( mean over the last 20 bars of (High / Low) &minus; 1 ). WHY A TRADER CARES: it measures how much this stock typically moves in a single day, so it filters out names too sluggish to produce a swing move &mdash; a 1% ADR stock has to trend for a fortnight to deliver what a 6% ADR stock delivers in two days. It is also a sizing input: position size and stop distance are set in proportion to a stock's OWN volatility rather than to a fixed percentage, so the same money risked buys a larger position in a quiet name and a smaller one in a wild one. Needs 20 usable bars. A bar whose low is zero, negative or not a finite number is skipped and an earlier bar used in its place; if 20 usable bars cannot be found the cell shows a dash rather than an average over fewer. It feeds nothing &mdash; not Setup Score, not MRS Rank, not any composite. Sortable and filterable like any other numeric column.">ADR%<span class="sort-ico"></span></th>
-            <th class="c-tight" data-s="tight" data-tip="How narrow the last 3 daily bars are compared with what is NORMAL FOR THIS STOCK. THE EXACT DEFINITION: Tight = 100 &times; ( mean over the last 3 bars of the bar's own high-to-low range as a percent of its close, i.e. 100 &times; (High &minus; Low) / Close ) / ADR%. HOW TO READ IT: 100 means the last 3 bars have been exactly as wide as this stock's normal day. LOWER IS BETTER &mdash; this is the one column in the table where a SMALL number is the good one &mdash; and below about 60 is meaningfully tight, i.e. the range has contracted to well under half of normal, which is what a coiled base looks like just before it moves. Above 100 the range is EXPANDING, which is the opposite of a setup. WHY THIS EXISTS WHEN CONSOLIDATION IS ALREADY HERE: Consolidation measures the range of CLOSING prices, so a bar with long wicks reads as tighter than it really is &mdash; a stock swinging 8% intraday and closing flat every day looks like a perfect base to it. This measures the TRUE high-to-low range instead, and it measures it against the stock's own ADR%, so a 3% range means something different on a sleepy large cap than on a 9% ADR small cap. The two columns answer different questions and are meant to be read together, not swapped. It REUSES the ADR% column's own value as the denominator &mdash; nothing is recomputed, so the two can never disagree. A dash, never a zero, when ADR% itself is unavailable or not positive, when there are fewer than 3 usable bars, or when any of those 3 bars has a close, high or low that is missing or not a positive finite number. Sortable and filterable like any other numeric column.">Tight<span class="sort-ico"></span></th>
-            <th class="c-daysup" data-s="daysup" data-tip="How many sessions IN A ROW, counting back from the latest bar, closed HIGHER than the session before. THE EXACT DEFINITION: walking back from the newest bar, count each bar whose close is strictly greater than the previous bar's close, and stop at the first one that is not. 0 means the latest close was NOT above the one before it &mdash; a flat close and a down close both read 0, because neither is an up day. Only a run that reaches the LATEST bar counts: three up days followed by a down day reads 0, not 3. WHY THE OWNER READS IT: he does not want to enter a stock that has already run 3 or 4 days. Every extra up day puts more distance between the price and the moving average the stop sits under, so the entry risk WIDENS with each one &mdash; the same move is available for a worse price and a bigger loss if it fails. 0 to 2 is the window; 3 and above is chasing, and the cell says so in red. Needs 2 bars to answer at all; below that, or when either of the last two closes is missing or not a finite number, it shows a dash rather than a zero &mdash; zero is a real reading here and must not double as "unmeasurable". Sortable and filterable like any other numeric column.">Days Up<span class="sort-ico"></span></th>
+            <th class="c-adr" data-s="adr" data-tip="Average Daily Range as a percent of price. THE EXACT DEFINITION: ADR% = 100 &times; ( mean over the last 20 bars of (High / Low) &minus; 1 ). WHY A TRADER CARES: it says how much this stock typically moves in a single day, so it screens out names too sluggish to produce a swing move. It is also a sizing input — position size and stop distance are set in proportion to the stock's own volatility rather than to a fixed percentage. Needs 20 usable bars: a bar whose low is zero, negative or not a finite number is skipped and an earlier bar used in its place, and if 20 usable bars cannot be found the cell shows a dash rather than an average over fewer. It feeds nothing — not Setup Score, not MRS Rank, not any composite. Sortable and filterable.">ADR%<span class="sort-ico"></span></th>
+            <th class="c-tight" data-s="tight" data-tip="How narrow the last 3 daily bars are compared with what is NORMAL FOR THIS STOCK. Tight = 100 &times; ( mean over the last 3 bars of 100 &times; (High &minus; Low) / Close ) / ADR%. 100 means the last 3 bars have been exactly as wide as this stock's normal day. LOWER IS BETTER — the one column where small is good — and below about 60 is meaningfully tight; above 100 the range is EXPANDING. VERSUS CONSOLIDATION: Consolidation measures the range of CLOSING prices, so a bar with long wicks reads as tighter than it really is. This measures the TRUE high-to-low range instead, and scales it against the stock's own ADR%. The two answer different questions and are read together. The denominator is the ADR% column's own value — nothing is recomputed. A dash, never a zero, when ADR% is unavailable or not positive, or there are fewer than 3 usable bars. Sortable and filterable.">Tight<span class="sort-ico"></span></th>
+            <th class="c-daysup" data-s="daysup" data-tip="How many sessions IN A ROW, counting back from the latest bar, closed HIGHER than the session before: each bar whose close is strictly greater than the previous one, stopping at the first that is not. Only a run reaching the LATEST bar counts — three up days followed by a down day reads 0, not 3 — and a flat close and a down close both read 0. WHY THE OWNER READS IT: he does not want to enter a stock that has already run 3 or 4 days. Every extra up day puts more distance between the price and the moving average the stop sits under, so the entry risk WIDENS with each one. 0 to 2 is the window; 3 and above is chasing, and the cell says so in red. Needs 2 bars to answer; below that, or with a missing close, it shows a dash rather than a zero, because zero is a real reading here."unmeasurable". Sortable and filterable like any other numeric column.">Days Up<span class="sort-ico"></span></th>
             <th data-s="s2" data-tip="Score on the Stage 2 uptrend checklist — price above the long moving averages, those averages stacked and rising, and price near its 52-week high. A full score is a confirmed uptrend.">Stage 2<span class="sort-ico"></span></th>
             <th class="c-mrsrank" data-s="mrs" style="text-align:center" data-tip="Percentile rank from 1 to 100 of this stock's 55-day excess return against every other stock in the same market that has one. A rank of 90 means it beat roughly 90% of that list. Stocks with too little history to produce an RS55 are left out of the ranking entirely rather than ranked as if flat.">MRS Rank<span class="sort-ico"></span></th>
             <th class="c-rs21" data-s="rs21" data-tip="21-day excess return over the benchmark, in percentage points. Positive = it beat the benchmark over the last month.">RS21<span class="sort-ico"></span></th>
             <th class="c-rs55" data-s="rs55" data-tip="55-day excess return over the benchmark, in percentage points. This is the leg MRS Rank is percentile-ranked on.">RS55<span class="sort-ico"></span></th>
             <th class="c-rs10w" data-s="rs10w" data-tip="10-week excess return over the benchmark, computed on weekly bars.">RS10W<span class="sort-ico"></span></th>
             <th class="c-rsslope" data-s="rsslope" data-tip="RS21 minus RS55 — whether relative strength is improving or decaying. Positive means the recent leg is stronger than the longer one.">RS Slope<span class="sort-ico"></span></th>
-            <th class="c-rsp55" data-s="rsp55" style="text-align:center" data-tip="Where the stock-to-benchmark price ratio sits inside its OWN last 55 bars, rescaled so the lowest bar of that window reads 1 and the highest reads 99. Read it as a statement about this stock only: 99 means its strength against the benchmark is at a 55-bar high FOR ITSELF — it does not mean it is stronger than the stock next to it, because two stocks can both read 99 while one has beaten the benchmark by 40% over the window and the other by 2%. That is also why it feeds nothing: not Setup Score, not MRS Rank, not any other composite. A min-max position is not additive and not comparable between rows. It answers a different question from RS55. RS55 is the excess return — by HOW MUCH the stock beat the benchmark. This is where that lead sits in its own recent range, so it turns earlier: the ratio can start making new window highs while the 55-day excess return is still negative. Needs 55 bars that can be paired with a benchmark bar by date; fewer than that, no benchmark, or a perfectly flat ratio with no range to divide by all show a dash rather than an invented number. Sortable like any other column.">RSP 55<span class="sort-ico"></span></th>
-            <th class="c-rsp21" data-s="rsp21" style="text-align:center" data-tip="Where the stock-to-benchmark price ratio sits inside its OWN last 21 bars, rescaled so the lowest bar of that window reads 1 and the highest reads 99. The same reading as RSP 55 over roughly one month, so it turns sooner and whipsaws more. 99 means this stock's strength against the benchmark is at a 21-bar high FOR ITSELF — it says nothing about whether it is stronger than another stock, since two stocks can both read 99 on completely different amounts of outperformance. For that reason it feeds nothing: not Setup Score, not MRS Rank, not any composite. RS21 answers by how much the stock beat the benchmark over 21 days; this answers whether that lead is at its best point within those 21 days, which is why it moves before RS21 does. Needs 21 bars that can be paired with a benchmark bar by date; fewer than that, no benchmark, or a flat ratio with no range shows a dash. Sortable like any other column.">RSP 21<span class="sort-ico"></span></th>
+            <th class="c-rsp55" data-s="rsp55" style="text-align:center" data-tip="Where the stock-to-benchmark price ratio sits inside its OWN last 55 bars, rescaled so the lowest bar of that window reads 1 and the highest reads 99. It is a statement about this stock only: 99 means its strength against the benchmark is at a 55-bar high FOR ITSELF, not that it is stronger than the stock next to it — two stocks can both read 99 on completely different amounts of outperformance. That is also why it feeds nothing: not Setup Score, not MRS Rank, not any composite. RS55 answers by HOW MUCH the stock beat the benchmark; this answers where that lead sits in its own recent range, so it turns earlier: the ratio can make new window highs while the 55-day excess return is still negative. Needs 55 bars pairable with a benchmark bar by date; fewer than that, no benchmark, or a flat ratio with no range shows a dash rather than an invented number. Sortable like any other column.">RSP 55<span class="sort-ico"></span></th>
+            <th class="c-rsp21" data-s="rsp21" style="text-align:center" data-tip="Where the stock-to-benchmark price ratio sits inside its OWN last 21 bars, rescaled so the lowest bar of that window reads 1 and the highest reads 99 — the same reading as RSP 55 over roughly a month, so it turns sooner and whipsaws more. 99 means this stock's strength against the benchmark is at a 21-bar high FOR ITSELF, not that it is stronger than another stock: two stocks can both read 99 on completely different amounts of outperformance. For that reason it feeds nothing — not Setup Score, not MRS Rank, not any composite. RS21 answers by how much the stock beat the benchmark over 21 days; this answers whether that lead is at its best point within those 21 days, which is why it moves before RS21 does. Needs 21 bars pairable with a benchmark bar by date; fewer than that, no benchmark, or a flat ratio with no range shows a dash. Sortable like any other column.">RSP 21<span class="sort-ico"></span></th>
             <th class="c-rshist" data-s="rshist" data-tip="Last ~30 readings of the 21-day excess return, drawn as a sparkline. The grey line is zero — above it the stock was beating the benchmark.">RS Rank History<span class="sort-ico"></span></th>
             <th style="text-align:center" data-tip="Lit up only when all three relative-strength legs — 21-day, 55-day and 10-week — are positive against the benchmark at the same time, i.e. broad outperformance rather than one good stretch.">Lead RS</th>
             <th class="c-rstrend" data-s="rst" data-tip="Bucketed straight from RS Slope, which is RS21 minus RS55: above +0.5 reads Up, below −0.5 reads Down, and anything in between is Flat. Because it compares the 21-day excess return against the 55-day one, Up does not merely mean the stock is beating the benchmark — it means the recent leg of that outperformance is running ahead of the medium-term leg, i.e. relative strength is accelerating.">RS Trend<span class="sort-ico"></span></th>
@@ -4229,16 +4291,46 @@ function histBarAt(gd,iso){
 /* Per-symbol lookup against the market's sheet map. Returns null — the same
    answer as "no bar" — when the tab is not in memory (the cached-load path
    never downloads it), because a dash is the honest reading either way. */
+/* WHICH DATE THIS PAIR OF COLUMNS IS MEASURING FROM.
+   Two features share one date box and one pair of columns, and this is the one
+   place that decides which is in charge. As-of mode wins: while the table is
+   rewound the pair is the forward-return readout for the day being screened,
+   and a leftover manual "Hist. from" date underneath it would silently answer a
+   different question. HIST_DATE is NOT cleared, so leaving as-of mode restores
+   whatever manual date was in play. */
+function histEffDate(){ return ASOF_DATE || HIST_DATE; }
+
 function histFor(sym,market){
-  if(!HIST_DATE) return null;
+  const iso=histEffDate();
+  if(!iso) return null;
   const m=market||CUR;
-  const k=m+'|'+HIST_DATE;
+  const k=m+'|'+iso;
   if(HIST_MEMO._k!==k) HIST_MEMO={_k:k};
   if(Object.prototype.hasOwnProperty.call(HIST_MEMO,sym)) return HIST_MEMO[sym];
+  /* Deliberately the UNTRUNCATED map. In as-of mode the truncated series ends
+     on exactly this date, so both give the same bar — but reading the live map
+     keeps this lookup identical in both modes and independent of whether a
+     rebuild has run yet. */
   const map=GSHEET_BY_MARKET[m];
-  const v=histBarAt(map&&map[sym], HIST_DATE);
+  const v=histBarAt(map&&map[sym], iso);
   HIST_MEMO[sym]=v;
   return v;
+}
+/* THE ONE FORWARD-LOOKING READ ON THE PAGE.
+   The latest close the feed holds for this ticker, taken from the UNTRUNCATED
+   series. Every other number in the table stops at the as-of date; this one
+   deliberately does not, because "what did it do afterwards" is unanswerable
+   otherwise. It is reachable from exactly one place — histGainFor() below —
+   and the column that shows it renames itself and rewrites its tooltip while
+   the mode is on, so the two can never be confused. Walks backwards past a
+   trailing null rather than trusting C[length-1]. */
+function asOfLatestClose(sym,market){
+  const map=GSHEET_BY_MARKET[market||CUR];
+  const gd=map&&map[sym];
+  const C=gd&&gd.C;
+  if(!Array.isArray(C)) return null;
+  for(let i=C.length-1;i>=0;i--){ const v=C[i]; if(v!=null&&isFinite(v)) return v; }
+  return null;
 }
 /* (current / historical − 1) × 100. Guarded on a positive base: a zero or
    negative close in the data would otherwise produce Infinity or a sign flip. */
@@ -4246,7 +4338,21 @@ function histGain(cur,h){
   if(h==null||cur==null||!(h.price>0)) return null;
   return +((cur/h.price-1)*100).toFixed(2);
 }
-function histGainFor(sym,d,market){ return histGain(d?.price??null, histFor(sym,market)); }
+/* TWO DIFFERENT NUMBERS UNDER ONE COLUMN — and the header says which.
+   LIVE:  (today's price ÷ the close on the date you typed − 1). Backward
+          looking, from a date you chose to now.
+   AS-OF: (the LATEST close the feed holds ÷ the close on the as-of date − 1).
+          FORWARD looking, from the day being screened to now. This is what
+          turns the rewind into a test rather than a history viewer: screen on
+          the rewound columns, then read this to see what the stocks that
+          passed actually went on to do.
+   d.price CANNOT BE USED IN AS-OF MODE: it is the as-of close itself, so the
+   answer would be 0.00% on every single row — a number that looks like data. */
+function histGainFor(sym,d,market){
+  const h=histFor(sym,market);
+  if(ASOF_DATE) return histGain(asOfLatestClose(sym,market), h);
+  return histGain(d?.price??null, h);
+}
 
 /* Applied by the Go button, not by the date input's own change event — see the
    markup comment. Re-render only: no loadMarket, no fetch, no recompute. */
@@ -4258,14 +4364,346 @@ function applyHistDate(){
   VISIBLE=CFG.INIT;
   renderTable(CUR); updateStatus();
 }
+/* The markup's own wording for the two headers' tooltips, captured the first
+   time it is swapped out. Captured rather than duplicated as a JS constant so
+   there is still exactly ONE copy of the live wording — in the HTML, next to
+   the column it describes — and editing it there cannot leave a stale copy
+   here to be restored over the top of it. */
+let HIST_TIP_LIVE=null, HISTG_TIP_LIVE=null;
+
+/* THE AS-OF WORDING. Built from the date, and blunt about the direction of
+   time, because this pair is the only place on the page where "the number after
+   the date" means "since then" rather than "as of then". */
+function asOfTipHist(){
+  return `AS-OF MODE. This is the stock's CLOSING PRICE ON ${ASOF_DATE} — the day the whole table is rewound to. `
+    + `It is not a historical comparison you typed in; it is the price the rest of this row is computed from. `
+    + `A dash means the stock had no bar on or before that date, and such stocks are dropped from the table entirely rather than shown as errors.`;
+}
+function asOfTipGain(){
+  return `FORWARD RETURN — THE ONLY FORWARD-LOOKING NUMBER ON THIS PAGE. `
+    + `While the table is rewound to ${ASOF_DATE}, this column is NOT the gain since a price you entered. `
+    + `It is the return FROM that day's close TO the latest close the data holds: (latest close ÷ close on ${ASOF_DATE} − 1) × 100. `
+    + `In other words, what the stock did AFTER the day you are screening. Every other column in this table stops at ${ASOF_DATE}; this one deliberately does not. `
+    + `That is the point: filter on the rewound columns, then read this to see whether that filter actually paid.`;
+}
+
 /* The chosen date belongs in the header as well as under each price: without it
-   a column headed "Gain% since" does not say since when. */
+   a column headed "Gain% since" does not say since when.
+
+   IN AS-OF MODE BOTH HEADERS ARE RENAMED, not merely re-dated. The pair keeps
+   its position but changes meaning — price THEN, return SINCE — and a header
+   still reading "Gain% since" over a forward return is the single most
+   dangerous misreading this feature can produce. The tooltips are swapped by
+   the same function, so a header and its explanation cannot disagree. */
 function syncHistLabel(){
   const a=$('thHistLbl'), b=$('thHistGainLbl');
-  if(a) a.textContent = HIST_DATE?`Hist. Price ${HIST_DATE}`:'Hist. Price';
-  if(b) b.textContent = HIST_DATE?`Gain% since ${HIST_DATE}`:'Gain% since';
+  if(ASOF_DATE){
+    if(a) a.textContent = `Close on ${ASOF_DATE}`;
+    if(b) b.textContent = `Fwd % after ${ASOF_DATE}`;
+  } else {
+    if(a) a.textContent = HIST_DATE?`Hist. Price ${HIST_DATE}`:'Hist. Price';
+    if(b) b.textContent = HIST_DATE?`Gain% since ${HIST_DATE}`:'Gain% since';
+  }
   const inp=$('histDate');
-  if(inp&&inp.value!==HIST_DATE) inp.value=HIST_DATE;
+  // Never overwrite the box while rewound: it is holding the as-of date the
+  // user just typed, and HIST_DATE is usually empty beside it.
+  if(!ASOF_DATE && inp && inp.value!==HIST_DATE) inp.value=HIST_DATE;
+  syncHistTips();
+}
+function syncHistTips(){
+  const th=$('thHist'), tg=$('thHistGain');
+  if(th&&th.getAttribute&&th.setAttribute){
+    if(HIST_TIP_LIVE===null) HIST_TIP_LIVE=th.getAttribute('data-tip')||'';
+    th.setAttribute('data-tip', ASOF_DATE?asOfTipHist():HIST_TIP_LIVE);
+  }
+  if(tg&&tg.getAttribute&&tg.setAttribute){
+    if(HISTG_TIP_LIVE===null) HISTG_TIP_LIVE=tg.getAttribute('data-tip')||'';
+    tg.setAttribute('data-tip', ASOF_DATE?asOfTipGain():HISTG_TIP_LIVE);
+  }
+}
+
+/* ══════════════════════════════════
+   AS-OF DATE — rewind the whole table to a past trading day
+   ─────────────────────────────────
+   WHY THIS EXISTS. Every column on this page is computed in the browser from
+   the raw OHLCV the sheet already holds, so "what did this screen look like on
+   the 8th?" needs no second data source and no stored snapshot — it needs the
+   SAME computation run over series that STOP on the 8th. Truncate, then
+   recompute. That is the whole idea, and it is the only construction that is
+   guaranteed to agree with what the live screen would have shown that day,
+   because it is literally the same code path: fetchStock -> computeTech ->
+   rankRS, over shorter arrays.
+
+   WHY IT IS A TEST AND NOT A HISTORY VIEWER. The rewound columns say what
+   fired — Setup, Fresh, Align, tightness, RS. The "Gain% since" pair beside
+   them then says what the stock DID afterwards (see the block above, and
+   histGainFor). Screen on the rewound columns, read the forward return, and you
+   learn which of your filters actually pay. That forward return is the ONLY
+   forward-looking number on the page, and it is labelled as such.
+
+   WHY THE LIMIT IS 50 TRADING DAYS. The feed holds roughly 250 bars per ticker.
+   The 200 EMA needs 200 of them, its slope needs 220, and hi52() will not
+   answer at all below 120. Rewinding 50 days still leaves ~200 bars, which is
+   the last point at which every column that has a minimum still has it. Go
+   further and the table keeps rendering while column after column quietly
+   turns into a dash — a stated refusal is honest, a silent degradation is not.
+
+   WHAT DOES NOT REWIND, and it is deliberate: market cap and sector are
+   attributes of the ticker as it is TODAY (they live in UNI, not in the price
+   series); your notes, reviews and watchlist are yours, not the market's; and
+   the metric-history charts read GSHEET_BY_MARKET directly and stay live. Only
+   the price series, and everything derived from it, moves.
+══════════════════════════════════ */
+
+/* The named limit. Trading days, not calendar days — the whole page counts in
+   bars, and a calendar limit would mean something different across a long
+   weekend. See the block comment above for the arithmetic behind 50. */
+const ASOF_MAX_BACK=50;
+
+/* '' = live. NEVER persisted: it is not in SCREEN_GET/SCREEN_SET, it is never
+   written to localStorage, and it is a plain `let` that starts empty on every
+   page load. A rewound state restored silently from storage is exactly how
+   somebody trades on stale data, so opening the page fresh is always live. */
+let ASOF_DATE='';
+/* The clamp explanation, or '' — shown in the banner so a silently-moved date
+   is impossible. */
+let ASOF_NOTE='';
+/* Trading days back, for the banner's wording. Derived by asOfCheck(), never
+   recounted from the date — two counts of the same thing is how the banner ends
+   up disagreeing with the limit that produced it. */
+let ASOF_BACK=null;
+/* Symbols with no bar at or before the as-of date. They leave the table
+   entirely rather than rendering as an error row: "had not listed yet" is not a
+   data failure, and an error row would read as a broken feed. Empty when live. */
+let ASOF_ABSENT=new Set();
+
+/* The union of every bar date the market's series hold, ascending. The union
+   rather than one ticker's dates because a halted or newly-listed ticker has
+   gaps, and the limit must be counted against the trading calendar the DATA
+   actually has, not against whatever one arbitrary symbol happened to trade.
+   Computed on demand — once per user action, never per row. */
+function asOfCalendar(market){
+  const map=GSHEET_BY_MARKET[market];
+  if(!map) return [];
+  const seen=new Set();
+  for(const k in map){
+    const ds=map[k]&&map[k].dates;
+    if(!Array.isArray(ds)) continue;
+    for(let i=0;i<ds.length;i++) if(typeof ds[i]==='string'&&ds[i]) seen.add(ds[i]);
+  }
+  return [...seen].sort();   // ISO dates sort correctly as strings
+}
+
+/* Index of the last entry of the ascending ISO array `arr` that is <= iso, or
+   -1. Shared by the calendar and the per-ticker slice so the two can never
+   resolve the same date to different bars. */
+function asOfIdx(arr,iso){
+  let lo=0,hi=arr.length-1,best=-1;
+  while(lo<=hi){ const m=(lo+hi)>>1; if(arr[m]<=iso){ best=m; lo=m+1; } else hi=m-1; }
+  return best;
+}
+
+/* Truncate ONE ticker's series to end at the last bar at or before `iso`.
+   Returns a NEW object with new arrays — the live map is never mutated, which
+   is what lets exiting the mode rebuild from memory with no refetch. Returns
+   null when the stock has no bar at or before the date (it had not listed). */
+function asOfSlice(gd,iso){
+  if(!gd||!iso) return null;
+  const D=gd.dates, C=gd.C;
+  if(!Array.isArray(D)||!Array.isArray(C)||!D.length||D.length!==C.length) return null;
+  const idx=asOfIdx(D,iso);
+  if(idx<0) return null;
+  const n=idx+1;
+  if(n===D.length) return gd;      // nothing to cut: this IS the live series
+  const cut=a=>Array.isArray(a)?a.slice(0,n):a;
+  const out={C:C.slice(0,n),H:cut(gd.H),L:cut(gd.L),V:cut(gd.V),dates:D.slice(0,n)};
+  if(Array.isArray(gd.O)) out.O=gd.O.slice(0,n);
+  return out;
+}
+
+/* The whole market, truncated. A ticker with no bar at or before the date is
+   simply absent from the result. */
+function asOfMap(map,iso){
+  const out={};
+  if(!map||!iso) return out;
+  for(const k in map){
+    const t=asOfSlice(map[k],iso);
+    if(t) out[k]=t;
+  }
+  return out;
+}
+
+/* Validate, resolve and clamp a requested as-of date, without touching any
+   state. Pure, so the limit and its wording are testable with no DOM.
+   Returns {ok, iso, barsBack, clamped, reason, last}. `iso` is always a REAL
+   bar date on the market's calendar, so the forward return's start point is
+   never a day the market was shut. */
+function asOfCheck(market,iso){
+  const bad=(reason)=>({ok:false,iso:'',barsBack:null,clamped:false,reason,last:null});
+  if(!/^\d{4}-\d{2}-\d{2}$/.test(String(iso||'')))
+    return bad('Pick a date in the "Hist. from" box first.');
+  const cal=asOfCalendar(market);
+  if(!cal.length)
+    return bad(`The ${String(market).toUpperCase()} price series is not in memory — this tab is showing cached data, and rewinding recomputes from the raw bars. Press ↻ Refresh to download them, then rewind.`);
+  const last=cal[cal.length-1];
+  const idx=asOfIdx(cal,iso);
+  if(idx<0)
+    return bad(`${iso} is before the first bar the data holds (${cal[0]}), so there is nothing to rewind to.`);
+  let barsBack=(cal.length-1)-idx;
+  if(barsBack===0)
+    return {ok:false,iso:last,barsBack:0,clamped:false,last,
+      reason:`${iso} resolves to ${last}, which is the newest bar in the data — that is the live view you are already looking at.`};
+  if(barsBack>ASOF_MAX_BACK){
+    const ci=cal.length-1-ASOF_MAX_BACK;
+    return {ok:true,iso:cal[ci],barsBack:ASOF_MAX_BACK,clamped:true,last,
+      reason:`${iso} is ${barsBack} trading days back. The feed holds about 250 bars per ticker and the 200 EMA needs 200 of them (its slope needs 220), so beyond ${ASOF_MAX_BACK} days those columns would quietly empty instead of being wrong out loud. Clamped to ${cal[ci]}, the furthest date every column can still be computed for.`};
+  }
+  return {ok:true,iso:cal[idx],barsBack,clamped:false,reason:'',last};
+}
+
+/* THE BENCHMARK, TRUNCATED TO THE SAME DATE.
+   ─────────────────────────────────────────
+   Without this every RS column would compare a rewound stock against TODAY's
+   benchmark, which is not a mistake anybody would see: the numbers stay
+   plausible and are simply wrong by however far the index moved since. It is
+   deliberately NOT fetchBenchmark(): that function falls back to the
+   day-stamped localStorage series (bKey) when the tab is not in memory, and
+   that cached series is FULL LENGTH — using it here would reintroduce exactly
+   the lookahead this function exists to remove. No fallback, therefore: either
+   the benchmark is in the truncated map with enough bars, or RS is blank and
+   says so, which is the same contract fetchBenchmark keeps. */
+function asOfSetBenchmark(market,map){
+  const ticker=RS_CONFIG.benchmark[market];
+  const gd=ticker?(map&&map[ticker]):null;
+  if(gd&&gd.C&&gd.C.length>=22){
+    BENCHMARK_DATA[market]={sym:ticker,C:gd.C,H:gd.H,L:gd.L,V:gd.V,dates:gd.dates};
+    delete BENCHMARK_FAILED[market];
+    return true;
+  }
+  BENCHMARK_DATA[market]=null;
+  BENCHMARK_FAILED[market]=ticker||'(none configured)';
+  return false;
+}
+
+/* THE REWIND. One page-load's worth of arithmetic and no network at all: the
+   raw series are already in memory, so this truncates them and runs the same
+   loop loadMarket() runs. `iso` null rebuilds the LIVE view from the
+   untruncated series, which is how exiting the mode costs nothing either.
+
+   IT NEVER WRITES THE DAY CACHE. saveCache() is not called from here, and it
+   refuses to run at all while ASOF_DATE is set (see its own guard), because the
+   live view is cached under `${CFG.VER}_${market}_${today()}` and one rewound
+   row written there would be served as tomorrow's live table. */
+async function asOfRebuild(market,iso){
+  const base=GSHEET_BY_MARKET[market];
+  if(!base) return false;
+  const map = iso ? asOfMap(base,iso) : base;
+  const absent=new Set();
+  if(iso){
+    UNI[market].forEach(def=>{
+      /* Only a ticker the LIVE feed really carries can be "not listed yet". One
+         the feed never had keeps its "no data" row in both modes — that is a
+         pipeline problem, and hiding it here would hide it for good. */
+      if(!base[def.s]) return;
+      const t=map[def.s];
+      if(!t||!Array.isArray(t.C)||t.C.length<2) absent.add(def.s);
+    });
+  }
+  ASOF_ABSENT=absent;
+  UNI[market].forEach(def=>{ SD[def.s]= absent.has(def.s) ? null : fetchStock(def,map); });
+  if(iso) asOfSetBenchmark(market,map);
+  else await fetchBenchmark(market);
+  rankRS(market);
+  computeSectorStrength(market);   // sector medians move whenever the data does
+  return true;
+}
+
+/* Entry point: the ⏪ button beside the existing Hist. from date box. There is
+   deliberately no second date input — one date, two questions, and the mode
+   decides which question is being asked. */
+async function applyAsOfDate(){
+  /* NOT DURING A LOAD. loadMarket()'s indicator loop yields to the browser every
+     CFG.CHUNK stocks and writes SD as it goes; rewinding underneath it would
+     interleave truncated and untruncated rows in the same table with no way to
+     tell which was which. Same guard, same reason, as loadMarket's own. */
+  if(LOADING){ setAsOfMsg('A data load is running — let it finish, then rewind.',true); return; }
+  const el=$('histDate');
+  const chk=asOfCheck(CUR, el&&el.value?el.value:'');
+  if(!chk.ok){ setAsOfMsg(chk.reason,true); return; }
+  setAsOfMsg('');
+  ASOF_DATE=chk.iso;
+  ASOF_NOTE=chk.clamped?chk.reason:'';
+  ASOF_BACK=chk.barsBack;
+  HIST_MEMO={_k:''};               // the memo is keyed on the effective date
+  VISIBLE=CFG.INIT;
+  await asOfRebuild(CUR,ASOF_DATE);
+  syncAsOfUI(); syncHistLabel();
+  renderTable(CUR); renderMetrics(CUR); updateStatus(); updateDataAsOf(CUR);
+}
+
+/* The one obvious way back. Reachable from the banner button, and from the ⏪
+   button itself once the mode is on. */
+async function exitAsOf(){
+  if(!ASOF_DATE) return;
+  if(LOADING){ setAsOfMsg('A data load is running — it will finish on live data.',true); return; }
+  ASOF_DATE=''; ASOF_NOTE=''; ASOF_BACK=null; ASOF_ABSENT=new Set();
+  HIST_MEMO={_k:''};
+  VISIBLE=CFG.INIT;
+  setAsOfMsg('');
+  await asOfRebuild(CUR,null);
+  syncAsOfUI(); syncHistLabel();
+  renderTable(CUR); renderMetrics(CUR); updateStatus(); updateDataAsOf(CUR);
+}
+
+/* Drop the mode WITHOUT recomputing, for the paths that are about to recompute
+   anyway (a market switch, a forced refresh). Those load a different or fresher
+   series, and a limit validated against one market's calendar means nothing on
+   another's — so the mode ends there rather than silently carrying over. */
+function asOfResetSilent(){
+  ASOF_DATE=''; ASOF_NOTE=''; ASOF_BACK=null; ASOF_ABSENT=new Set();
+  HIST_MEMO={_k:''};
+  setAsOfMsg('');
+  syncAsOfUI(); syncHistLabel();
+}
+
+function setAsOfMsg(text,isError){
+  const el=$('asofMsg');
+  if(!el) return;
+  el.textContent=text||'';
+  el.style.display = text ? 'inline' : 'none';
+  el.style.color   = isError ? 'var(--red)' : 'var(--text2)';
+}
+
+/* One sentence, in the banner, naming what the mode did NOT rewind. It belongs
+   next to the loud warning rather than in a tooltip nobody opens, because
+   "market cap is still today's" is precisely the kind of thing that turns a
+   backtest into a wrong conclusion. */
+function asOfStaticNote(){
+  return 'Market cap, sector, your notes/reviews/watchlist and the metric-history charts are still current — only the price series and everything computed from it moved.';
+}
+
+/* Paints every part of the persistent indicator. Called from both entry points
+   and from init(), so the page can never be rewound with the banner off. */
+function syncAsOfUI(){
+  const on=!!ASOF_DATE;
+  const btn=$('asofBtn');
+  if(btn){
+    if(btn.classList) btn.classList.toggle('on',on);
+    btn.textContent = on ? '● Live' : '⏪ As of';
+  }
+  const b=$('asofBanner');
+  if(b&&b.classList) b.classList.toggle('show',on);
+  const t=$('asofBannerTxt');
+  if(t) t.textContent = on
+    ? `Screening as of ${fmtBarDate(ASOF_DATE)} — ${ASOF_BACK} trading day${ASOF_BACK===1?'':'s'} back. Every column below is that day's, not today's.`
+    : '';
+  const n=$('asofNote');
+  if(n) n.textContent = on ? (ASOF_NOTE ? ASOF_NOTE+' ' : '')+asOfStaticNote() : '';
+  /* A body class as well as a banner: the banner scrolls away, the table's
+     sticky header does not, so the amber rule under the column headings keeps
+     saying "rewound" for as long as there is a row on screen. */
+  const de=(typeof document!=='undefined')&&document.body;
+  if(de&&de.classList) de.classList.toggle('asof-on',on);
 }
 
 /* ══════════════════════════════════
@@ -6324,6 +6762,18 @@ function fmtBarDate(iso){
 function dataAsOfState(market, now){
   const m=market||CUR;
   const cached=GSHEET_STATUS[m]==='cached';
+  /* AS-OF MODE OVERRIDES THE ANSWER, and it has to.
+     This stamp answers "how current are the numbers I am looking at". While the
+     table is rewound the honest answer is the as-of date — the FEED is perfectly
+     fresh, it is the TABLE that has been moved — and seriesMaxDate() would keep
+     reporting today's newest bar, i.e. a stamp reading "Data to 14 Aug 2026"
+     sitting directly under a banner saying the table is three weeks old. Two
+     elements contradicting each other is worse than either one alone, so the
+     stamp reports the same date the banner does and marks it 'rewound', which
+     is its own level: not fresh, not stale, deliberate. */
+  if(ASOF_DATE && m===CUR)
+    return {iso:ASOF_DATE, age:null, level:'rewound', cached:false, asof:true,
+            text:'\u23EA Rewound to '+fmtBarDate(ASOF_DATE)};
   const iso=seriesMaxDate(m);
   if(!iso) return {iso:null,age:null,level:'none',cached,text:'—'};
   const age=weekdayAge(iso,now);
@@ -6331,16 +6781,32 @@ function dataAsOfState(market, now){
   return {iso,age,level,cached,text:fmtBarDate(iso)+(cached?' · cached':'')};
 }
 
+/* The markup's own wording for the stamp's tooltip, captured once — same
+   reason as HIST_TIP_LIVE: one copy of the live wording, in the HTML. */
+let ASOF_STAMP_TIP_LIVE=null;
 function updateDataAsOf(market){
   const el=$('bnrAsOf'); if(!el) return;
   const m=market||CUR;
   if(m!==CUR) return;          // a background market's dates are not what the banner is about
   const st=dataAsOfState(m);
-  el.textContent='·\u00A0Data to '+st.text;
+  // The word "Data to" is dropped when rewound: the stamp is no longer
+  // describing the data, it is describing where the table has been moved to.
+  el.textContent = st.level==='rewound' ? '·\u00A0'+st.text : '·\u00A0Data to '+st.text;
   if(el.classList){
     el.classList.toggle('stale', st.level==='stale');
     el.classList.toggle('old',   st.level==='old');
     el.classList.toggle('cached',!!st.cached);
+    el.classList.toggle('rewound', st.level==='rewound');
+  }
+  /* The tooltip has to move with the text. Its live wording says this is "the
+     newest price bar present in the data" — which is exactly what the rewound
+     stamp is NOT, and a tooltip that contradicts the element it is attached to
+     is how a reader talks themselves out of a warning. */
+  if(el.getAttribute&&el.setAttribute){
+    if(ASOF_STAMP_TIP_LIVE===null) ASOF_STAMP_TIP_LIVE=el.getAttribute('data-tip')||'';
+    el.setAttribute('data-tip', st.level==='rewound'
+      ? `The table has been REWOUND to ${ASOF_DATE} — every column is computed from price bars that stop on that day. This is not how fresh the data is; the feed itself is current. Press "Back to live" in the amber strip above to return to today. The one exception is the forward-return column, which measures from ${ASOF_DATE} to the latest close on purpose.`
+      : ASOF_STAMP_TIP_LIVE);
   }
 }
 
@@ -6704,6 +7170,12 @@ const cKey=(m)=>`${CFG.VER}_${m}_${today()}`;
 const bKey=(m)=>`${CFG.VER}_bench_${m}_${today()}`;
 
 function saveCache(market){
+  /* NOT WHILE REWOUND. cKey() is `${CFG.VER}_${market}_${today()}` — a LIVE-day
+     key — and loadMarket() serves whatever is under it as today's table. One
+     as-of row written here would be handed back tomorrow as live data, silently
+     and with no way to tell. asOfRebuild() never calls this function; the guard
+     is here as well because a future caller will not know that. */
+  if(ASOF_DATE) return;
   /* THE BENCHMARK IS WRITTEN FIRST, AND IN ITS OWN try.
      ──────────────────────────────────────────────────
      It used to be written last, inside the same try as the market blob. The
@@ -8023,8 +8495,11 @@ function boFuC(v){
    the failure mode this column exists to avoid. */
 function histC(h,cur){
   if(h==null) return '<span class="vm">—</span>';
+  // histEffDate(), not HIST_DATE: in as-of mode the pair is measuring from the
+  // as-of date, and naming the wrong one here would caption the right price
+  // with the wrong question.
   const t=h.exact?`Close on ${h.date}`
-                 :`${HIST_DATE} was not a trading day — this is the close on ${h.date}, the last trading day at or before it`;
+                 :`${histEffDate()} was not a trading day — this is the close on ${h.date}, the last trading day at or before it`;
   return `<span style="font-weight:600">${fmtP(h.price,cur)}</span>`
        + `<br><span class="hist-d${h.exact?'':' adj'}" title="${escAttr(t)}">${h.date}</span>`;
 }
@@ -9164,6 +9639,10 @@ function boxSetup(d){
    wants the real table omits it. */
 function getRows(market, exclCol){
   let items=UNI[market].slice();
+  /* AS-OF MODE: a stock with no bar at or before the as-of date had not listed
+     yet, so it leaves the table entirely instead of rendering as an error row —
+     see ASOF_ABSENT. Empty (and therefore free) when live. */
+  if(ASOF_DATE&&ASOF_ABSENT.size) items=items.filter(def=>!ASOF_ABSENT.has(def.s));
   const q=SEARCH.toLowerCase().trim();
   if(q) items=items.filter(def=>def.d.toLowerCase().includes(q)||def.sector.toLowerCase().includes(q));
   if(F_SCT && exclCol!=='sector') items=items.filter(def=>def.sector===F_SCT);
@@ -9380,6 +9859,12 @@ const TOUR=[
    b:'Sector View breaks the whole market down by sector so you can see which groups are actually working, and clicking a row filters the table to it. Advanced Filters adds screens the dropdowns do not cover — consolidation length, distance from the 52-week high, breakout age, volume, and a minimum on Avg Value, the average daily turnover in rupees or dollars, which matters because an 8/8 setup you cannot get filled in at your size is useless. And the D / W / D+W breadth toggle tells you how much of the market is rising on the daily, the weekly, or both, which is the fastest read on whether to be buying at all today.'},
   {el:'screenSel', t:'7 · Keeping your work',
    b:'Mark a stock bull, bear or neutral with the Review buttons, type a note against it, or star it onto your watchlist — all three are saved in this browser, shared across all three markets, and survive a reload. Save the whole filter combination as a named screen here and recall it any time, and use Excel to export exactly what is currently on screen with every column included. Clicking a ticker opens its chart drilldown — candles, volume and EMAs drawn from the data already in the page, plus a link to open that stock on TradingView as a daily chart, in a new tab.'},
+  /* The tour ends on the as-of mode deliberately: it is the one control that
+     changes what every other column MEANS, so a user who meets it by accident
+     rather than by explanation is the user most likely to misread a rewound
+     table as today's. */
+  {el:'asofBtn', t:'8 · Testing whether your filters actually work',
+   b:'Pick a date up to 50 trading days back and every column rewinds to that day — Setup, Fresh, Align, Tight, RS, the boxes — computed from only the bars that existed then, with nothing peeking at what came after. One number deliberately does the opposite: Gain% since flips to show what the stock did AFTER that date, so you screen on the past and read the outcome, which is how you find out which of your rules actually paid. An amber strip and a Rewound stamp make the mode impossible to miss, Back to live returns you, and it never survives a reload.'},
 ];
 let TOUR_I=0;
 function startTour(i){
@@ -9673,6 +10158,11 @@ function updateMcapUI(market){
 
 function switchMkt(market){
   if(market===CUR&&LOADED[market]) return;
+  /* The rewind ends at the tab boundary. The 50-day limit was validated against
+     THIS market's trading calendar and the new market has its own; carrying the
+     date over would show a banner whose day count is measured on the wrong
+     calendar, or rewind a market whose raw series is not even downloaded yet. */
+  asOfResetSilent();
   CUR=market;VISIBLE=CFG.INIT;
   computeSectorStrength(market);       // strengths are per-market, never carried over
   // Repoint the live sheet map at the market we're switching TO. Guarded: if a
@@ -9811,6 +10301,9 @@ function setRev(sym,val){
 }
 function showMore(){VISIBLE+=25;renderTable(CUR);updateStatus();}
 function forceRefresh(){
+  // A refresh downloads a NEWER series, which moves the newest bar and so moves
+  // what "50 days back" means. The mode ends here and is re-entered on purpose.
+  asOfResetSilent();
   localStorage.removeItem(cKey(CUR));
   LOADED[CUR]=false;
   UNI[CUR].forEach(def=>delete SD[def.s]);
@@ -9825,6 +10318,19 @@ function forceRefresh(){
    falls back to CSV rather than failing: a slightly less pretty file beats no
    file. Both paths share one row builder so the two can't drift apart.
 ══════════════════════════════════ */
+/* THE HEADER FOLLOWS THE SCREEN. A file leaves the page and is read later, by
+   which time nothing on it says the table was rewound — so a column headed
+   "Gain% since" carrying a FORWARD return is a wrong number with no context
+   attached. Only the three columns whose meaning the mode actually changes are
+   renamed; every other header is returned untouched. */
+function exportColLabel(label){
+  if(!ASOF_DATE) return label;
+  if(label==='Hist Date')   return `As-of Date (${ASOF_DATE})`;
+  if(label==='Hist Price')  return `Close on ${ASOF_DATE}`;
+  if(label==='Gain% since') return `Fwd % after ${ASOF_DATE} (forward-looking)`;
+  return label;
+}
+
 const EXPORT_COLS=[
   ['Ticker',      (def,d)=>def.d],
   ['Name',        (def,d)=>def.d],
@@ -9940,7 +10446,7 @@ const EXPORT_COLS=[
 ];
 function exportRows(){
   const rows=getRows(CUR);
-  return [EXPORT_COLS.map(c=>c[0]),
+  return [EXPORT_COLS.map(c=>exportColLabel(c[0])),
           ...rows.map(def=>{ const d=SD[def.s]; return EXPORT_COLS.map(c=>c[1](def,d)); })];
 }
 function loadScript(src){
@@ -9962,7 +10468,7 @@ async function doExport(){
     }
     const aoa=exportRows();
     const ws=XLSX.utils.aoa_to_sheet(aoa);
-    ws['!cols']=EXPORT_COLS.map((c,i)=>({wch: i<3?16:Math.max(9,c[0].length+2)}));
+    ws['!cols']=EXPORT_COLS.map((c,i)=>({wch: i<3?16:Math.max(9,exportColLabel(c[0]).length+2)}));
     ws['!freeze']={xSplit:0,ySplit:1};
     const wb=XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb,ws,CUR.toUpperCase());
@@ -10112,7 +10618,21 @@ function showTip(el){
   // clamp below achievable at all — otherwise "fits above" and "fits below" are
   // both false and the box has to hang off one edge.
   let h=t.height;
-  const maxH=vh-16;
+  /* A TOOLTIP MUST NEVER OWN THE SCREEN.
+     -------------------------------------
+     This was `vh - 16`, i.e. the whole viewport bar a hair. The longest
+     tooltips (Fresh was 1,816 characters) then rendered as a full-height
+     column that covered the filter bar and the header row underneath it — so
+     the user could not reach the funnel or the sort arrow on the very column
+     whose tooltip he was reading. Reported as "the long tooltip text comes in
+     my view where I cannot apply a filter or sort the column properly".
+
+     42% of the viewport, hard-capped at 340px, keeps the toolbar and the
+     header row visible behind every tooltip while still showing a long one in
+     full at ordinary window sizes; anything past that scrolls inside the box.
+     The cap is absolute as well as proportional so a tall monitor does not
+     reintroduce the wall of text. */
+  const maxH=Math.max(120, Math.min(Math.round(vh*0.42), 340));
   if(h>maxH){ h=maxH; b.style.maxHeight=maxH+'px'; }   // internal scroll takes the rest
   // Prefer above; the sticky header row sits at the very top of the scroll
   // panel, where there is no room, so it flips below instead of being clipped.
@@ -11683,6 +12203,13 @@ function closeDrill(){
   loadAdvFilters();
   syncXoverLabel();
   syncHistLabel();   // no date chosen yet: writes the plain column headings
+  /* AS-OF STARTS OFF, ALWAYS. ASOF_DATE is a plain `let` that is never read
+     from or written to localStorage and is not a SCREEN_FIELDS entry, so a
+     reload cannot restore it — this call only paints that fact (banner hidden,
+     button reading "As of", no body class). A rewound table silently restored
+     from storage is precisely how somebody trades on three-week-old numbers,
+     so the mode is deliberately session-only and deliberately not saveable. */
+  syncAsOfUI();
   updateAdvBtn();
   applyBreadthCollapsed();
   applyCollapsibles();   // must precede the first paint, or both sections flash open on a phone
