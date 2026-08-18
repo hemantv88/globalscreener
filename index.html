@@ -545,6 +545,21 @@ td:last-child{border-right:none}
 .vcp-pivot{background:var(--blue-bg);color:var(--blue);border-color:var(--blue)}
 .vcp-forming{background:var(--surface2);color:var(--text2);border-color:var(--border)}
 
+/* ─── IPO-BASE BADGE ────── */
+/* A THIRD badge family, and a third one on purpose. It is shaped like .vcp and
+   coloured on the same argument — the state that can be acted on now is filled
+   and bordered, the one still waiting recedes — but the level underneath it is
+   the post-listing high, not the VCP lid and not the Darvas top. Sharing .vcp
+   would make three different levels one stylesheet edit away from reading as
+   one. Tokens only, no hard-coded hex, so a theme switch repaints it with no
+   JS. Same tokens as .vcp, so the AA contrast proven for one is the same
+   arithmetic for the other — and both suites compute it rather than trust it. */
+.ipo{display:inline-block;padding:2px 7px;border-radius:var(--rs);
+  font-size:10px;font-weight:700;border:1px solid transparent;white-space:nowrap}
+.ipo-breakout{background:var(--green-bg);color:var(--green);border-color:var(--green)}
+.ipo-pivot{background:var(--blue-bg);color:var(--blue);border-color:var(--blue)}
+.ipo-forming{background:var(--surface2);color:var(--text2);border-color:var(--border)}
+
 /* ─── FRESH-MOMENTUM BADGE ────── */
 /* One badge naming the most recent trigger, or a count when several fired on
    the same row. Green because everything this column reports is a turn that
@@ -815,7 +830,14 @@ body.asof-on .tbl-wrap{outline:3px solid var(--orange)}
    small screen with no level under it, which is worse than dropping all three.
    They sit beside Coil because Coil is the same question asked cheaply: Coil
    is one ratio of two halves of a 20-bar window, VCP is the full structure. */
-.c-adr,.c-tight,.c-daysup,.c-coil,.c-vcp,.c-vcplid,.c-vcptolid{display:table-cell}
+/* The IPO trio is GROUP B, and all three together, for exactly the reason the
+   VCP trio is: the badge says which side of the level the price is on, IPO Lid
+   says where the level is, % to IPO Lid says how far — one reading in three
+   cells, and splitting them across tiers leaves a state with no level under
+   it. They sit beside the VCP trio because a reader comparing "which ceiling
+   is this" needs both in view or neither. */
+.c-adr,.c-tight,.c-daysup,.c-coil,.c-vcp,.c-vcplid,.c-vcptolid,
+.c-ipo,.c-ipolid,.c-ipotolid{display:table-cell}
 
 /* User-controlled column toggles (via the Columns modal, saved to localStorage).
    Adding e.g. "hide-wrsi" to <body> hides every cell tagged .c-wrsi — works
@@ -852,6 +874,9 @@ body.hide-coil    .c-coil,
 body.hide-vcp     .c-vcp,
 body.hide-vcplid  .c-vcplid,
 body.hide-vcptolid .c-vcptolid,
+body.hide-ipo     .c-ipo,
+body.hide-ipolid  .c-ipolid,
+body.hide-ipotolid .c-ipotolid,
 body.hide-mrsrank .c-mrsrank,
 body.hide-rstrend .c-rstrend,
 body.hide-notes   .c-notes,
@@ -1187,7 +1212,8 @@ body.dd-lock{overflow:hidden}
   .c-sector,.c-subind,.c-status,.c-xcross,.c-pattern,.c-consol,.c-rs21,.c-rs55,
   .c-ch1w,.c-ch1m,.c-ch3m,.c-histg,.c-dbox,.c-pctpiv,.c-avgval,.c-fresh,
   .c-pct10e,.c-pct20e,.c-adr,.c-tight,.c-daysup,.c-coil,
-  .c-vcp,.c-vcplid,.c-vcptolid{display:none!important}
+  .c-vcp,.c-vcplid,.c-vcptolid,
+  .c-ipo,.c-ipolid,.c-ipotolid{display:none!important}
   .search-bar input{width:80px}
 }
 </style>
@@ -1489,10 +1515,13 @@ body.dd-lock{overflow:hidden}
             <th class="c-adr" data-s="adr" data-tip="Average Daily Range as a percent of price. THE EXACT DEFINITION: ADR% = 100 &times; ( mean over the last 20 bars of (High / Low) &minus; 1 ). WHY A TRADER CARES: it says how much this stock typically moves in a single day, so it screens out names too sluggish to produce a swing move. It is also a sizing input — position size and stop distance are set in proportion to the stock's own volatility rather than to a fixed percentage. Needs 20 usable bars: a bar whose low is zero, negative or not a finite number is skipped and an earlier bar used in its place, and if 20 usable bars cannot be found the cell shows a dash rather than an average over fewer. It feeds nothing — not Setup Score, not MRS Rank, not any composite. Sortable and filterable.">ADR%<span class="sort-ico"></span></th>
             <th class="c-tight" data-s="tight" data-tip="How narrow the last 3 daily bars are compared with what is NORMAL FOR THIS STOCK. Tight = 100 &times; ( mean over the last 3 bars of 100 &times; (High &minus; Low) / Close ) / ADR%. 100 means the last 3 bars have been exactly as wide as this stock's normal day. LOWER IS BETTER — the one column where small is good — and below about 60 is meaningfully tight; above 100 the range is EXPANDING. VERSUS CONSOLIDATION: Consolidation measures the range of CLOSING prices, so a bar with long wicks reads as tighter than it really is. This measures the TRUE high-to-low range instead, and scales it against the stock's own ADR%. The two answer different questions and are read together. The denominator is the ADR% column's own value — nothing is recomputed. A dash, never a zero, when ADR% is unavailable or not positive, or there are fewer than 3 usable bars. Sortable and filterable.">Tight<span class="sort-ico"></span></th>
             <th class="c-daysup" data-s="daysup" data-tip="How many sessions IN A ROW, counting back from the latest bar, closed HIGHER than the session before: each bar whose close is strictly greater than the previous one, stopping at the first that is not. Only a run reaching the LATEST bar counts — three up days followed by a down day reads 0, not 3 — and a flat close and a down close both read 0. WHY THE OWNER READS IT: he does not want to enter a stock that has already run 3 or 4 days. Every extra up day puts more distance between the price and the moving average the stop sits under, so the entry risk WIDENS with each one. 0 to 2 is the window; 3 and above is chasing, and the cell says so in red. Needs 2 bars to answer; below that, or with a missing close, it shows a dash rather than a zero, because zero is a real reading here."unmeasurable". Sortable and filterable like any other numeric column.">Days Up<span class="sort-ico"></span></th>
-            <th class="c-coil" data-s="coil" data-tip="Whether the base is CONTRACTING as it ages: Coil = ( the true high-to-low range of the most recent 10 bars ) &divide; ( the true high-to-low range of the 10 bars before those ) — two halves of a 20-bar base window. BELOW 1 MEANS COILING: the recent swing is tighter than the earlier one, which is the shape a volatility contraction makes, so LOWER IS BETTER and the colour runs the other way to most of this table — green below 1, red above it, where the base is WIDENING. VERSUS TIGHT: Tight compares the last 3 bars against this stock&#39;s own ADR% — is it quiet RIGHT NOW — and says nothing about the shape of the base; this compares the base against ITSELF over time. VERSUS CONSOLIDATION: that measures CLOSING prices, so long wicks read tighter than they traded; these are TRUE high-to-low ranges. A dash, never a 1, when there are fewer than 20 usable bars or either half has no range. Hidden by default — switch it on in Columns.">Coil<span class="sort-ico"></span></th>
+            <th class="c-coil" data-s="coil" data-tip="Whether the base is CONTRACTING as it ages: Coil = ( the true high-to-low range of the most recent 10 bars ) &divide; ( the same range for the 10 bars before them ). BELOW 1 MEANS COILING &mdash; the recent swing is tighter than the earlier one, the shape a volatility contraction makes. LOWER IS BETTER, so the colour runs the other way to most of this table: green under 1, red above it where the base is WIDENING. VERSUS TIGHT: that compares the last 3 bars against this stock&#39;s own ADR% and says nothing about the shape of the base; this compares the base against ITSELF over time. VERSUS CONSOLIDATION: that measures CLOSING prices, so long wicks read tighter than they traded; these are TRUE high-to-low ranges. A dash, never a 1, below 20 usable bars or if either half has no range. Hidden by default.">Coil<span class="sort-ico"></span></th>
             <th class="c-vcp" data-s="vcp" data-tip="Volatility Contraction Pattern — a REST AFTER A RUN, not a downtrend. The badge packs state, contraction count and base length: VCP · 3c · 42b · pivot. TO QUALIFY: the highest high of the last 120 bars, ignoring the most recent 5, is the LID; the stock advanced 25%+ into that lid over the 60 bars before it; 2 to 4 swing high-to-low contractions follow, EACH STRICTLY SHALLOWER THAN THE LAST — one widening leg disqualifies it, with no tolerance factor; first at most 35% deep, final at most 12%; the final leg's mean volume is 0.75× the first's or less AND the last 5 bars sit under the 20-day average; price above the 50 EMA, 50 above 200. STATES: forming (under the lid) · pivot (within 2%) · broke out (closed above in the last 5 bars on 1.5× volume). THE LID IS NOT THE DARVAS BOX TOP — see VCP Lid. Needs 200 bars; a dash means a failed leg. Hidden by default — switch it on in Columns.">VCP<span class="sort-ico"></span></th>
             <th class="c-vcplid" data-s="vcplid" data-tip="The ceiling the base is built under: the highest high of the last 120 bars, with the most recent 5 excluded so that a breakout bar cannot become the level it is breaking. THIS IS NOT THE DARVAS BOX TOP. A Darvas box is a FIVE-BAR construct — one new-high bar plus three quiet ones — and D-Box prints it two columns to the left while % vs Pivot measures the distance to it. This lid is the top of a base that can run 120 bars, so on the same stock on the same day the two are routinely different prices; % to Lid measures this one and % vs Pivot measures that one, and neither is a substitute for the other. Shown only when the whole VCP test passes, so a price here means every leg qualified. A dash when it does not, or when there are fewer than 200 bars. Hidden by default — switch it on in Columns.">VCP Lid<span class="sort-ico"></span></th>
             <th class="c-vcptolid" data-s="vcptolid" data-tip="How far the latest close still has to travel to reach the VCP LID, as a percentage of the CLOSE: % to Lid = 100 × ( Lid − Close ) ÷ Close. POSITIVE MEANS IT HAS THAT FAR TO GO — +3.20% is 3.2% under the lid and not yet triggered — and zero or negative means the lid has already been taken out. MIND THE DENOMINATOR: % vs Pivot divides by the DARVAS BOX TOP, this divides by the CLOSE, and the two levels are different to begin with, so the two numbers are not comparable and will not agree. NO RED TIER on purpose: sitting a few percent under the lid is the SETUP this column exists to find, not a failure, so still-to-travel is muted and at-or-through-the-lid is green. A dash whenever VCP itself is a dash — the distance to a level that does not exist is not zero. Hidden by default — switch it on in Columns.">% to Lid<span class="sort-ico"></span></th>
+            <th class="c-ipo" data-s="ipo" data-tip="A young stock's FIRST real consolidation. The badge packs three facts: IPO · 24b · 78 listed · pivot — base length, bars of history, state. TO QUALIFY: fewer than 250 bars of history AND a first bar later than the feed's own start date; the highest high since that first bar, ignoring the most recent 5, is the LID; a base of 15 to 90 bars hangs under it, at most 35% deep. STATES: forming (under the lid) · pivot (within 2%) · broke out (closed above in the last 5 bars on 1.5× volume). No RS gate — a stock this young has no honest percentile. ⚠ THE AGE TEST IS A PROXY: there are no listing dates in this pipeline, so a ticker whose HISTORY FAILED TO LOAD looks exactly like a genuine new listing. Check the bars-listed figure, and run reportStaleTickers() in the Apps Script before trusting a surprise. Needs 40 bars; a dash means a failed leg. Hidden by default — switch it on in Columns.">IPO Base<span class="sort-ico"></span></th>
+            <th class="c-ipolid" data-s="ipolid" data-tip="The ceiling the first base is built under: the highest high since the ticker's FIRST BAR in this feed, with the most recent 5 excluded so a breakout bar cannot become the level it is breaking. THIS IS A THIRD LEVEL, and neither of the other two. D-Box Top is a five-bar Darvas construct. VCP Lid is the top of a contraction base scanned over a fixed 120-bar window. This one's window STARTS AT THE LISTING, so on a stock with 60 bars of history it is the all-time high and the other two are not — on the same row on the same day all three are routinely different prices. ⚠ It is only the post-LISTING high if the stock really is newly listed; see the IPO Base tooltip on the proxy. A dash when the IPO test fails, or below 40 bars. Hidden by default — switch it on in Columns.">IPO Lid<span class="sort-ico"></span></th>
+            <th class="c-ipotolid" data-s="ipotolid" data-tip="How far the latest close still has to travel to reach the IPO LID, as a percentage of the CLOSE: % to IPO Lid = 100 × ( IPO Lid − Close ) ÷ Close. POSITIVE MEANS IT HAS THAT FAR TO GO — +3.20% is 3.2% under the lid, not yet triggered — and zero or negative means the lid is already taken out. MIND WHICH LID: this measures the post-listing high, while % to Lid measures the VCP lid and % vs Pivot measures the Darvas box top and divides by that top rather than by the close. Three columns, three levels; they are not comparable and will not agree. NO RED TIER on purpose: sitting under the first ceiling is the SETUP this column exists to find, not a failure. A dash whenever IPO Base is a dash. Hidden by default — switch it on in Columns.">% to IPO Lid<span class="sort-ico"></span></th>
             <th data-s="s2" data-tip="Score on the Stage 2 uptrend checklist — price above the long moving averages, those averages stacked and rising, and price near its 52-week high. A full score is a confirmed uptrend.">Stage 2<span class="sort-ico"></span></th>
             <th class="c-mrsrank" data-s="mrs" style="text-align:center" data-tip="Percentile rank from 1 to 100 of this stock's 55-day excess return against every other stock in the same market that has one. A rank of 90 means it beat roughly 90% of that list. Stocks with too little history to produce an RS55 are left out of the ranking entirely rather than ranked as if flat.">MRS Rank<span class="sort-ico"></span></th>
             <th class="c-rs21" data-s="rs21" data-tip="21-day excess return over the benchmark, in percentage points. Positive = it beat the benchmark over the last month.">RS21<span class="sort-ico"></span></th>
@@ -1888,7 +1917,16 @@ const CFG = {
      bars ≈ 45 trading days) fits inside a year of data with room to spare. */
   DARVAS: {boxp:5, nearPct:1.0},
 
-  VER:  'gs16',     // gs15 -> gs16: computeTech() returns FIVE more fields — the VCP column family.
+  VER:  'gs17',     // gs16 -> gs17: computeTech() returns SIX more fields — the IPO-base family.
+                    // ipoState (forming / pivot / broke out), ipoBaseBars (how many bars the base
+                    // runs), ipoBars (how many bars the ticker has listed here at all), ipoDepth,
+                    // ipoLid (the highest high since the ticker's FIRST bar — a THIRD level, not
+                    // dBoxTop and not vcpLid) and ipoToLid. All six are written by computeTech()
+                    // and are therefore CACHED, and every one needs the raw high/low/volume series
+                    // AND the date array that a cached row does not carry — so a gs16 row could
+                    // not be repaired at render time even in principle. It would show three
+                    // permanently blank columns with nothing on screen to say why.
+                    // gs15 -> gs16: computeTech() returns FIVE more fields — the VCP column family.
                     // vcpState (forming / pivot / broke out), vcpCount (how many contractions),
                     // vcpBase (how many bars the base runs), vcpLid (the base ceiling — NOT the
                     // Darvas box top, which is dBoxTop and a different level entirely) and
@@ -4259,11 +4297,31 @@ function onScreenPick(name){
   if(!name){ ACTIVE_SCREEN=''; updateScreenUI(); return; }
   applyScreen(name);
 }
+/* A seeded screen's one-line description, or '' for a user-made screen.
+   WHY THIS EXISTS AT ALL: a screen NAME cannot carry a caveat, and at least one
+   of these screens has a caveat that changes how its results should be read
+   (see '52-Week High' — the feed is ~250 bars, so it is really a ~50-week
+   high). The description is metadata about the SEED, deliberately not a field
+   on the stored screen object: adding a key there would make a seeded screen a
+   different shape from captureScreen()'s, and applyScreen() would then leave
+   the previous screen's value behind in whatever key a user screen lacks. */
+function screenDesc(name){
+  const sd=SCREEN_SEEDS.find(s=>s.name===name);
+  return (sd&&sd.desc)?sd.desc:'';
+}
 function buildScreenSelect(){
   const sel=$('screenSel'); if(!sel) return;
   const names=Object.keys(SCREENS).sort();
   sel.innerHTML='<option value="">Screens…</option>'+
-    names.map(n=>`<option value="${escAttr(n)}"${n===ACTIVE_SCREEN?' selected':''}>${n}</option>`).join('');
+    names.map(n=>{
+      /* Only a seeded name gets a title; a user's own screen gets none, since
+         the app has no idea what theirs is for. Note the description describes
+         the SEED as shipped — a user who saves their own filters over a seeded
+         name keeps the old hover text, which is why this is a hover and not a
+         claim printed beside the row count. */
+      const t=screenDesc(n);
+      return `<option value="${escAttr(n)}"${t?` title="${escAttr(t)}"`:''}${n===ACTIVE_SCREEN?' selected':''}>${n}</option>`;
+    }).join('');
   sel.value=ACTIVE_SCREEN;
 }
 /* The visible "which screen am I on, and have I wandered off it" indicator.
@@ -4284,7 +4342,7 @@ function updateScreenUI(){
 }
 
 /* ══════════════════════════════════
-   TWO PRE-BUILT SCREENS
+   THE PRE-BUILT SCREENS
    ────────────────────────────────
    Shipped as ORDINARY SAVED SCREENS — same object shape, same SCREENS map,
    same localStorage key, same picker, same Save/Delete buttons. There is
@@ -4293,7 +4351,7 @@ function updateScreenUI(){
    the same name, and the moment the owner wanted to nudge one of these numbers
    he would have nowhere to put the change.
 
-   THE TWO SCREENS ARE STARTING POINTS. Every bound below is a plain inclusive
+   THE SCREENS ARE STARTING POINTS. Every bound below is a plain inclusive
    min/max on a column filter, editable from that column's own header funnel
    and re-savable under the same name.
 
@@ -4362,7 +4420,7 @@ function seedScreenObj(colf){
   return sc;
 }
 
-/* THE TWO SCREENS. `colf` is built per call from the floor so nothing about
+/* THE SCREENS THEMSELVES. `colf` is built per call from the floor so nothing about
    them is frozen at parse time.
 
    A NOTE ON "GREATER THAN 0". Column filter bounds are INCLUSIVE at both ends
@@ -4375,6 +4433,7 @@ function seedScreenObj(colf){
 const SCREEN_SEEDS=[
   {
     name:'Near 20 EMA',
+    desc:'Uptrend pullback: within -2% to +5% of the 20 EMA, above the 200 EMA, Stage 2, beating the benchmark on RS21, 200 EMA rising, not already extended.',
     /* THE NORMAL-MARKET ENTRY. A stock in an uptrend that has come back to the
        line the stop goes under, before it has run away again. */
     colf:floor=>({
@@ -4393,6 +4452,7 @@ const SCREEN_SEEDS=[
   },
   {
     name:'Weak Market',
+    desc:'Bad-tape pullback: below the 20 EMA but holding the 50 and the 200, still beating the benchmark on RS21, 200 EMA rising. Deliberately not Stage 2.',
     /* THE BAD-TAPE VERSION. A good stock pulling back THROUGH the 20 EMA but
        holding the 50, in a market where that is ordinary behaviour rather than
        a breakdown.
@@ -4414,6 +4474,39 @@ const SCREEN_SEEDS=[
       slope:   {sel:['Rising']},
       avgval:  {min:floor, max:null, blanks:false},
     }),
+  },
+  {
+    name:'52-Week High',
+    /* THE HONEST NAME PROBLEM, STATED IN THE DESCRIPTION THE USER CAN READ.
+       hi52() takes the highest high over Math.min(n,H52_WIN) bars and refuses
+       to answer below H52_MIN_BARS. The sheet holds ~250 trading bars, so on
+       almost every ticker the window is ~250 bars, i.e. roughly 50 weeks and
+       not 52. The column is called "52W High%" for the same reason everyone
+       else calls it that, but a SCREEN is a claim about a specific list of
+       stocks, so the caveat is spelled out here rather than left to the <th>
+       tooltip the user may never hover. */
+    desc:'Within 5% of the 52-week high with MRS Rank 60+ and enough liquidity. NOTE: the feed holds only ~250 trading bars, so this is really a ~50-week high, not a full 52 weeks.',
+    colf:floor=>({
+      /* h52d is how far BELOW the high price sits, so "within 5%" is min:-5.
+         max is null on purpose: a stock making a NEW high prints a positive
+         h52d and is the most extreme case of the thing being screened for.
+         blanks:false matters more here than anywhere else on the page — h52d
+         is null under hi52()'s 120-bar floor, and `null >= -5` coerces to
+         true, which would admit every short-history ticker as if it were at
+         its highs. */
+      h52:     {min:-5, max:null, blanks:false},
+      // The 1..100 cross-sectional percentile of RS55 written by rankRS().
+      mrs:     {min:60, max:null, blanks:false},
+      avgval:  {min:floor, max:null, blanks:false},
+    }),
+    /* DELIBERATELY NOTHING ELSE, and this is the decision most likely to be
+       "improved" by a later reader. A stock trading within 5% of its own
+       52-week high is BY CONSTRUCTION in an uptrend — no Stage 2 leg, no
+       %200E leg and no rising-slope leg can tell you anything the price
+       position has not already said, and each one would quietly throw away
+       names the owner asked to see. The two legs that DO add information are
+       the ones here: MRS Rank asks whether it is also outrunning everything
+       else in the market, and Avg Value asks whether it can be traded. */
   },
 ];
 
@@ -6264,7 +6357,165 @@ function vcpDetect(C,H,L,V,e50,e200){
   };
 }
 
-function computeTech(C,H,L,V,dates,sym,O){
+/* ── THE IPO BASE: A YOUNG STOCK'S FIRST REAL CONSOLIDATION ────────────
+     A recent listing runs, stalls, and builds the first ceiling it has ever
+     had. There is no prior base to compare it against and no meaningful RS
+     percentile behind it, so this is a much simpler shape than the VCP: a
+     post-listing high, a base of a sane length hanging under it, and a depth
+     that says "rest" rather than "failed listing".
+
+   MINIMUM BAR REQUIREMENT: 40 BARS, and it is DERIVED, not chosen.
+     20  the volAvg20() baseline the breakout leg weighs volume against
+   + 15  IPO_MIN_BASE, the shortest thing that counts as a base
+   +  5  VCP_BO_AGE, the bars the lid scan skips (see below)
+   = 40  IPO_MIN_BARS
+   The worst case is IPO_MAX_BASE (90) + VCP_BO_AGE (5) = 95 bars, and the age
+   gate refuses anything at or above IPO_MAX_BARS (250) anyway. Both numbers
+   fit comfortably inside the ~250-bar feed — unlike the VCP's 200, nothing
+   here is anywhere near the ceiling. That is the point of the column: it is
+   the one pattern in this file that a short history HELPS rather than blocks.
+
+   ⚠️ THE AGE GATE IS A PROXY, AND IT CANNOT BE MADE INTO ANYTHING BETTER.
+   There are no listing dates anywhere in this pipeline — not in the Sheet, not
+   in the Apps Script, not in the universe CSVs. So "young" is inferred from
+   the shape of the data: fewer than IPO_MAX_BARS bars of history AND a first
+   bar later than the feed's own earliest date, i.e. the series genuinely
+   begins part-way through a window every other ticker fills.
+
+   ⚠️ AND HERE IS WHAT THAT PROXY CANNOT DO. A ticker whose history FAILED TO
+   BACKFILL looks identical to one that listed six months ago: both have a
+   short series starting mid-window. The proxy cannot tell them apart, and no
+   arrangement of these same inputs can. A confident "IPO base" badge on a
+   stock that simply did not load would be worse than no column at all, so the
+   tooltip says this in plain words and points at reportStaleTickers() in the
+   Apps Script, which is the only place the difference is actually visible.
+   Do not "fix" this by softening the wording.
+
+   THE LID IS THE POST-LISTING HIGH — a THIRD level, and it must not be
+   confused with either of the two already on this row:
+     · dBoxTop  — a five-bar Darvas construct, republished every few weeks.
+     · vcpLid   — the ceiling of a contraction sequence up to 120 bars long,
+                  scanned over a window that STARTS 120 bars back.
+     · ipoLid   — the highest high since the ticker's FIRST BAR. The window
+                  start is the listing, not a fixed lookback, so on a stock
+                  with 60 bars of history this is the all-time high and the
+                  other two are not.
+   Three levels, three fields, three columns, three tooltips. The % columns
+   divide by the CLOSE, like % to Lid and unlike % vs Pivot.
+
+   WHY THE LID SCAN ALSO EXCLUDES THE LAST VCP_BO_AGE BARS: exactly
+   vcpDetect()'s reasoning, reused rather than re-argued. If the scan included
+   the breakout bar, that bar's own high would BE the lid and no close could
+   ever sit above it, so 'broke out' would be structurally unreachable.
+
+   REUSED, NOT RE-MINTED. VCP_BO_AGE, VCP_PIVOT_ZONE and VCP_BO_VOL define what
+   "fresh", "at the trigger" and "on volume" mean everywhere else on this row,
+   and a second set of near-identical constants would be two definitions of one
+   idea, drifting apart at the first retune. VCP_LABEL supplies the three state
+   words and VCP_RANK their sort order, for the same reason.
+
+   NO RS GATE, DELIBERATELY. rankRS() ranks on rs55, which needs 55 bars plus a
+   benchmark window; a stock this young either has no percentile at all or has
+   one drawn from a handful of bars. Requiring a rank would empty the screen
+   silently, which is the failure mode this file keeps being bitten by.
+
+   NULL, NEVER A PARTIAL VERDICT — same contract as vcpDetect(). */
+const IPO_MAX_BARS=250;    // at or above this much history the stock is not young
+const IPO_MIN_BASE=15;     // shortest run of bars under the lid that counts as a base
+const IPO_MAX_BASE=90;     // longest — beyond this it is a trading range, not a first base
+const IPO_MAX_DEPTH=35;    // % off the lid the base may dig before it is a failed listing
+/* DERIVED from the three numbers above it, so retuning IPO_MIN_BASE cannot
+   leave the floor quietly describing the old base length. */
+const IPO_MIN_BARS=20+IPO_MIN_BASE+VCP_BO_AGE;   // = 40
+
+/* THE FEED'S OWN START DATE. Not a constant: it is whatever the earliest bar
+   in THIS market's payload happens to be, so a shorter or longer download
+   moves it and the proxy moves with it.
+
+   Memoised on the map OBJECT, not on a global. GSHEET_DATA is a POINTER that
+   switchMkt() repoints mid-load, and reading it inside the compute loop is the
+   bug that once recorded 55 India stocks as "no data". fetchStock() already
+   takes its map as an argument, bound once per load; keying the memo off that
+   same object means a tab switch cannot make one ticker's answer depend on
+   another market's calendar. A WeakMap so a discarded map is collectable. */
+const FEED_START_MEMO=new WeakMap();
+function feedStartOf(map){
+  if(!map||typeof map!=='object') return null;
+  if(FEED_START_MEMO.has(map)) return FEED_START_MEMO.get(map);
+  let min=null;
+  for(const k in map){
+    const d=map[k]&&map[k].dates;
+    const f=Array.isArray(d)&&d.length?d[0]:null;
+    if(typeof f!=='string'||!f) continue;
+    if(min==null||f<min) min=f;      // ISO dates: lexicographic IS chronological
+  }
+  FEED_START_MEMO.set(map,min);
+  return min;
+}
+
+function ipoBase(C,H,L,V,dates,feedStart){
+  if(!Array.isArray(C)||!Array.isArray(H)||!Array.isArray(L)||!Array.isArray(V)||!Array.isArray(dates)) return null;
+  const n=Math.min(C.length,H.length,L.length,V.length,dates.length);
+  const fin=v=>typeof v==='number'&&isFinite(v);
+
+  /* AGE GATE FIRST — it is the cheapest leg and the one that decides whether
+     this column has any business answering at all. */
+  if(n<IPO_MIN_BARS||n>=IPO_MAX_BARS) return null;
+  const first=dates[0];
+  if(typeof first!=='string'||!first) return null;
+  if(typeof feedStart!=='string'||!feedStart) return null;   // unknown feed start: unanswerable, so null
+  if(!(first>feedStart)) return null;                        // starts with everyone else: not young
+
+  const close=C[n-1];
+  if(!fin(close)||close<=0) return null;
+
+  /* THE LID: the highest high since the ticker's FIRST bar — index 0, not a
+     fixed lookback — with the most recent VCP_BO_AGE bars excluded. Ties go to
+     the EARLIEST bar, as in vcpDetect(): the level was set the first time it
+     was reached, and the earlier index gives the longer, honester base. */
+  const lidEnd=n-1-VCP_BO_AGE;
+  if(lidEnd<0) return null;
+  let lidIdx=-1, lid=-Infinity;
+  for(let i=0;i<=lidEnd;i++){ const h=H[i]; if(fin(h)&&h>lid){ lid=h; lidIdx=i; } }
+  if(lidIdx<0||!(lid>0)) return null;
+
+  /* THE BASE is everything from the lid bar to the last bar. Too short and it
+     is a pause; too long and the "first base" story has stopped being true. */
+  const baseBars=n-lidIdx;
+  if(baseBars<IPO_MIN_BASE||baseBars>IPO_MAX_BASE) return null;
+
+  /* DEPTH off the lid. A single unreadable bar inside the base nulls the whole
+     verdict rather than being skipped — a base measured over the bars that
+     happened to parse is not the base. */
+  let low=Infinity;
+  for(let i=lidIdx;i<=n-1;i++){ const l=L[i]; if(!fin(l)) return null; if(l<low) low=l; }
+  if(!(low>0)) return null;
+  const depth=(lid-low)/lid*100;
+  if(!(depth<=IPO_MAX_DEPTH)) return null;
+
+  /* STATE, on vcpDetect()'s exact rules and its exact constants.
+     volAvg20(V,i+1) reads bars 0..i-1, so no bar is ever judged against its
+     own future or against bars that had not happened yet. */
+  let state='forming';
+  for(let i=Math.max(0,n-VCP_BO_AGE);i<=n-1;i++){
+    const av=volAvg20(V,i+1);
+    if(fin(C[i])&&C[i]>lid&&fin(V[i])&&av>0&&V[i]>=VCP_BO_VOL*av){ state='breakout'; break; }
+  }
+  if(state!=='breakout'&&Math.abs(close-lid)/lid*100<=VCP_PIVOT_ZONE) state='pivot';
+
+  return{
+    state,
+    lid,
+    lidIdx,
+    baseBars,
+    bars:n,                       // how many bars this ticker has EVER had here
+    depth:+depth.toFixed(2),
+    // Divides by the CLOSE, like % to Lid — "how far does it still have to go".
+    toLid:+((lid-close)/close*100).toFixed(2),
+  };
+}
+
+function computeTech(C,H,L,V,dates,sym,O,feedStart){
   // A 2-row stock (e.g. IPO'd a few days ago)
   // is real data, not a failure. Every derived indicator below (RSI, EMA,
   // Stage2, breakout, RS returns, etc.) already null-guards its own minimum
@@ -6494,6 +6745,13 @@ function computeTech(C,H,L,V,dates,sym,O){
      building a third copy. e200 is null below 200 bars and vcpDetect() nulls
      the whole pattern on that, deliberately: see its block comment. */
   const vcp=vcpDetect(C,H,L,V,e50,e200);
+  /* IPO BASE. Computed here for the same reason Coil and VCP are — the raw
+     OHLCV is gone on a cached load and this row is then the only surviving
+     record of it. feedStart is PASSED IN rather than read from GSHEET_DATA:
+     that global is a pointer switchMkt() repoints, and reading it from inside
+     the compute loop is the exact bug that once recorded 55 India stocks as
+     "no data". A caller that does not supply it gets null, honestly. */
+  const ipo=ipoBase(C,H,L,V,dates,feedStart);
 
   /* %10E reads e10 — the SAME EMA computed at the top of this function and
      already drawn as the first EMA Align badge. Nothing is recomputed. */
@@ -6642,6 +6900,18 @@ function computeTech(C,H,L,V,dates,sym,O){
        separate fields on purpose and neither column may describe the other. */
     vcpState:vcp&&vcp.state, vcpCount:vcp&&vcp.count, vcpBase:vcp&&vcp.baseBars,
     vcpLid:vcp?vcp.lid:null, vcpToLid:vcp?vcp.toLid:null,
+    /* THE IPO-BASE FAMILY, gs17. Same contract as the VCP family: read by its
+       own three columns, by the sort, by the column filters and by the export
+       — and by NOTHING that scores, ranks or blends. In particular it must
+       never reach isQualitySetup() or the Stage 2 patch: the age gate is a
+       PROXY (see ipoBase()'s block comment) and a proxy has no business
+       silently moving a score the owner reads as a fact.
+       ipoLid IS NEITHER dBoxTop NOR vcpLid. Three different levels on one row
+       — a 5-bar Darvas top, a 120-bar contraction ceiling, and the highest
+       high since this ticker's first bar. Separate fields on purpose, and no
+       column may describe another's level. */
+    ipoState:ipo&&ipo.state, ipoBaseBars:ipo&&ipo.baseBars, ipoBars:ipo&&ipo.bars,
+    ipoDepth:ipo?ipo.depth:null, ipoLid:ipo?ipo.lid:null, ipoToLid:ipo?ipo.toLid:null,
     boGain:bo.gain,boCnt:bo.count,retrace:bo.retrace,
     // Own returns (inputs to RS, never displayed as RS), plus the dates they
     // were measured across so rankRS() can price the benchmark on the SAME
@@ -7804,7 +8074,11 @@ function fetchStock(def, data){
   // O is passed LAST, not spliced in after C, so that any caller (and every
   // existing test) written against the old 6-arg signature still works and
   // simply gets no candlestick patterns instead of silently mis-binding H to O.
-  const d = computeTech(gd.C,gd.H,gd.L,gd.V,gd.dates,def.s,gd.O) || null;
+  /* feedStartOf(map) — the earliest bar date in THIS payload, memoised on the
+     map object. Bound from the same `map` argument the bars came from, never
+     from GSHEET_DATA, so a tab switch mid-load cannot price one market's
+     ticker against another market's calendar. */
+  const d = computeTech(gd.C,gd.H,gd.L,gd.V,gd.dates,def.s,gd.O,feedStartOf(map)) || null;
   if(d) d.boAge = boBarsSince(gd.C,gd.V);
   return d;
 }
@@ -9031,6 +9305,42 @@ function vcpToLidC(v){
   return `<span class="${v<=0?'vg':'vm'}">${v>0?'+':''}${v.toFixed(2)}%</span>`;
 }
 
+/* THE IPO-BASE BADGE. Three facts in one cell, in the order they are read:
+   the state, how long the base has run, and how long the stock has existed
+   here at all. The bars-listed number is not decoration — it is the ONLY
+   thing on screen that lets the owner sanity-check the age proxy. A "45
+   listed" on a stock he knows has traded for years is a failed backfill, and
+   that is exactly the confusion ipoBase()'s comment and the tooltip warn about.
+
+   Its own class family, deliberately not .vcp. The two badges are shaped alike
+   and coloured on the same argument, but they describe different levels on the
+   same row, and sharing a class would put them one stylesheet edit away from
+   looking like a single reading — the same reason .vcp is not .dbx.
+
+   A ROW WITH NO IPO BASE PRINTS A DASH. Every field of the family is null
+   together, so testing the state alone is enough. */
+function ipoC(d){
+  if(!d||!d.ipoState||!VCP_LABEL[d.ipoState]) return '<span class="vm">—</span>';
+  return `<span class="ipo ipo-${d.ipoState}">IPO · ${d.ipoBaseBars}b · ${d.ipoBars} listed · ${VCP_LABEL[d.ipoState]}</span>`;
+}
+
+/* The post-listing high, as a price. Formatted exactly like VCP Lid and the
+   D-Box range so a user comparing the three levels does not also have to
+   re-read three number formats. That shared formatting is the ONLY thing the
+   three have in common — see ipoBase()'s note on the three lids. */
+function ipoLidC(v){
+  if(v==null||!isFinite(v)) return '<span class="vm">—</span>';
+  return `<span>${v>=1000?Math.round(v).toLocaleString('en-IN'):(+v).toFixed(2)}</span>`;
+}
+
+/* % to IPO Lid. NO RED TIER, on vcpToLidC()'s argument: a young stock sitting
+   3% under its first ceiling is the SETUP this column exists to find, not a
+   failure, so still-to-travel is muted and at-or-through is green. */
+function ipoToLidC(v){
+  if(v==null) return '<span class="vm">—</span>';
+  return `<span class="${v<=0?'vg':'vm'}">${v>0?'+':''}${v.toFixed(2)}%</span>`;
+}
+
 function pctEmaC(v){
   if(v==null) return '<span class="vm">—</span>';
   const c=v>0?'vg':v<0?'vr':'vm';
@@ -9367,7 +9677,7 @@ function histGC(v){ return fmtCh(v); }
    rows' cells get hidden. Length must equal (th count − 4). */
 const SKEL_COLS=['c-setup','c-align','c-fresh','c-sector','c-subind','','','c-ch1w','c-ch1m','c-ch3m','c-hist','c-histg','c-status','','c-wrsi','c-vr','c-volspike','c-wvol','c-avgval','','c-wpiv','c-dbox','c-pctpiv','c-wbox','',
   'c-ema','c-pct10e','c-pct20e','c-pct50e','c-pct200e','c-wema','c-xcross','c-wcross','c-slope200','c-pattern','c-wpattern','c-consol',
-  'c-monthly','','c-bocnt','c-followup','c-voldry','c-retrace','c-squeeze','c-adr','c-tight','c-daysup','c-coil','c-vcp','c-vcplid','c-vcptolid','','c-mrsrank','c-rs21',
+  'c-monthly','','c-bocnt','c-followup','c-voldry','c-retrace','c-squeeze','c-adr','c-tight','c-daysup','c-coil','c-vcp','c-vcplid','c-vcptolid','c-ipo','c-ipolid','c-ipotolid','','c-mrsrank','c-rs21',
   'c-rs55','c-rs10w','c-rsslope','c-rsp55','c-rsp21','c-rshist','','c-rstrend','c-notes'];
 
 function skelRow(def,i){
@@ -9461,6 +9771,9 @@ function dataRow(def,d,i){
     <td class="c-vcp">${vcpC(d)}</td>
     <td class="c-vcplid">${vcpLidC(d.vcpLid)}</td>
     <td class="c-vcptolid">${vcpToLidC(d.vcpToLid)}</td>
+    <td class="c-ipo">${ipoC(d)}</td>
+    <td class="c-ipolid">${ipoLidC(d.ipoLid)}</td>
+    <td class="c-ipotolid">${ipoToLidC(d.ipoToLid)}</td>
     <td>${s2C(d.s2)}</td>
     <td class="c-mrsrank" style="text-align:center">${rsC(d.mrsRank)}</td>
     <td class="c-rs21">${rsNumC(d.rs21)}</td>
@@ -9482,7 +9795,7 @@ function errRow(def,i){
     <td class="td-n pin pin1">${i}</td><td class="pin pin2">${revC(def.s)}</td>
     <td class="pin pin3">${capB(def.g)}</td>
     <td class="pin pin4">${watchC(def.s)}<span class="ticker">${def.d}</span><br><span class="sec">${def.sector}</span></td>
-    <td colspan="63" style="color:var(--text3);font-size:11px">
+    <td colspan="66" style="color:var(--text3);font-size:11px">
       ⚠ Not in this market's data source — it will appear once the daily data carries it
     </td>
   </tr>`;
@@ -10373,6 +10686,15 @@ const SORT_FN={
      is the watch-list order. */
   vcplid:d=>d?.vcpLid,
   vcptolid:d=>d?.vcpToLid,
+  /* The IPO badge is ordinal on the SAME ladder the VCP badge uses — VCP_RANK,
+     not a second copy of it, because the three state words are literally the
+     same three words and two ladders would be one retune away from disagreeing.
+     A row with no IPO base returns undefined -> getRows() maps it to -Infinity,
+     so it sinks rather than pretending to be 'forming'. */
+  ipo:d=>VCP_RANK[d?.ipoState],
+  /* A price and a distance, both ranking on the number the cell prints. */
+  ipolid:d=>d?.ipoLid,
+  ipotolid:d=>d?.ipoToLid,
   rshist:d=>Array.isArray(d?.rsHist)&&d.rsHist.length?d.rsHist[d.rsHist.length-1]:null,
   // rsTrend is now the words 'up'/'flat'/'down' (was the arrows ↑/→/↓).
   // The arrow keys are kept so a row rehydrated from an older cache still
@@ -11505,6 +11827,21 @@ const EXPORT_COLS=[
   // columns, and a reader must be able to see they differ.
   ['VCP Lid',     (def,d)=>d?.vcpLid??''],
   ['% to Lid',    (def,d)=>d?.vcpToLid??''],
+  /* The IPO-base family, beside the VCP family for the same audit-in-place
+     reason. The badge packs three facts and the export unpacks them, because a
+     spreadsheet can sort a base length and a bars-listed count and cannot sort
+     a badge — and bars-listed is the number that tells the owner whether the
+     age proxy was right. The state exports through VCP_LABEL, so the file and
+     the screen never use two vocabularies for one field. Depth exports too: it
+     is a qualifying leg with no column of its own, and a spreadsheet is
+     exactly where a reader goes to ask "how deep was that base really". */
+  ['IPO Base',    (def,d)=>d?.ipoState?(VCP_LABEL[d.ipoState]||d.ipoState):''],
+  ['IPO Base (bars)',(def,d)=>d?.ipoBaseBars??''],
+  ['IPO Bars Listed',(def,d)=>d?.ipoBars??''],
+  ['IPO Base Depth%',(def,d)=>d?.ipoDepth??''],
+  // NOT the VCP lid and NOT the Darvas box top — three levels, three columns.
+  ['IPO Lid',     (def,d)=>d?.ipoLid??''],
+  ['% to IPO Lid',(def,d)=>d?.ipoToLid??''],
   ['MRS Rank',    (def,d)=>d?.mrsRank??''],
   ['RS21',        (def,d)=>d?.rs21??''],
   ['RS55',        (def,d)=>d?.rs55??''],
@@ -11916,6 +12253,21 @@ const COL_FILTERS={
              return w?w.charAt(0).toUpperCase()+w.slice(1):null; }},
   vcplid:  {t:'num',  label:'VCP Lid', val:d=>d&&d.vcpLid},
   vcptolid:{t:'num',  label:'% to Lid', val:d=>d&&d.vcpToLid},
+  /* THE IPO TRIO. Filterable and sortable while hidden, like every other
+     defOff column. The badge filters as a CATEGORY off VCP_LABEL — the same
+     three words, capitalised the same way, rather than a fourth hand-written
+     list that a renamed state could leave naming something that no longer
+     exists. The lid and the distance are plain inclusive numeric bounds.
+     NOTE THE KEYS. ipoState/ipoLid/ipoToLid are the FIELDS; ipo/ipolid/
+     ipotolid are the keys, and each key must match its <th>'s data-s, which is
+     lower-case throughout the header. And "% to IPO Lid" is NOT "% to Lid" and
+     NOT "% vs Pivot": three columns, three different levels, and a screen
+     wanting more than one must set more than one. */
+  ipo:     {t:'cat',  label:'IPO Base', val:d=>{
+             const s=d&&d.ipoState, w=s&&VCP_LABEL[s];
+             return w?w.charAt(0).toUpperCase()+w.slice(1):null; }},
+  ipolid:  {t:'num',  label:'IPO Lid', val:d=>d&&d.ipoLid},
+  ipotolid:{t:'num',  label:'% to IPO Lid', val:d=>d&&d.ipoToLid},
   daysup:  {t:'num',  label:'Days Up', val:d=>d&&d.daysUp},
 
   /* ── explicitly nothing ─────────────────────────────────────────── */
@@ -12562,6 +12914,13 @@ const TOGGLEABLE_COLS=[
   {cls:'vcp',    label:'VCP', defOff:true},
   {cls:'vcplid', label:'VCP Lid', defOff:true},
   {cls:'vcptolid',label:'% to Lid', defOff:true},
+  /* defOff for the same reason the VCP trio is — see COL_DEF_OFF below. Three
+     more columns is three more columns of width the owner did not ask for, so
+     all three arrive switched OFF and earn their place from the Columns modal.
+     They still sort, filter and export while hidden. */
+  {cls:'ipo',    label:'IPO Base', defOff:true},
+  {cls:'ipolid', label:'IPO Lid', defOff:true},
+  {cls:'ipotolid',label:'% to IPO Lid', defOff:true},
   {cls:'mrsrank',label:'MRS Rank'},
   {cls:'rs21',   label:'RS21'},
   {cls:'rs55',   label:'RS55'},
