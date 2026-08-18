@@ -530,6 +530,21 @@ td:last-child{border-right:none}
 .dbx-below{color:var(--red);font-weight:600}
 .dbx-rng{font-size:9.5px;color:var(--text3);white-space:nowrap}
 
+/* ─── VCP BADGE ────────────────── */
+/* ITS OWN CLASS FAMILY, DELIBERATELY NOT .dbx. The Darvas badge describes a
+   five-bar box top and this one describes the ceiling of a base up to
+   VCP_MAX_BASE bars old — different levels on the same row — and sharing a
+   class would put them one stylesheet edit away from looking like a single
+   reading. The colour logic is the same shape though, and on purpose: the
+   state that can be acted on now is filled and bordered, the one still waiting
+   recedes. Tokens only, no hard-coded hex, so a theme switch repaints it with
+   no JS — the same contract the stage panel is held to. */
+.vcp{display:inline-block;padding:2px 7px;border-radius:var(--rs);
+  font-size:10px;font-weight:700;border:1px solid transparent;white-space:nowrap}
+.vcp-breakout{background:var(--green-bg);color:var(--green);border-color:var(--green)}
+.vcp-pivot{background:var(--blue-bg);color:var(--blue);border-color:var(--blue)}
+.vcp-forming{background:var(--surface2);color:var(--text2);border-color:var(--border)}
+
 /* ─── FRESH-MOMENTUM BADGE ────── */
 /* One badge naming the most recent trigger, or a count when several fired on
    the same row. Green because everything this column reports is a turn that
@@ -611,6 +626,41 @@ body.metrics-collapsed #metricsHd,body.filters-collapsed #filtersHd{margin-botto
 .breadth-flat{background:var(--border2);transition:width .25s}
 .breadth-legend{display:flex;gap:14px;margin-top:6px;font-size:11px;color:var(--text2);flex-wrap:wrap}
 .breadth-legend b{font-weight:700}
+
+/* ─── LIFECYCLE STAGES ────────────
+   Deliberately the SAME panel as Market Breadth above (surface card, caret,
+   summary, remembered collapse) — see the note on .coll-hd. The buttons reuse
+   .ftog's engaged look, --dark on --on-dark, because "this filter is on" must
+   look like one thing everywhere on the page.
+   THE 44px FLOOR IS ON THE BUTTON, not just the header: these are the controls
+   a phone user taps to reframe the whole table, and .ftog's 11px/4px padding
+   lands at ~26px. Every colour here is a token, so a theme switch repaints the
+   panel with no JS. */
+.stg-sec{padding:10px 16px 0}
+.stg-box{background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--rl);box-shadow:var(--sh);overflow:hidden}
+.stg-hd{display:flex;align-items:center;gap:8px;padding:8px 12px;min-height:44px;
+  cursor:pointer;font-size:12px;font-weight:600;color:var(--text);user-select:none}
+.stg-hd:hover{background:var(--surface2)}
+.stg-hd:focus-visible{outline:2px solid var(--blue);outline-offset:-2px}
+.stg-caret{color:var(--text3);font-size:10px;width:10px;text-align:center;flex-shrink:0}
+.stg-sum{margin-left:auto;font-weight:500;color:var(--text2);font-size:11.5px;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.stg-body{display:flex;flex-wrap:wrap;gap:8px;padding:0 12px 12px}
+.stg-btn{display:flex;align-items:center;gap:7px;min-height:44px;padding:6px 12px;
+  border-radius:var(--r);font-size:11.5px;font-weight:600;color:var(--text2);
+  border:1.5px solid var(--border2);background:var(--surface);
+  transition:all .12s;white-space:nowrap;cursor:pointer}
+.stg-btn:not(.on):hover{border-color:var(--blue);color:var(--blue);background:var(--blue-bg)}
+.stg-btn:focus-visible{outline:2px solid var(--blue);outline-offset:1px}
+.stg-btn.on{background:var(--dark);border-color:var(--dark);color:var(--on-dark)}
+.stg-btn.on:hover{background:var(--dark-hv);border-color:var(--dark-hv)}
+/* The count is the number the user is actually reading, so it is the darker of
+   the two tiers on the button — the label is the caption, not the answer. */
+.stg-n{font-weight:700;font-size:12.5px;color:var(--text)}
+.stg-btn.on .stg-n{color:var(--on-dark)}
+.stg-lbl{font-weight:600}
+body.stg-collapsed .stg-body{display:none}
 
 /* ─── SCAN STATUS BANNERS ─────── */
 .scan-banner{display:none;align-items:center;gap:8px;padding:7px 16px;
@@ -743,11 +793,29 @@ body.asof-on .tbl-wrap{outline:3px solid var(--orange)}
 /* ADR% is GROUP B, not A: it is a sizing input you reach for at the moment you
    are deciding what to buy, which is exactly when a phone is the thing in your
    hand. It survives down to 480px alongside D-Box. */
+/* % vs Pivot is GROUP B, beside D-Box for the same reason %20E is beside EMA
+   Align: the badge says WHICH SIDE of the level the price is on, this says HOW
+   FAR — and "how far to the trigger" is read at the moment of deciding what to
+   buy, which is exactly when a phone is the thing in hand. Splitting it from
+   D-Box across the two groups would leave the state on the small screen with
+   the distance gone. */
+.c-pctpiv,
 /* Tight and Days Up are GROUP B for the same reason ADR% and %20E are: both
    answer "is THIS a good entry, right now", which is the question being asked
    at the moment a phone is the thing in hand. Tight sits beside ADR% because
    ADR% is its denominator. */
-.c-adr,.c-tight,.c-daysup{display:table-cell}
+/* Coil is GROUP B for the same reason Tight is, and it is listed with Tight
+   because the two are read as a PAIR: Tight says whether the last three bars
+   are quiet, Coil says whether the base they sit in is getting tighter. Half
+   of that comparison on a phone is worse than neither half. */
+/* The VCP trio is GROUP B, and all three together, for the same reason D-Box
+   and % vs Pivot are: the badge says WHICH SIDE of the level the price is on,
+   VCP Lid says WHERE the level is and % to Lid says HOW FAR — one reading in
+   three cells. Splitting them across the two tiers would leave a state on the
+   small screen with no level under it, which is worse than dropping all three.
+   They sit beside Coil because Coil is the same question asked cheaply: Coil
+   is one ratio of two halves of a 20-bar window, VCP is the full structure. */
+.c-adr,.c-tight,.c-daysup,.c-coil,.c-vcp,.c-vcplid,.c-vcptolid{display:table-cell}
 
 /* User-controlled column toggles (via the Columns modal, saved to localStorage).
    Adding e.g. "hide-wrsi" to <body> hides every cell tagged .c-wrsi — works
@@ -764,6 +832,7 @@ body.hide-wvol    .c-wvol,
 body.hide-avgval  .c-avgval,
 body.hide-wpiv    .c-wpiv,
 body.hide-dbox    .c-dbox,
+body.hide-pctpiv  .c-pctpiv,
 body.hide-wbox    .c-wbox,
 body.hide-ema     .c-ema,
 body.hide-wema    .c-wema,
@@ -779,6 +848,10 @@ body.hide-pct50e  .c-pct50e,
 body.hide-pct200e .c-pct200e,
 body.hide-tight   .c-tight,
 body.hide-daysup  .c-daysup,
+body.hide-coil    .c-coil,
+body.hide-vcp     .c-vcp,
+body.hide-vcplid  .c-vcplid,
+body.hide-vcptolid .c-vcptolid,
 body.hide-mrsrank .c-mrsrank,
 body.hide-rstrend .c-rstrend,
 body.hide-notes   .c-notes,
@@ -861,6 +934,13 @@ body.hide-fresh   .c-fresh{display:none!important}
 .sb-hi{background:var(--green-bg);color:var(--green)}
 .sb-mid{background:var(--orange-bg);color:var(--orange)}
 .sb-lo{background:var(--red-bg);color:var(--red)}
+/* A FOURTH pill colour, for the rotation label only. hi/mid/lo is a
+   one-axis ramp and rotation has two axes: Improving (weak but rising) is
+   not a mid-strength version of Leading, it is a different kind of thing,
+   and painting it the same orange as Weakening would make the one label
+   worth acting on look identical to the one worth avoiding. Same semantic
+   tokens as the other three, so it needs no per-theme override. */
+.sb-blu{background:var(--blue-bg);color:var(--blue)}
 
 /* ─── SETUP SCORE BADGE ───────── */
 .setup-badge{display:inline-flex;align-items:center;gap:3px;padding:2px 7px;border-radius:var(--rs);
@@ -1104,8 +1184,9 @@ body.dd-lock{overflow:hidden}
   .metrics-row{grid-template-columns:repeat(2,1fr)}
   .c-volspike,.c-vr,.c-align,.c-ema,.c-bocnt,.c-squeeze,.c-mrsrank,.c-setup,
   .c-sector,.c-status,.c-xcross,.c-pattern,.c-consol,.c-rs21,.c-rs55,
-  .c-ch1w,.c-ch1m,.c-ch3m,.c-histg,.c-dbox,.c-avgval,.c-fresh,
-  .c-pct10e,.c-pct20e,.c-adr,.c-tight,.c-daysup{display:none!important}
+  .c-ch1w,.c-ch1m,.c-ch3m,.c-histg,.c-dbox,.c-pctpiv,.c-avgval,.c-fresh,
+  .c-pct10e,.c-pct20e,.c-adr,.c-tight,.c-daysup,.c-coil,
+  .c-vcp,.c-vcplid,.c-vcptolid{display:none!important}
   .search-bar input{width:80px}
 }
 </style>
@@ -1321,6 +1402,25 @@ body.dd-lock{overflow:hidden}
   </div>
 </section>
 
+<!-- LIFECYCLE STAGES
+     Sits with the breadth panel rather than in the filter bar on purpose: it is
+     read first ("what just triggered?") and only then clicked. Same panel, same
+     caret, same one-line summary, same remembered collapse state — a second
+     idiom for the same gesture would just be a second thing to learn. -->
+<section class="stg-sec">
+  <div class="stg-box">
+    <div class="stg-hd" id="stageHd" role="button" tabindex="0" aria-expanded="true"
+         aria-controls="stageBody" onclick="toggleStages()"
+         onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();toggleStages()}"
+         data-tip="Where each stock is in the one move this screener is built around: coiling under its Darvas pivot, crossing it, running, or handing the move back. Click a stage to keep only those rows; click it again to clear. The four counts follow every other filter you have set.">
+      <span class="stg-caret" id="stageCaret">&#9662;</span>
+      <span>Lifecycle Stage</span>
+      <span class="stg-sum" id="stageSum">&mdash;</span>
+    </div>
+    <div class="stg-body" id="stageBody"><!-- renderStages() paints the four buttons --></div>
+  </div>
+</section>
+
 <!-- STATUS ROW -->
 <div class="status-row">
   <div>Showing <strong id="vCnt">—</strong> of <strong id="tCnt">—</strong> stocks<span class="colf-chip" id="colfChip"></span></div>
@@ -1359,6 +1459,7 @@ body.dd-lock{overflow:hidden}
             <th data-s="dpiv" data-tip="Where the price sits among the classic daily pivot levels, from below S2 (weakest) up to above R2 (strongest). Anything above the pivot point is the bullish half of the day's range.">D-Pivot<span class="sort-ico"></span></th>
             <th class="c-wpiv" data-s="wpiv" data-tip="The same pivot zones calculated from weekly bars — a slower read on whether the stock is holding the strong side of its range.">W-Pivot<span class="sort-ico"></span></th>
             <th class="c-dbox" data-s="dbox" data-tip="Darvas Box on daily bars, box length 5. HOW IT IS BUILT: a bar whose high beats the highest high of the previous 5 bars sets a candidate top; if the next 3 bars make no new high, that high becomes the box TOP and the lowest low of the 5 bars up to the confirming bar becomes the box BOTTOM. The box PERSISTS until the next one forms — a level to trade against, not a one-bar flag. THE STATES: Break = the close crossed above the top on the latest bar and was below it the day before — the freshest · Near = below the top but within 1% of it · Inside = between the bottom and the top, still consolidating · Above = already over the top, so the move is under way and a new entry is late · Below = under the box bottom, the setup has failed · a dash means no box has formed yet or there are fewer than 9 bars of history. Sorting puts Break and Near first, then Inside — the ones you can still act on.">D-Box<span class="sort-ico"></span></th>
+            <th class="c-pctpiv" data-s="pctpiv" data-tip="How far the latest close sits from the DAILY Darvas box TOP, as a percentage of that top: % vs Pivot = 100 &times; ( Close &minus; Box Top ) / Box Top. THE BOX TOP IS THE BREAKOUT LEVEL — the number printed as the upper figure in the D-Box cell beside this one, and drawn as the upper line on the chart — and the owner buys ABOVE it. So a NEGATIVE reading means NOT YET TRIGGERED, and its size is how far the stock still has to travel: &minus;4.10% is 4.1% under the trigger; a POSITIVE one means the level has already been taken out. %20E measures the distance to the STOP; this measures the distance to the ENTRY. It divides by the box top the D-Box column itself publishes — no box is recomputed here. A dash, never a zero, when no box has formed, when the top is missing or not positive, or when there is no close; zero is a real reading, sitting exactly on the pivot. Hidden by default — switch it on in Columns.">% vs Pivot<span class="sort-ico"></span></th>
             <th class="c-wbox" data-s="wbox" data-tip="The same Darvas Box construction run on WEEKLY bars, so both the box and the states describe months rather than days. A weekly box needs 9 weekly bars (roughly 45 trading days) before it can exist, and it moves far less often than the daily one — a weekly Break is a much rarer and heavier signal than a daily one. The five states mean exactly what they mean in the D-Box column.">W-Box<span class="sort-ico"></span></th>
             <th data-s="h52" data-tip="% below the highest high in the available window. The data source holds ~1 trading year (~250 bars), so in practice this is a ~50-week high, not a full 52. Shows — for stocks with under 120 bars of history.">52W High<span class="sort-ico"></span></th>
             <th class="c-ema" data-s="ema" data-tip="How many of the 10, 20, 50 and 200-day moving averages the price is trading above, one badge each. All four green is the textbook shape of a healthy uptrend.">EMA Align<span class="sort-ico"></span></th>
@@ -1380,12 +1481,16 @@ body.dd-lock{overflow:hidden}
             <th data-s="bog" data-tip="Percentage gained from the close of the most recent breakout bar to the latest close, using the same rule as BO Count: close above the prior 52-bar high on more than 1.5× the 20-day average volume. A large number means the move is already well advanced and a late entry is riskier.">BO Gain%<span class="sort-ico"></span></th>
             <th class="c-bocnt" data-s="boc" data-tip="Count of volume-confirmed breakout bars across the whole available history. Every bar from the 53rd onwards is tested and counts only if BOTH hold: its close beat the highest close of the prior 52 bars, AND its volume was more than 1.5× the recent 20-day average volume. These are separate breakout days scattered through the series, not consecutive candles — 3 means three distinct events, which suggests repeated accumulation rather than one pop.">BO Count<span class="sort-ico"></span></th>
             <th class="c-followup" data-s="bofu" data-tip="Trading days since the most recent breakout bar — the same volume-confirmed 52-bar breakout that BO Count counts, scanned backwards from the latest bar. 0 means it broke out on the newest bar in the data. Green is 5 days or fewer and still actionable, amber up to 20, grey beyond that. A dash means no qualifying breakout exists anywhere in the available history. These are trading days, so weekends and holidays are not counted.">Follow-up<span class="sort-ico"></span></th>
-            <th class="c-voldry" data-s="voldry" data-tip="20-day average volume below the 50-day average — volume drying up, which is what a healthy base looks like before a breakout.">Vol Dry<span class="sort-ico"></span></th>
+            <th class="c-voldry" data-s="voldry" data-tip="Volume drying up, as a NUMBER rather than a yes/no: Vol Dry = 20-day average volume &divide; 50-day average volume. BELOW 1 MEANS DRYING UP — recent volume is running under the medium-term norm, which is what a healthy base looks like before a breakout — and 0.83&times; reads as recent volume at 83% of that norm. The number is the point: 0.40&times; and 0.95&times; were both a plain tick before gs15, and they are not the same signal at all. Green below 1, muted at or above it. NO RED, unlike Coil: expanding volume is the wrong side of this line while a base is forming and the RIGHT side on the day it breaks out, so a red here would be a verdict this column cannot defend alone. Both averages come off the same trailing window, so the 20-day is a SUBSET of the 50-day. Filter it as a number — max 0.6 is the screen this exists for. A dash when there are fewer than 50 bars, or the 50-day average is not positive.">Vol Dry<span class="sort-ico"></span></th>
             <th class="c-retrace" data-s="ret" data-tip="How far the latest close sits below the highest close reached since the most recent breakout, as a percentage of that peak — so it is always zero or negative. It is not the fraction of the breakout move given back. A small figure means the move is being held; a large one means most of the follow-through has been surrendered.">Retrace%<span class="sort-ico"></span></th>
             <th class="c-squeeze" data-s="sq" data-tip="A 0–100 compression score, not a yes/no flag: (1 − Bollinger width ÷ Keltner width) × 100, clamped to 0–100. Bollinger width is 4 standard deviations of the closes and Keltner width is 3× the average true range, each divided by the mean close over the full series. A higher score means the Bollinger bands sit further inside the Keltner channel — volatility has contracted, which often precedes an expansion. The bar turns amber above 65.">Squeeze<span class="sort-ico"></span></th>
             <th class="c-adr" data-s="adr" data-tip="Average Daily Range as a percent of price. THE EXACT DEFINITION: ADR% = 100 &times; ( mean over the last 20 bars of (High / Low) &minus; 1 ). WHY A TRADER CARES: it says how much this stock typically moves in a single day, so it screens out names too sluggish to produce a swing move. It is also a sizing input — position size and stop distance are set in proportion to the stock's own volatility rather than to a fixed percentage. Needs 20 usable bars: a bar whose low is zero, negative or not a finite number is skipped and an earlier bar used in its place, and if 20 usable bars cannot be found the cell shows a dash rather than an average over fewer. It feeds nothing — not Setup Score, not MRS Rank, not any composite. Sortable and filterable.">ADR%<span class="sort-ico"></span></th>
             <th class="c-tight" data-s="tight" data-tip="How narrow the last 3 daily bars are compared with what is NORMAL FOR THIS STOCK. Tight = 100 &times; ( mean over the last 3 bars of 100 &times; (High &minus; Low) / Close ) / ADR%. 100 means the last 3 bars have been exactly as wide as this stock's normal day. LOWER IS BETTER — the one column where small is good — and below about 60 is meaningfully tight; above 100 the range is EXPANDING. VERSUS CONSOLIDATION: Consolidation measures the range of CLOSING prices, so a bar with long wicks reads as tighter than it really is. This measures the TRUE high-to-low range instead, and scales it against the stock's own ADR%. The two answer different questions and are read together. The denominator is the ADR% column's own value — nothing is recomputed. A dash, never a zero, when ADR% is unavailable or not positive, or there are fewer than 3 usable bars. Sortable and filterable.">Tight<span class="sort-ico"></span></th>
             <th class="c-daysup" data-s="daysup" data-tip="How many sessions IN A ROW, counting back from the latest bar, closed HIGHER than the session before: each bar whose close is strictly greater than the previous one, stopping at the first that is not. Only a run reaching the LATEST bar counts — three up days followed by a down day reads 0, not 3 — and a flat close and a down close both read 0. WHY THE OWNER READS IT: he does not want to enter a stock that has already run 3 or 4 days. Every extra up day puts more distance between the price and the moving average the stop sits under, so the entry risk WIDENS with each one. 0 to 2 is the window; 3 and above is chasing, and the cell says so in red. Needs 2 bars to answer; below that, or with a missing close, it shows a dash rather than a zero, because zero is a real reading here."unmeasurable". Sortable and filterable like any other numeric column.">Days Up<span class="sort-ico"></span></th>
+            <th class="c-coil" data-s="coil" data-tip="Whether the base is CONTRACTING as it ages: Coil = ( the true high-to-low range of the most recent 10 bars ) &divide; ( the true high-to-low range of the 10 bars before those ) — two halves of a 20-bar base window. BELOW 1 MEANS COILING: the recent swing is tighter than the earlier one, which is the shape a volatility contraction makes, so LOWER IS BETTER and the colour runs the other way to most of this table — green below 1, red above it, where the base is WIDENING. VERSUS TIGHT: Tight compares the last 3 bars against this stock&#39;s own ADR% — is it quiet RIGHT NOW — and says nothing about the shape of the base; this compares the base against ITSELF over time. VERSUS CONSOLIDATION: that measures CLOSING prices, so long wicks read tighter than they traded; these are TRUE high-to-low ranges. A dash, never a 1, when there are fewer than 20 usable bars or either half has no range. Hidden by default — switch it on in Columns.">Coil<span class="sort-ico"></span></th>
+            <th class="c-vcp" data-s="vcp" data-tip="Volatility Contraction Pattern — a REST AFTER A RUN, not a downtrend. The badge packs state, contraction count and base length: VCP · 3c · 42b · pivot. TO QUALIFY: the highest high of the last 120 bars, ignoring the most recent 5, is the LID; the stock advanced 25%+ into that lid over the 60 bars before it; 2 to 4 swing high-to-low contractions follow, EACH STRICTLY SHALLOWER THAN THE LAST — one widening leg disqualifies it, with no tolerance factor; first at most 35% deep, final at most 12%; the final leg's mean volume is 0.75× the first's or less AND the last 5 bars sit under the 20-day average; price above the 50 EMA, 50 above 200. STATES: forming (under the lid) · pivot (within 2%) · broke out (closed above in the last 5 bars on 1.5× volume). THE LID IS NOT THE DARVAS BOX TOP — see VCP Lid. Needs 200 bars; a dash means a failed leg. Hidden by default — switch it on in Columns.">VCP<span class="sort-ico"></span></th>
+            <th class="c-vcplid" data-s="vcplid" data-tip="The ceiling the base is built under: the highest high of the last 120 bars, with the most recent 5 excluded so that a breakout bar cannot become the level it is breaking. THIS IS NOT THE DARVAS BOX TOP. A Darvas box is a FIVE-BAR construct — one new-high bar plus three quiet ones — and D-Box prints it two columns to the left while % vs Pivot measures the distance to it. This lid is the top of a base that can run 120 bars, so on the same stock on the same day the two are routinely different prices; % to Lid measures this one and % vs Pivot measures that one, and neither is a substitute for the other. Shown only when the whole VCP test passes, so a price here means every leg qualified. A dash when it does not, or when there are fewer than 200 bars. Hidden by default — switch it on in Columns.">VCP Lid<span class="sort-ico"></span></th>
+            <th class="c-vcptolid" data-s="vcptolid" data-tip="How far the latest close still has to travel to reach the VCP LID, as a percentage of the CLOSE: % to Lid = 100 × ( Lid − Close ) ÷ Close. POSITIVE MEANS IT HAS THAT FAR TO GO — +3.20% is 3.2% under the lid and not yet triggered — and zero or negative means the lid has already been taken out. MIND THE DENOMINATOR: % vs Pivot divides by the DARVAS BOX TOP, this divides by the CLOSE, and the two levels are different to begin with, so the two numbers are not comparable and will not agree. NO RED TIER on purpose: sitting a few percent under the lid is the SETUP this column exists to find, not a failure, so still-to-travel is muted and at-or-through-the-lid is green. A dash whenever VCP itself is a dash — the distance to a level that does not exist is not zero. Hidden by default — switch it on in Columns.">% to Lid<span class="sort-ico"></span></th>
             <th data-s="s2" data-tip="Score on the Stage 2 uptrend checklist — price above the long moving averages, those averages stacked and rising, and price near its 52-week high. A full score is a confirmed uptrend.">Stage 2<span class="sort-ico"></span></th>
             <th class="c-mrsrank" data-s="mrs" style="text-align:center" data-tip="Percentile rank from 1 to 100 of this stock's 55-day excess return against every other stock in the same market that has one. A rank of 90 means it beat roughly 90% of that list. Stocks with too little history to produce an RS55 are left out of the ranking entirely rather than ranked as if flat.">MRS Rank<span class="sort-ico"></span></th>
             <th class="c-rs21" data-s="rs21" data-tip="21-day excess return over the benchmark, in percentage points. Positive = it beat the benchmark over the last month.">RS21<span class="sort-ico"></span></th>
@@ -1781,7 +1886,32 @@ const CFG = {
      bars ≈ 45 trading days) fits inside a year of data with room to spare. */
   DARVAS: {boxp:5, nearPct:1.0},
 
-  VER:  'gs14',     // gs13 -> gs14: computeTech() returns THREE more fields — pct10e (the
+  VER:  'gs16',     // gs15 -> gs16: computeTech() returns FIVE more fields — the VCP column family.
+                    // vcpState (forming / pivot / broke out), vcpCount (how many contractions),
+                    // vcpBase (how many bars the base runs), vcpLid (the base ceiling — NOT the
+                    // Darvas box top, which is dBoxTop and a different level entirely) and
+                    // vcpToLid (how far the close still has to travel to reach it). All five are
+                    // written by computeTech() and are therefore CACHED, and every one of them
+                    // needs the raw high/low/volume series a cached row does NOT carry, so a gs15
+                    // row could not be repaired at render time even in principle — it would show
+                    // three permanently blank columns with nothing on screen to say why.
+                    // gs14 -> gs15: computeTech() returns THREE more fields — pctVsPivot (the
+                    // close's distance from the Darvas box TOP, i.e. from the owner's own
+                    // entry trigger), coil (the recent half of the base window's true
+                    // high-low range over the earlier half's) and volDryRatio (the 20-day
+                    // average volume over the 50-day, the NUMBER behind what used to be a
+                    // yes/no Vol Dry flag). All three are written by computeTech() and are
+                    // therefore CACHED, so a gs14 row rehydrated into a gs15 renderer would
+                    // show two blank columns and a Vol Dry column that had lost its number.
+                    // pctVsPivot recomputes NO box — it divides by dBoxTop, which a gs14 row
+                    // already carries — but the DERIVED field is what the renderer, the sort
+                    // and the filter read, and it is new. coil and volDryRatio genuinely need
+                    // the raw high/low and volume series, which a cached row does NOT carry,
+                    // so a gs14 row could not be repaired at render time even in principle.
+                    // volDry, the old boolean, is DELIBERATELY still on the row: it is now
+                    // derived from volDryRatio (see computeTech) so the two can never
+                    // disagree about which way "drying up" points.
+                    // gs13 -> gs14: computeTech() returns THREE more fields — pct10e (the
                     // close's distance from the 10 EMA, the tighter half of the 10/20
                     // pullback zone), volSpike (the largest volume-vs-its-own-20-day-
                     // average multiple in the last VOL_SPIKE_WIN sessions) and volSpikeAge
@@ -3859,7 +3989,7 @@ const SCREENS_LS_KEY='sm_saved_screens_v1';
 const SCREEN_GET={
   F_CAP:()=>F_CAP, F_SCT:()=>F_SCT, F_EMA:()=>F_EMA, F_RSI:()=>F_RSI,
   F_PIV:()=>F_PIV, F_WPIV:()=>F_WPIV, F_REV:()=>F_REV, F_ALIGN:()=>F_ALIGN, F_BO:()=>F_BO,
-  F_DWA:()=>F_DWA, F_BOX:()=>F_BOX,
+  F_DWA:()=>F_DWA, F_BOX:()=>F_BOX, F_STAGE:()=>F_STAGE,
   MIN_MCAP:()=>MIN_MCAP, SEARCH:()=>SEARCH, SORT_C:()=>SORT_C, SORT_D:()=>SORT_D,
   /* Deep-cloned both ways: COLF holds nested arrays and objects, and a shared
      reference would make every saved screen mutate along with the live one —
@@ -3874,8 +4004,15 @@ const SCREEN_SET={
   F_CAP:v=>{F_CAP=v}, F_SCT:v=>{F_SCT=v}, F_EMA:v=>{F_EMA=v}, F_RSI:v=>{F_RSI=v},
   F_PIV:v=>{F_PIV=v}, F_WPIV:v=>{F_WPIV=v}, F_REV:v=>{F_REV=v}, F_ALIGN:v=>{F_ALIGN=!!v}, F_BO:v=>{F_BO=!!v},
   F_DWA:v=>{F_DWA=!!v}, F_BOX:v=>{F_BOX=!!v},
+  /* VALIDATED on the way in, unlike the booleans. A screen saved against a
+     stage that no longer exists (or a hand-edited localStorage payload) would
+     otherwise filter the table to a value lifecycleStage() can never return,
+     i.e. to nothing at all, with all four buttons unlit and no way to tell why. */
+  F_STAGE:v=>{F_STAGE=STAGE_KEYS.includes(v)?v:'';},
   MIN_MCAP:v=>{MIN_MCAP=+v||0}, SEARCH:v=>{SEARCH=v}, SORT_C:v=>{SORT_C=v}, SORT_D:v=>{SORT_D=v},
-  COLF:v=>{ COLF=(v&&typeof v==='object'&&!Array.isArray(v))?JSON.parse(JSON.stringify(v)):{}; },
+  /* MIGRATED, not merely cloned. A screen saved before a column's filter TYPE
+     changed carries an entry the column can no longer read — see colfMigrate. */
+  COLF:v=>{ COLF=colfMigrate(v); },
   // Memo is keyed on the date, so it must be dropped whenever the date is set
   // from anywhere other than applyHistDate().
   HIST_DATE:v=>{HIST_DATE=v||''; HIST_MEMO={_k:''};},
@@ -4091,7 +4228,7 @@ const SCREEN_LIQ_FLOOR={india:5, us:10, etf:10};
 function screenSeedBase(){
   return {
     F_CAP:'All', F_SCT:'', F_EMA:'', F_RSI:'', F_PIV:'', F_WPIV:'', F_REV:'',
-    F_ALIGN:false, F_BO:false, F_DWA:false, F_BOX:false,
+    F_ALIGN:false, F_BO:false, F_DWA:false, F_BOX:false, F_STAGE:'',
     MIN_MCAP:(MCAP_DEFAULTS[CUR] ?? 0), SEARCH:'', SORT_C:'', SORT_D:'desc',
     COLF:{}, HIST_DATE:'',
   };
@@ -4241,6 +4378,11 @@ let F_WL=false;
    EMA dropdown because it is a conjunction of two independent ideas (trend
    filter AND box position) and must still stack with everything else. */
 let F_BOX=false;
+/* LIFECYCLE STAGE. A STRING, not a fifth boolean: the four stages are mutually
+   exclusive by construction (see lifecycleStage), so two of them at once is a
+   state the UI must not be able to reach. '' means no stage picked, which is
+   also what clicking the lit stage a second time restores. */
+let F_STAGE='';
 let SEARCH='', VISIBLE=CFG.INIT;
 let LOADING=false;
 
@@ -5648,10 +5790,368 @@ function tightness(C,H,L,adr,win){
   return +(100*(sum/w)/adr).toFixed(2);
 }
 
+/* ── IS THE BASE CONTRACTING AS IT AGES? ───────────────────────────────
+     Coil = ( high-low range over the RECENT half of the base window )
+          / ( high-low range over the EARLIER half of the base window )
+
+   BELOW 1 MEANS COILING — the recent swing is tighter than the one before it,
+   which is the shape a volatility-contraction setup makes. Above 1 the base is
+   widening, which is the opposite. LOWER IS BETTER, like Tight and unlike
+   almost everything else in this table.
+
+   WHY THIS IS NOT Tight. Tight compares the last THREE bars against this
+   stock's own ADR% — "is right now quiet" — and says nothing whatever about
+   the SHAPE of the base: a three-bar pause inside a base that has been getting
+   WIDER all month reads perfectly tight. This compares the base against
+   ITSELF, over time, which is the thing a VCP is actually made of. Both stay;
+   they answer different questions and are read together.
+
+   WHY THIS IS NOT Consolidation either. consolidation() only ever sees
+   `closes` — check its signature — so it measures the spread of CLOSING
+   prices, and a stock swinging 8% intraday and closing flat every day looks
+   like a perfect base to it. This uses TRUE high-to-low ranges, so a long wick
+   counts for exactly what it is: range the stock actually traded through.
+   consolidation() is deliberately left alone; a second column is the honest
+   fix for a limitation, not a redefinition of the first one.
+
+   THE WINDOW IS 20 BARS, AND IT IS ITS OWN CONSTANT. Twenty is the length the
+   rest of this file already treats as "a base" — it is what CFG.CONSOL.lookback
+   defaults to and what ADR_WIN averages over — and it halves cleanly into two
+   10-bar swings, which is the shortest half that can contain a swing rather
+   than a single move. It is deliberately NOT read from CFG.CONSOL.lookback:
+   that value is a user-facing dial, and a user widening the Consolidation
+   window would otherwise silently redefine what Coil means. The Darvas boxp of
+   5 was the other candidate and is far too short — 2*boxp is a 10-bar window,
+   i.e. two 5-bar halves, which is noise rather than a base.
+
+   NULL, NEVER 1. Too few bars to fill BOTH halves is unanswerable, and so is a
+   half whose range is zero or negative — a zero denominator is a division by
+   nothing and a zero numerator is a half with no trading in it at all, neither
+   of which is "a ratio of 1". A missing or non-finite bar anywhere in the
+   window is a hole in the data, and like tightness() (and unlike adrPct) no bar
+   is silently swapped for an older one: the window is anchored to the PRESENT,
+   and "the last 20 bars" with a substitution in it is not the statistic the
+   column claims. */
+const COIL_WIN=20;
+function coilRatio(H,L,win){
+  const w=Math.floor(win==null?COIL_WIN:win);
+  if(!(w>=2)) return null;
+  if(!Array.isArray(H)||!Array.isArray(L)) return null;
+  const n=Math.min(H.length,L.length);
+  if(n<w) return null;
+  const half=Math.floor(w/2);
+  // True high-to-low over [from,to). Returns null on any unusable bar.
+  const rng=(from,to)=>{
+    let hi=-Infinity, lo=Infinity;
+    for(let i=from;i<to;i++){
+      const h=H[i], l=L[i];
+      if(!(typeof h==='number'&&isFinite(h))) return null;
+      if(!(typeof l==='number'&&isFinite(l))) return null;
+      if(h>hi) hi=h;
+      if(l<lo) lo=l;
+    }
+    return hi-lo;
+  };
+  /* An ODD window gives the EARLIER half the spare bar: `half` bars of recent
+     against `w-half` earlier. The recent half is the one being judged, so it is
+     the one held to the exact stated length. */
+  const recent=rng(n-half,n), earlier=rng(n-w,n-half);
+  if(recent==null||earlier==null) return null;
+  if(!(recent>0)||!(earlier>0)) return null;
+  return +(recent/earlier).toFixed(2);
+}
+
 function pctFromEma(price,ema){
   if(price==null||!isFinite(price)) return null;
   if(ema==null||!isFinite(ema)||ema<=0) return null;
   return +((price-ema)/ema*100).toFixed(2);
+}
+
+/* HOW FAR THE PRICE SITS FROM THE DARVAS BOX TOP — the owner's actual entry
+   trigger, not a moving average.
+
+     pctVsPivot = 100 x ( price - boxTop ) / boxTop
+
+   NEGATIVE IS THE USEFUL CASE and the reason the column exists: it says how far
+   a Forming stock still has to travel to trigger. Positive means it is already
+   through the level. Zero is a real reading — sitting exactly on the pivot — so
+   the unanswerable cases return null and never 0.
+
+   IT TAKES THE PUBLISHED BOX TOP AND RECOMPUTES NOTHING. darvasBox() rounds
+   dBox.top to two decimals for display, the D-Box cell prints that number and
+   the chart draws that line; a second, unrounded top computed here would put a
+   percentage on the screen that disagrees with the levels printed two cells to
+   its left. lifecycleStage()'s comment makes the same argument from the other
+   direction — one box, one top, read rather than recomputed.
+
+   Same signature shape and same null discipline as pctFromEma() above, which is
+   the other "distance to a level, as a percent of that level" on this row: a
+   non-positive denominator is a hole in the data, not a level. */
+function pctFromPivot(price,boxTop){
+  if(price==null||!isFinite(price)) return null;
+  if(boxTop==null||!isFinite(boxTop)||boxTop<=0) return null;
+  return +((price-boxTop)/boxTop*100).toFixed(2);
+}
+
+/* ── VCP: THE VOLATILITY CONTRACTION PATTERN ───────────────────────────
+     A VCP is a REST AFTER A MOVE. The stock advances, then builds a base made
+     of successive swing high-to-low contractions, EACH SHALLOWER THAN THE ONE
+     BEFORE, on volume that dries up as the base tightens. It is not a
+     downtrend and it is not a random quiet patch, which is why the prior-run
+     leg and the strictly-shallower leg are both hard requirements.
+
+   MINIMUM BAR REQUIREMENT: 200 BARS. Stated up front because this file has
+   been bitten by silently-nulling indicators before, and the sheet holds only
+   ~250 daily bars:
+     · 200 is the BINDING number, and it comes from the trend filter, not from
+       the pattern. The long leg is "50 EMA above 200 EMA", and where 200 bars
+       do not exist that leg is UNANSWERABLE — so it is nulled, and a null leg
+       nulls the whole pattern. Silently passing a stock because its 200 EMA
+       could not be computed is exactly the bug this comment exists to prevent.
+     · 67 is what the PATTERN GEOMETRY alone needs: VCP_RUN_WIN (60) bars of
+       history before the lid, plus the shortest base that can carry two
+       ±VCP_PIVOT_K-confirmed pivots and their confirmation windows (7).
+     · 180 is the worst case: a full-length VCP_MAX_BASE (120) base sitting on
+       top of its VCP_RUN_WIN (60) bars of prior advance.
+   All three fit inside ~250. Nothing here needs more data than the sheet has.
+
+   THE LID IS NOT THE DARVAS BOX TOP, AND THE TWO MUST NEVER BE CONFLATED.
+   darvasBox() builds a FIVE-BAR construct — one new-high bar plus three quiet
+   bars — and republishes a new top every few weeks; dBoxTop is that level and
+   the % vs Pivot column measures the distance to it. The VCP lid is the
+   ceiling of a base that can be 120 bars long. On the same stock on the same
+   day they are routinely different prices, so they get different fields
+   (vcpLid vs dBoxTop), different columns (% to Lid vs % vs Pivot) and
+   different arithmetic (% to Lid divides by the CLOSE, % vs Pivot divides by
+   the box top). Neither tooltip is allowed to describe the other's level.
+
+   WHY THE LID SCAN EXCLUDES THE LAST VCP_BO_AGE BARS. The lid is the highest
+   high of the window. If the window included the breakout bar, that bar's own
+   high would BE the lid and no close could ever sit above it — the "broke out"
+   state would be structurally unreachable. Ending the scan VCP_BO_AGE bars
+   short makes the lid a level established BEFORE any bar a breakout can be
+   detected in, which is the only way "closed above the lid" means anything.
+
+   REUSED, NOT REIMPLEMENTED. The 20-bar volume baseline is volAvg20() — the
+   same function vRatio, volSpike() and breakout() weigh volume against, and
+   the same no-lookahead form (volAvg20(V,i+1) reads bars 0..i-1 only). The
+   trend leg reads the e50/e200 computeTech() already computed for the EMA
+   Align badges; no EMA is built a second time here, for the same reason
+   pct50e/pct200e read theirs rather than recomputing.
+
+   NULL, NEVER A PARTIAL VERDICT. A stock that fails one leg is not "partly
+   VCP": every failure and every missing input returns null and the three
+   columns print a dash together. */
+const VCP_MAX_BASE=120;    // bars scanned for the lid and the base start
+const VCP_RUN_WIN=60;      // bars BEFORE the lid the prior advance is measured over
+const VCP_PRIOR_RUN=25;    // % the stock must have advanced into the lid
+const VCP_PIVOT_K=3;       // ± bars a swing high/low must dominate to be a pivot
+const VCP_MIN_LEGS=2;      // fewest contractions that count as a contraction SEQUENCE
+const VCP_MAX_LEGS=4;      // most contractions before the base is just a range
+const VCP_MAX_DEPTH=35;    // % — deepest allowed FIRST contraction
+const VCP_FINAL_DEPTH=12;  // % — deepest allowed FINAL contraction
+/* THE TIGHTENING PAIR. Read these two together — neither works alone.
+   ------------------------------------------------------------------
+   The rule used to be "every leg STRICTLY shallower than the one before". That
+   is brittle: a base running -22, -12, -13, -6 is plainly contracting, but the
+   third leg widened by a hair and the whole pattern was thrown away. Real bases
+   are noisy and that produced false negatives on good setups.
+
+   The obvious fix — a per-leg tolerance — is worse on its own. Allow each leg to
+   be 10% deeper than the last and -15, -16.5, -18.1 passes every individual
+   comparison while the base is WIDENING. A confident wrong signal is far more
+   expensive than a missed one.
+
+   So: LEG_TOL absorbs noise between adjacent legs, and CONTRACT_RATIO forces the
+   sequence to narrow end to end regardless. Drift is tolerated locally and
+   forbidden cumulatively, which is what "contraction" actually means.
+
+   0.60 rather than the 0.90 seen elsewhere: 10% of narrowing across a whole base
+   is not a contraction, it is a rounding error. A textbook VCP goes -25 to -8,
+   a 68% reduction; 0.60 sits inside that without demanding it. */
+const VCP_LEG_TOL=1.10;        // a leg may run 10% deeper than its predecessor — noise, not widening
+const VCP_CONTRACT_RATIO=0.60; // ...but the LAST leg must be <= 60% of the FIRST
+const VCP_VOL_DRY=0.75;    // final leg's mean volume as a fraction of the first leg's
+const VCP_VOL_TAIL=5;      // bars of "the recent tail" tested against the 20-bar average
+const VCP_PIVOT_ZONE=2;    // % band around the lid that reads 'pivot'
+const VCP_BO_AGE=5;        // bars a breakout stays fresh — and the bars the lid scan skips
+const VCP_BO_VOL=1.5;      // × the 20-bar average a breakout bar must have traded
+
+/* The badge's words, and the sort's ordinal. Both keyed off the SAME three
+   state names the detector returns, so a renamed state breaks loudly in one
+   place instead of quietly printing a raw key in one of them. The filter
+   capitalises VCP_LABEL rather than keeping a third list. */
+const VCP_LABEL={forming:'forming', pivot:'pivot', breakout:'broke out'};
+const VCP_RANK ={breakout:3, pivot:2, forming:1};
+
+/* PIVOTS. i is a pivot high when High[i] beats every high in the k bars BEFORE
+   it and matches-or-beats every high in the k bars AFTER it; mirrored for
+   lows. The asymmetry is the tie-break: on a plateau of equal highs the FIRST
+   bar wins, so a flat top yields ONE pivot rather than k+1 stacked ones that
+   would each start their own contraction.
+
+   NO LOOKAHEAD, STRUCTURALLY. A pivot at i is decided from bars i-k..i+k and
+   nothing else, so no pivot at i can be created, destroyed or moved by a bar
+   later than i+k. That is what makes appending bars to the end of the series
+   unable to change a verdict about an earlier part of the base. It is also why
+   the newest k bars can never hold a pivot: an unconfirmed swing is not a
+   swing, and pretending otherwise is how a screener finds setups that vanish
+   the next morning.
+
+   A non-finite high or low anywhere in the ±k window disqualifies that bar as
+   a pivot rather than being skipped over — a hole in the data is not a swing. */
+function vcpPivots(H,L,k){
+  const K=Math.floor(k==null?VCP_PIVOT_K:k);
+  const out={highs:[],lows:[]};
+  if(!(K>=1)||!Array.isArray(H)||!Array.isArray(L)) return out;
+  const n=Math.min(H.length,L.length);
+  const fin=v=>typeof v==='number'&&isFinite(v);
+  for(let i=K;i<=n-1-K;i++){
+    let hOk=fin(H[i]), lOk=fin(L[i]);
+    for(let j=i-K;j<=i+K && (hOk||lOk);j++){
+      if(j===i) continue;
+      if(!fin(H[j])) hOk=false;
+      if(!fin(L[j])) lOk=false;
+      if(hOk && (j<i ? !(H[i]>H[j]) : !(H[i]>=H[j]))) hOk=false;
+      if(lOk && (j<i ? !(L[i]<L[j]) : !(L[i]<=L[j]))) lOk=false;
+    }
+    if(hOk) out.highs.push(i);
+    if(lOk) out.lows.push(i);
+  }
+  return out;
+}
+
+/* THE CONTRACTION SEQUENCE. Walk forward from the lid: the next pivot LOW
+   closes contraction 1, the next pivot HIGH after it opens contraction 2, and
+   so on. Depth is measured off the high that OPENS each leg, not off the lid,
+   because "each shallower than the one before" is a statement about successive
+   swings and not about distance from one fixed level.
+
+   It deliberately collects one leg MORE than VCP_MAX_LEGS so the caller can
+   tell "exactly four" from "five or more" — a base with six contractions is
+   not a tighter VCP, it is a trading range, and stopping the walk at four
+   would make the two indistinguishable. */
+function vcpContractions(H,L,lidVal,lidIdx,piv,endIdx){
+  const legs=[];
+  let hIdx=lidIdx, hVal=lidVal;
+  while(legs.length<=VCP_MAX_LEGS){
+    if(!(typeof hVal==='number'&&isFinite(hVal)&&hVal>0)) break;
+    const lo=piv.lows.find(j=>j>hIdx&&j<=endIdx);
+    if(lo==null) break;
+    const lv=L[lo];
+    if(!(typeof lv==='number'&&isFinite(lv))) break;
+    legs.push({hi:hIdx, lo, high:hVal, low:lv, depth:+((hVal-lv)/hVal*100).toFixed(2)});
+    const nh=piv.highs.find(j=>j>lo&&j<=endIdx);
+    if(nh==null) break;
+    hIdx=nh; hVal=H[nh];
+  }
+  return legs;
+}
+
+/* THE DETECTOR. Returns null unless EVERY leg passes; otherwise an object the
+   three columns read. e50 and e200 are PASSED IN — the values computeTech()
+   already holds — so the trend filter and the EMA Align badges can never
+   disagree about where the 50 and the 200 are. e200 null (fewer than 200 bars)
+   means the long leg is unanswerable, and this returns null rather than
+   passing a stock whose regime nobody checked. */
+function vcpDetect(C,H,L,V,e50,e200){
+  if(!Array.isArray(C)||!Array.isArray(H)||!Array.isArray(L)||!Array.isArray(V)) return null;
+  const n=Math.min(C.length,H.length,L.length,V.length);
+  if(n<2) return null;
+  const fin=v=>typeof v==='number'&&isFinite(v);
+  const close=C[n-1];
+  if(!fin(close)||close<=0) return null;
+
+  /* TREND FILTER FIRST, because it is the cheapest and the one with the hard
+     data requirement. Above the 50 EMA, and the 50 above the 200 — the second
+     half NULLS where 200 bars do not exist rather than being skipped. */
+  if(!fin(e50)||!(close>e50)) return null;
+  if(!fin(e200)) return null;          // <200 bars: unanswerable, so not passed
+  if(!(e50>e200)) return null;
+
+  /* THE LID. Highest high of the last VCP_MAX_BASE bars, with the most recent
+     VCP_BO_AGE bars excluded so a breakout cannot redefine the level it is
+     breaking (see the block comment). Ties go to the EARLIEST bar: the level
+     was set the first time it was reached, and the earlier index gives the
+     longer, more honest base length. */
+  const winStart=Math.max(0,n-VCP_MAX_BASE), lidEnd=n-1-VCP_BO_AGE;
+  if(lidEnd<winStart) return null;
+  let lidIdx=-1, lid=-Infinity;
+  for(let i=winStart;i<=lidEnd;i++){ const h=H[i]; if(fin(h)&&h>lid){ lid=h; lidIdx=i; } }
+  if(lidIdx<0||!(lid>0)) return null;
+
+  /* PRIOR UPTREND. The advance INTO the lid over the VCP_RUN_WIN bars before
+     it, measured from the lowest low in that window. Needs those bars to
+     exist — a base with no measurable run before it is not a rest after a
+     move, and this is the leg that keeps downtrending stocks out. */
+  if(lidIdx<VCP_RUN_WIN) return null;
+  let runLow=Infinity;
+  for(let i=lidIdx-VCP_RUN_WIN;i<lidIdx;i++){ const l=L[i]; if(!fin(l)) return null; if(l<runLow) runLow=l; }
+  if(!(runLow>0)) return null;
+  const priorRun=(lid-runLow)/runLow*100;
+  if(!(priorRun>=VCP_PRIOR_RUN)) return null;
+
+  /* CONTRACTIONS. 2 to 4, each STRICTLY shallower than the one before. The
+     owner chose the strict form deliberately — there is no tolerance factor
+     and there must not be one: a leg that widens is the pattern failing, and
+     a 1.02x fudge would let exactly the shape this column exists to reject
+     through. */
+  const piv=vcpPivots(H,L,VCP_PIVOT_K);
+  const legs=vcpContractions(H,L,lid,lidIdx,piv,n-1);
+  if(legs.length<VCP_MIN_LEGS||legs.length>VCP_MAX_LEGS) return null;
+  /* Local tolerance: absorbs the noise a real base carries between adjacent legs. */
+  for(let i=1;i<legs.length;i++) if(!(legs[i].depth<=legs[i-1].depth*VCP_LEG_TOL)) return null;
+  /* The cumulative test that stops VCP_LEG_TOL becoming a loophole. Without this
+     line a base could widen by 9% on EVERY leg and still pass every comparison. */
+  if(!(legs[legs.length-1].depth<=legs[0].depth*VCP_CONTRACT_RATIO)) return null;
+  if(!(legs[0].depth<=VCP_MAX_DEPTH)) return null;
+  if(!(legs[legs.length-1].depth<=VCP_FINAL_DEPTH)) return null;
+
+  /* VOLUME DRY-UP, both halves. The final contraction has to be quieter than
+     the first one by VCP_VOL_DRY, AND the most recent bars have to be under
+     the 20-bar average — the second is what stops a base that dried up a month
+     ago and has been waking up ever since from reading as dry today. */
+  const meanV=(from,to)=>{ let s=0,c=0;
+    for(let i=from;i<=to;i++){ const v=V[i]; if(!fin(v)||v<0) return null; s+=v; c++; }
+    return c?s/c:null; };
+  const vFirst=meanV(legs[0].hi,legs[0].lo);
+  const vLast =meanV(legs[legs.length-1].hi,legs[legs.length-1].lo);
+  if(vFirst==null||vLast==null||!(vFirst>0)) return null;
+  if(!(vLast<=VCP_VOL_DRY*vFirst)) return null;
+  const tail=meanV(n-VCP_VOL_TAIL,n-1);
+  const base20=volAvg20(V,n);          // the same 20-bar average vRatio prints
+  if(tail==null||!(base20>0)||!(tail<base20)) return null;
+
+  /* STATE. 'broke out' needs a close above the lid in the last VCP_BO_AGE bars
+     WITH volume behind it, priced against that bar's OWN trailing average —
+     volAvg20(V,i+1) reads bars 0..i-1, so no bar is judged against its future.
+     'pivot' is the VCP_PIVOT_ZONE band around the lid, taken on BOTH sides: a
+     close that has poked above the lid on ordinary volume is at the trigger,
+     not through it, and calling that 'broke out' would be the volume test
+     saying one thing and the badge saying another. */
+  let state='forming';
+  const zone=Math.abs(close-lid)/lid*100;
+  for(let i=Math.max(0,n-VCP_BO_AGE);i<=n-1;i++){
+    const av=volAvg20(V,i+1);
+    if(fin(C[i])&&C[i]>lid&&fin(V[i])&&av>0&&V[i]>=VCP_BO_VOL*av){ state='breakout'; break; }
+  }
+  if(state!=='breakout'&&zone<=VCP_PIVOT_ZONE) state='pivot';
+
+  return{
+    state,
+    count:legs.length,
+    baseBars:n-lidIdx,
+    lid,
+    lidIdx,
+    /* % TO LID divides by the CLOSE, not by the lid — "how much further does
+       this have to travel from where it is" — which is deliberately different
+       arithmetic from % vs Pivot's divide-by-the-box-top. Two columns measuring
+       two different levels must not look like the same number. */
+    toLid:+((lid-close)/close*100).toFixed(2),
+    priorRun:+priorRun.toFixed(2),
+    depths:legs.map(l=>l.depth),
+    legs,
+  };
 }
 
 function computeTech(C,H,L,V,dates,sym,O){
@@ -5870,6 +6370,20 @@ function computeTech(C,H,L,V,dates,sym,O){
      rendered in the ADR% column — so the denominator is read, never remade. */
   const daysUp=upDayStreak(C);
   const tight=tightness(C,H,L,adr,TIGHT_WIN);
+  /* Coil is the same kind of statement as Tight — "what have the recent bars
+     done" — and is computed here for the same reason: the raw OHLCV is gone on
+     a cached load and the row is then the only surviving record of it. It reads
+     the RAW daily H/L, the same two arrays adrPct() above was handed, because
+     the whole point of the column is the TRUE range rather than the close-only
+     range consolidation() can see. */
+  const coil=coilRatio(H,L,COIL_WIN);
+  /* VCP. Computed here for the same reason Coil is — the raw OHLCV is gone on
+     a cached load and this row is then the only surviving record of it — and
+     handed e50/e200, the EMAs computed at the top of this function, so the
+     trend leg reads the same two lines the EMA Align badges draw rather than
+     building a third copy. e200 is null below 200 bars and vcpDetect() nulls
+     the whole pattern on that, deliberately: see its block comment. */
+  const vcp=vcpDetect(C,H,L,V,e50,e200);
 
   /* %10E reads e10 — the SAME EMA computed at the top of this function and
      already drawn as the first EMA Align badge. Nothing is recomputed. */
@@ -5890,14 +6404,34 @@ function computeTech(C,H,L,V,dates,sym,O){
 
   const cons=consolidation(C,CFG.CONSOL.lookback,CFG.CONSOL.maxRangePct);
 
-  /* Volume drying up: 20d average below 50d average. Both averages are taken
+  /* Volume drying up: 20d average against 50d average. Both averages are taken
      over the same trailing window, so the 20d is a SUBSET of the 50d — this is
-     "recent volume below the medium-term norm", not two independent samples. */
-  let volDry=null;
+     "recent volume below the medium-term norm", not two independent samples.
+
+     gs15 PUBLISHES THE RATIO, NOT JUST THE VERDICT. The measure is unchanged;
+     what changed is how much of it survives to the screen. 0.40 and 0.95 are
+     both "dry" and they are not remotely the same signal, and a boolean threw
+     that difference away before anything could sort or filter on it.
+
+     THE RATIO IS DELIBERATELY NOT ROUNDED HERE. Every other derived number on
+     this row is rounded to two decimals at source; this one is not, because the
+     contract that must hold is "ratio < 1 exactly when the old flag was true",
+     and rounding breaks it at the boundary: an m20/m50 of 0.999 is DRY and
+     rounds to 1.00, which is not < 1. The cell rounds for display instead —
+     presentation is the right place to lose precision, and the filter is the
+     wrong one, because "max 0.99" is a screen a user actually writes.
+
+     volDry IS STILL PUBLISHED, and is now DERIVED from the ratio rather than
+     computed beside it. Three test suites assert the field exists and behaves
+     (it is part of the row's published shape), and deriving it is what makes
+     the sense of the upgrade unbreakable: there is no arithmetic left that
+     could make the flag and the number point in opposite directions. */
+  let volDryRatio=null, volDry=null;
   if(n>=50){
     const a20=V.slice(-20), a50=V.slice(-50);
     const m20=a20.reduce((a,b)=>a+(b||0),0)/20, m50=a50.reduce((a,b)=>a+(b||0),0)/50;
-    volDry = m50>0 ? m20<m50 : null;
+    volDryRatio = m50>0 ? m20/m50 : null;
+    volDry = volDryRatio==null ? null : volDryRatio<1;
   }
 
   /* Monthly setup: above where it traded ~6 months (126 trading days) ago AND
@@ -5958,13 +6492,18 @@ function computeTech(C,H,L,V,dates,sym,O){
     sma50,sma150,sma200,slope200,slopeDir,
     xFast:XF,xSlow:XS,xFastEma,xSlowEma,xState,xBars,wxState,e50CrossUpAge,
     pattern,wPattern,
-    consolDays:cons.days,consolRange:cons.range,volDry,monthlySetup,
+    consolDays:cons.days,consolRange:cons.range,volDry,volDryRatio,monthlySetup,
     // The price-only half of the Setup Age. The RS leg is applied later, at
     // render time, from rsHist — see the note above setupBaseAge().
     setupBaseAge:setupBaseA,
     we10,we20,weEmaScr,wxBars,wxApplicable,
     dpz,wpz,dPiv,wPiv,s2,sq,wVolRatio,
     dBoxTop:dBox.top, dBoxBot:dBox.bot, dBoxState:dBox.state,
+    /* % VS PIVOT. Read off dBox.top — the very field on the line above — so the
+       percentage and the levels the D-Box cell prints can never disagree. The
+       box is NOT built a second time: there are still exactly two box builds in
+       this function, the daily one and the weekly one, and t6 counts them. */
+    pctVsPivot:pctFromPivot(price,dBox.top),
     wBoxTop:wBox.top, wBoxBot:wBox.bot, wBoxState:wBox.state,
     /* adr arrived with gs10 (alongside dBoxRisk, which gs11 removed with the
        Risk% column). It is read by the ADR% column, by sorting, by the column
@@ -5982,7 +6521,17 @@ function computeTech(C,H,L,V,dates,sym,O){
        nothing that scores, ranks or blends. `tight` in particular must never
        become an input to a composite: it is already a RATIO of two things the
        table shows, and folding it into a score would count ADR% twice. */
-    daysUp,tight,
+    daysUp,tight,coil,
+    /* THE VCP FAMILY, gs16. Same contract as adr, the EMA-distance columns and
+       coil: read by their own three columns, by the sort, by the column filters
+       and by the export — and by NOTHING that scores, ranks or blends.
+       isQualitySetup() keeps asking its own questions in its own place.
+       vcpLid IS NOT dBoxTop. The Darvas top is a 5-bar construct published two
+       fields below; this is the ceiling of a base up to VCP_MAX_BASE bars long,
+       and on the same stock on the same day they are different prices. They are
+       separate fields on purpose and neither column may describe the other. */
+    vcpState:vcp&&vcp.state, vcpCount:vcp&&vcp.count, vcpBase:vcp&&vcp.baseBars,
+    vcpLid:vcp?vcp.lid:null, vcpToLid:vcp?vcp.toLid:null,
     boGain:bo.gain,boCnt:bo.count,retrace:bo.retrace,
     // Own returns (inputs to RS, never displayed as RS), plus the dates they
     // were measured across so rankRS() can price the benchmark on the SAME
@@ -7250,6 +7799,64 @@ function calcMetrics(market){
 ══════════════════════════════════ */
 let SECTOR_SORT_COL='count', SECTOR_SORT_DIR='desc';
 
+/* ══ SECTOR ROTATION ═══════════════════════════════════════════════════
+   The rest of this panel answers "which sectors are strong NOW". It cannot
+   answer "which are GETTING stronger", and those are different trades: a
+   sector at the top of the RS table that has been sliding for two weeks is
+   where last month's money is, not next week's.
+
+   WHY rsHist AND NOT rsSlope. rsSlope is rs21-rs55 — one number comparing two
+   windows of different length, computed once for the latest bar. It has no
+   lookback to name and no way to ask "and what was it ten sessions ago", so a
+   sector built on it can only ever be a level dressed up as a direction.
+   rsHist is a REAL history: 30 consecutive values of the same rs21 quantity,
+   one per bar, already built by rankRS() through the same date-aligned
+   benchmark index as everything else. Subtracting two points of it is a
+   change in one measure over a stated window, which is what rotation means.
+
+   MINIMUM BAR REQUIREMENT: none beyond what rsHist already costs. rsHist
+   needs 21 + 30 = 51 daily bars (pcHist21's own comment says 51) and is null
+   below that; a SECTOR_ROT_LOOKBACK-bar difference consumes 11 of the 30
+   points rsHist already carries. Against the ~250-bar sheet this adds no new
+   ceiling and nothing new to download — no field here is new.
+
+   No CFG.VER bump is needed: computeTech()'s output shape does not change.
+   Everything below is derived at render time from fields that already exist. */
+const SECTOR_ROT_LOOKBACK=10;      // trading sessions — two weeks of direction
+/* Same threshold sectorStrength() already uses to floor a sector's strength.
+   A 1- or 2-stock "sector" is a sample, not a signal, and a rotation label is
+   a stronger claim than a number: it says LEAD or LAG in a word. */
+const SECTOR_ROT_MIN_MEMBERS=3;
+/* Strictly greater than this counts as rising, so an exactly-flat sector is
+   called falling rather than promoted. Named so the tie-break is visible. */
+const SECTOR_ROT_RISING_MIN=0;
+
+/* One stock's RS movement over the lookback, or null.
+   NULL, NEVER 0, when the history is missing or too short. `null` coerces to 0
+   in arithmetic, so a stock returning 0 here would be counted as "did not
+   rotate" and pull the sector median towards no-change — the same
+   null-coerces-to-0 trap that made `d.h52d>=-10` true for tickers with no
+   52-week high at all. The caller filters these out of the median entirely. */
+function rsChangeOf(d){
+  const h=d&&d.rsHist;
+  if(!Array.isArray(h)||h.length<SECTOR_ROT_LOOKBACK+1) return null;
+  const now=h[h.length-1], then=h[h.length-1-SECTOR_ROT_LOOKBACK];
+  if(now==null||then==null) return null;
+  return +(now-then).toFixed(2);
+}
+
+/* strength level x direction -> one of four words, or null when either input
+   is unknown. `split` is the median of the sectors and is passed in rather
+   than looked up, because it cannot be known until every sector is measured. */
+function rotLabel(level,chg,split){
+  if(level==null||chg==null||split==null) return null;
+  const strong = level>=split;
+  const rising = chg>SECTOR_ROT_RISING_MIN;
+  return strong ? (rising?'Leading':'Weakening')
+                : (rising?'Improving':'Lagging');
+}
+const ROT_CLS={Leading:'sb-hi', Weakening:'sb-mid', Improving:'sb-blu', Lagging:'sb-lo'};
+
 /* WHY this walks getRows() and not UNI:
    the modal used to aggregate over UNI while skipping every stock without
    computed data (`if(!d) return`). The table renders the whole filtered
@@ -7278,11 +7885,35 @@ function calcSectorBreadth(market){
     const pct=cnt=>m?Math.round(cnt/m*100):null;
     const vals=k=>items.map(d=>d[k]).filter(v=>v!=null);
 
+    /* ROTATION INPUTS — all three derived from `items`, the SAME filtered
+       array every other figure in this row comes from. computeSectorStrength()
+       computes a median rs55 too, but it walks UNI (the whole universe,
+       filters ignored) because it feeds a sort key, not this panel. Reading it
+       here would put two numbers called "the sector's RS" side by side in one
+       app, disagreeing whenever a filter is on — exactly the two-populations
+       bug this panel already shipped once. Same RULE, same array. */
+    const setups=items.filter(isQualitySetup).length;
+    const rs55Vals=vals('rs55');
+    // Floored the same way sectorStrength() floors it: too few members to call.
+    const medRs55 = rs55Vals.length>=SECTOR_ROT_MIN_MEMBERS ? median(rs55Vals) : null;
+    // Only the members that HAVE a usable history. Absent ones are dropped,
+    // not zeroed — see rsChangeOf(). null when nobody in the sector qualifies.
+    const rsChgVals=items.map(rsChangeOf).filter(v=>v!=null);
+    const rsChg = rsChgVals.length ? +median(rsChgVals).toFixed(2) : null;
+
     return{
       sector,
       count: n,                 // every row the table is showing for this sector
       noData: n-m,              // ...of which this many have nothing computed yet
-      setups: items.filter(isQualitySetup).length,
+      setups,
+      /* The leaders count is the setups count — the same number, counted once.
+         Aliased rather than recomputed so the two can never drift apart, and
+         so nothing in this file counts qualifying stocks from a second array. */
+      leaders: setups,
+      rsChg,                    // median RS movement over SECTOR_ROT_LOOKBACK bars
+      rsChgN: rsChgVals.length, // ...of how many members; the rest were excluded
+      medRs55,                  // the level axis; null below the member floor
+      rot: null,                // filled below — it needs every sector's level
       avgRsi: avg(vals('rsi14')),
       avgCh: avg(vals('ch1d')),
       advPct: pct(items.filter(d=>d.ch1d!=null&&d.ch1d>0).length),
@@ -7298,16 +7929,43 @@ function calcSectorBreadth(market){
       above200ema: pct(items.filter(d=>d.e200&&d.price>d.e200).length),
     };
   });
+  /* THE STRONG/WEAK SPLIT IS A MEDIAN OF THE SECTORS, NOT A NUMBER.
+     A fixed cut (say rs55 > 0) labels every sector Lagging in a bear market and
+     every sector Leading in a bull one, which is when a rotation map is least
+     use — it stops telling you anything the banner does not. Splitting at the
+     median of the sectors on screen keeps roughly half on each side however
+     the whole market has moved, so the label always answers "relative to the
+     rest of THIS list". Sectors with no level (too few members) are excluded
+     from the split itself as well as from labelling. */
+  const levels=out.map(r=>r.medRs55).filter(v=>v!=null);
+  const rotSplit = levels.length ? median(levels) : null;
+  out.forEach(r=>{ r.rot = rotLabel(r.medRs55, r.rsChg, rotSplit); });
+
   // `total` is the length of the very array the table renders, so the caller can
   // assert sum(count) === total instead of hoping.
-  return {rows:out, total:rows.length, noData:out.reduce((a,r)=>a+r.noData,0)};
+  return {rows:out, total:rows.length, noData:out.reduce((a,r)=>a+r.noData,0), rotSplit};
 }
 
 const SECTOR_COLS=[
   {key:'sector',      label:'Sector',      fmt:v=>v},
   {key:'count',       label:'Stocks #',    fmt:v=>v},
   {key:'noData',      label:'No Data',     fmt:v=>v?`<span class="sb-pill sb-lo">${v}</span>`:'0'},
-  {key:'setups',      label:'Setups',      fmt:v=>v?`<span class="sb-pill sb-hi">${v}</span>`:'0'},
+  {key:'setups',      label:'Setups',      fmt:v=>v?`<span class="sb-pill sb-hi">${v}</span>`:'0',
+   /* The Setups column IS the leaders count — stocks in this sector currently
+      passing isQualitySetup(). It is not duplicated as a second column; a
+      second column counting the same thing is how two panels start disagreeing. */
+   tip:`How many stocks in this sector are showing a Setup right now — the sector's leaders. Exactly the stars the main table is showing for this sector, counted once from the same rows, not recounted from a second list.`},
+  /* Direction, not level. Both of these are medians ACROSS THE SECTOR's members
+     and both say so in their tooltip, because a median of a handful of stocks
+     invites being read as a fact about the sector itself. The lookback and the
+     member floor are interpolated from the constants so the words cannot drift
+     away from the code the way a hand-typed "10 days" would. */
+  {key:'rsChg',       label:`RS Δ ${SECTOR_ROT_LOOKBACK}d`,
+   fmt:v=>v==null?'<span class="vm">—</span>':`<span class="sb-pill ${v>SECTOR_ROT_RISING_MIN?'sb-hi':'sb-lo'}">${v>=0?'+':''}${v.toFixed(2)}</span>`,
+   tip:`The MEDIAN across this sector's stocks of how far each one's 21-day relative strength has moved over the last ${SECTOR_ROT_LOOKBACK} sessions — its RS21 today minus its RS21 ${SECTOR_ROT_LOOKBACK} bars ago, read off the same RS history the RS sparkline draws. A median across the sector's members, not an average, so one runaway stock cannot speak for the whole group. Stocks with no RS history, or less than ${SECTOR_ROT_LOOKBACK} sessions of it, are LEFT OUT of the median rather than counted as zero — counting them as zero would drag the sector towards a false no-rotation reading. Positive means the sector has been GAINING ground on the benchmark over those ${SECTOR_ROT_LOOKBACK} sessions, negative means losing it. It describes where money HAS been moving. It is not a prediction.`},
+  {key:'rot',         label:'Rotation',
+   fmt:v=>v==null?'<span class="vm">—</span>':`<span class="sb-pill ${ROT_CLS[v]||'sb-mid'}">${v}</span>`,
+   tip:`Direction on top of level. LEVEL is this sector's median RS55; DIRECTION is the median ${SECTOR_ROT_LOOKBACK}-session change in its members' RS21. Strong and rising = Leading. Strong and falling = Weakening. Weak and rising = Improving. Weak and falling = Lagging. Strong versus weak splits at the MEDIAN of the sectors on screen, never a fixed number, so the labels still divide the list when the whole market is up or down. Both figures are medians across this sector's own members, and members with no usable RS history are left out rather than counted as zero. A sector with fewer than ${SECTOR_ROT_MIN_MEMBERS} members carrying RS is left blank instead of labelled — too small a sample to call. Says where money HAS been moving over the last ${SECTOR_ROT_LOOKBACK} sessions; it is not a prediction.`},
   {key:'avgRsi',      label:'Avg RSI',     fmt:v=>v==null?'—':v.toFixed(1)},
   {key:'avgCh',       label:'Avg 1D%',     fmt:v=>v==null?'—':(v>=0?'+':'')+v.toFixed(2)+'%'},
   {key:'advPct',      label:'Advancing',   fmt:v=>pillFmt(v)},
@@ -7343,13 +8001,24 @@ function renderSectorBreadth(){
   const fn=SECTOR_COLS.find(c=>c.key===SECTOR_SORT_COL);
   rows.sort((a,b)=>{
     const va=a[SECTOR_SORT_COL], vb=b[SECTOR_SORT_COL];
-    if(typeof va==='string') return SECTOR_SORT_DIR==='asc' ? va.localeCompare(vb) : vb.localeCompare(va);
+    /* Rotation is a string column whose value is legitimately null on a sector
+       too small to label. Testing only `va` sent a null-vs-string pair down the
+       numeric branch, where `null??-Infinity` minus a string is NaN and the
+       comparator stops ordering anything. Suppressed labels sort as the empty
+       string: together, at one end, never interleaved with real ones. */
+    if(typeof va==='string'||typeof vb==='string'){
+      const sa=va??'', sb=vb??'';
+      return SECTOR_SORT_DIR==='asc' ? sa.localeCompare(sb) : sb.localeCompare(sa);
+    }
     const na=va??-Infinity, nb=vb??-Infinity;
     return SECTOR_SORT_DIR==='asc' ? na-nb : nb-na;
   });
 
+  /* data-tip only where a column HAS one — the delegated [data-tip] listener
+     picks these up inside the modal for free, and the tip box is body-level
+     and fixed, so it is not clipped by the modal's own scroll wrapper. */
   $('sectorTableHead').innerHTML=SECTOR_COLS.map(c=>
-    `<th onclick="sortSectorTable('${c.key}')">${c.label}${SECTOR_SORT_COL===c.key?(SECTOR_SORT_DIR==='asc'?' ↑':' ↓'):''}</th>`
+    `<th onclick="sortSectorTable('${c.key}')"${c.tip?` data-tip="${escAttr(c.tip)}"`:''}>${c.label}${SECTOR_SORT_COL===c.key?(SECTOR_SORT_DIR==='asc'?' ↑':' ↓'):''}</th>`
   ).join('');
 
   $('sectorTableBody').innerHTML=rows.map(r=>
@@ -8137,8 +8806,12 @@ function adrC(v){
   return `<span>${v.toFixed(2)}%</span>`;
 }
 
-/* %20E / %50E / %200E share one cell renderer, so the three can never drift
-   apart in formatting or in colour. COLOURED ON THE SIGN, the same rule 1D%
+/* %20E / %50E / %200E — and, since gs15, % vs Pivot — share one cell renderer,
+   so they can never drift apart in formatting or in colour. % vs Pivot is a
+   different denominator (the Darvas box top rather than a moving average) but
+   the SAME statement: a signed distance to a level, as a percent of that level.
+   Giving it a renderer of its own would have been a second copy of this colour
+   rule waiting to disagree with the trio beside it. COLOURED ON THE SIGN, the same rule 1D%
    (fmtCh) and RS21 (rsNumC) already use: above the average is green, below is
    red, exactly on it is neutral. Deliberately NOT bucketed by magnitude —
    "8% above the 20 EMA" is bad for an entry and good for an open position, so
@@ -8178,6 +8851,74 @@ function tightC(v){
   if(v==null) return '<span class="vm">—</span>';
   const c=v<=TIGHT_GOOD?'vg':v>100?'vr':'';
   return `<span class="${c}">${v.toFixed(2)}</span>`;
+}
+
+/* Coil cell. LIKE Tight, THE COLOUR RUNS THE OPPOSITE WAY TO MOST OF THIS
+   TABLE: a SMALL number is the good one, because small means the recent half of
+   the base swung less than the earlier half — it is contracting.
+   THE BAND EDGE IS THE FORMULA'S OWN PIVOT, 1.0, and not an invented threshold:
+   below 1 the base is tighter than it was, above 1 it is wider, and exactly 1
+   is neither. tightC() bands on TIGHT_GOOD because "100 = a normal day" leaves
+   a real question about how far under 100 is meaningful; here there is no such
+   question to answer, so no second tier is invented to answer it.
+   Printed with a × because it is a MULTIPLE — "the recent swing is 0.62 of the
+   earlier one" — and printing a bare 0.62 beside Tight's bare 55.00 would read
+   as two numbers on one scale. Two decimals, like Tight and ADR% beside it. */
+/* Vol Dry cell. WAS a boolean tick through boolC(); gs15 prints the RATIO the
+   tick was computed from, because 0.40 and 0.95 were both "✓ Dry" and are not
+   the same signal at all.
+   THE COLOUR IS THE OLD COLUMN'S COLOUR, ON THE SAME LINE: green under 1 —
+   exactly where boolC() painted "✓ Dry" green — and muted at or above it,
+   exactly where it painted "✗ No" muted. NO RED, on purpose and unlike Coil
+   beside it: expanding volume is the WRONG side of this line while a base is
+   forming and the RIGHT side on the day it breaks out, so painting it red would
+   state a verdict this column cannot defend on its own.
+   Two decimals and a × because it is a MULTIPLE of the 50-day average — 0.83×
+   reads as "recent volume is 83% of the medium-term norm", where a bare 0.83
+   in a column of percentages would not. */
+function volDryC(v){
+  if(v==null) return '<span class="vm">—</span>';
+  return `<span class="${v<1?'vg':'vm'}">${v.toFixed(2)}×</span>`;
+}
+
+function coilC(v){
+  if(v==null) return '<span class="vm">—</span>';
+  const c=v<1?'vg':v>1?'vr':'vm';
+  return `<span class="${c}">${v.toFixed(2)}×</span>`;
+}
+
+/* THE VCP BADGE. One cell carrying three facts — state, contraction count and
+   base length — because they are unreadable apart: "3 contractions" says
+   nothing without knowing whether they happened over 20 bars or 120, and
+   "pivot" says nothing about how much structure is under it. The state's own
+   colour comes from a class per state, the same shape dboxC() uses, so a theme
+   switch repaints it with no JS.
+
+   A ROW WITH NO PATTERN PRINTS A DASH, not an empty badge. Every field of the
+   family is null together — vcpDetect() returns null or a complete object — so
+   testing the state alone is enough. */
+function vcpC(d){
+  if(!d||!d.vcpState||!VCP_LABEL[d.vcpState]) return '<span class="vm">—</span>';
+  return `<span class="vcp vcp-${d.vcpState}">VCP · ${d.vcpCount}c · ${d.vcpBase}b · ${VCP_LABEL[d.vcpState]}</span>`;
+}
+
+/* The lid, as a price. Formatted like the D-Box range beside it — thousands
+   grouped, otherwise two decimals — because both are prices off the same
+   series and a user comparing them should not have to re-read two formats.
+   That is the ONLY thing the two levels share; see the note on vcpDetect(). */
+function vcpLidC(v){
+  if(v==null||!isFinite(v)) return '<span class="vm">—</span>';
+  return `<span>${v>=1000?Math.round(v).toLocaleString('en-IN'):(+v).toFixed(2)}</span>`;
+}
+
+/* % to Lid. NO RED TIER, on the same argument volDryC() makes: a stock sitting
+   3% under its lid is the SETUP this column exists to find, not a failure, so
+   "still to travel" is muted and "at or through the lid" is green. Painting
+   the distance red would be a verdict the column cannot defend — the owner
+   buys the approach as readily as the break. */
+function vcpToLidC(v){
+  if(v==null) return '<span class="vm">—</span>';
+  return `<span class="${v<=0?'vg':'vm'}">${v>0?'+':''}${v.toFixed(2)}%</span>`;
 }
 
 function pctEmaC(v){
@@ -8514,9 +9255,9 @@ function histGC(v){ return fmtCh(v); }
    reason: without them a table loading with columns switched off renders
    skeleton rows WIDER than the data rows underneath, because only the data
    rows' cells get hidden. Length must equal (th count − 4). */
-const SKEL_COLS=['c-setup','c-align','c-fresh','c-sector','','','c-ch1w','c-ch1m','c-ch3m','c-hist','c-histg','c-status','','c-wrsi','c-vr','c-volspike','c-wvol','c-avgval','','c-wpiv','c-dbox','c-wbox','',
+const SKEL_COLS=['c-setup','c-align','c-fresh','c-sector','','','c-ch1w','c-ch1m','c-ch3m','c-hist','c-histg','c-status','','c-wrsi','c-vr','c-volspike','c-wvol','c-avgval','','c-wpiv','c-dbox','c-pctpiv','c-wbox','',
   'c-ema','c-pct10e','c-pct20e','c-pct50e','c-pct200e','c-wema','c-xcross','c-wcross','c-slope200','c-pattern','c-wpattern','c-consol',
-  'c-monthly','','c-bocnt','c-followup','c-voldry','c-retrace','c-squeeze','c-adr','c-tight','c-daysup','','c-mrsrank','c-rs21',
+  'c-monthly','','c-bocnt','c-followup','c-voldry','c-retrace','c-squeeze','c-adr','c-tight','c-daysup','c-coil','c-vcp','c-vcplid','c-vcptolid','','c-mrsrank','c-rs21',
   'c-rs55','c-rs10w','c-rsslope','c-rsp55','c-rsp21','c-rshist','','c-rstrend','c-notes'];
 
 function skelRow(def,i){
@@ -8580,6 +9321,7 @@ function dataRow(def,d,i){
     <td>${pivC(d.dpz)}</td>
     <td class="c-wpiv">${pivC(d.wpz)}</td>
     <td class="c-dbox">${dboxC(d.dBoxState,d.dBoxTop,d.dBoxBot)}</td>
+    <td class="c-pctpiv">${pctEmaC(d.pctVsPivot)}</td>
     <td class="c-wbox">${dboxC(d.wBoxState,d.wBoxTop,d.wBoxBot)}</td>
     <td>${h52C(d.h52d)}</td>
     <td class="c-ema">${emaBadgeRow(d.price,[['10',d.e10],['20',d.e20],['50',d.e50],['200',d.e200]])}</td>
@@ -8598,12 +9340,16 @@ function dataRow(def,d,i){
     <td>${boGC(d.boGain)}</td>
     <td class="c-bocnt">${bocC(d.boCnt)}</td>
     <td class="c-followup">${boFuC(d.boAge)}</td>
-    <td class="c-voldry">${boolC(d.volDry,'✓ Dry','✗ No')}</td>
+    <td class="c-voldry">${volDryC(d.volDryRatio)}</td>
     <td class="c-retrace">${retC(d.retrace)}</td>
     <td class="c-squeeze">${sqC(d.sq)}</td>
     <td class="c-adr">${adrC(d.adr)}</td>
     <td class="c-tight">${tightC(d.tight)}</td>
     <td class="c-daysup">${daysUpC(d.daysUp)}</td>
+    <td class="c-coil">${coilC(d.coil)}</td>
+    <td class="c-vcp">${vcpC(d)}</td>
+    <td class="c-vcplid">${vcpLidC(d.vcpLid)}</td>
+    <td class="c-vcptolid">${vcpToLidC(d.vcpToLid)}</td>
     <td>${s2C(d.s2)}</td>
     <td class="c-mrsrank" style="text-align:center">${rsC(d.mrsRank)}</td>
     <td class="c-rs21">${rsNumC(d.rs21)}</td>
@@ -8625,7 +9371,7 @@ function errRow(def,i){
     <td class="td-n pin pin1">${i}</td><td class="pin pin2">${revC(def.s)}</td>
     <td class="pin pin3">${capB(def.g)}</td>
     <td class="pin pin4">${watchC(def.s)}<span class="ticker">${def.d}</span><br><span class="sec">${def.sector}</span></td>
-    <td colspan="57" style="color:var(--text3);font-size:11px">
+    <td colspan="62" style="color:var(--text3);font-size:11px">
       ⚠ Not in this market's data source — it will appear once the daily data carries it
     </td>
   </tr>`;
@@ -8917,6 +9663,50 @@ function toggleBreadth(){
   applyBreadthCollapsed();
 }
 
+/* ── THE LIFECYCLE STAGE PANEL ──────────────────────────────────────────
+   Four counts and four buttons, built from STAGE_DEFS so the panel, the filter
+   and the saved-screen validation cannot disagree about how many stages there
+   are. Takes the row array rather than calling getRows() itself, for the same
+   reason renderBreadth() does.
+
+   THE SUMMARY IS THE FEATURE, not decoration: "Forming 28 · Fresh breakout 12 ·
+   Climbing 28 · Played out 85" is the whole reframing, and it has to survive
+   the panel being folded away, which is where a phone user will leave it. */
+function renderStages(rows){
+  const n=stageCounts(rows);
+  const el=$('stageBody');
+  if(el) el.innerHTML=STAGE_DEFS.map(st=>{
+    const on=F_STAGE===st.k;
+    return `<button type="button" class="stg-btn${on?' on':''}" data-stage="${st.k}"`
+         + ` aria-pressed="${on?'true':'false'}" onclick="pickStage('${st.k}')"`
+         + ` data-tip="${escAttr(st.tip)}">`
+         + `<span class="stg-lbl">${escHtml(st.label)}</span>`
+         + `<span class="stg-n">${n[st.k]}</span></button>`;
+  }).join('');
+  const sum=$('stageSum');
+  if(sum) sum.textContent=STAGE_DEFS.map(st=>st.label+' '+n[st.k]).join(' \u00B7 ');
+}
+
+/* Clicking the lit stage clears it — the same "click again to undo" the filter
+   toggles already use, and the only gesture that needs no second control. */
+function pickStage(k){
+  F_STAGE = (F_STAGE===k) ? '' : (STAGE_KEYS.includes(k) ? k : '');
+  VISIBLE=CFG.INIT;
+  renderTable(CUR); updateStatus();
+}
+
+const STAGE_KEY='sm_stages_collapsed';
+function applyStagesCollapsed(){
+  const c=collapsedPref(STAGE_KEY);
+  document.body.classList.toggle('stg-collapsed', c);
+  const car=$('stageCaret'); if(car) car.textContent=c?'\u25B8':'\u25BE';
+  const hd=$('stageHd'); if(hd&&hd.setAttribute) hd.setAttribute('aria-expanded', c?'false':'true');
+}
+function toggleStages(){
+  lsWrite(STAGE_KEY, collapsedPref(STAGE_KEY)?'0':'1');
+  applyStagesCollapsed();
+}
+
 /* ══════════════════════════════════
    COLLAPSIBLE SECTIONS — the metric dials and the filter bar
    ─────────────────────────────────
@@ -8974,8 +9764,15 @@ function metricsSummary(){ return MDEF.length+' metric'+(MDEF.length===1?'':'s')
 /* Reuses colfCount(), the counter the status-row chip already reads. A second
    independent tally would drift from the chip the first time a filter type was
    added, and then the page would state two different numbers at once. */
+/* THE ACTIVE-FILTER COUNT. colfCount() is deliberately left alone: the chip
+   beside the status row says "N column filters", and the stage panel is not a
+   column — inflating that number would make the chip's own wording false and
+   put a key into colfActiveKeys() that COL_FILTERS has no entry for. This is
+   the wider count, "how many things are narrowing the table", and it is what
+   the folded filter bar reports. */
+function activeFilterCount(){ return colfCount() + (F_STAGE?1:0); }
 function filtersSummary(){
-  const n=colfCount();
+  const n=activeFilterCount();
   return n ? n+' active filter'+(n===1?'':'s') : 'No active filters';
 }
 
@@ -9396,6 +10193,10 @@ const SORT_FN={
      A row with no box returns undefined -> getRows() maps it to -Infinity, so
      "no box yet" sinks rather than pretending to be 'below'. */
   dbox:d=>DBOX_RANK[d?.dBoxState],
+  /* Plain numeric, like the EMA-distance trio: the number the cell prints IS
+     the number to rank on. Ascending — the header's second click — reads
+     "furthest below the trigger first", which is the watch-list order. */
+  pctpiv:d=>d?.pctVsPivot,
   wbox:d=>DBOX_RANK[d?.wBoxState],
   sector:(_,def)=>def.sector,
   // Sort on the same fraction the badge is bucketed from, not on the raw score:
@@ -9412,7 +10213,12 @@ const SORT_FN={
   wpattern:d=>d?.wPattern,
   consol:d=>d?.consolDays,
   monthly:d=>d?.monthlySetup==null?null:(d.monthlySetup?1:0),
-  voldry:d=>d?.volDry==null?null:(d.volDry?1:0),
+  /* WAS a 1/0 off the boolean, which could only ever produce two ranks and so
+     could not order the column it sorted. It ranks on the RATIO now: ASCENDING
+     — the header's second click — reads "driest first", which is the order the
+     column exists to give. Nothing is negated; the printed number is the
+     ranked one. */
+  voldry:d=>d?.volDryRatio,
   rs21:d=>d?.rs21,rs55:d=>d?.rs55,rs10w:d=>d?.rs10w,rsslope:d=>d?.rsSlope,
   /* Sortable, and ONLY sortable. Sorting is a per-column view of one column's
      own values, which a min-max position supports perfectly well; ranking
@@ -9435,6 +10241,25 @@ const SORT_FN={
      the ones that have just expanded out of a base — and negating would make
      the arrow lie about which way the column is ordered. */
   tight:d=>d?.tight, daysup:d=>d?.daysUp,
+  /* Like Tight, the USEFUL direction is ASCENDING — "most contracted first" —
+     which the header's second click already gives. Nothing is negated to make
+     that happen, because the number the cell prints IS the number to rank on;
+     negating here would put a number in the sort that appears nowhere on the
+     page, which is the bug the bofu comment describes. */
+  coil:d=>d?.coil,
+  /* VCP state is ordinal, not alphabetical — exactly the argument DBOX_RANK
+     makes: sorted as strings 'broke out' would outrank 'forming' and 'pivot'
+     would sink below both, which is the opposite of what the column is for.
+     VCP_RANK puts broke out and pivot on top. A row with no pattern returns
+     undefined -> getRows() maps it to -Infinity, so it sinks rather than
+     pretending to be 'forming'. */
+  vcp:d=>VCP_RANK[d?.vcpState],
+  /* The lid is a price and % to Lid is a distance; both rank on the number the
+     cell prints, nothing negated. Ascending on % to Lid — the header's second
+     click — reads "already through the lid first, then nearest to it", which
+     is the watch-list order. */
+  vcplid:d=>d?.vcpLid,
+  vcptolid:d=>d?.vcpToLid,
   rshist:d=>Array.isArray(d?.rsHist)&&d.rsHist.length?d.rsHist[d.rsHist.length-1]:null,
   // rsTrend is now the words 'up'/'flat'/'down' (was the arrows ↑/→/↓).
   // The arrow keys are kept so a row rehydrated from an older cache still
@@ -9633,6 +10458,104 @@ function boxSetup(d){
   return BOX_SETUP_STATES.includes(d.dBoxState);
 }
 
+/* ══ LIFECYCLE STAGE ═════════════════════════════════════════
+   Where a name is in the ONE move this screener is built around: coiling under
+   a Darvas pivot, crossing it, running, and finally handing the move back. The
+   table already carries every input; what it did not carry was the question
+   "which of these 433 rows just triggered". Four counts answer that in one
+   glance and one click.
+
+   NOTHING NEW IS COMPUTED. The stage is DERIVED at filter/render time from
+   three fields the row already publishes — dBoxState and dBoxTop (darvasBox(),
+   via computeTech) and boAge (boBarsSince(), via fetchStock). computeTech()'s
+   return shape is untouched, so CFG.VER does NOT move and no cache is
+   invalidated. That is also what makes the as-of mode work for free:
+   asOfRebuild() rewrites every SD entry from truncated bars, so asking this
+   function about a rewound row gives that day's stage, not today's.
+
+   WHY THE BOX TOP AND NOT Retrace%. "Played out" could have been "gave back
+   more than N%", and N would have been an arbitrary number nobody could
+   defend. The box top is a level the chart already draws and the user already
+   trades against: back under it, the breakout failed. No threshold to argue
+   about, and Retrace% stays what it is — a column you read, not a rule.
+
+   WHY "ABOVE THE BOX TOP" IS ASKED VIA dBoxState. darvasState() already
+   answers exactly this question ('break'/'above' are its two c > top cases)
+   and it asks it against the UNROUNDED close and the UNROUNDED top. dBoxTop is
+   rounded to two decimals for display, so `d.price > d.dBoxTop` would disagree
+   with the D-Box column shown on the same row by a hundredth of a rupee. One
+   box, one answer, read — never recomputed.
+
+   THE FOUR STAGES ARE MUTUALLY EXCLUSIVE, and the tie they have to break is
+   real: a name that broke out and fell back into its box is BOTH "state is
+   inside" and "closed back below the top". The owner's own wording settles it
+   — Forming reads "not yet triggered" — so a breakout on record wins, and
+   Forming is the never-triggered case only.
+
+   A ROW CAN BE IN NO STAGE AT ALL, and that is not a bug to paper over: no box
+   has formed yet (too little history, or the highs never settled), or there is
+   a box but no qualifying breakout and the price is above it or under its
+   floor. Returning 'forming' for a row with no box would put freshly-listed
+   names into the one bucket the user screens for setups in. */
+const STAGE_FRESH_DAYS=5;          // "just triggered" window, in trading days
+/* Order is the lifecycle's own order, and it is what the panel renders in.
+   One list: the buttons, the counts, the saved-screen validation and the
+   summary line all read it, so a fifth stage cannot arrive in three of them. */
+const STAGE_DEFS=[
+  {k:'forming', label:'Forming',
+   tip:'Coiling under its Darvas pivot and not yet triggered — the daily box state is inside or near, and there is no volume-confirmed breakout on record. This is the watch list: nothing has happened yet.'},
+  {k:'fresh',   label:'Fresh breakout',
+   tip:'Broke out within the last '+STAGE_FRESH_DAYS+' trading days and is still trading above the box top. The narrow window where the move is young enough to enter and the breakout has not failed.'},
+  {k:'climbing',label:'Climbing',
+   tip:'Broke out more than '+STAGE_FRESH_DAYS+' trading days ago and is still above the box top. The move is working, but it is no longer fresh — read Retrace% and %20E before chasing it.'},
+  {k:'played',  label:'Played out',
+   tip:'It broke out at some point and the price has since closed back below the box top. The level that defined the move has been lost, whatever the percentages say.'},
+];
+const STAGE_KEYS=STAGE_DEFS.map(s=>s.k);
+const STAGE_LABEL=STAGE_DEFS.reduce((o,s)=>(o[s.k]=s.label,o),{});
+// Under the pivot, still in the base. Excludes 'below' (lost the box floor).
+const STAGE_FORMING_STATES=['inside','near'];
+/* The two darvasState() cases that mean close > top. 'break' is the crossover
+   bar and 'above' is every bar after it; both are above the top, which is the
+   only thing this asks. */
+const STAGE_ABOVE_STATES=['break','above'];
+
+function lifecycleStage(d){
+  if(!d) return null;
+  /* No box → no stage. dBoxTop is checked as well as the state because a box
+     is what all four rules are stated against; a state with no top would mean
+     darvasBox() had changed shape under us. */
+  if(d.dBoxTop==null || d.dBoxState==null) return null;
+  const age=d.boAge;
+  /* `undefined` means the field was never written — a row rehydrated from a
+     cache older than boAge itself. That is "we do not know whether it broke
+     out", which is not the same as "it never did", and neither of the two
+     answers it could be coerced into would be true. passesAdv() makes the same
+     distinction for the same reason. */
+  if(age===undefined) return null;
+  // null = boBarsSince() found no qualifying breakout anywhere in the history.
+  if(age===null) return STAGE_FORMING_STATES.includes(d.dBoxState)?'forming':null;
+  if(typeof age!=='number'||!isFinite(age)) return null;
+  if(STAGE_ABOVE_STATES.includes(d.dBoxState))
+    return age<=STAGE_FRESH_DAYS?'fresh':'climbing';
+  // Broke out, and is no longer above the top: 'near', 'inside' or 'below'.
+  return 'played';
+}
+
+/* Counts for the panel. Takes the ARRAY rather than fetching its own, exactly
+   as renderBreadth() does — two panels counting the same thing from two
+   different arrays is a bug this file has already shipped once (see
+   calcSectorBreadth's note). Rows in no stage are simply not counted, so the
+   four numbers sum to at most the row count, never past it. */
+function stageCounts(rows){
+  const out={}; STAGE_KEYS.forEach(k=>{ out[k]=0; });
+  (rows||[]).forEach(def=>{
+    const k=lifecycleStage(SD[def.s]);
+    if(k!=null && out[k]!==undefined) out[k]++;
+  });
+  return out;
+}
+
 /* `exclCol` drops ONE column's filter — its own COLF entry AND the toolbar
    control that mirrors it — so colfOptions() can count "what would narrowing
    further do" rather than "what does this market contain". Every caller that
@@ -9681,6 +10604,14 @@ function getRows(market, exclCol){
   if(F_DWA)   items=items.filter(def=>dwAligned(SD[def.s]));
   if(F_BO)    items=items.filter(def=>hasBreakout(SD[def.s]));
   if(F_BOX)   items=items.filter(def=>boxSetup(SD[def.s]));
+  /* THE LIFECYCLE STAGE, in the same AND chain as everything else — so "what
+     the table is showing" keeps exactly one definition. `exclCol==='stage'` is
+     how the stage panel counts its own four buckets over every OTHER filter,
+     the same contract colfOptions() uses for a category column's checkbox
+     counts and for the same reason: a bucket whose count collapsed to 0 the
+     moment it was picked would leave the user no way to see, or reach, the
+     other three. With no stage picked the two calls return the same array. */
+  if(F_STAGE && exclCol!=='stage') items=items.filter(def=>lifecycleStage(SD[def.s])===F_STAGE);
   // Keyed off the symbol, not off SD — a starred stock stays visible even while
   // its indicators are still loading, which is the only sane behaviour for a
   // list the user curated by hand.
@@ -9746,6 +10677,13 @@ function renderTable(market){
      over rather than recomputed, so the panel and the list cannot disagree and
      the filter+sort pass is not paid for twice. */
   renderBreadth(all);
+  /* THE STAGE COUNTS. With no stage picked this is literally `all` — the array
+     the table just rendered, handed over exactly as breadth is, so the panel
+     and the list cannot disagree. With one picked, `all` is already narrowed to
+     that stage, and reporting "Climbing 0" for a bucket holding 28 rows would
+     be both false and a dead end, so the four buckets are re-counted over every
+     OTHER filter. That is colfOptions()'s contract, not a new one. */
+  renderStages(F_STAGE ? getRows(market,'stage') : all);
   /* Every path that changes a filter ends in renderTable() — dropdowns,
      toggles, segment buttons, header sorts, Clear Filters, applyScreen. Hooking
      the indicator here means none of them has to remember to update it. */
@@ -10172,7 +11110,7 @@ function switchMkt(market){
   if(!LOADING) GSHEET_DATA = GSHEET_BY_MARKET[market] || null;
   setGSheetStatus(market);
   F_CAP='All';F_SCT='';F_EMA='';F_RSI='';F_PIV='';F_WPIV='';
-  F_ALIGN=false;F_BO=false;F_DWA=false;F_BOX=false;
+  F_ALIGN=false;F_BO=false;F_DWA=false;F_BOX=false;F_STAGE='';
   $('emaFil').value='';$('rsiFil').value='';$('pivFil').value='';$('wpivFil').value='';
   // A column filter naming this market's sectors or caps means nothing in the
   // next market, so it is dropped with the rest of them.
@@ -10247,6 +11185,8 @@ function toggleWL(){ F_WL=!F_WL; syncFilterToggles();
 function clrF(){
   SEARCH='';F_CAP='All';F_SCT='';F_EMA='';F_RSI='';F_PIV='';F_WPIV='';F_REV='';
   F_ALIGN=false;F_BO=false;F_DWA=false;F_WL=false;F_BOX=false;
+  // The stage panel is a filter like any other, so "Clear Filters" clears it.
+  F_STAGE='';
   MIN_MCAP=MCAP_DEFAULTS[CUR] ?? 0;
   $('searchQ').value='';$('sctFil').value='';$('emaFil').value='';
   $('rsiFil').value='';$('pivFil').value='';$('wpivFil').value='';
@@ -10381,6 +11321,9 @@ const EXPORT_COLS=[
   ['D-Box State', (def,d)=>d?.dBoxState??''],
   ['D-Box Top',   (def,d)=>d?.dBoxTop??''],
   ['D-Box Bottom',(def,d)=>d?.dBoxBot??''],
+  // Next to the top it divides by — the same audit-in-place argument as the
+  // EMA-distance columns sitting beside the raw EMA levels.
+  ['% vs Pivot',  (def,d)=>d?.pctVsPivot??''],
   ['W-Box State', (def,d)=>d?.wBoxState??''],
   ['W-Box Top',   (def,d)=>d?.wBoxTop??''],
   ['W-Box Bottom',(def,d)=>d?.wBoxBot??''],
@@ -10412,7 +11355,11 @@ const EXPORT_COLS=[
   ['W-Pattern',   (def,d)=>d?.wPattern??''],
   ['Consol Days', (def,d)=>d?.consolDays??''],
   ['Consol Range%',(def,d)=>d?.consolRange??''],
-  ['Vol Dry',     (def,d)=>d?.volDry!=null?(d.volDry?'Y':'N'):''],
+  /* The RATIO, not the Y/N it used to be: a spreadsheet can sort and threshold
+     a number, and the Y/N is recoverable from it (dry is exactly < 1) while the
+     number is not recoverable from the Y/N. Unrounded, like every other export
+     line — the export is the place precision is wanted most. */
+  ['Vol Dry',     (def,d)=>d?.volDryRatio??''],
   ['Monthly Setup',(def,d)=>d?.monthlySetup!=null?(d.monthlySetup?'Y':'N'):''],
   ['Status',      (def,d)=>d?.s2&&d.s2.total?(d.s2.score/d.s2.total>=0.8?'Stage 2':d.s2.score/d.s2.total>=0.5?'Setup':'Weak'):''],
   ['Stage2',      (def,d)=>d?.s2?`${d.s2.score}/${d.s2.total}`:''],
@@ -10428,6 +11375,22 @@ const EXPORT_COLS=[
   // argument as the EMA-distance trio sitting beside the raw EMA levels.
   ['Tight',       (def,d)=>d?.tight??''],
   ['Days Up',     (def,d)=>d?.daysUp??''],
+  // Beside Tight, the other contraction reading, for the same audit-in-place
+  // reason — the two are read together and are exported together.
+  ['Coil',        (def,d)=>d?.coil??''],
+  /* The VCP family, beside Coil for the same audit-in-place reason Coil sits
+     beside Tight. The badge packs three facts into one cell and the export
+     unpacks them into three columns, because a spreadsheet can sort a count
+     and a base length and cannot sort a badge. The state exports as the words
+     the badge prints, via VCP_LABEL, so the file and the screen never use two
+     different vocabularies for one field. */
+  ['VCP',         (def,d)=>d?.vcpState?(VCP_LABEL[d.vcpState]||d.vcpState):''],
+  ['VCP Contractions',(def,d)=>d?.vcpCount??''],
+  ['VCP Base (bars)',(def,d)=>d?.vcpBase??''],
+  // NOT the Darvas box top — that exports as 'D-Box Top'. Two levels, two
+  // columns, and a reader must be able to see they differ.
+  ['VCP Lid',     (def,d)=>d?.vcpLid??''],
+  ['% to Lid',    (def,d)=>d?.vcpToLid??''],
   ['MRS Rank',    (def,d)=>d?.mrsRank??''],
   ['RS21',        (def,d)=>d?.rs21??''],
   ['RS55',        (def,d)=>d?.rs55??''],
@@ -10726,8 +11689,9 @@ const COL_FILTERS={
              const s=d&&d.s2; return (s&&s.total)?(s.score+'/'+s.total):null; }},
   monthly: {t:'cat',  label:'Monthly Setup', val:d=>{
              const v=d&&d.monthlySetup; return v==null?null:(v?'Yes':'No'); }},
-  voldry:  {t:'cat',  label:'Vol Dry', val:d=>{
-             const v=d&&d.volDry; return v==null?null:(v?'Dry':'No'); }},
+  /* Vol Dry USED TO SIT HERE, as a Dry/No pair. gs15 moved it to the numeric
+     block below: the verdict was all a category could offer, and the number
+     behind it is the thing worth screening on. */
   fresh:   {t:'cat',  label:'Fresh',   val:d=>{
              const f=freshFlags(d); return f.length?FRESH_LABEL[f[0].key]:null; }},
   rst:     {t:'cat',  label:'RS Trend', val:d=>{
@@ -10757,6 +11721,14 @@ const COL_FILTERS={
      prints. Note volSpike is the FIELD and volspike is the key: the key must
      match the <th>'s data-s, which is lower-case throughout the header. */
   volspike:{t:'num',  label:'Vol Spike', val:d=>d&&d.volSpike},
+  /* WAS t:'cat' with a Dry/No checkbox pair — see the ratio's note in
+     computeTech. As a category it could only ever offer the verdict; "max 0.6",
+     the screen the owner actually wants (volume down to under two thirds of its
+     own norm), was unsayable. A plain inclusive bound on the number the cell
+     prints says it. The printed × is a UNIT, not part of the value: the filter
+     takes 0.6, the same way ADR% takes 4 and not 4%.
+     A SCREEN SAVED UNDER THE OLD SHAPE still loads — see colfMigrate(). */
+  voldry:  {t:'num',  label:'Vol Dry', val:d=>d&&d.volDryRatio},
   wvol:    {t:'num',  label:'W-VOL',   val:d=>d&&d.wVolRatio},
   // Filtered on the DISPLAY unit (₹ Cr / $ M) for the same reason it SORTS on
   // it: a raw-currency bound would mean two different things in one table.
@@ -10789,6 +11761,12 @@ const COL_FILTERS={
      them means the same thing to a reader as the header funnel does. */
   /* "within 3% of the 10 EMA" is the pullback-zone screen this exists for —
      the same plain inclusive bounds on the printed number that %20E carries. */
+  /* "min -5, max 0" — everything sitting within 5% UNDER its breakout level
+     and not yet through it — is the Forming screen this exists for, and it is
+     a plain inclusive bound on the number the cell prints. Note pctVsPivot is
+     the FIELD and pctpiv is the key: the key must match the <th>'s data-s,
+     which is lower-case throughout the header. */
+  pctpiv:  {t:'num',  label:'% vs Pivot', val:d=>d&&d.pctVsPivot},
   pct10e:  {t:'num',  label:'%10E',    val:d=>d&&d.pct10e},
   pct20e:  {t:'num',  label:'%20E',    val:d=>d&&d.pct20e},
   pct50e:  {t:'num',  label:'%50E',    val:d=>d&&d.pct50e},
@@ -10798,6 +11776,28 @@ const COL_FILTERS={
      Note daysUp is the FIELD and daysup is the key: the key must match the
      <th>'s data-s, which is lower-case throughout the header. */
   tight:   {t:'num',  label:'Tight',   val:d=>d&&d.tight},
+  /* "max 0.8" — bases that have contracted by a fifth or more — is the VCP
+     screen this exists for, and it is a plain inclusive bound on the number
+     the cell prints. Note the printed × is a UNIT, not part of the value: the
+     filter takes 0.8, the same way ADR% takes 4 and not 4%. */
+  coil:    {t:'num',  label:'Coil',    val:d=>d&&d.coil},
+  /* THE VCP TRIO. The badge filters as a CATEGORY — the three states are the
+     whole vocabulary and "show me the pivots" is the screen it exists for —
+     and the label is capitalised from VCP_LABEL rather than kept as a fourth
+     hand-written list, so a renamed state cannot leave the filter naming a
+     state that no longer exists. The lid and the distance are plain inclusive
+     numeric bounds on the numbers their cells print: "% to Lid max 3" is
+     everything within 3% of the trigger, which is the watch-list screen.
+     NOTE THE KEYS. vcpState/vcpLid/vcpToLid are the FIELDS; vcp/vcplid/
+     vcptolid are the keys, and the key must match the <th>'s data-s, which is
+     lower-case throughout the header. And % to Lid is NOT % vs Pivot: that one
+     bounds the distance to the DARVAS box top and this one the distance to the
+     VCP lid, so a screen wanting both must set both. */
+  vcp:     {t:'cat',  label:'VCP',     val:d=>{
+             const s=d&&d.vcpState, w=s&&VCP_LABEL[s];
+             return w?w.charAt(0).toUpperCase()+w.slice(1):null; }},
+  vcplid:  {t:'num',  label:'VCP Lid', val:d=>d&&d.vcpLid},
+  vcptolid:{t:'num',  label:'% to Lid', val:d=>d&&d.vcpToLid},
   daysup:  {t:'num',  label:'Days Up', val:d=>d&&d.daysUp},
 
   /* ── explicitly nothing ─────────────────────────────────────────── */
@@ -10807,6 +11807,56 @@ const COL_FILTERS={
      so the coverage test can tell "decided against" from "forgotten". */
   rshist:  {t:'none', label:'RS Rank History'},
 };
+
+/* ── A SAVED SCREEN CAN OUTLIVE A COLUMN'S FILTER TYPE ────────────────
+   A screen stores COLF verbatim, and gs15 changed one column's type under the
+   screens already on disk: Vol Dry went from a Dry/No CATEGORY to a numeric
+   ratio. A screen saved under the old shape holds {sel:['Dry']} against a
+   column that now wants {min,max,blanks}.
+
+   THAT IS NOT SELF-CORRECTING. colfActive() would report the entry inactive —
+   a num filter with no min and no max — so the funnel, the chip and the active
+   count would all say "nothing filtering this column" while the stale entry sat
+   in COLF, got written back on the next Save, and was there again tomorrow. The
+   popover would meanwhile read f.min/f.max off an object that has neither. The
+   failure is quiet in every direction, which is exactly the kind that survives.
+
+   SO SHAPES ARE CHECKED ON THE WAY IN and anything that cannot be read as its
+   column's CURRENT type is DROPPED — the screen loads, every other filter in it
+   is restored untouched, and the changed column comes back unfiltered.
+
+   DROPPED, NOT TRANSLATED, and that is a decision rather than laziness: 'Dry'
+   meant m20 < m50, i.e. ratio STRICTLY under 1, and the numeric filter's bounds
+   are inclusive on both ends. "max 1" would silently admit a stock sitting
+   exactly on its own average, which the old screen excluded. Turning a saved
+   screen into a filter that means ALMOST the same thing is worse than handing
+   the user back a column they can set themselves — a screen that quietly
+   changed what it selects is a screen that cannot be trusted again.
+
+   Entries for keys COL_FILTERS no longer has at all are dropped for the same
+   reason and by the same rule. */
+function colfShapeOk(t,f){
+  if(t==='text') return typeof f.q==='string';
+  if(t==='cat')  return Array.isArray(f.sel);
+  /* A numeric entry is recognised by what it is NOT: any {min,max,blanks} shape
+     is accepted verbatim (including one carrying only `blanks`, which restores
+     exactly as it did before gs15), while a cat's `sel` array or a text `q`
+     string is the fingerprint of an entry saved against a DIFFERENT type. */
+  if(t==='num')  return !Array.isArray(f.sel) && typeof f.q!=='string';
+  return false;   // t:'none' — the column has no filter to restore into
+}
+function colfMigrate(v){
+  if(!v||typeof v!=='object'||Array.isArray(v)) return {};
+  const out={};
+  Object.keys(v).forEach(k=>{
+    const c=COL_FILTERS[k], f=v[k];
+    if(!c) return;                                   // the column is gone
+    if(!f||typeof f!=='object'||Array.isArray(f)) return;
+    if(!colfShapeOk(c.t,f)) return;                  // saved against another type
+    out[k]=JSON.parse(JSON.stringify(f));            // otherwise verbatim, as before
+  });
+  return out;
+}
 
 /* Live state, keyed exactly like COL_FILTERS. Shapes, all JSON-safe so a saved
    screen round-trips them without a custom serialiser:
@@ -11353,6 +12403,11 @@ const TOGGLEABLE_COLS=[
   {cls:'avgval', label:'Avg Value'},
   {cls:'wpiv',   label:'W-Pivot'},
   {cls:'dbox',   label:'D-Box (Darvas)'},
+  /* defOff — see COL_DEF_OFF below. The table is already 62 columns wide and
+     the owner guards that width, so a column arrives switched OFF and earns its
+     place from the Columns modal. It is a DEFAULT, not a disability: it sorts,
+     filters and exports exactly like every other column while hidden. */
+  {cls:'pctpiv', label:'% vs Pivot', defOff:true},
   {cls:'wbox',   label:'W-Box (Darvas)'},
   {cls:'ema',    label:'EMA Align'},
   {cls:'pct10e', label:'%10E'},
@@ -11375,6 +12430,15 @@ const TOGGLEABLE_COLS=[
   {cls:'adr',    label:'ADR%'},
   {cls:'tight',  label:'Tight'},
   {cls:'daysup', label:'Days Up'},
+  // defOff for the same reason % vs Pivot is — see COL_DEF_OFF below.
+  {cls:'coil',   label:'Coil', defOff:true},
+  // defOff for the same reason Coil and % vs Pivot are — see COL_DEF_OFF
+  // below. Three columns at once is three columns of width the owner did not
+  // ask for, so all three arrive switched OFF and earn their place from the
+  // Columns modal. They still sort, filter and export while hidden.
+  {cls:'vcp',    label:'VCP', defOff:true},
+  {cls:'vcplid', label:'VCP Lid', defOff:true},
+  {cls:'vcptolid',label:'% to Lid', defOff:true},
   {cls:'mrsrank',label:'MRS Rank'},
   {cls:'rs21',   label:'RS21'},
   {cls:'rs55',   label:'RS55'},
@@ -11388,6 +12452,28 @@ const TOGGLEABLE_COLS=[
 ];
 const COL_VIS_KEY='sm_col_visibility';
 
+/* ── DEFAULT VISIBILITY, PER COLUMN ──────────────────────────────────
+   There was no such thing before gs15: every column defaulted to visible and
+   `vis[cls]===false` was the only way to hide one. That is fine while every
+   column is one the owner asked to see on day one, and wrong for a column added
+   afterwards — the table is already 62 wide and its width is the thing he
+   guards, so a new column has to EARN its place rather than take it.
+
+   `defOff:true` on a TOGGLEABLE_COLS entry means "off until ticked". The stored
+   map is unchanged and still records only what the user has EXPLICITLY chosen,
+   so an explicit true switches a defOff column on and an explicit false
+   switches a normally-visible one off — exactly as before, in both directions.
+   Derived from TOGGLEABLE_COLS rather than written out a second time: a list of
+   class names kept beside the list of class names is how the two drift. */
+const COL_DEF_OFF=new Set(TOGGLEABLE_COLS.filter(c=>c.defOff).map(c=>c.cls));
+/* The ONE place "is this column showing" is decided. Only a real boolean in the
+   stored map counts as the user's answer; anything else (absent, or a stale
+   value from a hand-edited payload) falls back to the column's own default. */
+function colIsVisible(vis,cls){
+  const v=vis&&vis[cls];
+  return typeof v==='boolean' ? v : !COL_DEF_OFF.has(cls);
+}
+
 function loadColVisibility(){
   try{
     const raw=localStorage.getItem(COL_VIS_KEY);
@@ -11400,14 +12486,15 @@ function saveColVisibility(vis){
 function applyColVisibility(){
   const vis=loadColVisibility();
   TOGGLEABLE_COLS.forEach(c=>{
-    const hidden = vis[c.cls]===false; // default: visible unless explicitly set false
-    document.body.classList.toggle('hide-'+c.cls, hidden);
+    // Was a bare equality test against a stored false; colIsVisible() adds the
+    // per-column default that test could not express.
+    document.body.classList.toggle('hide-'+c.cls, !colIsVisible(vis,c.cls));
   });
 }
 function buildColModal(){
   const vis=loadColVisibility();
   $('colCheckGrid').innerHTML=TOGGLEABLE_COLS.map(c=>{
-    const checked = vis[c.cls]!==false; // default checked (visible)
+    const checked = colIsVisible(vis,c.cls); // ticked = showing, defaults included
     return `<label class="modal-check">
       <input type="checkbox" ${checked?'checked':''} onchange="toggleColumn('${c.cls}',this.checked)"/>
       ${c.label}
@@ -11421,8 +12508,13 @@ function toggleColumn(cls,visible){
   document.body.classList.toggle('hide-'+cls, !visible);
 }
 function resetColumnVisibility(){
-  saveColVisibility({}); // empty = everything defaults to visible
+  saveColVisibility({}); // empty = every column back to its OWN default
+  /* Strip every hide-* class, then RE-DERIVE. Stripping alone used to be the
+     whole reset because "no hide- class" and "the defaults" were the same
+     thing; with defOff columns they are not, and stripping alone would quietly
+     switch on the two columns the reset is supposed to put back off. */
   document.body.className=document.body.className.split(' ').filter(c=>!c.startsWith('hide-')).join(' ');
+  applyColVisibility();
   buildColModal();
 }
 
@@ -12212,6 +13304,7 @@ function closeDrill(){
   syncAsOfUI();
   updateAdvBtn();
   applyBreadthCollapsed();
+  applyStagesCollapsed();
   applyCollapsibles();   // must precede the first paint, or both sections flash open on a phone
   loadBreadthTF();     // must precede buildBreadthTF/renderBreadth, which read it
   buildBreadthTF();
