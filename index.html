@@ -778,7 +778,7 @@ body.asof-on .tbl-wrap{outline:3px solid var(--orange)}
    the pair on a narrow screen leaves half an answer. */
 .c-volspike,
 .c-vr,.c-align,.c-ema,.c-bocnt,.c-squeeze,.c-mrsrank,.c-setup,
-.c-sector,.c-status,.c-xcross,.c-pattern,.c-consol,.c-rs21,.c-rs55,
+.c-sector,.c-subind,.c-status,.c-xcross,.c-pattern,.c-consol,.c-rs21,.c-rs55,
 .c-ch1w,.c-ch1m,.c-ch3m,.c-histg,.c-dbox,.c-avgval,.c-fresh,
 /* %10E is GROUP B for the same reason %20E is, and it is listed FIRST because
    it sits first in the table: the owner reads the 10 and the 20 as a PAIR —
@@ -856,6 +856,7 @@ body.hide-mrsrank .c-mrsrank,
 body.hide-rstrend .c-rstrend,
 body.hide-notes   .c-notes,
 body.hide-sector  .c-sector,
+body.hide-subind  .c-subind,
 body.hide-status  .c-status,
 body.hide-xcross  .c-xcross,
 body.hide-wcross  .c-wcross,
@@ -1183,7 +1184,7 @@ body.dd-lock{overflow:hidden}
 @media (max-width:480px){
   .metrics-row{grid-template-columns:repeat(2,1fr)}
   .c-volspike,.c-vr,.c-align,.c-ema,.c-bocnt,.c-squeeze,.c-mrsrank,.c-setup,
-  .c-sector,.c-status,.c-xcross,.c-pattern,.c-consol,.c-rs21,.c-rs55,
+  .c-sector,.c-subind,.c-status,.c-xcross,.c-pattern,.c-consol,.c-rs21,.c-rs55,
   .c-ch1w,.c-ch1m,.c-ch3m,.c-histg,.c-dbox,.c-pctpiv,.c-avgval,.c-fresh,
   .c-pct10e,.c-pct20e,.c-adr,.c-tight,.c-daysup,.c-coil,
   .c-vcp,.c-vcplid,.c-vcptolid{display:none!important}
@@ -1442,6 +1443,7 @@ body.dd-lock{overflow:hidden}
             <th class="c-align" data-s="align" data-tip="How much the daily and the weekly timeframe agree, out of 8 checks: 1. price above the daily 20 EMA · 2. price above the daily 50 EMA · 3. price above the weekly 10 EMA · 4. price above the weekly 20 EMA · 5. daily RSI 50 or above · 6. weekly RSI 50 or above · 7. positive 21-day relative strength · 8. positive 10-week relative strength. A swing trade wants both clocks pointing the same way, so 7 or 8 is the shortlist. Each check needs its own input, and a check that cannot be run is left OUT OF THE TOTAL rather than counted as a failure — that is why some rows read 6/7 instead of 6/8. Sorting puts the higher score first and, on a tie, the row that could be fully measured above the one that could not.">Align<span class="sort-ico"></span></th>
             <th class="c-fresh" data-s="fresh" data-tip="Stocks that have JUST turned, not ones merely in a good state. Four events: 1. close crossed ABOVE the 50-day EMA (last 3 bars) · 2. RS21 (21-day excess return) crossed above zero (last 5 bars) · 3. base breakout: a 20-bar-plus consolidation broke out (last 3 bars) · 4. RSP ↑90: RS Position, the stock/benchmark ratio's place in its own last 21 bars, crossed UP through 90 within the last 5 bars, having been at or under 80 in the 5 bars before that crossing. READ 4 AND 2 AS A PAIR: the ratio makes new range-highs before the excess return turns positive, so RSP is the EARLY WARNING and RS21 the CONFIRMATION, not two independent signals. The 80 floor matters: RSP pins near its ceiling in a trend. The cell names the most recent flag and its age. A dash means none fired, or an input was missing: under 51 bars has no 50-EMA cross, no benchmark means no RS21 or RS Position. Freshest sorts first.">Fresh<span class="sort-ico"></span></th>
             <th class="c-sector" data-s="sector" data-tip="Sector from the built-in universe — for India these are NSE's own macro industry groups, taken from the Nifty Total Market constituent list. It is not cosmetic: the default Setup Score order ranks sectors by the median RS55 of their members, so this label decides which group a stock is judged inside. Sortable, so the table can be grouped by sector without using the sector filter.">Sector<span class="sort-ico"></span></th>
+            <th class="c-subind" data-s="subind" data-tip="Which NSE sectoral INDEX carries this stock — a finer grouping READ UNDER Sector, never instead of it. It is INDEX MEMBERSHIP, not an official classification: &quot;Private Bank&quot; means the stock is one of the ten in the Nifty Private Bank index, not that anyone classified the business that way. Membership is size-ranked, so these labels SKEW TO THE LARGER companies and a smaller peer doing the identical business is simply left out. Where a stock sits in several indices the narrowest wins, in a fixed order written into the source: Private Bank, PSU Bank, Housing Finance, Insurance, NBFC, Bank, Pharma, Hospitals, Retail, Cement, Telecommunications. &quot;&lt;Sector&gt; (other)&quot; means NO index carried this stock — it does NOT mean the business is miscellaneous. India only; US and ETF rows are blank. Hidden by default — switch it on in Columns.">Sub-Industry<span class="sort-ico"></span></th>
             <th data-s="price" data-tip="The most recent closing price in the stock's own currency. It comes from the end-of-day data feed, so it is yesterday's close, not a live quote.">Price<span class="sort-ico"></span></th>
             <th data-s="ch1d" data-tip="How much the price moved on its latest trading day, as a percentage of the previous close. Green is up, red is down.">1D%<span class="sort-ico"></span></th>
             <th class="c-ch1w" data-s="ch1w" data-tip="Price change over the last 5 trading bars — one trading week. Measured bar-to-bar, not calendar days, so holidays and weekends never dilute it. Needs at least 6 bars of history; below that it shows a dash rather than pretending the change was zero.">1W%<span class="sort-ico"></span></th>
@@ -3410,6 +3412,114 @@ function capTierFromMcap(mcap){
   return 'Mic';
 }
 UNI.india.forEach(def=>{ def.g = capTierFromMcap(def.mcap); });
+
+/* ══════════════════════════════════
+   SUB-INDUSTRY  (India only)
+   ────────────────────────────────────
+   A SECOND, FINER label beside `sector`. It is a STATIC ATTRIBUTE of the
+   ticker, exactly like `sector` and `mcap` — nothing here is derived from
+   price, so computeTech()'s shape is untouched and CFG.VER does not move.
+   `sector` itself is not read, not rewritten and not shadowed: every sector
+   filter, saved screen, calcSectorBreadth() total and rotation figure sees
+   precisely what it saw before this block existed.
+
+   WHERE IT COMES FROM, AND WHAT THAT COSTS. NSE publishes constituent lists
+   for its sectoral indices, and a constituent list is MEMBERSHIP, not a
+   classification. "In the Nifty Private Bank index" means "is one of the ten
+   largest private banks", not "is a private bank". Two consequences, both
+   stated in the column's own tooltip rather than buried here:
+     · coverage is SIZE-BIASED. A small private bank outside the index gets no
+       sub-group at all. AUBANK is the live example — it is in the Bank index
+       but not the Private Bank one, so it reads 'Bank' while HDFCBANK, the
+       same business at 30x the size, reads 'Private Bank'.
+     · a stock no kept index carries is labelled '<Sector> (other)', so the
+       residual is VISIBLE and nobody reads a 129-stock leftover as a coherent
+       group. It means "no index carried this stock". It never means
+       "miscellaneous business".
+
+   WHICH LISTS ARE USED, AND WHY THE OTHER 23 ARE NOT. Only lists that
+   genuinely DIVIDE their parent sector. Most of NSE's 34 sectoral files
+   restate the macro sector under a near-identical name — the Auto index IS
+   the Auto & Components sector, the Capital Goods index IS Cap Goods — and a
+   sub-label identical to its parent is worse than no sub-label, because it
+   looks like information. Cap-segment and broad variants (midsmall*, the 500
+   series, financial services 25-50, financial services ex-bank, plain
+   Finance, plain Healthcare) are not sub-industries at all. The REITs &
+   Realty list resolves, inside THIS universe, to exactly the same ten symbols
+   as the plain Realty index — its five genuine REITs/InvITs (EMBASSY,
+   MINDSPACE, BIRET, NXST, KRT) are not in the universe — so including it
+   would be including the Realty index under a second name.
+
+   PRECEDENCE IS THIS ARRAY'S ORDER, most specific first. It is written out
+   rather than inferred from list size so it can be read and argued with:
+   Private Bank beats PSU Bank beats Housing Finance beats Insurance beats
+   NBFC beats Bank, then the sectors that do not overlap. 131 symbols sit in
+   more than one of NSE's 34 files; 13 sit in more than one KEPT file, and
+   every one of those 13 is a bank. First group to claim a symbol wins.
+
+   Symbols are stored WITHOUT the '.NS' suffix and space-separated: 164
+   entries as one string per group is a fraction of the bytes of 164 object
+   literals, and a fraction of the bytes of a second field on every UNI row. */
+const SUBIND_SRC=[
+  {label:'Private Bank', syms:
+    'AXISBANK BANDHANBNK FEDERALBNK HDFCBANK ICICIBANK IDFCFIRSTB INDUSINDBK KOTAKBANK '+
+    'RBLBANK YESBANK'},
+  {label:'PSU Bank', syms:'BANKBARODA BANKINDIA CANBK CENTRALBK INDIANB IOB MAHABANK PNB SBIN UCOBANK UNIONBANK'},
+  {label:'Housing Finance', syms:
+    'AADHARHFC AAVAS APTUS BAJAJHFL CANFINHOME HOMEFIRST INDIASHLTR LICHSGFIN PNBHOUSING '+
+    'SAMMAANCAP'},
+  {label:'Insurance', syms:
+    'CANHLIFE GICRE GODIGIT HDFCLIFE ICICIGI ICICIPRULI LICI MFSL NIACL NIVABUPA SBILIFE '+
+    'STARHEALTH'},
+  {label:'NBFC', syms:
+    'AIIL BAJFINANCE CGCL CHOLAFIN FEDFINA FIVESTAR HDBFS IIFL LTF M&MFIN MANAPPURAM '+
+    'MUTHOOTFIN PIRAMALFIN POONAWALLA SBFC SBICARD SHRIRAMFIN SUNDARMFIN TATACAP'},
+  {label:'Bank', syms:
+    'AUBANK AXISBANK BANKBARODA CANBK FEDERALBNK HDFCBANK ICICIBANK IDFCFIRSTB INDUSINDBK '+
+    'KOTAKBANK PNB SBIN UNIONBANK YESBANK'},
+  {label:'Pharma', syms:
+    'ABBOTINDIA AJANTPHARM ALKEM AUROPHARMA BIOCON CIPLA DIVISLAB DRREDDY GLAND GLENMARK '+
+    'IPCALAB LAURUSLABS LUPIN MANKIND PPLPHARMA SAILIFE SUNPHARMA TORNTPHARM WOCKPHARMA '+
+    'ZYDUSLIFE'},
+  {label:'Hospitals', syms:
+    'AGARWALEYE APOLLOHOSP ASTERDM FORTIS HCG JLHL KIMS MAXHEALTH MEDANTA NH PARKHOSPS '+
+    'RAINBOW YATHARTH'},
+  {label:'Retail', syms:
+    'ABFRL ABLBL ARVINDFASN AVL CARTRADE CRIZAC DMART EMIL ENTERO ETERNAL FIRSTCRY '+
+    'INDIAMART JUSTDIAL LENSKART MANYAVAR MEDPLUS MEESHO NAUKRI NYKAA RTNINDIA SWIGGY TRENT '+
+    'URBANCO V2RETAIL VMART VMM'},
+  {label:'Cement', syms:
+    'ACC AMBUJACEM BIRLACORPN DALBHARAT GRASIM INDIACEM JKCEMENT JKLAKSHMI JSWCEMENT NUVOCO '+
+    'ORIENTCEM PRSMJOHNSN RAMCOCEM SHREECEM STARCEMENT ULTRACEMCO'},
+  {label:'Telecommunications', syms:
+    'BHARTIARTL BHARTIHEXA HFCL IDEA INDUSTOWER ITI OPTIEMUS RAILTEL ROUTE STLTECH TATACOMM '+
+    'TEJASNET TTML'},
+];
+/* Resolved ONCE, at load, by walking SUBIND_SRC in order — the first group
+   that names a symbol keeps it. Resolved here rather than baked in as a flat
+   symbol->label table on purpose: a baked table would hide the precedence
+   that produced it, which is the one thing about this mapping that is worth
+   auditing. */
+const SUBIND=(()=>{
+  const m=Object.create(null);
+  for(const g of SUBIND_SRC)
+    for(const sym of g.syms.split(' ')){
+      const k=sym+'.NS';
+      if(sym && !(k in m)) m[k]=g.label;
+    }
+  return m;
+})();
+/* India-only, and decided from UNI.india rather than from a '.NS' suffix: the
+   suffix is a convention, the universe is the fact. A US or ETF row returns ''
+   and its cell renders the same dash every other blank cell renders. */
+const SUBIND_MARKET=new Set(UNI.india.map(d=>d.s));
+/* The ONE place a row's sub-industry is decided. The '(other)' label is built
+   from def.sector itself, never from a re-typed copy of the sector names, so a
+   sector renamed in UNI renames its residual bucket in the same edit. */
+function subIndOf(def){
+  if(!def || !SUBIND_MARKET.has(def.s)) return '';
+  return SUBIND[def.s] || (def.sector ? def.sector+' (other)' : '');
+}
 
 /* Same idea for US stocks, but in $ Billion (US convention, not Rs Crore):
    Large Cap  >= $10B
@@ -9255,7 +9365,7 @@ function histGC(v){ return fmtCh(v); }
    reason: without them a table loading with columns switched off renders
    skeleton rows WIDER than the data rows underneath, because only the data
    rows' cells get hidden. Length must equal (th count − 4). */
-const SKEL_COLS=['c-setup','c-align','c-fresh','c-sector','','','c-ch1w','c-ch1m','c-ch3m','c-hist','c-histg','c-status','','c-wrsi','c-vr','c-volspike','c-wvol','c-avgval','','c-wpiv','c-dbox','c-pctpiv','c-wbox','',
+const SKEL_COLS=['c-setup','c-align','c-fresh','c-sector','c-subind','','','c-ch1w','c-ch1m','c-ch3m','c-hist','c-histg','c-status','','c-wrsi','c-vr','c-volspike','c-wvol','c-avgval','','c-wpiv','c-dbox','c-pctpiv','c-wbox','',
   'c-ema','c-pct10e','c-pct20e','c-pct50e','c-pct200e','c-wema','c-xcross','c-wcross','c-slope200','c-pattern','c-wpattern','c-consol',
   'c-monthly','','c-bocnt','c-followup','c-voldry','c-retrace','c-squeeze','c-adr','c-tight','c-daysup','c-coil','c-vcp','c-vcplid','c-vcptolid','','c-mrsrank','c-rs21',
   'c-rs55','c-rs10w','c-rsslope','c-rsp55','c-rsp21','c-rshist','','c-rstrend','c-notes'];
@@ -9304,6 +9414,7 @@ function dataRow(def,d,i){
     <td class="c-align">${alignC(d)}</td>
     <td class="c-fresh">${freshC(d)}</td>
     <td class="c-sector">${def.sector||'—'}</td>
+    <td class="c-subind">${subIndOf(def)||'—'}</td>
     <td style="font-weight:600">${fmtP(d.price,d.currency)}</td>
     <td>${fmtCh(d.ch1d)}</td>
     <td class="c-ch1w">${fmtCh(d.ch1w)}</td>
@@ -9371,7 +9482,7 @@ function errRow(def,i){
     <td class="td-n pin pin1">${i}</td><td class="pin pin2">${revC(def.s)}</td>
     <td class="pin pin3">${capB(def.g)}</td>
     <td class="pin pin4">${watchC(def.s)}<span class="ticker">${def.d}</span><br><span class="sec">${def.sector}</span></td>
-    <td colspan="62" style="color:var(--text3);font-size:11px">
+    <td colspan="63" style="color:var(--text3);font-size:11px">
       ⚠ Not in this market's data source — it will appear once the daily data carries it
     </td>
   </tr>`;
@@ -10199,6 +10310,8 @@ const SORT_FN={
   pctpiv:d=>d?.pctVsPivot,
   wbox:d=>DBOX_RANK[d?.wBoxState],
   sector:(_,def)=>def.sector,
+  // Same shape as sector: a per-ROW attribute, so it takes def, not d.
+  subind:(_,def)=>subIndOf(def),
   // Sort on the same fraction the badge is bucketed from, not on the raw score:
   // a 6/9 and a 6/7 are not the same setup.
   status:d=>d?.s2?.total?d.s2.score/d.s2.total:null,
@@ -11275,6 +11388,7 @@ const EXPORT_COLS=[
   ['Ticker',      (def,d)=>def.d],
   ['Name',        (def,d)=>def.d],
   ['Sector',      (def,d)=>def.sector],
+  ['Sub-Industry',(def,d)=>subIndOf(def)],
   ['Cap',         (def,d)=>d?.g||def.g||''],
   ['Setup',       (def,d)=>d?(isQualitySetup(d)?'Y':'N'):''],
   /* Exported as "7/8", the same string the cell shows, so the denominator
@@ -11660,6 +11774,10 @@ const COL_FILTERS={
   /* ── text ───────────────────────────────────────────────────────── */
   ticker:  {t:'text', label:'Ticker',  val:(d,def)=>def.d},
   sector:  {t:'text', label:'Sector',  val:(d,def)=>def.sector},
+  /* Filterable WHILE HIDDEN, like every other defOff column: the value comes
+     from def, not from the rendered cell, so hiding the column cannot change
+     what the filter sees. */
+  subind:  {t:'text', label:'Sub-Industry', val:(d,def)=>subIndOf(def)},
   notes:   {t:'text', label:'Notes',   val:(d,def)=>NOTES[def.s]||''},
 
   /* ── category ───────────────────────────────────────────────────── */
@@ -12390,6 +12508,11 @@ const TOGGLEABLE_COLS=[
   {cls:'align',  label:'Align D+W'},
   {cls:'fresh',  label:'Fresh'},
   {cls:'sector', label:'Sector'},
+  /* defOff for the same reason % vs Pivot, Coil and the VCP trio are: the
+     table is already 66 columns wide and its width is the thing the owner
+     guards, so a new column arrives switched OFF and earns its place from
+     the Columns modal. It still sorts, filters and exports while hidden. */
+  {cls:'subind', label:'Sub-Industry', defOff:true},
   {cls:'status', label:'Status'},
   {cls:'ch1w',   label:'1W%'},
   {cls:'ch1m',   label:'1M%'},
