@@ -1118,6 +1118,15 @@ body.dd-lock{overflow:hidden}
    weight, since those are the numbers a reader actually takes away. */
 .dd-dbox{color:var(--text2);white-space:nowrap}
 .dd-dbox b{color:var(--text)}
+/* The VCP base's label. Deliberately the same shape and the same
+   muted/emphasised split as .dd-dbox directly above: the two are the same KIND
+   of thing — a pattern the canvas has drawn, named in words — and a second
+   visual language for the second one would read as two unrelated widgets.
+   Its OWN class rather than a reuse of .dd-dbox, for the reason the .vcp badge
+   is not .dbx: the lid and the box top are different prices on the same day,
+   and one shared rule is the first step towards one shared label. */
+.dd-vcp{color:var(--text2);white-space:nowrap}
+.dd-vcp b{color:var(--text)}
 /* A fixed box the canvas fills. The canvas element itself is sized in CSS
    pixels here and in DEVICE pixels by ddDraw(); see ddCanvasCtx() for why. */
 .dd-chart{position:relative;width:100%;height:340px}
@@ -13105,8 +13114,8 @@ let DD_VIEW={bars:[],ema:[],total:0};   // what is currently drawn
 let DD_HOVER=-1;          // bar index under the pointer, -1 for none
 
 /* ── OPTIONAL CHART LAYERS ──────────────────────────────────────────
-   The chart paints four things: candles, a Darvas band, a volume histogram
-   and the EMA overlays. Only the candles are mandatory — the other three are
+   The chart paints five things: candles, a Darvas band, a VCP base, a volume
+   histogram and the EMA overlays. Only the candles are mandatory — the other three are
    context, and which context helps depends entirely on what you are looking
    for. Reading a Darvas break wants the band and nothing else on top of the
    wicks; judging a trend wants the EMAs and does not care about the box.
@@ -13118,10 +13127,17 @@ let DD_HOVER=-1;          // bar index under the pointer, -1 for none
    layer picker that can break the chart it is picking layers for.
 
    One key per layer rather than one packed key, so a future fourth layer adds
-   a key instead of a migration for everyone's stored string. */
+   a key instead of a migration for everyone's stored string. The VCP layer WAS
+   that fourth layer and cost exactly one new key, which is the whole argument
+   for the shape. */
 const DD_LAYERS=[
   {k:'darvas', key:'sm_chart_darvas', label:'Darvas',
    title:'The daily Darvas box, drawn as a band behind the candles. Off by preference, not because no box exists — a ticker with no box shows no band either way.'},
+  /* Listed beside Darvas because it is the same kind of thing — a level and a
+     shape drawn behind the candles — and because that is the order the two are
+     painted in. It is the ARRAY order that is presentation-only; see above. */
+  {k:'vcp',    key:'sm_chart_vcp',    label:'VCP',
+   title:'The VCP base the VCP column found: the base span shaded behind the candles, the lid drawn and priced, and each contraction leg marked so the tightening is visible. A ticker whose VCP column is blank draws nothing here.'},
   {k:'emas',   key:'sm_chart_emas',   label:'EMAs',
    title:'The EMA overlays (10/20/50/200) and their legend entries. Only the periods this ticker has enough history for are ever drawn.'},
   {k:'volume', key:'sm_chart_volume', label:'Volume',
@@ -13231,7 +13247,18 @@ function ddSeries(sym,market,count){
     // column rounds them, so the label and the cell cannot print two numbers.
     state:dbox.state, top:dbox.top, bot:dbox.bot,
   };
-  return {bars,ema,darvas,total:n};
+  /* THE VCP BASE. ddVcpFor() holds the whole argument for why this is a call to
+     the column's own detector gated on the column's own row; ddVcpMarks() turns
+     the verdict's series indices into window indices. Neither is inlined here,
+     so both can be tested without a canvas and without a dialog.
+
+     asOfSlice() only while the table is rewound: it returns the SAME object
+     when there is nothing to cut, so the live path allocates nothing. Null
+     means this ticker had not listed by that date, and null flows through
+     ddVcpFor() to no drawing at all. */
+  const vs = ASOF_DATE ? asOfSlice(gd,ASOF_DATE) : gd;
+  const vcp = ddVcpMarks(ddVcpFor(sym,vs), from, bars.length);
+  return {bars,ema,darvas,vcp,total:n};
 }
 
 /* PURE GEOMETRY — bars and a box in, pixel positions out. Deliberately split
@@ -13287,6 +13314,86 @@ function ddDarvasBands(tops,bots){
     out.push(cur);
   }
   return out;
+}
+
+/* ── THE VCP BASE, AS THE COLUMN DECIDED IT ────────────────────────
+   vcpDetect() is the VCP COLUMN'S OWN detector and it already returns the two
+   things the drawing needs — lidIdx, the bar that set the ceiling, and legs,
+   each contraction's opening high and closing low. Nothing about it changes
+   here; this only calls it.
+
+   WHY IT IS CALLED AGAIN RATHER THAN CACHED ON THE ROW. computeTech() publishes
+   the VERDICT (state, count, base length, lid) because that is what the three
+   columns print; it does not publish the leg positions, and putting them there
+   would change computeTech()'s output shape and cost a CFG.VER bump — a full
+   recompute for every user — to carry data no column reads. It would also buy
+   nothing: on a cached load the raw bars are gone, GSHEET_BY_MARKET is empty
+   and this chart has no candles to draw the legs on in the first place. So the
+   geometry comes from a call, on the SAME inputs, to the SAME function.
+
+   AND THAT IS WHY THE ROW IS THE GATE. Calling the detector again is not the
+   same thing as deciding again. The row is compared field by field below and a
+   disagreement — a stale row, a half-applied rewind, a series that moved under
+   us — draws NOTHING. The chart can therefore never show a base the column is
+   not claiming, which is the failure this whole layer had to avoid.
+
+   AS-OF. The row is rewound, so this must be too, or every comparison fails
+   while the table is rewound and the layer silently disappears. asOfSlice() is
+   the as-of mode's own truncation function, so the two see one series and not
+   two readings of it. Truncation only removes bars from the END, so every index
+   the detector returns still points at the same bar of the drawn window. */
+function ddVcpFor(sym,gd){
+  if(!gd||!Array.isArray(gd.C)||gd.C.length<2) return null;
+  const d=SD[sym];
+  if(!d||!d.vcpState) return null;      // the column found no base: draw none
+  const C=gd.C, n=C.length;
+  /* Built exactly as computeTech() builds them — ema() at 50 and 200, null
+     below that many bars — so the trend leg is answered off the same two lines
+     the EMA Align badges draw and cannot disagree with them. */
+  const e50=n>=50?ema(C,50):null;
+  const e200=n>=200?ema(C,200):null;
+  const v=vcpDetect(C,gd.H||[],gd.L||[],gd.V||[],e50,e200);
+  if(!v) return null;
+  if(v.state!==d.vcpState||v.count!==d.vcpCount||v.baseBars!==d.vcpBase||v.lid!==d.vcpLid) return null;
+  return v;
+}
+
+/* PURE GEOMETRY — a verdict and a window in, window-relative indices out. Split
+   out of the drawing for the same reason ddScale() and ddDarvasBands() are:
+   every "the base is subtly in the wrong place" bug lives in this arithmetic,
+   and arithmetic can be tested without a canvas.
+
+   `from` is the index of the window's first bar in the FULL series, which is
+   what every index in the verdict is measured against.
+
+   NULL WHEN THE LID BAR IS NOT IN THE WINDOW, and that is the important rule.
+   A base whose ceiling was set before the left edge would have to be drawn as
+   if it began at the edge, which invents a start the pattern never had — the
+   same lie ddDarvasBands() splits its runs to avoid. It also makes the drawn
+   rectangle provably fit the price panel: the lid is a high of a bar in the
+   window and every leg low is a low of one, so both are inside the range
+   ddScale() derived from those same bars. Null, never a partial shape. */
+function ddVcpMarks(v,from,n){
+  if(!v||!(n>0)||!Array.isArray(v.legs)||!v.legs.length) return null;
+  const f=from||0;
+  const i0=v.lidIdx-f;
+  /* The base's last bar is derived from the verdict itself (baseBars counts
+     from the lid bar inclusive), NOT taken as the last bar of the window: while
+     the table is rewound those are different bars, and the base stops on the
+     as-of day. */
+  const i1=Math.min(n-1, v.lidIdx+v.baseBars-1-f);
+  if(i0<0||i1<i0) return null;
+  let low=Infinity;
+  const legs=[];
+  for(const g of v.legs){
+    const hi=g.hi-f, lo=g.lo-f;
+    if(hi<0||lo>n-1||!(lo>hi)) return null;
+    if(g.low<low) low=g.low;
+    legs.push({hi,lo,high:g.high,low:g.low,depth:g.depth});
+  }
+  // A band with no height is not a base; it is a horizontal line pretending.
+  if(!(v.lid>low)) return null;
+  return {state:v.state,count:v.count,baseBars:v.baseBars,lid:v.lid,low,i0,i1,legs};
 }
 
 /* Colours are READ AT DRAW TIME, never captured once. A canvas holds pixels,
@@ -13385,7 +13492,20 @@ function ddLoadChart(){
       ? `<span class="dd-dbox">Darvas <b>${escHtml(DBOX_LABEL[dv.state]||dv.state)}</b> `
         + `${escHtml(fmtP(dv.bot,sd&&sd.currency))}&ndash;${escHtml(fmtP(dv.top,sd&&sd.currency))}</span>`
       : '';
-    lg.innerHTML=boxHtml+emaHtml;
+    /* The VCP entry, on exactly the same terms as the box label beside it: it
+       exists only when the layer is on AND DD_VIEW.vcp is non-null, and that is
+       non-null only when the COLUMN reported a base and the drawing agreed with
+       it field for field. A legend naming a pattern that is not on the canvas
+       is the same failure the EMA entries were already fixed for once.
+       VCP_LABEL is the VCP column's own wording and fmtP() the price column's
+       own formatter, so the cell, this label and the canvas cannot print three
+       different things for one base. */
+    const vp=DD_VIEW.vcp;
+    const vcpHtml=(ddLayerOn('vcp')&&vp)
+      ? `<span class="dd-vcp">VCP <b>${escHtml(VCP_LABEL[vp.state]||vp.state)}</b> `
+        + `${vp.count}c &middot; ${vp.baseBars}b &middot; lid <b>${escHtml(fmtP(vp.lid,sd&&sd.currency))}</b></span>`
+      : '';
+    lg.innerHTML=boxHtml+vcpHtml+emaHtml;
   }
   ddDraw();
 }
@@ -13405,7 +13525,15 @@ function ddDraw(){
              cross:ddCol('--text2','#394B53'), surf:ddCol('--surface','#FBFDFE'),
              // The box band. Read here with the rest, for the same reason: a hex
              // baked in would leave the band in Classic's palette under Paper.
-             box:ddCol('--border2','#AFC0C7'), boxEdge:ddCol('--text2','#394B53')};
+             box:ddCol('--border2','#AFC0C7'), boxEdge:ddCol('--text2','#394B53'),
+             /* The VCP base. Read here with the rest, for the same reason. Two
+                tokens, and deliberately NEITHER of the band's two: the lid is
+                not the box top, and two different levels drawn in one colour on
+                one canvas is how a reader quotes the wrong number. --text is
+                the strongest ink in the palette and carries the lid, which is
+                the number this layer exists to show; the wash and the leg marks
+                sit back at --accent-dk. */
+             vcp:ddCol('--accent-dk','#095468'), vcpLid:ddCol('--text','#0C1A20')};
   ctx.clearRect(0,0,w,h);
   ctx.fillStyle=col.surf; ctx.fillRect(0,0,w,h);
   if(!sc.n) return;
@@ -13454,6 +13582,52 @@ function ddDraw(){
       ctx.beginPath(); ctx.moveTo(x0,Math.round(yB)+0.5); ctx.lineTo(x1,Math.round(yB)+0.5); ctx.stroke();
     }
     if(ctx.setLineDash) ctx.setLineDash([]);
+    ctx.restore();
+  }
+
+  /* THE VCP BASE — drawn here, with the band and BEHIND the candles, for the
+     same reason the band is: a wash laid over the wicks veils exactly the
+     tightening it exists to show. The gate goes at the top of the block and
+     nowhere else, so the block keeps its position in the paint order.
+
+     DD_VIEW.vcp is null whenever the column reported no base, whenever the
+     drawing disagreed with it, and whenever the base does not fit the window —
+     so a ticker without one draws nothing at all. Not an empty rectangle, not
+     a flat band: the block simply does not run. */
+  const vp=DD_VIEW.vcp;
+  if(ddLayerOn('vcp')&&vp){
+    ctx.save();
+    const vx0=sc.x(vp.i0)-sc.cw/2, vx1=sc.x(vp.i1)+sc.cw/2;
+    const vyT=sc.y(vp.lid), vyB=sc.y(vp.low);
+    // The span itself: lid down to the deepest contraction low, over the bars
+    // the base actually ran for. Fainter than the band so the two never
+    // compete when both are on.
+    ctx.fillStyle=col.vcp; ctx.globalAlpha=.12;
+    ctx.fillRect(vx0,vyT,Math.max(1,vx1-vx0),Math.max(1,vyB-vyT));
+    ctx.globalAlpha=1;
+    /* THE LID, solid and a shade heavier than any other line here — it is the
+       one price on this layer a reader acts on, and it has to survive greyscale
+       printing, so the emphasis is carried by the WEIGHT and not by the hue. */
+    ctx.strokeStyle=col.vcpLid; ctx.lineWidth=1.6;
+    if(ctx.setLineDash) ctx.setLineDash([]);
+    ctx.beginPath(); ctx.moveTo(vx0,Math.round(vyT)+0.5); ctx.lineTo(vx1,Math.round(vyT)+0.5); ctx.stroke();
+    // ...priced through fmtP(), the price column's own formatter, so the label
+    // on the canvas and the cell in the table read the same number.
+    ctx.fillStyle=col.vcpLid; ctx.font='10px system-ui,sans-serif'; ctx.textBaseline='bottom';
+    ctx.fillText(fmtP(vp.lid,(SD[DD_SYM]||{}).currency),vx0+2,Math.round(vyT)-2);
+    /* THE CONTRACTIONS, one dashed run from the high that opened each leg to
+       the low that closed it, with the leg's own depth beside that low. The
+       dashes tell the legs apart from the lid without a second colour, and the
+       depths are what make the tightening a number rather than an impression. */
+    ctx.textBaseline='middle';
+    ctx.strokeStyle=col.vcp; ctx.lineWidth=1;
+    if(ctx.setLineDash) ctx.setLineDash([3,2]);
+    for(const g of vp.legs){
+      ctx.beginPath(); ctx.moveTo(sc.x(g.hi),sc.y(g.high)); ctx.lineTo(sc.x(g.lo),sc.y(g.low)); ctx.stroke();
+    }
+    if(ctx.setLineDash) ctx.setLineDash([]);
+    ctx.fillStyle=col.vcp;
+    for(const g of vp.legs) ctx.fillText('-'+g.depth+'%',sc.x(g.lo)+3,sc.y(g.low)+8);
     ctx.restore();
   }
 
