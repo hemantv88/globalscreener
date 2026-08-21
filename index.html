@@ -910,7 +910,19 @@ body.hide-fresh   .c-fresh{display:none!important}
 .modal h3{font-size:14px;font-weight:700;margin-bottom:4px}
 .modal-x{float:right;font-size:15px;color:var(--text3);cursor:pointer;margin-top:-3px}
 .modal p{font-size:12px;color:var(--text2);margin-top:6px;line-height:1.6}
-.modal-grid{display:grid;grid-template-columns:1fr 1fr;gap:7px 10px;margin-top:14px}
+/* THREE COLUMNS, AND A SCROLL REGION.
+   At 66 toggleable columns a two-column grid is 33 rows tall — taller than a
+   laptop viewport, so the Show All and Done buttons fell below the fold and the
+   only way to reach them was to zoom the browser out. auto-fill with a 130px
+   minimum gives three columns on a normal window and drops to two, then one, on
+   narrow ones without a media query. The max-height keeps the buttons on screen
+   whatever the column count grows to: the LIST scrolls, the dialog does not. */
+.modal-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));
+  gap:7px 14px;margin-top:14px;max-height:min(52vh,420px);overflow-y:auto;
+  padding-right:4px}
+/* The dialog is sized for a two-column list; the column picker needs more room
+   for three. Scoped to that one dialog so the other four keep their width. */
+#colModal .modal{width:600px}
 .modal-check{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text);cursor:pointer;user-select:none}
 .modal-check input{cursor:pointer;width:14px;height:14px;flex-shrink:0}
 
@@ -957,6 +969,18 @@ body.hide-fresh   .c-fresh{display:none!important}
 .sector-table tr.sector-row td:first-child{font-weight:600;color:var(--text)}
 .sb-pill{display:inline-flex;align-items:center;justify-content:center;min-width:36px;
   padding:2px 6px;border-radius:var(--rs);font-size:10.5px;font-weight:700}
+/* THE ZERO/BLANK PILL. Same box, no colour. Every cell in a numeric column has
+   to occupy the same shape or the digits stop lining up: a bare "0" beside a
+   padded pill is inset differently and the eye can no longer scan the column.
+   Transparent rather than grey so a zero still reads as quieter than a value. */
+.sb-zero{background:transparent;color:var(--text3);font-weight:600}
+/* EXTENDED ROWS. Dimmed, not hidden — see isExtended(). Opacity rather than a
+   colour so every badge, pill and conditional colour inside the row fades with
+   it; recolouring the text alone would leave the green and red cells at full
+   strength and the row would not read as set aside. Full opacity on hover so
+   the row is still properly readable when you go looking at it. */
+tbody tr.ext-row{opacity:.55}
+tbody tr.ext-row:hover{opacity:1}
 .sb-hi{background:var(--green-bg);color:var(--green)}
 .sb-mid{background:var(--orange-bg);color:var(--orange)}
 .sb-lo{background:var(--red-bg);color:var(--red)}
@@ -1603,8 +1627,12 @@ body.dd-lock{overflow:hidden}
     <p>Untick a column to hide it. Your choices are remembered next time you open this file. On mobile, some columns still auto-hide regardless of this setting, to keep the table readable on a small screen.</p>
     <div class="modal-grid" id="colCheckGrid"><!-- JS fills this --></div>
     <div style="margin-top:14px;display:flex;gap:8px;justify-content:space-between;align-items:center">
-      <button onclick="resetColumnVisibility()"
+      <div style="display:flex;gap:8px">
+      <button onclick="showAllColumns()"
         style="padding:6px 12px;border-radius:8px;border:1.5px solid var(--border2);font-size:11.5px;font-weight:500;color:var(--text2);cursor:pointer">Show All</button>
+      <button onclick="resetColumnVisibility()"
+        style="padding:6px 12px;border-radius:8px;border:1.5px solid var(--border2);font-size:11.5px;font-weight:500;color:var(--text2);cursor:pointer">Reset to defaults</button>
+      </div>
       <button onclick="$('colModal').classList.remove('open')"
         style="padding:6px 14px;border-radius:8px;background:#1E293B;color:var(--surface2);font-size:12px;font-weight:600;cursor:pointer">Done</button>
     </div>
@@ -4523,7 +4551,18 @@ function screenDesc(name){
 }
 function buildScreenSelect(){
   const sel=$('screenSel'); if(!sel) return;
-  const names=Object.keys(SCREENS).sort();
+  /* SEEDED SCREENS IN THEIR DECLARED ORDER, then the user's own alphabetically.
+     A plain .sort() ranked the list by first character, which put "52-Week
+     High" at the top for no better reason than a digit sorting before a letter.
+     SCREEN_SEEDS is written best-first and that is a real recommendation, so it
+     is the order the dropdown uses. A user's own screens keep alphabetical
+     ordering and sit below, because the app has no opinion about those. */
+  const SEED_RANK=new Map(SCREEN_SEEDS.map((sd,i)=>[sd.name,i]));
+  const names=Object.keys(SCREENS).sort((a,b)=>{
+    const ra=SEED_RANK.has(a)?SEED_RANK.get(a):Infinity;
+    const rb=SEED_RANK.has(b)?SEED_RANK.get(b):Infinity;
+    return (ra-rb) || a.localeCompare(b);
+  });
   sel.innerHTML='<option value="">Screens…</option>'+
     names.map(n=>{
       /* Only a seeded name gets a title; a user's own screen gets none, since
@@ -4643,52 +4682,99 @@ function seedScreenObj(colf){
    screen; 0 is the honest bound and the difference is not a stock anyone would
    want excluded on a technicality. */
 const SCREEN_SEEDS=[
+  /* ORDER IS THE RECOMMENDATION, and buildScreenDropdown() renders seeded
+     screens in THIS order before any of the user's own. Sorting the whole list
+     alphabetically put "52-Week High" first purely because of a digit, which is
+     not a ranking anybody chose. Earliest-and-lowest-risk first: a base you can
+     stalk beats a breakout you must chase. */
   {
-    name:'Near 20 EMA',
-    desc:'Uptrend pullback: within -2% to +5% of the 20 EMA, above the 200 EMA, Stage 2, beating the benchmark on RS21, 200 EMA rising, not already extended.',
-    /* THE NORMAL-MARKET ENTRY. A stock in an uptrend that has come back to the
-       line the stop goes under, before it has run away again. */
+    name:'1 · Coiled & Ready',
+    desc:'Pre-breakout. Tightening for 3+ sessions inside the base, above the 20 and 50 EMA, volume dried up, beating the benchmark, and still UNDER the pivot. The stalking list — nothing has triggered yet.',
+    /* THE PRE-BREAKOUT WATCHLIST. Every condition here describes a base that is
+       winding up: the range is contracting, volume has gone quiet, and price has
+       not yet taken out the level. The last of those is what keeps this screen
+       distinct from "Breakout on Volume" below — pctpiv max 0 means not through
+       the pivot. Without it the two screens would return overlapping lists and
+       neither would tell you which stage you were looking at. */
     colf:floor=>({
-      // At or just under the 20 EMA, out to 5% above it: close enough that the
-      // stop (2% under the 20 EMA) is still a tolerable distance from entry.
-      pct20e:  {min:-2, max:5,    blanks:false},
-      pct200e: {min:0,  max:null, blanks:false},   // above the regime line
-      status:  {sel:['Stage 2']},                  // the quality leg, not the Setup flag
-      rs21:    {min:0,  max:null, blanks:false},   // beating the benchmark
-      slope:   {sel:['Rising']},                   // the 200 EMA itself pointing up
-      // Not already extended — the anti-chasing leg, using the same constant
-      // the Days Up cell colours on, so the screen and the colour agree.
-      daysup:  {min:null, max:DAYSUP_MAX_OK, blanks:false},
-      avgval:  {min:floor, max:null, blanks:false},
+      coil:    {min:null, max:0.85, blanks:false},  // recent half of the range tighter than the half before
+      consol:  {min:3,    max:null, blanks:false},  // has been doing it for 3+ sessions, not one quiet day
+      pct20e:  {min:0,    max:null, blanks:false},
+      pct50e:  {min:0,    max:null, blanks:false},
+      voldry:  {min:null, max:1,    blanks:false},  // 20-day volume under the 50-day
+      rs21:    {min:0,    max:null, blanks:false},
+      pctpiv:  {min:null, max:0,    blanks:false},  // NOT yet through the pivot
+      avgval:  {min:floor,max:null, blanks:false},
     }),
   },
   {
-    name:'Weak Market',
-    desc:'Bad-tape pullback: below the 20 EMA but holding the 50 and the 200, still beating the benchmark on RS21, 200 EMA rising. Deliberately not Stage 2.',
-    /* THE BAD-TAPE VERSION. A good stock pulling back THROUGH the 20 EMA but
-       holding the 50, in a market where that is ordinary behaviour rather than
-       a breakdown.
+    name:'2 · Pullback to 20 EMA',
+    desc:'The lower-risk re-entry. Already broke out, has come back to within 3% either side of the 20 EMA, still holding the 50, RS55 still positive and the 200 EMA rising. Your stop sits just under the line.',
+    /* RENAMED FROM "Near 20 EMA" and widened slightly: the old band was -2% to
+       +5%, which is skewed above the line, and the better fills are at or just
+       under it. Now symmetric.
 
-       DELIBERATELY NOT STAGE 2, and this is the one decision in this file most
-       likely to be "fixed" by a later reader. Several Stage 2 rules are
-       position tests against moving averages and the 52-week range, and in a
-       weak tape a perfectly good leader temporarily fails one or two of them —
-       which is exactly when this screen is wanted. Requiring Stage 2 here
-       would empty the screen precisely on the days it exists for. The quality
-       floor is instead carried by three things that survive a market-wide
-       pullback: still above the 50 and the 200 EMA, still beating the
-       benchmark on RS21, and a 200 EMA that is still rising. */
+       RS55 RATHER THAN "RS21 OR RS55". The owner asked for either one being
+       strong. A column filter is a set of AND conditions — there is no OR to
+       express — so the choice is which single gate to use, and rs55 is the
+       right one here: this screen is about a stock that has ALREADY proved
+       itself and is resting, and the 55-day read survives a pullback that the
+       21-day one may not. Add an rs21 floor by hand on the day you want both. */
     colf:floor=>({
-      pct20e:  {min:null, max:0,    blanks:false},  // has lost the 20...
-      pct50e:  {min:0,    max:null, blanks:false},  // ...but is holding the 50
-      pct200e: {min:0,    max:null, blanks:false},
-      rs21:    {min:0,    max:null, blanks:false},
+      pct20e:  {min:-3, max:3,    blanks:false},   // at the line, either side
+      pct50e:  {min:0,  max:null, blanks:false},   // never buy below the 50
+      pct200e: {min:0,  max:null, blanks:false},
+      bofu:    {min:1,  max:null, blanks:false},   // it HAS broken out at some point
+      rs55:    {min:0,  max:null, blanks:false},
       slope:   {sel:['Rising']},
       avgval:  {min:floor, max:null, blanks:false},
     }),
   },
   {
-    name:'52-Week High',
+    name:'3 · Breakout on Volume',
+    desc:'The trigger day. At or just through the pivot on volume at least 1.5x its 20-day average, out of a base of 5+ sessions, above the 50 EMA and beating the benchmark.',
+    /* THE 1.5x IS NOT ARBITRARY. It is the figure the breakout literature
+       converges on for a range breakout worth acting on, and it is measured
+       against the 20-bar average EXCLUDING today, which is what vRatio already
+       is — so this asks the published number rather than re-deriving it.
+
+       THE UPPER PIVOT BOUND MATTERS AS MUCH AS THE LOWER ONE. max 5 keeps this
+       to the trigger itself; without it the screen fills with names that broke
+       out a fortnight ago and are 20% through, which is the Climbing stage and
+       has its own button. */
+    colf:floor=>({
+      pctpiv:  {min:-1,  max:5,    blanks:false},  // at the pivot or just through it
+      vr:      {min:1.5, max:null, blanks:false},  // today's volume vs its 20-bar average
+      consol:  {min:5,   max:null, blanks:false},  // came out of an actual base
+      pct50e:  {min:0,   max:null, blanks:false},
+      rs21:    {min:0,   max:null, blanks:false},
+      avgval:  {min:floor,max:null,blanks:false},
+    }),
+  },
+  {
+    name:'4 · Power Pivot',
+    desc:'The sudden wake-up. A 5%+ day on 3x its normal volume, above the 50 EMA. Catches names that gap on news out of a long quiet stretch — the one setup the other three cannot find, because there is no base to measure.',
+    /* THE EPISODIC PIVOT, and it is deliberately the loosest screen here.
+       It has no coil, no consolidation floor and no pivot test, because the
+       whole point is a stock that had NO setup yesterday and has one today. The
+       quality is carried by the two things that define the event — a real move
+       on real volume — plus the 50 EMA as a floor.
+
+       WHAT THIS CANNOT DO, stated plainly rather than implied: the classic rule
+       is "flat for 3-6 months, then the gap". Three to six months of flatness
+       needs 60-120 bars of range history to assert, and consolDays measures the
+       CURRENT quiet stretch, not a prior one. So this finds the event and
+       leaves you to check the preceding months on the chart. It will return
+       some names that were already moving. */
+    colf:floor=>({
+      ch1d:    {min:5,   max:null, blanks:false},  // a real day, not a drift
+      vr:      {min:3,   max:null, blanks:false},  // and real volume behind it
+      pct50e:  {min:0,   max:null, blanks:false},
+      avgval:  {min:floor,max:null,blanks:false},
+    }),
+  },
+  {
+    name:'5 · 52-Week High',
     /* THE HONEST NAME PROBLEM, STATED IN THE DESCRIPTION THE USER CAN READ.
        hi52() takes the highest high over Math.min(n,H52_WIN) bars and refuses
        to answer below H52_MIN_BARS. The sheet holds ~250 trading bars, so on
@@ -4720,6 +4806,30 @@ const SCREEN_SEEDS=[
        the ones here: MRS Rank asks whether it is also outrunning everything
        else in the market, and Avg Value asks whether it can be traded. */
   },
+  {
+    name:'6 · Weak-Market Pullback',
+    desc:'Bad-tape pullback: below the 20 EMA but holding the 50 and the 200, still beating the benchmark on RS21, 200 EMA rising. Deliberately not Stage 2.',
+    /* THE BAD-TAPE VERSION, and last in the list because it is the one you want
+       least often — on a normal day screen 2 is the better pullback.
+
+       DELIBERATELY NOT STAGE 2, and this is the one decision here most likely to
+       be "fixed" by a later reader. Several Stage 2 rules are position tests
+       against moving averages and the 52-week range, and in a weak tape a
+       perfectly good leader temporarily fails one or two of them - which is
+       exactly when this screen is wanted. Requiring Stage 2 would
+       empty the screen precisely on the days it exists for.
+       The quality floor is instead carried
+       by three things that survive a market-wide pullback: still above the 50
+       and the 200, still beating the benchmark on RS21, and a rising 200 EMA. */
+    colf:floor=>({
+      pct20e:  {min:null, max:0,    blanks:false},  // has lost the 20...
+      pct50e:  {min:0,    max:null, blanks:false},  // ...but is holding the 50
+      pct200e: {min:0,    max:null, blanks:false},
+      rs21:    {min:0,    max:null, blanks:false},
+      slope:   {sel:['Rising']},
+      avgval:  {min:floor, max:null, blanks:false},
+    }),
+  },
 ];
 
 /* SEEDED ONCE, AND NEVER OVER THE TOP OF ANYTHING.
@@ -4745,7 +4855,52 @@ function seededScreenNames(){
     return Array.isArray(a)?a.filter(x=>typeof x==='string'):[];
   } catch(e){ return []; /* corrupt marker: treat as "never seeded" */ }
 }
+/* RENAMING A SEEDED SCREEN NEEDS A MIGRATION, or it silently duplicates.
+   ──────────────────────────────────────────────────────────────────────
+   'Near 20 EMA' and 'Weak Market' shipped under those names and are already in
+   the user's SCREENS and in SCREEN_SEED_KEY. Renaming them in SCREEN_SEEDS
+   alone would seed the NEW names as fresh screens while the old ones sat there
+   untouched — two entries for one idea, and the user would have no way to know
+   which was which.
+
+   So: rename in place, once, and record that it happened. The rules are
+   conservative on purpose —
+     · if the new name already exists, do nothing (never overwrite the user's);
+     · the screen's SAVED FILTERS are carried across untouched, including any
+       the user modified, because a rename must not silently reset their work;
+     · the old name is retired from the seed marker so it cannot be re-seeded.
+   Once the marker is set this never runs again. */
+const SCREEN_RENAME_KEY='sm_screen_renames_v1';
+const SCREEN_RENAMES=[
+  ['Near 20 EMA',  '2 · Pullback to 20 EMA'],
+  ['Weak Market',  '6 · Weak-Market Pullback'],
+  ['52-Week High', '5 · 52-Week High'],
+];
+function migrateScreenNames(){
+  if(lsRead(SCREEN_RENAME_KEY)) return [];
+  const done=[];
+  let seeded=seededScreenNames();
+  SCREEN_RENAMES.forEach(([from,to])=>{
+    if(!Object.prototype.hasOwnProperty.call(SCREENS,from)) return;
+    if(Object.prototype.hasOwnProperty.call(SCREENS,to)) return;   // never clobber
+    SCREENS[to]=SCREENS[from];
+    delete SCREENS[from];
+    if(ACTIVE_SCREEN===from) ACTIVE_SCREEN=to;   // keep the selection pointing somewhere real
+    seeded=seeded.filter(n=>n!==from).concat(seeded.indexOf(to)===-1?[to]:[]);
+    done.push(from+' -> '+to);
+  });
+  if(done.length){
+    saveScreensLocal();
+    lsWrite(SCREEN_SEED_KEY, JSON.stringify(seeded));
+  }
+  /* Written whether or not anything moved: a fresh browser has nothing to
+     rename and must not re-check on every load forever. */
+  lsWrite(SCREEN_RENAME_KEY,'1');
+  return done;
+}
+
 function seedDefaultScreens(){
+  migrateScreenNames();
   const already=seededScreenNames();
   const floor=(SCREEN_LIQ_FLOOR[CUR]!=null)?SCREEN_LIQ_FLOOR[CUR]:SCREEN_LIQ_FLOOR.india;
   const added=[];
@@ -8552,8 +8707,12 @@ function calcSectorBreadth(market){
 const SECTOR_COLS=[
   {key:'sector',      label:'Sector',      fmt:v=>v},
   {key:'count',       label:'Stocks #',    fmt:v=>v},
-  {key:'noData',      label:'No Data',     fmt:v=>v?`<span class="sb-pill sb-lo">${v}</span>`:'0'},
-  {key:'setups',      label:'Setups',      fmt:v=>v?`<span class="sb-pill sb-hi">${v}</span>`:'0',
+  /* A ZERO IS A PILL TOO — see .sb-zero. Rendering it as bare text put it flush
+     against the cell's right edge while every non-zero sat inset by the pill's
+     padding, so the column's digits did not share a units place. That is the
+     misalignment; it is not the column order. */
+  {key:'noData',      label:'No Data',     fmt:v=>v?`<span class="sb-pill sb-lo">${v}</span>`:'<span class="sb-pill sb-zero">0</span>'},
+  {key:'setups',      label:'Setups',      fmt:v=>v?`<span class="sb-pill sb-hi">${v}</span>`:'<span class="sb-pill sb-zero">0</span>',
    /* The Setups column IS the leaders count — stocks in this sector currently
       passing isQualitySetup(). It is not duplicated as a second column; a
       second column counting the same thing is how two panels start disagreeing. */
@@ -8564,17 +8723,17 @@ const SECTOR_COLS=[
      member floor are interpolated from the constants so the words cannot drift
      away from the code the way a hand-typed "10 days" would. */
   {key:'rsChg',       label:`RS Δ ${SECTOR_ROT_LOOKBACK}d`,
-   fmt:v=>v==null?'<span class="vm">—</span>':`<span class="sb-pill ${v>SECTOR_ROT_RISING_MIN?'sb-hi':'sb-lo'}">${v>=0?'+':''}${v.toFixed(2)}</span>`,
+   fmt:v=>v==null?'<span class=\"sb-pill sb-zero\">—</span>':`<span class="sb-pill ${v>SECTOR_ROT_RISING_MIN?'sb-hi':'sb-lo'}">${v>=0?'+':''}${v.toFixed(2)}</span>`,
    tip:`The MEDIAN across this sector's stocks of how far each one's 21-day relative strength has moved over the last ${SECTOR_ROT_LOOKBACK} sessions — its RS21 today minus its RS21 ${SECTOR_ROT_LOOKBACK} bars ago, read off the same RS history the RS sparkline draws. A median across the sector's members, not an average, so one runaway stock cannot speak for the whole group. Stocks with no RS history, or less than ${SECTOR_ROT_LOOKBACK} sessions of it, are LEFT OUT of the median rather than counted as zero — counting them as zero would drag the sector towards a false no-rotation reading. Positive means the sector has been GAINING ground on the benchmark over those ${SECTOR_ROT_LOOKBACK} sessions, negative means losing it. It describes where money HAS been moving. It is not a prediction.`},
   /* THE STRENGTH LEVEL, finally visible. calcSectorBreadth() has always computed
      medRs55 — the Rotation column is built on it — but it was never shown and
      never sortable, so "which sectors are strongest" could not be answered from
      this panel at all. It is the level axis; RS Δ next to it is the direction. */
   {key:'medRs55',     label:'Sector RS',
-   fmt:v=>v==null?'<span class="vm">—</span>':`<span class="sb-pill ${v>0?'sb-hi':'sb-lo'}">${v>=0?'+':''}${v.toFixed(1)}</span>`,
+   fmt:v=>v==null?'<span class=\"sb-pill sb-zero\">—</span>':`<span class="sb-pill ${v>0?'sb-hi':'sb-lo'}">${v>=0?'+':''}${v.toFixed(1)}</span>`,
    tip:`The MEDIAN 55-day relative strength of this sector's stocks — how the typical member has performed against the benchmark over roughly the last quarter. This is the sector's STRENGTH LEVEL, and the table is sorted by it, so the strongest sectors sit at the top. A median across the sector's own members, not an average, so one runaway stock cannot speak for the group. A sector with fewer than ${SECTOR_ROT_MIN_MEMBERS} members carrying RS is left blank rather than scored, and blanks sort to the bottom — too small a sample to call. Read it beside RS Δ: this says where the sector IS, that one says which way it has been moving.`},
   {key:'rot',         label:'Rotation',
-   fmt:v=>v==null?'<span class="vm">—</span>':`<span class="sb-pill ${ROT_CLS[v]||'sb-mid'}">${v}</span>`,
+   fmt:v=>v==null?'<span class=\"sb-pill sb-zero\">—</span>':`<span class="sb-pill ${ROT_CLS[v]||'sb-mid'}">${v}</span>`,
    tip:`Direction on top of level. LEVEL is this sector's median RS55; DIRECTION is the median ${SECTOR_ROT_LOOKBACK}-session change in its members' RS21. Strong and rising = Leading. Strong and falling = Weakening. Weak and rising = Improving. Weak and falling = Lagging. Strong versus weak splits at the MEDIAN of the sectors on screen, never a fixed number, so the labels still divide the list when the whole market is up or down. Both figures are medians across this sector's own members, and members with no usable RS history are left out rather than counted as zero. A sector with fewer than ${SECTOR_ROT_MIN_MEMBERS} members carrying RS is left blank instead of labelled — too small a sample to call. Says where money HAS been moving over the last ${SECTOR_ROT_LOOKBACK} sessions; it is not a prediction.`},
   {key:'avgRsi',      label:'Avg RSI',     fmt:v=>v==null?'—':v.toFixed(1)},
   {key:'avgCh',       label:'Avg 1D%',     fmt:v=>v==null?'—':(v>=0?'+':'')+v.toFixed(2)+'%'},
@@ -8591,7 +8750,7 @@ const SECTOR_COLS=[
 
 function pillFmt(pct){
   // null = the metric could not be computed (no row in this sector has data).
-  if(pct==null) return '<span class="vm">—</span>';
+  if(pct==null) return '<span class="sb-pill sb-zero">—</span>';
   const cls = pct>=50?'sb-hi':pct>=25?'sb-mid':'sb-lo';
   return `<span class="sb-pill ${cls}">${pct}%</span>`;
 }
@@ -9941,7 +10100,7 @@ function dataRow(def,d,i){
      0 were the neutral point, which would read as "+62 percentage points
      ahead of the benchmark" — a completely different, and much better,
      number than the one being shown. */
-  return `<tr id="r-${safeSym}">
+  return `<tr id="r-${safeSym}"${isExtended(d)?' class="ext-row"':''}>
     <td class="td-n pin pin1">${i}</td>
     <td class="pin pin2">${revC(def.s)}</td>
     <td class="pin pin3">${capB(cap)}</td>
@@ -10779,12 +10938,43 @@ function sectorStrength(market){
 
 /* Ordering: quality setups first, then by sector strength, then by the row's own
    rs55. Rows with no computed data sort last whatever their sector does. */
+/* EXTENDED — too far above the 20 EMA to place a sane stop.
+   ──────────────────────────────────────────────────────────
+   Measured in ADRs, not in a fixed percentage, and that choice is the whole
+   point: a sleepy large-cap 8% above its 20 EMA is genuinely extended, while a
+   small-cap that routinely moves 6% in a day is not. A single "10%" rule is
+   wrong at both ends. The threshold is Qullamaggie's own risk rule — a stop
+   should never be wider than 1x ADR — restated as an entry test: if the stock
+   is further above the 20 EMA than one ADR, there is nowhere sensible to put
+   the stop, so it is not buyable here whatever else is true about it.
+
+   THESE ROWS ARE SORTED LAST, NEVER HIDDEN. An extended leader is exactly what
+   you want on a watchlist for the pullback that follows, and a screen that
+   silently drops it gives the owner no way to tell "it got extended" apart from
+   "the data broke". They sink to the bottom and render greyed.
+
+   A MISSING MEASUREMENT IS NOT EXTENDED. Unknown is not the same as far, and
+   penalising a row for having no ADR yet would push freshly-listed names to the
+   bottom of every screen for a reason that has nothing to do with their price. */
+const EXTENDED_ADR_MULT=1;
+function isExtended(d){
+  if(!d) return false;
+  if(!numOk(d.pct20e) || !numOk(d.adr)) return false;
+  if(!(d.adr>0)) return false;                    // a zero/negative ADR is unusable, not a pass
+  return d.pct20e > d.adr*EXTENDED_ADR_MULT;
+}
+
 function sortBySetupScore(items,market){
   const strength=sectorStrength(market);
   const key=new Map();
   items.forEach(def=>{
     const d=SD[def.s];
     key.set(def, d ? {
+      /* ASCENDING, and read FIRST: 0 (not extended) sorts ahead of 1. This is
+         deliberately ahead of the quality flag — an extended Setup is still
+         unbuyable today, and showing it above a buyable non-setup would be
+         ranking the list by yesterday's opportunity. */
+      x: isExtended(d)?1:0,
       q: isQualitySetup(d)?1:0,
       ss: strength[def.sector]??SECTOR_STRENGTH_FLOOR,
       rs: d.rs55??SECTOR_STRENGTH_FLOOR,
@@ -10795,7 +10985,7 @@ function sortBySetupScore(items,market){
     if(!ka && !kb) return 0;
     if(!ka) return 1;
     if(!kb) return -1;
-    return (kb.q-ka.q) || (kb.ss-ka.ss) || (kb.rs-ka.rs);
+    return (ka.x-kb.x) || (kb.q-ka.q) || (kb.ss-ka.ss) || (kb.rs-ka.rs);
   });
 }
 
@@ -13281,6 +13471,25 @@ function toggleColumn(cls,visible){
   saveColVisibility(vis);
   document.body.classList.toggle('hide-'+cls, !visible);
 }
+/* SHOW ALL means every column ON — including the ones that are OFF by default.
+   ─────────────────────────────────────────────────────────────────────────────
+   The button labelled "Show All" used to call resetColumnVisibility(), which
+   restores each column to its OWN default. Nine columns are defOff (Sub-Industry,
+   % vs Pivot, Coil, the VCP trio, and the rest), so on a table where the user had
+   already ticked everything, pressing "Show All" turned nine columns OFF. The
+   label described something the code did not do, and the two behaviours are both
+   wanted — so there are now two buttons rather than one lying one. */
+function showAllColumns(){
+  const vis={};
+  TOGGLEABLE_COLS.forEach(c=>{ vis[c.cls]=true; });
+  saveColVisibility(vis);
+  /* Strip every hide-* class and re-derive, exactly as the reset does: the
+     class list is a projection of the stored map, never a second source. */
+  document.body.className=document.body.className.split(' ').filter(c=>!c.startsWith('hide-')).join(' ');
+  applyColVisibility();
+  buildColModal();
+}
+
 function resetColumnVisibility(){
   saveColVisibility({}); // empty = every column back to its OWN default
   /* Strip every hide-* class, then RE-DERIVE. Stripping alone used to be the
