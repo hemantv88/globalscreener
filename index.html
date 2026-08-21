@@ -8393,7 +8393,14 @@ function calcMetrics(market){
 /* ══════════════════════════════════
    SECTOR BREADTH
 ══════════════════════════════════ */
-let SECTOR_SORT_COL='count', SECTOR_SORT_DIR='desc';
+/* DEFAULTS TO STRENGTH, NOT SIZE. This opened on 'count' — the number of stocks
+   in each sector — which answers "which sector is biggest", a question nobody
+   asks this panel. medRs55 is the sector's median 55-day relative strength, the
+   same level axis the Rotation label is built from, so the panel now opens with
+   the strongest sectors at the top. Sectors too small to score carry a null and
+   the comparator's ??-Infinity puts them last on a descending sort, which is
+   where an unscored sector belongs. */
+let SECTOR_SORT_COL='medRs55', SECTOR_SORT_DIR='desc';
 
 /* ══ SECTOR ROTATION ═══════════════════════════════════════════════════
    The rest of this panel answers "which sectors are strong NOW". It cannot
@@ -8559,6 +8566,13 @@ const SECTOR_COLS=[
   {key:'rsChg',       label:`RS Δ ${SECTOR_ROT_LOOKBACK}d`,
    fmt:v=>v==null?'<span class="vm">—</span>':`<span class="sb-pill ${v>SECTOR_ROT_RISING_MIN?'sb-hi':'sb-lo'}">${v>=0?'+':''}${v.toFixed(2)}</span>`,
    tip:`The MEDIAN across this sector's stocks of how far each one's 21-day relative strength has moved over the last ${SECTOR_ROT_LOOKBACK} sessions — its RS21 today minus its RS21 ${SECTOR_ROT_LOOKBACK} bars ago, read off the same RS history the RS sparkline draws. A median across the sector's members, not an average, so one runaway stock cannot speak for the whole group. Stocks with no RS history, or less than ${SECTOR_ROT_LOOKBACK} sessions of it, are LEFT OUT of the median rather than counted as zero — counting them as zero would drag the sector towards a false no-rotation reading. Positive means the sector has been GAINING ground on the benchmark over those ${SECTOR_ROT_LOOKBACK} sessions, negative means losing it. It describes where money HAS been moving. It is not a prediction.`},
+  /* THE STRENGTH LEVEL, finally visible. calcSectorBreadth() has always computed
+     medRs55 — the Rotation column is built on it — but it was never shown and
+     never sortable, so "which sectors are strongest" could not be answered from
+     this panel at all. It is the level axis; RS Δ next to it is the direction. */
+  {key:'medRs55',     label:'Sector RS',
+   fmt:v=>v==null?'<span class="vm">—</span>':`<span class="sb-pill ${v>0?'sb-hi':'sb-lo'}">${v>=0?'+':''}${v.toFixed(1)}</span>`,
+   tip:`The MEDIAN 55-day relative strength of this sector's stocks — how the typical member has performed against the benchmark over roughly the last quarter. This is the sector's STRENGTH LEVEL, and the table is sorted by it, so the strongest sectors sit at the top. A median across the sector's own members, not an average, so one runaway stock cannot speak for the group. A sector with fewer than ${SECTOR_ROT_MIN_MEMBERS} members carrying RS is left blank rather than scored, and blanks sort to the bottom — too small a sample to call. Read it beside RS Δ: this says where the sector IS, that one says which way it has been moving.`},
   {key:'rot',         label:'Rotation',
    fmt:v=>v==null?'<span class="vm">—</span>':`<span class="sb-pill ${ROT_CLS[v]||'sb-mid'}">${v}</span>`,
    tip:`Direction on top of level. LEVEL is this sector's median RS55; DIRECTION is the median ${SECTOR_ROT_LOOKBACK}-session change in its members' RS21. Strong and rising = Leading. Strong and falling = Weakening. Weak and rising = Improving. Weak and falling = Lagging. Strong versus weak splits at the MEDIAN of the sectors on screen, never a fixed number, so the labels still divide the list when the whole market is up or down. Both figures are medians across this sector's own members, and members with no usable RS history are left out rather than counted as zero. A sector with fewer than ${SECTOR_ROT_MIN_MEMBERS} members carrying RS is left blank instead of labelled — too small a sample to call. Says where money HAS been moving over the last ${SECTOR_ROT_LOOKBACK} sessions; it is not a prediction.`},
@@ -11148,7 +11162,67 @@ const STAGE_FRESH_DAYS=5;          // "just triggered" window, in trading days
 /* Order is the lifecycle's own order, and it is what the panel renders in.
    One list: the buttons, the counts, the saved-screen validation and the
    summary line all read it, so a fifth stage cannot arrive in three of them. */
+/* ── EMERGING: the Stage 1 → Stage 2 turn ─────────────────────────────────────
+   The owner's words: "just coming out of stage 1 and moving into stage 2, above
+   20, 50 and hovering near the 200 EMA, RS21 getting stronger, about to come out
+   of consolidation, squeezing in the box, accumulation happening."
+
+   NOTE THE WORD COLLISION, because it will otherwise confuse a future reader:
+   "Stage 1" and "Stage 2" there are WEINSTEIN stages — basing, then advancing.
+   The stages in this file are a DARVAS BOX lifecycle. Different taxonomies that
+   happen to share a word. Emerging is where the two meet: a Darvas base that is
+   also showing the Weinstein turn.
+
+   EMERGING IS CARVED OUT OF FORMING, NOT LAID OVER IT. Every stage here is
+   mutually exclusive and the counts sum to the row count; a stage that overlaps
+   another breaks both properties, and the panel's numbers would stop adding up
+   with nothing to say why. So a row that qualifies is Emerging INSTEAD of
+   Forming — Forming remains every other pre-breakout base.
+
+   ALL SIX CONDITIONS, ALL REQUIRED, NONE COERCED. The null discipline matters
+   more here than anywhere else in this file, because one of these tests is the
+   exact trap this project has already been bitten by: Math.abs(null) is 0, and
+   0 <= 10 is TRUE, so a stock with NO 200 EMA would silently pass the "near the
+   200" test as though it were sitting right on the line. numOk() is applied to
+   every numeric input before it is compared, so a missing measurement is never
+   read as a passing one. */
+const EMERGING_NEAR_200 = 10;    // within this many % either side of the 200 EMA
+const EMERGING_COIL_MAX = 0.85;  // the recent half of the coil window must be at
+                                 // least 15% tighter than the half before it
+const EMERGING_MIN_RS_SLOPE = 0; // rsSlope is rs21 - rs55: above zero means the
+                                 // 21-day RS has pulled ahead of the 55-day one
+
+/* A real, finite number — not null, not undefined, not NaN, not a string that
+   would coerce. Every Emerging test runs its input through here first. */
+function numOk(v){ return typeof v==='number' && isFinite(v); }
+
+function isEmerging(d){
+  if(!d) return false;
+  /* Above the 20 and the 50: the short and medium trend have already turned up.
+     `null > 0` is false, so these two are safe without numOk — but they get it
+     anyway, because relying on a coercion rule being safe is how the next one
+     that is NOT safe slips through unreviewed. */
+  if(!numOk(d.pct20e)  || !(d.pct20e > 0)) return false;
+  if(!numOk(d.pct50e)  || !(d.pct50e > 0)) return false;
+  /* Near the 200, EITHER SIDE. Under it and climbing is the earliest read on the
+     turn; just above it is the confirmation. Both are wanted, which is why this
+     is an absolute distance and not a floor. */
+  if(!numOk(d.pct200e) || !(Math.abs(d.pct200e) <= EMERGING_NEAR_200)) return false;
+  // RS21 getting stronger, measured as rs21 pulling ahead of rs55.
+  if(!numOk(d.rsSlope) || !(d.rsSlope > EMERGING_MIN_RS_SLOPE)) return false;
+  // Squeezing: the recent half of the window is tighter than the half before it.
+  if(!numOk(d.coil)    || !(d.coil <= EMERGING_COIL_MAX)) return false;
+  /* Accumulation, read as volume drying up — 20-day average under the 50-day.
+     volDry is already a BOOLEAN computed beside volDryRatio, so this asks the
+     published flag rather than re-deriving the comparison and risking the two
+     disagreeing. `=== true` because null must not pass. */
+  if(d.volDry !== true) return false;
+  return true;
+}
+
 const STAGE_DEFS=[
+  {k:'emerging',label:'Emerging',
+   tip:'The Stage 1 to Stage 2 turn, inside a base that has not triggered yet. All six must hold at once: above the 20 EMA, above the 50 EMA, within '+EMERGING_NEAR_200+'% either side of the 200 EMA, RS21 pulling ahead of RS55, the recent half of the 20-bar range at least '+Math.round((1-EMERGING_COIL_MAX)*100)+'% tighter than the half before it, and 20-day volume under its 50-day average. This is the earliest read the data supports: the trend has turned, the base is still tightening and volume has gone quiet. It is carved OUT of Forming, so a stock is in one or the other, never both. A missing measurement fails the test rather than passing it.'},
   {k:'forming', label:'Forming',
    tip:'Coiling under its Darvas pivot and not yet triggered — the daily box state is inside or near, and there is no volume-confirmed breakout on record. This is the watch list: nothing has happened yet.'},
   {k:'fresh',   label:'Fresh breakout',
@@ -11181,7 +11255,13 @@ function lifecycleStage(d){
      distinction for the same reason. */
   if(age===undefined) return null;
   // null = boBarsSince() found no qualifying breakout anywhere in the history.
-  if(age===null) return STAGE_FORMING_STATES.includes(d.dBoxState)?'forming':null;
+  /* EMERGING FIRST, and only inside the never-triggered case. A stock that has
+     already broken out is past this question — the turn it describes is a thing
+     that happens in a base, not after one. */
+  if(age===null){
+    if(!STAGE_FORMING_STATES.includes(d.dBoxState)) return null;
+    return isEmerging(d) ? 'emerging' : 'forming';
+  }
   if(typeof age!=='number'||!isFinite(age)) return null;
   if(STAGE_ABOVE_STATES.includes(d.dBoxState))
     return age<=STAGE_FRESH_DAYS?'fresh':'climbing';
