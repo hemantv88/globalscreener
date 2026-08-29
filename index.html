@@ -1135,6 +1135,10 @@ body.dd-lock{overflow:hidden}
   background:var(--surface);color:var(--text2);font-size:11px;font-weight:600;cursor:pointer}
 .dd-tf button:hover{background:var(--accent-bg);color:var(--accent-dk)}
 .dd-tf button.on{background:var(--dark);color:var(--on-dark);border-color:var(--dark)}
+/* A separating rule rather than a gap, so the DAILY/WEEKLY switch reads as a
+   different KIND of control from the window pills beside it — one changes what
+   a bar is, the others change how many are shown. */
+.dd-tfm{margin-right:10px;padding-right:10px;border-right:1px solid var(--border2)}
 .dd-note{font-size:11px;color:var(--text2)}
 .dd-legend{margin-left:auto;display:flex;gap:10px;font-size:10.5px;font-weight:600}
 /* The Darvas band's label. Muted like the bar-count note beside it — the band
@@ -10082,7 +10086,16 @@ function dataRow(def,d,i){
      0 were the neutral point, which would read as "+62 percentage points
      ahead of the benchmark" — a completely different, and much better,
      number than the one being shown. */
-  return `<tr id="r-${safeSym}"${isExtended(d)?' class="ext-row"':''}>
+  /* DIMMED ONLY WHEN THE DIMMING ALSO MEANS "AT THE BOTTOM".
+     ────────────────────────────────────────────────────────
+     isExtended() decides the ORDER through sortBySetupScore(), which only runs
+     when no explicit column sort is set. Click a column header and the user has
+     asked for THAT column's order — extended rows are then scattered through
+     the list, and a scattered faded row reads as a rendering fault rather than
+     as a category. It was reported as one. So the fade is tied to the same
+     condition as the sort: SORT_C empty. */
+  const dim = !SORT_C && isExtended(d);
+  return `<tr id="r-${safeSym}"${dim?' class="ext-row"':''}>
     <td class="td-n pin pin1">${i}</td>
     <td class="pin pin2">${revC(def.s)}</td>
     <td class="pin pin3">${capB(cap)}</td>
@@ -11956,9 +11969,20 @@ function updateStatus(){
   const shown=Math.min(VISIBLE,rows.length), matching=rows.length, universe=UNI[CUR].length;
   $('vCnt').textContent=shown;
   $('tCnt').textContent=matching;
-  $('smLbl').textContent = matching===universe
+  const base = matching===universe
     ? `Showing ${shown} of ${matching}`
     : `Showing ${shown} of ${matching} matching · ${universe} total`;
+  /* THE LEGEND FOR THE FADED ROWS, and it appears only when there is something
+     to explain: the default sort is in force AND at least one row on screen is
+     actually dimmed. A permanent note would be noise on every other view, and a
+     note that appears while nothing is faded is worse than none — it sends the
+     user looking for a thing that is not there. Counted over the rows the table
+     will RENDER, not the whole match set, for the same reason. */
+  const dimmed = SORT_C ? 0
+    : rows.slice(0,shown).filter(def=>isExtended(SD[def.s])).length;
+  $('smLbl').textContent = dimmed
+    ? `${base} · ${dimmed} faded = extended (more than 1× ADR above the 20 EMA, so no room for a stop) — sorted to the bottom, hover to read`
+    : base;
   colfChip();
   // The collapsed filter header states the same count the chip does, from the
   // same source, so a folded filter bar can never claim a different number.
@@ -13582,7 +13606,40 @@ function ddChgHTML(d){
    option the data can never fill is a control that is permanently broken, so
    the top option is set at a value a real year of sessions clears. */
 const DD_TF=[['3M',63],['6M',126],['1Y',240]];
+/* WEEKLY WINDOWS, IN WEEKS. The sheet holds ~250 daily bars, which resample to
+   ~50 weekly ones, so 1Y (52) is already at the ceiling and anything longer is
+   an option the data can never fill. ddTimeframes() drops any window wider than
+   the history that exists, so a short ticker simply shows fewer pills. */
+const DD_TF_W=[['3M',13],['6M',26],['1Y',52]];
 const DD_EMA_P=[10,20,50,200];
+/* ── WEEKLY EMAs: 10 AND 20 ONLY, AND THIS IS A DATA LIMIT, NOT A PREFERENCE ──
+   A 50-week EMA needs 50 weekly bars and a 200-week EMA needs 200 — that is
+   1,000 trading days, about four years. The sheet holds ~250 daily bars, i.e.
+   ~50 weeks, so the 50W would be seeded at the very first bar it has (a line
+   that is drawn but means nothing) and the 200W cannot be computed at all.
+   Drawing either would put a smooth, authoritative-looking curve on the chart
+   that is wrong, which is worse than an absent line — so the weekly legend
+   states why they are missing instead. */
+const DD_EMA_W=[10,20];
+/* 'D' or 'W'. Persisted like the layer toggles: a stored value beats the
+   default, and 'D' is written explicitly rather than removing the key, so
+   "I chose daily" survives a reload instead of reading back as never-chosen. */
+const DD_TFM_KEY='sm_chart_tfmode';
+let DD_TFM = (lsRead(DD_TFM_KEY)==='W') ? 'W' : 'D';
+const ddWeekly = () => DD_TFM==='W';
+function ddSetTfMode(m){
+  const v = (m==='W') ? 'W' : 'D';
+  if(v===DD_TFM) return;
+  DD_TFM=v; lsWrite(DD_TFM_KEY,v);
+  /* The chosen WINDOW is not carried across: '3M' means 63 bars on daily and 13
+     on weekly, and the pill list is rebuilt for the new mode. ddPickTf() falls
+     back to 6M when the remembered key is not in the new list. */
+  DD_HOVER=-1;
+  ddLoadChart();
+}
+const ddTfList = () => ddWeekly() ? DD_TF_W : DD_TF;
+const ddEmaPeriods = () => ddWeekly() ? DD_EMA_W : DD_EMA_P;
+const ddBarWord = () => ddWeekly() ? 'weekly' : 'daily';
 let DD_TFK='6M';          // chosen timeframe, remembered across tickers
 let DD_VIEW={bars:[],ema:[],total:0};   // what is currently drawn
 let DD_HOVER=-1;          // bar index under the pointer, -1 for none
@@ -13661,8 +13718,8 @@ function ddToggleLayer(k){
    the control never claims a range the series does not have. */
 function ddTimeframes(n){
   if(!(n>0)) return [];
-  const fit=DD_TF.filter(([,b])=>b<=n);
-  return fit.length?fit.slice():[['All '+n+'d',n]];
+  const fit=ddTfList().filter(([,b])=>b<=n);
+  return fit.length?fit.slice():[['All '+n+(ddWeekly()?'w':'d'),n]];
 }
 function ddPickTf(opts){
   if(!opts.length) return null;
@@ -13686,7 +13743,18 @@ function ddSeries(sym,market,count){
   const map=GSHEET_BY_MARKET[market||CUR];
   const gd=map&&map[sym];
   if(!gd||!Array.isArray(gd.C)||!gd.C.length) return {bars:[],ema:[],total:0};
-  const C=gd.C,H=gd.H||[],L=gd.L||[],O=gd.O||[],V=gd.V||[],D=gd.dates||[];
+  /* WEEKLY IS THE SAME FUNCTION ON RESAMPLED INPUTS. weeklyResample() is the
+     one the W-RSI, W-Pivot and W-Box columns already run on, so the weekly
+     chart and those columns are reading the identical bars — a second weekly
+     bucketing here would look right in a diff and only disagree at the edges,
+     which is the hardest kind of wrong to notice. Everything after this line is
+     mode-agnostic: it works on C/H/L/O/V/D whatever built them. */
+  let C=gd.C,H=gd.H||[],L=gd.L||[],O=gd.O||[],V=gd.V||[],D=gd.dates||[];
+  if(ddWeekly()){
+    const wk=weeklyResample(C,H,L,V,D,O);
+    C=wk.closes; H=wk.highs; L=wk.lows; O=wk.opens; V=wk.volumes; D=wk.dates;
+  }
+  if(!C.length) return {bars:[],ema:[],total:0};
   const n=C.length;
   const take=Math.max(1,Math.min(n,count||n));
   const from=n-take;
@@ -13700,7 +13768,7 @@ function ddSeries(sym,market,count){
     bars.push({d:D[i]||'',o,h:Math.max(hh,o,c),l:Math.min(ll,o,c),c,
                v:(V[i]!=null&&isFinite(V[i]))?V[i]:0});
   }
-  const ema=DD_EMA_P.filter(p=>n>=p).map(p=>({p, v:emaSeries(C,p).slice(from)}));
+  const ema=ddEmaPeriods().filter(p=>n>=p).map(p=>({p, v:emaSeries(C,p).slice(from)}));
   /* THE DAILY DARVAS BOX. darvasSeries()/darvasBox() are the D-Box column's own
      functions, called on the column's own inputs — gd.H/gd.L, NOT the bars[]
      highs and lows, which are clamped to contain o and c and so are a different
@@ -13730,9 +13798,15 @@ function ddSeries(sym,market,count){
      when there is nothing to cut, so the live path allocates nothing. Null
      means this ticker had not listed by that date, and null flows through
      ddVcpFor() to no drawing at all. */
+  /* VCP IS DAILY-ONLY, and that is a bar-count fact rather than a choice: the
+     contraction detector needs 200 bars, which on weekly is 200 WEEKS — about
+     four years — against the ~50 weeks the sheet resamples to. It would return
+     null on every ticker, so rather than draw nothing and leave the user
+     wondering, the layer is reported as unavailable on weekly (see the legend). */
   const vs = ASOF_DATE ? asOfSlice(gd,ASOF_DATE) : gd;
-  const vcp = ddVcpMarks(ddVcpFor(sym,vs), from, bars.length);
-  return {bars,ema,darvas,vcp,total:n};
+  const vcp = ddWeekly() ? {legs:[],base:null,lid:null}
+            : ddVcpMarks(ddVcpFor(sym,vs), from, bars.length);
+  return {bars,ema,darvas,vcp,total:n,weekly:ddWeekly()};
 }
 
 /* PURE GEOMETRY — bars and a box in, pixel positions out. Deliberately split
@@ -13919,6 +13993,19 @@ function ddRenderTf(total){
     `<button type="button" class="${cur&&cur[0]===k?'on':''}" data-bars="${b}"`
     +` onclick="ddSetTf('${escAttr(k)}')">${escHtml(k)}</button>`).join('');
 }
+/* The DAILY / WEEKLY switch. Rendered on every chart load for the same reason
+   the layer pills are: the markup is static but the on-state is not. */
+function ddRenderTfMode(){
+  const el=$('ddTfm'); if(!el) return;
+  el.innerHTML=[['D','Daily'],['W','Weekly']].map(([m,label])=>
+    `<button type="button" class="${DD_TFM===m?'on':''}" data-tfm="${m}"`
+    +` aria-pressed="${DD_TFM===m?'true':'false'}"`
+    +` title="${m==='W'
+        ? 'Weekly candles, bucketed by ISO week — the same resampling the W-RSI, W-Pivot and W-Box columns use. Only the 10 and 20 week EMAs are drawn: a 50W needs 50 weekly bars and a 200W needs about four years, against the ~50 weeks this data holds. VCP is daily-only for the same reason.'
+        : 'Daily candles — every EMA, the Darvas box and the VCP base are all available.'}"`
+    +` onclick="ddSetTfMode('${m}')">${label}</button>`).join('');
+}
+
 function ddSetTf(k){
   DD_TFK=k;
   DD_HOVER=-1;
@@ -13935,17 +14022,24 @@ function ddLoadChart(){
      but the pills carry the CURRENT on/off state, and opening the dialog is
      the moment that state has to be right. */
   ddRenderLayers();
+  ddRenderTfMode();
   const opts=ddTimeframes(total);
   const pick=ddPickTf(opts);
   DD_VIEW=pick?ddSeries(DD_SYM,CUR,pick[1]):{bars:[],ema:[],total:total};
   const note=$('ddNote');
   if(note){
+    const W=ddBarWord();
     if(!total) note.textContent='No price history for this ticker in the data source.';
     /* A short history is LABELLED, not blanked. An IPO with 30 bars still has
        a chart worth looking at; what it must not do is pretend to be a year. */
-    else if(!opts.length||opts[0][1]>total) note.textContent=total+' daily bars available';
-    else if(opts.length===1&&opts[0][1]===total) note.textContent='Only '+total+' daily bars available — showing all of them';
-    else note.textContent=DD_VIEW.bars.length+' of '+total+' daily bars';
+    else if(!opts.length||opts[0][1]>total) note.textContent=total+' '+W+' bars available';
+    else if(opts.length===1&&opts[0][1]===total) note.textContent='Only '+total+' '+W+' bars available — showing all of them';
+    else note.textContent=DD_VIEW.bars.length+' of '+total+' '+W+' bars';
+    /* THE ABSENCE IS LABELLED. Without this the weekly chart simply has two
+       fewer lines than the daily one and the reader is left to guess whether
+       the data is broken. It is not — 50W and 200W are not computable from ~50
+       weeks, and saying so is the difference between a limit and a bug. */
+    if(ddWeekly() && total) note.textContent += ' · 50W/200W EMAs and VCP need more history than the sheet holds';
   }
   const lg=$('ddLegend');
   if(lg){
@@ -14551,6 +14645,7 @@ function closeDrill(){
       <div class="dd-tabs" id="ddTabs" aria-label="Chart source"></div>
       <div id="ddLocal">
       <div class="dd-tools">
+        <div class="dd-tf dd-tfm" id="ddTfm"><!-- ddRenderTfMode() fills this --></div>
         <div class="dd-tf" id="ddTf"><!-- ddRenderTf() fills this from the bars that exist --></div>
         <!-- Same .dd-tf pills as the timeframe control beside it: these are the
              same kind of small on/off control and should not read as a second,
