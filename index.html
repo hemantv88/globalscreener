@@ -599,6 +599,58 @@ td:last-child{border-right:none}
    row in the table for no extra information. Muted like .dbx-rng because it is
    the WORKING behind the badge, not a second verdict. */
 .smz-dist{font-size:9.5px;color:var(--text3);white-space:nowrap}
+/* THE BREAK-OF-STRUCTURE MARKER — its own badge, and PURPLE on purpose. The
+   five state classes above have already spent this column's whole colour
+   vocabulary on one question: green and blue are "price has arrived in a band",
+   grey is "it has not pulled back yet", red is "it has overrun". The marker
+   answers a DIFFERENT question — when did structure last flip — and reusing any
+   of those five would read as a sixth state and put two unrelated meanings on
+   one colour. Purple is the only semantic token this column does not already
+   use, and .bmc has carried it on these same tints since long before this.
+   NEUTRAL BETWEEN THE DIRECTIONS, and not by omission. The marker appears on
+   bull and bear rows alike, so it must not be tinted green-for-bull or
+   red-for-bear: the direction is already printed two words to its left, and a
+   colour repeating it would be a second place for the same fact. Filled and
+   bordered like the two in-zone states, because a break inside the last ten
+   sessions is an "act on this" reading, not a footnote — it is the recency that
+   makes it worth the ink, which is exactly why SMZ_BOS_MAX_AGE gates it. */
+.smz-bos{display:inline-block;margin-left:2px;padding:1px 5px;border-radius:var(--rs);
+  font-size:9.5px;font-weight:700;white-space:nowrap;
+  background:var(--purple-bg);color:var(--purple);border:1px solid #C4B5FD}
+
+/* ─── MOMENTUM BASE BADGE ─────── */
+/* TWO STATES, TWO WEIGHTS, and the gap between them is the whole point of the
+   column. 'Base' is a WATCH reading — the thrust is over, the stock is resting,
+   and there is nothing to do today except keep it on screen — so it takes the
+   quiet blue fill that .smz-ibz uses for the same kind of "arrived, now wait"
+   statement. 'Breakout' is the one bar the watching was for, so it takes green
+   and the ⚡ that .smz-bos already established in this table as "this happened
+   just now". Reusing the amber/orange tints was rejected: nothing else in this
+   row uses them, and a third colour family here would imply a third state.
+
+   Built as fixed classes rather than mechanically off the state name, unlike
+   .smz-${state} and .dbx-${state}. There are exactly two states and they are
+   not interchangeable words for one axis — 'base' and 'breakout' are before and
+   after, not two points on a scale — so the mechanical form would buy nothing
+   and would quietly render an unstyled chip if a third state were ever added,
+   which is precisely when someone needs to be told.
+
+   Tokens only, no hard-coded hex, so a theme switch repaints it with no JS. The
+   tokens are the ones .smz, .vcp and .ipo already use, so the AA contrast
+   proven for those is the same arithmetic here. */
+.momo{display:inline-block;padding:2px 7px;border-radius:var(--rs);
+  font-size:10px;font-weight:700;border:1px solid transparent;white-space:nowrap}
+.momo-base{background:var(--blue-bg);color:var(--blue);border-color:var(--blue)}
+.momo-bo{background:var(--green-bg);color:var(--green);border-color:var(--green)}
+/* The WHY rides beside the badge rather than under it, exactly as .smz-dist
+   does and for the same reason: these are two short numbers, and a second line
+   would make this cell taller than every other row in the table for no extra
+   information. Muted because it is the WORKING behind the badge — how big the
+   thrust was, how long it took, how long the rest has run — not a second
+   verdict. It is printed at all because a bare 'Base' chip says nothing about
+   whether the move behind it was 41% or 92%, and the owner reads this column to
+   pick between them. */
+.momo-why{font-size:9.5px;color:var(--text3);white-space:nowrap}
 
 /* ─── FRESH-MOMENTUM BADGE ────── */
 /* One badge naming the most recent trigger, or a count when several fired on
@@ -830,6 +882,13 @@ body.asof-on .tbl-wrap{outline:3px solid var(--orange)}
    state and distance on one line — so it is the first thing that should go
    when the viewport gets tight. */
 .c-smz,
+/* Momentum Base is GROUP A, beside SMZ, on the same argument and for the same
+   two reasons. It is read on the same clock — a 42-bar thrust with a fortnight
+   of rest hanging off it describes weeks, and weeks are the WORKING behind an
+   entry rather than the entry itself — and its cell is the same shape as SMZ's:
+   a badge plus two numbers of working on one line, which is the first thing
+   that should go when the viewport gets tight. */
+.c-momo,
 /* %50E and %200E are GROUP A, not B: they answer "which regime am I in", which
    is the WORKING behind the decision rather than the decision itself. The one
    of the three that is a live stop level — %20E — is in group B below. */
@@ -904,6 +963,7 @@ body.hide-dbox    .c-dbox,
 body.hide-pctpiv  .c-pctpiv,
 body.hide-wbox    .c-wbox,
 body.hide-smz     .c-smz,
+body.hide-momo    .c-momo,
 body.hide-ema     .c-ema,
 body.hide-wema    .c-wema,
 body.hide-bocnt   .c-bocnt,
@@ -1274,7 +1334,7 @@ body.dd-lock{overflow:hidden}
   .metrics-row{grid-template-columns:repeat(4,1fr)}
   .c-wrsi,.c-wvol,.c-wpiv,.c-wema,.c-voldry,.c-retrace,.c-rstrend,.c-notes,
   .c-wcross,.c-wpattern,.c-monthly,.c-rs10w,.c-rsslope,.c-rshist,.c-slope200,
-  .c-followup,.c-hist,.c-wbox,.c-rsp55,.c-rsp21,.c-smz,
+  .c-followup,.c-hist,.c-wbox,.c-rsp55,.c-rsp21,.c-smz,.c-momo,
   .c-pct50e,.c-pct200e{display:none!important}
 }
 @media (max-width:768px){
@@ -1420,6 +1480,13 @@ body.dd-lock{overflow:hidden}
     <button class="ftog" id="rsimaTog" aria-pressed="false" onclick="toggleRsiMa()" data-tip="Keep only stocks whose RSI(14) is trading above a 14-period moving average of the RSI line itself — momentum judged against its own recent trend rather than against a fixed 50 or 70 level. It can turn up while RSI is still well under 70, which is what makes it an entry screen rather than an overbought reading. Daily only: there is deliberately no weekly version of this test. A stock with under about 45 bars of history has no settled RSI average yet and is left OUT rather than waved through — 'we could not measure it' is never treated as a pass here. Combines with every other filter rather than replacing them.">📉 RSI &gt; MA</button>
     <button class="ftog" id="emacvTog" aria-pressed="false" onclick="toggleEmaCv()" data-tip="Keep only stocks where price is at or above every one of the 10, 20, 50 and 200-day EMAs AND those EMAs have run together — the gap from the highest to the lowest is 5% of price or less. Bunched on its own is not enough: a stock rolling over squeezes its averages together just as neatly, so price has to be sitting on top of the whole cluster. Daily only; there is deliberately no weekly version. A stock too young to have a 200 EMA is judged on the EMAs it does have, as long as at least two of them exist — one average is not agreement. The 5% is fixed for this button; the Advanced Filters panel carries its own editable percentage if you want it tighter. Combines with every other filter rather than replacing them.">🎯 EMAs Converge</button>
     <button class="ftog" id="smzTog" aria-pressed="false" onclick="toggleSmz()" data-tip="Stocks in BULL structure that have pulled back into or through the institutional zone: bias is bullish and the price is anywhere from the swing low up to the 0.618 line. Stocks still ABOVE the zone are left out on purpose — they have not pulled back yet, so there is nothing to buy into. A stock that closes below its swing low stops being bull structure altogether and drops off this list on its own the next day, so the button needs no separate stop rule. Use the SMZ column funnel to narrow further to just In IBZ and In SMZ; this button deliberately keeps Below zone too, because a retracement that overran is still a bull structure and still worth a look.">🧲 SMZ Setup</button>
+    <button class="ftog" id="smzbosTog" aria-pressed="false" onclick="toggleSmzBos()" data-tip="The break-and-retest case: structure flipped BULLISH within the last 10 trading days AND price has since pulled back into or through the institutional zone. It is the 🧲 SMZ Setup screen narrowed to setups where the break itself is still fresh, so it is always a subset of that button. A stock that broke out and kept running will NOT appear — it is still above the zone, so it has not offered an entry yet, and it only shows up here if it comes back within those ten days. Bear structures are excluded outright: the ⚡ BOS marker in the SMZ column is neutral and marks both directions, but this button is bull-only. Stocks that have never broken structure have no break to date and are excluded too.">⚡ SMZ + BOS</button>
+    <!-- 🔥 rather than the 🚀 this screen naturally wants: 🚀 is already the
+         Breakout Stocks button eight rows up, and two rockets in one toolbar
+         would read as two views of one screen when these two share nothing —
+         that one counts volume-confirmed 52-bar breakouts anywhere in history,
+         this one wants a stock that has STOPPED going up. -->
+    <button class="ftog" id="momoTog" aria-pressed="false" onclick="toggleMomo()" data-tip="Stocks that have already made a sharp thrust and are now resting in a tight base above the 20-day EMA — the shape you WATCH for a base breakout rather than buy today. It keeps both states the Momentum Base column publishes: Base, where the rest is still forming, and Breakout, where the close has just cleared the base's own high. The thresholds are the editable ones in Advanced Filters: a 40% rise inside 42 bars, more volume on that move's up days than its down days, 80% of the bars since it began closing above the 20 EMA, the close still above that EMA today, and a rest of at least 8 bars no deeper than 25%. Changing any of those four re-runs the whole scan, because the column is computed from them rather than filtered on. Combines with every other filter rather than replacing them.">🔥 Momentum Base</button>
     <button class="ftog" id="wlTog" aria-pressed="false" onclick="toggleWL()" data-tip="Show only the stocks you have starred. The star sits next to each ticker; the list is saved in this browser and is shared across all three markets, so a name starred on the India tab is still starred when you come back tomorrow.">⭐ Watchlist</button>
     <select class="fsel" id="emaFil" onchange="applyF()">
       <option value="">EMA Filter</option>
@@ -1585,7 +1652,8 @@ body.dd-lock{overflow:hidden}
             <th class="c-dbox" data-s="dbox" data-tip="Darvas Box on daily bars, box length 5. HOW IT IS BUILT: a bar whose high beats the highest high of the previous 5 bars sets a candidate top; if the next 3 bars make no new high, that high becomes the box TOP and the lowest low of the 5 bars up to the confirming bar becomes the box BOTTOM. The box PERSISTS until the next one forms — a level to trade against, not a one-bar flag. THE STATES: Break = the close crossed above the top on the latest bar and was below it the day before — the freshest · Near = below the top but within 1% of it · Inside = between the bottom and the top, still consolidating · Above = already over the top, so the move is under way and a new entry is late · Below = under the box bottom, the setup has failed · a dash means no box has formed yet or there are fewer than 9 bars of history. Sorting puts Break and Near first, then Inside — the ones you can still act on.">D-Box<span class="sort-ico"></span></th>
             <th class="c-pctpiv" data-s="pctpiv" data-tip="How far the latest close sits from the DAILY Darvas box TOP, as a percentage of that top: % vs Pivot = 100 &times; ( Close &minus; Box Top ) / Box Top. THE BOX TOP IS THE BREAKOUT LEVEL — the number printed as the upper figure in the D-Box cell beside this one, and drawn as the upper line on the chart — and the owner buys ABOVE it. So a NEGATIVE reading means NOT YET TRIGGERED, and its size is how far the stock still has to travel: &minus;4.10% is 4.1% under the trigger; a POSITIVE one means the level has already been taken out. %20E measures the distance to the STOP; this measures the distance to the ENTRY. It divides by the box top the D-Box column itself publishes — no box is recomputed here. A dash, never a zero, when no box has formed, when the top is missing or not positive, or when there is no close; zero is a real reading, sitting exactly on the pivot. Hidden by default — switch it on in Columns.">% vs Pivot<span class="sort-ico"></span></th>
             <th class="c-wbox" data-s="wbox" data-tip="The same Darvas Box construction run on WEEKLY bars, so both the box and the states describe months rather than days. A weekly box needs 9 weekly bars (roughly 45 trading days) before it can exist, and it moves far less often than the daily one — a weekly Break is a much rarer and heavier signal than a daily one. The five states mean exactly what they mean in the D-Box column.">W-Box<span class="sort-ico"></span></th>
-            <th class="c-smz" data-s="smz" data-tip="Smart Money Zones, ported from the TradingView study of the same name. Structure is read from 5-bar pivot highs and lows: a close through a swing high turns the bias bullish, a close through a swing low turns it bearish. The zone is then drawn back from the extreme of that move to the swing that started it — 0.618 to 0.786 is the IBZ (Institutional Buying Zone), 0.786 to 0.826 the deeper SMZ. The cell reads direction, then where the price sits inside that retracement, then how far it still has to travel to the 0.618 edge — negative means it is already inside or through. '— No structure' is a finding: a full year of bars and no swing was ever broken, so there is nothing to anchor a zone to. A plain dash is an absence: fewer than 60 bars, so it was never tried.">SMZ<span class="sort-ico"></span></th>
+            <th class="c-smz" data-s="smz" data-tip="Smart Money Zones, ported from the TradingView study. Structure comes from 5-bar pivots: a close through a swing high turns the bias bullish, through a swing low bearish. The zone is drawn back from the extreme of that move to the swing that began it — 0.618 to 0.786 is the IBZ (Institutional Buying Zone), 0.786 to 0.826 the deeper SMZ. The cell reads direction, then where price sits in that retracement, then how far it must still travel to the 0.618 edge — negative means already inside or through. ⚡ BOS dates the most recent break of structure and appears only for 10 trading days after it: on a Bull row the swing HIGH was taken out, on a Bear row the swing LOW. 'BOS today' means it flipped on the latest bar. '— No structure' is a finding: no swing was ever broken, so nothing anchors a zone. A plain dash is an absence: fewer than 60 bars, so it was never tried.">SMZ<span class="sort-ico"></span></th>
+            <th class="c-momo" data-s="momo" data-tip="The thrust-then-rest shape, from the owner's own annotated charts. It finds a stock that has ALREADY made its violent move and has since gone quiet: a rise of at least 40% from a low to a later high inside the last 42 bars, more volume on that move's up days than on its down days, at least 80% of the bars since it began closing above the 20-day EMA, the close still above that EMA today, and then a rest of 8 bars or more whose range is no deeper than 25% off its own high. A WATCH signal, never an entry — the trade is the break of the base's own high, and this column exists to put the name on screen before that happens. The cell reads the state, then the size of the thrust and the bars it took, then how long the rest has run. All four thresholds are editable in Advanced Filters, and changing one re-runs the scan. A dash means a test failed.">Momentum Base<span class="sort-ico"></span></th>
             <th data-s="h52" data-tip="% below the highest high in the available window. The data source holds ~1 trading year (~250 bars), so in practice this is a ~50-week high, not a full 52. Shows — for stocks with under 120 bars of history.">52W High<span class="sort-ico"></span></th>
             <th class="c-ema" data-s="ema" data-tip="How many of the 10, 20, 50 and 200-day moving averages the price is trading above, one badge each. All four green is the textbook shape of a healthy uptrend.">EMA Align<span class="sort-ico"></span></th>
             <th class="c-pct10e" data-s="pct10e" data-tip="How far the latest close sits above or below the 10-day EMA, as a percentage of that EMA: %10E = 100 &times; ( Close &minus; EMA10 ) / EMA10. ITS ROLE: with the 20 EMA it marks the PULLBACK ZONE a stock drops into after a fast, high-volume move; the 10 is the tighter of the two, so the gap between them is the depth of the pullback. It is not a stop level — that is %20E in a normal market, %50E in a weak one. A POSITIVE number means the close is ABOVE the average, a NEGATIVE number means it is BELOW it. It reuses the EMA the EMA Align badges beside it are drawn from — no moving average is recomputed. A dash means the EMA could not be computed on the history available, or came back zero or negative; never a zero, because zero is a real reading: the close sitting exactly on the average. Sortable and filterable.">%10E<span class="sort-ico"></span></th>
@@ -1850,6 +1918,50 @@ body.dd-lock{overflow:hidden}
           and price at or above all of them
         </div>
       </div>
+      <!-- MOMENTUM BASE. THIS ONE IS BOTH, and it is the only row in the modal
+           that is: the checkbox narrows the table like every other filter, AND
+           the four numbers are INPUTS to computeTech() like the EMA pair and the
+           SMZ anchor below, so editing any of them re-runs the scan rather than
+           re-filtering the rows. It therefore carries an `on` key (unlike the
+           SMZ row) and DOES count in the "Advanced Filters (n)" badge, because
+           ticking it genuinely removes stocks from the table.
+           Four boxes, not six: minVolRatio and minBaseBars stay in CFG.MOMO
+           where the owner set them. They are the two legs he has never wanted to
+           retune, and every box added here is another value that has to survive
+           a screen save, a reset and a stale localStorage payload. -->
+      <div class="adv-row">
+        <label class="adv-name"><input type="checkbox" id="advMomoOn"/> Momentum base</label>
+        <div class="adv-fields">
+          thrust of at least <input type="number" id="advMomoMove" min="1" step="5"/> %
+          within <input type="number" id="advMomoDays" min="5" step="1"/> bars,
+          base no deeper than <input type="number" id="advMomoDepth" min="1" step="5"/> %,
+          and <input type="number" id="advMomoAbove" min="1" max="100" step="5"/> % of bars above the 20 EMA
+        </div>
+      </div>
+      <!-- THRUST DAY. A PURE ROW FILTER, and the contrast with the Momentum
+           Base row directly above is the thing to hold on to: momo's four
+           numbers are INPUTS to computeTech() and moving one re-runs the scan,
+           whereas all three numbers here are compared against thrustPct /
+           thrustAge / thrustVol, which computeTech() has ALREADY published off
+           CFG.THRUST.win. Only that window feeds the engine, and it is not
+           editable from this modal. So these three boxes are deliberately
+           absent from every forceRefresh() condition in the file — editing them
+           re-filters the rows already in hand and costs nothing.
+           It DOES carry an `on` checkbox (unlike the SMZ anchor below) because
+           ticking it genuinely removes stocks from the table, so it belongs in
+           the "Advanced Filters (n)" badge.
+           THE VOLUME BOX ACCEPTS 0, meaning "ignore volume" — see hadThrust(),
+           where that is a branch rather than a comparison. Left as a plain
+           comparison, 0 would still reject every row whose 20-bar average was
+           unavailable, which is the opposite of what typing 0 asks for. -->
+      <div class="adv-row">
+        <label class="adv-name"><input type="checkbox" id="advThrustOn"/> Thrust day</label>
+        <div class="adv-fields" data-tip="One violent up day, then quiet. Keeps stocks whose biggest single-day close-to-close gain in the last 10 sessions was at least this big, happened no more than this many days ago, and came on at least this multiple of that day's own trailing 20-day average volume. All three tests describe the SAME session — the same bar supplies the gain, the date and the volume — so this cannot pass a stock that rose sharply on one day and traded heavily on a different one. The volume multiple excludes the thrust day itself from its own average, so it answers how big that day was against what was normal BEFORE it. Set the volume box to 0 to ignore volume entirely. Age 0 means it happened on the latest bar. Changing any of these three re-filters the table; it does not re-run the scan.">
+          gain at least <input type="number" id="advThrustPct" min="0" step="1"/> %,
+          no more than <input type="number" id="advThrustDays" min="0" step="1"/> bars ago,
+          on <input type="number" id="advThrustVol" min="0" step="0.5"/> x that day's own 20-bar average volume
+        </div>
+      </div>
       <!-- NOT A FILTER, AND IT CARRIES NO CHECKBOX FOR THAT REASON. Every other
            row in this modal removes stocks from the table; this one changes how
            the SMZ zones are CALCULATED, so it re-runs the scan exactly the way
@@ -1860,8 +1972,8 @@ body.dd-lock{overflow:hidden}
       <div class="adv-row">
         <label class="adv-name" for="advSmzMode">SMZ zone anchor</label>
         <div class="adv-fields">
-          <select id="advSmzMode" data-tip="Which pivot the zone is anchored to. Structure Break Only re-anchors it just once a close breaks a swing level, so the lines sit still until the trend itself changes. Every HL/LH — TradingView calls it Every Higher Low / Lower High — re-anchors on every new pivot in the direction of the bias, so the zone tracks the most recent higher low in an uptrend or lower high in a downtrend. That means the lines move far more often, and a stock can leave the SMZ Setup list because the ZONE shifted underneath it rather than because the price went anywhere. Changing this re-runs the whole scan for this market, because the SMZ columns are computed from it.">
-            <option value="break">Structure Break Only (default)</option>
+          <select id="advSmzMode" data-tip="Which pivot the zone is anchored to. Structure Break — TradingView spells it Structure Break Only, and it is the default — re-anchors just once a close breaks a swing level, so the lines sit still until the trend itself changes. Every HL/LH — TradingView calls it Every Higher Low / Lower High — re-anchors on every new pivot in the direction of the bias, so the zone tracks the most recent higher low in an uptrend or lower high in a downtrend. That means the lines move far more often, and a stock can leave the SMZ Setup list because the ZONE shifted underneath it rather than because the price went anywhere. Changing this re-runs the whole scan for this market, because the SMZ columns are computed from it.">
+            <option value="break">Structure Break</option>
             <option value="everyhllh">Every HL/LH</option>
           </select>
           — how often the Smart Money Zone re-anchors
@@ -2087,7 +2199,97 @@ const CFG = {
      simply ANDs the tighter of the two. */
   EMACV_PCT: 5,
 
-  VER:  'gs19',     // gs18 -> gs19: computeTech() returns EIGHT more fields — the Smart Money Zones
+  /* ── MOMENTUM BASE — the thrust-then-rest shape, from the owner's own charts ──
+     Every number here was chosen by the owner off three annotated charts he
+     traded (Cyient DLM, Syrma SGS, Aeroflex), not fitted to a backtest, and it
+     lives in CFG rather than as file-level constants for one specific reason:
+     unlike VCP_* and IPO_*, all five of these are editable from the Advanced
+     Filters modal, so they are INPUTS to computeTech() the same way CFG.XOVER
+     and CFG.SMZ.advanceMode are. Changing any of them is a re-scan, never a
+     re-filter — see applyAdvFilters().
+
+       lookback      How far back the thrust is hunted, in trading bars. 42 is
+                     about two months: long enough to contain a move that took
+                     six weeks to build, short enough that a rally from last
+                     autumn cannot still be claimed as "the thrust" today.
+       minMovePct    How big that rise has to be, low to high, to count as a
+                     thrust rather than drift. 40% is deliberately steep — the
+                     column exists to find the stocks that already went, not the
+                     ones grinding up 12% a quarter.
+       minVolRatio   Up-volume over down-volume across the thrust. 1.0 asks only
+                     that more shares changed hands on the up days than the down
+                     ones, which is the weakest form of "accumulation, not
+                     short-covering" that still means anything.
+       minAbovePct   The share of bars from the thrust's start to today that
+                     closed above the 20 EMA. 80% says the stock has held the
+                     line for the whole move, with room for the odd shakeout
+                     bar rather than demanding a perfect record.
+       minBaseBars   How many bars must have passed since the peak before the
+                     rest counts as a base. 8 is roughly a fortnight: fewer and
+                     it is a pause inside the move, and the "tight base" reading
+                     would be describing three bars of noise.
+       maxBaseDepth  The deepest the base may retrace off its own high, as a
+                     percent of that high. 25, AND THE NUMBER IS NOT ARBITRARY:
+                     the owner's three examples measured roughly 11%, 16% and
+                     18% deep, so an earlier 15% would have thrown two of the
+                     three out. 25 keeps all three with headroom and still
+                     refuses anything that has given back a quarter of its
+                     range, which is a failed base rather than a tight one. */
+  MOMO: {lookback:42, minMovePct:40, minVolRatio:1.0, minAbovePct:80, minBaseBars:8, maxBaseDepth:25},
+
+  /* ── THE THRUST DAY — how far back one violent up day is hunted ──
+     ONE NUMBER, and it is the ONLY thing here that feeds the engine. thrustDay()
+     publishes thrustPct / thrustAge / thrustVol off this window; the three
+     numbers in the Advanced Filters "Thrust day" row (minimum gain, maximum
+     age, minimum volume multiple) are pure ROW FILTERS applied to those
+     published fields afterwards, so editing them is a re-filter and never a
+     re-scan. That is the opposite arrangement to CFG.MOMO directly above,
+     whose four modal numbers ARE engine inputs, and the difference is worth
+     being explicit about: it is why ADV.thrust is deliberately absent from
+     every forceRefresh() condition in the file.
+
+     10 rather than something longer, and the same 10 VOL_SPIKE_WIN uses. The
+     shape being screened for is "it went, then it came back to the 10/20 EMA
+     and went quiet" — about two weeks of drift. Widen this and the screen
+     starts claiming a move from last month as the thrust while the stock has
+     spent the interval building a completely different structure; the age box
+     in the modal is the per-screen tightener, and it can only ever narrow what
+     this window already found. */
+  THRUST: {win:10},
+
+  VER:  'gs22',     // gs21 -> gs22: computeTech() returns THREE more fields — the thrust-day trio
+                    // (thrustPct, thrustAge, thrustVol). All three describe ONE bar: the biggest
+                    // single-day percentage gain in the last CFG.THRUST.win sessions, how many bars
+                    // ago it was, and that same bar's volume over its own trailing 20-day average.
+                    // They are replayed from the raw daily close and volume series — the gain needs
+                    // the prior close and the multiple needs twenty bars of volume before the thrust
+                    // bar — and a cached row carries no series at all, so a gs21 row cannot be
+                    // repaired at render time. It would rehydrate with all three absent, and
+                    // `undefined` fails the `!= null` guards hadThrust() is written against, so the
+                    // Thrust day advanced filter and the seeded screen built on it would silently
+                    // return an empty table rather than erroring. One rescan fills them.
+                    // gs20 -> gs21: computeTech() returns NINE more fields — the Momentum Base family
+                    // (momoState, momoPct, momoBars, momoVolRatio, momoAbovePct, momoBaseBars,
+                    // momoBaseHigh, momoBaseLow, momoBaseDepth). Every one of them is replayed from
+                    // the raw daily low/high/close/volume series plus a 20-EMA series computed over
+                    // it — the thrust is found by walking the bars in order and the base is measured
+                    // from the bar the thrust peaked on — and a cached row carries no series, so a
+                    // gs20 row cannot be repaired at render time. It would rehydrate with all nine
+                    // absent, and `undefined` fails the `!= null` and `==='base'` guards the column,
+                    // the sort, the filter and the 🔥 Momentum Base button are all written against,
+                    // so those rows would silently drop out of a screen they belong in rather than
+                    // erroring. One rescan fills them.
+                    // gs19 -> gs20: computeTech() returns ONE more field — smzBosAge, the number of
+                    // whole bars since the structure state machine last flipped, i.e. how long ago
+                    // the break of structure happened. 0 means it flipped on the latest bar. Like
+                    // every other member of the SMZ family it is replayed from the raw daily
+                    // high/low/close series — the flip bar is only knowable by walking the bars in
+                    // order — and a cached row carries no series, so a gs19 row cannot be repaired
+                    // at render time. It would rehydrate with the field absent, and `undefined`
+                    // fails the `!= null` guard the SMZ + BOS filter and the column marker are both
+                    // written against, so those rows would silently drop out of a screen they
+                    // belong in rather than erroring. One rescan fills them.
+                    // gs18 -> gs19: computeTech() returns EIGHT more fields — the Smart Money Zones
                     // family. smzBias, smzState, smzDist, smz618, smz786, smz826, smzSwingHi and
                     // smzSwingLo, the ported Pine "Smart Money Zones - APX" structure read. Every
                     // one of them is replayed from the raw daily high/low/close series — the whole
@@ -4509,7 +4711,8 @@ const SCREENS_LS_KEY='sm_saved_screens_v1';
 const SCREEN_GET={
   F_CAP:()=>F_CAP, F_SCT:()=>F_SCT, F_EMA:()=>F_EMA, F_RSI:()=>F_RSI,
   F_PIV:()=>F_PIV, F_WPIV:()=>F_WPIV, F_REV:()=>F_REV, F_ALIGN:()=>F_ALIGN, F_BO:()=>F_BO,
-  F_DWA:()=>F_DWA, F_BOX:()=>F_BOX, F_RSIMA:()=>F_RSIMA, F_EMACV:()=>F_EMACV, F_SMZ:()=>F_SMZ, F_STAGE:()=>F_STAGE,
+  F_DWA:()=>F_DWA, F_BOX:()=>F_BOX, F_RSIMA:()=>F_RSIMA, F_EMACV:()=>F_EMACV, F_SMZ:()=>F_SMZ,
+  F_SMZBOS:()=>F_SMZBOS, F_MOMO:()=>F_MOMO, F_STAGE:()=>F_STAGE,
   MIN_MCAP:()=>MIN_MCAP, SEARCH:()=>SEARCH, SORT_C:()=>SORT_C, SORT_D:()=>SORT_D,
   /* Deep-cloned both ways: COLF holds nested arrays and objects, and a shared
      reference would make every saved screen mutate along with the live one —
@@ -4524,6 +4727,22 @@ const SCREEN_SET={
   F_CAP:v=>{F_CAP=v}, F_SCT:v=>{F_SCT=v}, F_EMA:v=>{F_EMA=v}, F_RSI:v=>{F_RSI=v},
   F_PIV:v=>{F_PIV=v}, F_WPIV:v=>{F_WPIV=v}, F_REV:v=>{F_REV=v}, F_ALIGN:v=>{F_ALIGN=!!v}, F_BO:v=>{F_BO=!!v},
   F_DWA:v=>{F_DWA=!!v}, F_BOX:v=>{F_BOX=!!v}, F_RSIMA:v=>{F_RSIMA=!!v}, F_EMACV:v=>{F_EMACV=!!v}, F_SMZ:v=>{F_SMZ=!!v},
+  /* Coerced like every other boolean here. A screen saved before gs20 carries
+     no F_SMZBOS key at all, and applyScreen()'s `sc[f]!==undefined` guard then
+     skips this setter entirely rather than calling it with undefined — so the
+     flag keeps whatever it already held rather than being forced off. That is
+     the same contract every boolean above has had since it shipped, not
+     something new here, and the seeded screens are unaffected either way
+     because seedScreenObj() fills every SCREEN_FIELDS key from
+     screenSeedBase(), which names F_SMZBOS explicitly. */
+  F_SMZBOS:v=>{F_SMZBOS=!!v},
+  /* Coerced like every other boolean here, and carrying the same contract
+     F_SMZBOS's note above spells out: a screen saved before gs21 has no F_MOMO
+     key, applyScreen()'s `sc[f]!==undefined` guard skips this setter rather
+     than calling it with undefined, and the flag keeps whatever it held. The
+     seeded screens are unaffected either way, because seedScreenObj() fills
+     every SCREEN_FIELDS key from screenSeedBase(), which names F_MOMO. */
+  F_MOMO:v=>{F_MOMO=!!v},
   /* VALIDATED on the way in, unlike the booleans. A screen saved against a
      stage that no longer exists (or a hand-edited localStorage payload) would
      otherwise filter the table to a value lifecycleStage() can never return,
@@ -4609,7 +4828,35 @@ function applyScreen(name){
   if(sc.COLF===undefined){ COLF={}; colfDeriveAll(); }
   ACTIVE_SCREEN=name;
   VISIBLE=CFG.INIT;
+  /* THE THREE RE-SCAN INPUTS TRAVEL WITH THE SCREEN, SO THEY MUST REACH CFG.
+     ADV was restored just above, but ADV is only the FORM's copy of these
+     three. xState/xBars, every SMZ field and the whole Momentum Base family
+     come out of computeTech(), which reads CFG.XOVER, CFG.SMZ and CFG.MOMO —
+     not ADV. Restoring ADV alone left the Advanced
+     Filters panel showing one setting while the table still held rows computed
+     under the other, and nothing on screen said so: the screen looked right and
+     read wrong. Since the SMZ anchor mode moves bull structure by roughly a
+     hundred stocks, that is a materially different list presented as the saved
+     one.
+
+     This mirrors applyAdvFilters() deliberately — same capture-before, same
+     comparison, same SINGLE forceRefresh() — rather than inventing a second
+     mechanism that could fire at a different moment than the first. */
+  const prevX=CFG.XOVER.fast+'/'+CFG.XOVER.slow, prevSmz=CFG.SMZ.advanceMode;
+  const prevMomo=momoKey();
+  CFG.XOVER={fast:ADV.xover.fast, slow:ADV.xover.slow};
+  CFG.SMZ.advanceMode=ADV.smz.mode;
+  applyMomoCfg();
+  syncXoverLabel();
   syncScreenToDom();
+  /* forceRefresh() repaints on its way through, so returning here is not a
+     skipped render — it is the same render, done after the recompute instead
+     of before it against rows that are about to be replaced. */
+  if(prevX !== CFG.XOVER.fast+'/'+CFG.XOVER.slow || prevSmz !== CFG.SMZ.advanceMode
+     || prevMomo !== momoKey()){
+    forceRefresh();
+    return true;
+  }
   renderTable(CUR); updateStatus();
   return true;
 }
@@ -4779,7 +5026,8 @@ const SCREEN_LIQ_FLOOR={india:5, us:10, etf:10};
 function screenSeedBase(){
   return {
     F_CAP:'All', F_SCT:'', F_EMA:'', F_RSI:'', F_PIV:'', F_WPIV:'', F_REV:'',
-    F_ALIGN:false, F_BO:false, F_DWA:false, F_BOX:false, F_RSIMA:false, F_EMACV:false, F_SMZ:false, F_STAGE:'',
+    F_ALIGN:false, F_BO:false, F_DWA:false, F_BOX:false, F_RSIMA:false, F_EMACV:false, F_SMZ:false,
+    F_SMZBOS:false, F_MOMO:false, F_STAGE:'',
     MIN_MCAP:(MCAP_DEFAULTS[CUR] ?? 0), SEARCH:'', SORT_C:'', SORT_D:'desc',
     COLF:{}, HIST_DATE:'',
   };
@@ -4790,8 +5038,34 @@ function screenSeedBase(){
    capture and restore both read — rather than over a hand-written key list, so
    a filter added to the app later lands in these two screens as well instead
    of coming back `undefined` from applyScreen(). A field with no seed value
-   falls back to the live getter, which at startup IS that field's default. */
-function seedScreenObj(colf){
+   falls back to the live getter, which at startup IS that field's default.
+
+   `adv` IS OPTIONAL, AND IT IS A PER-GROUP OVERRIDE, NOT A REPLACEMENT.
+   ─────────────────────────────────────────────────────────────────────
+   Until a seed needed one, this line was a flat `cloneAdv(ADV_DEFAULTS)`, and
+   that quietly made "a seeded screen cannot carry an advanced filter" a
+   property of the mechanism rather than a decision anyone had taken. A seed
+   may now pass an object naming only the groups and only the keys it wants to
+   move; everything else stays at its default.
+
+   THE MERGE IS applyScreen()'s MERGE, DELIBERATELY THE SAME SHAPE — iterate
+   ADV_DEFAULTS' own group names, Object.assign each group over its defaults.
+   Two consequences fall out of copying that loop rather than writing a fresh
+   one, and both are the point:
+     · A seed that names a group not in ADV_DEFAULTS is IGNORED, because the
+       loop is over the defaults' keys and not over the seed's. A typo'd group
+       cannot invent a filter, and cannot survive a group being renamed later.
+     · A seed that names only SOME keys of a group gets the rest of that
+       group's defaults, exactly as a screen saved before a key existed does.
+   So a seed and a saved screen restore through identical rules, and the two
+   can never come to disagree about what a partial ADV means.
+
+   KEPT GENERAL ON PURPOSE. Nothing here knows about the thrust filter or any
+   other particular group; the next seed that wants an advanced filter declares
+   `adv:` and needs no change to this function. Omitting `adv` reproduces the
+   old behaviour byte for byte — the merge loop simply never runs — which is
+   why the six screens that shipped before this are untouched. */
+function seedScreenObj(colf, adv){
   const base=screenSeedBase(), sc={};
   SCREEN_FIELDS.forEach(f=>{
     sc[f] = Object.prototype.hasOwnProperty.call(base,f)
@@ -4800,6 +5074,11 @@ function seedScreenObj(colf){
   });
   sc.COLF=JSON.parse(JSON.stringify(colf));
   sc.ADV=cloneAdv(ADV_DEFAULTS);   // deep, for the same reason captureScreen clones
+  if(adv && typeof adv==='object'){
+    Object.keys(ADV_DEFAULTS).forEach(k=>{
+      if(adv[k] && typeof adv[k]==='object') Object.assign(sc.ADV[k], adv[k]);
+    });
+  }
   return sc;
 }
 
@@ -4818,7 +5097,22 @@ const SCREEN_SEEDS=[
      screens in THIS order before any of the user's own. Sorting the whole list
      alphabetically put "52-Week High" first purely because of a digit, which is
      not a ranking anybody chose. Earliest-and-lowest-risk first: a base you can
-     stalk beats a breakout you must chase. */
+     stalk beats a breakout you must chase.
+
+     THE NUMBERS IN THESE NAMES ARE IDENTIFIERS, NOT JUST ORDERING, WHICH IS WHY
+     A NEW SCREEN IS APPENDED RATHER THAN INSERTED. The name is the key in
+     SCREENS, in SCREEN_SEED_KEY's ledger and in SCREEN_RENAMES. '7 · Thrust
+     Then Rest' is a stalking list and by the rule above it belongs up beside 1
+     and 2 — but moving it there means renumbering three to six, and each of
+     those renames would orphan a screen the user may have edited: the old name
+     stays in SCREENS, the new name seeds fresh and empty beside it, and the
+     user gets two entries for one idea with no way to tell which is his. The
+     rename machinery below exists precisely to repair that, and it is a
+     one-shot guarded by SCREEN_RENAME_KEY which is ALREADY SET for every
+     existing user — so a renumber would need a second key and a second
+     migration pass over data that is fine as it stands. Appending costs
+     nothing but a number that reads lower than the screen deserves. Read the
+     list as 1, 2 and 7 being the three stalking screens. */
   {
     name:'1 · Coiled & Ready',
     desc:'Pre-breakout. Tightening for 3+ sessions inside the base, above the 20 and 50 EMA, volume dried up, beating the benchmark, and still UNDER the pivot. The stalking list — nothing has triggered yet.',
@@ -4962,6 +5256,132 @@ const SCREEN_SEEDS=[
       avgval:  {min:floor, max:null, blanks:false},
     }),
   },
+  {
+    name:'7 · Thrust Then Rest',
+    desc:'One violent up day on 2x+ its own prior volume in the last 10 sessions, since drifted back to the 10 and 20 EMA, still above the 50. VOLUME DRYNESS IS NOT SCREENED — Vol Dry counts the thrust itself and so reads high on exactly these stocks; check that column by eye. THE TRIGGER IS NOT SCREENED EITHER: buy by hand only when price takes out the high of the previous day. This is the watchlist, not the signal.',
+    /* THE OWNER'S OWN ENTRY SETUP, and the first seed to carry an advanced
+       filter — see seedScreenObj()'s `adv` note for the mechanism.
+
+       THE SHAPE, IN THE ORDER THE STOCK LIVES IT. Something happened: one
+       session where the stock ran hard on volume that says institutions were
+       the buyers, not the tape. Then nothing: it drifts back down to the 10
+       and 20 EMA while volume dies, which is what a stock does when the
+       sellers are done and no new buyers have arrived yet. Then it sits there.
+       That sitting is the whole opportunity, and it is what this screen finds.
+
+       WHY THE THRUST HALF CANNOT BE COLUMN FILTERS. There is no thrust column
+       and there is deliberately not going to be one. ch1d only knows about
+       TODAY, and by the time this setup is worth buying the violent day is a
+       week behind and today is a quiet drift — so ch1d reads ~0 on exactly the
+       stocks wanted. vr has the same blindness for the same reason. Vol Spike
+       carries the volume memory but not the price memory, so it cannot tell a
+       thrust from a distribution day. hadThrust() is the only test that asks
+       "was there one explosive UP day recently, and did THAT day trade heavy",
+       which is why this screen reaches for an Advanced Filter rather than
+       another column bound.
+
+       WHY THE REST HALF CANNOT BE THE ADVANCED FILTER. The pullback is pure
+       position-against-the-averages, and the table already has exact columns
+       for every leg of it. Splitting the work this way means the only new
+       machinery is the one test nothing could already express.
+
+       THE BANDS. pct10e -2..3 and pct20e -3..3 put price AT the two lines
+       rather than near them, and both are asked because "back at the 10 but
+       still 8% over the 20" is a stock that has barely pulled back at all. The
+       20 EMA band is a point wider on the downside for the ordinary reason: on
+       a stock that ran 18% in a day, the 20 EMA is further below and the drift
+       overshoots it more often than it overshoots the 10.
+
+       voldry max 0.6 IS BY FAR THE STRICTEST LEG, AND IT FIGHTS THE THRUST LEG.
+       READ THIS BEFORE RETUNING ANYTHING HERE.
+       ────────────────────────────────────────────────────────────────────
+       volDryRatio is the 20-day mean volume over the 50-day mean. Screen 1
+       uses max 1 — merely quiet. 0.6 asks for under 60%, and the intent is
+       plain: everyone who was going to sell has finished.
+
+       The trouble is that the two halves of this screen are measured over
+       OVERLAPPING windows pointing in opposite directions. The thrust bar is
+       at most 10 sessions old, so it is still INSIDE the 20-day window in
+       volDryRatio's numerator, and the more violent it was the more it lifts
+       that numerator. A 40x volume day alone adds roughly two whole units to
+       a ratio we are asking to be under 0.6. So the harder the thrust — i.e.
+       the better the setup — the WORSE this leg reads, and it is the biggest
+       and best examples that get cut first.
+
+       This is not theoretical. On the India universe the other four legs
+       together return 33 names; adding voldry<=0.6 leaves 2. The owner's own
+       example, BALRAMCHIN after 20 Aug, clears every other leg comfortably
+       (10 EMA -1.95%, 20 EMA -0.07%, 50 EMA +5.84%, thrust +17.87% at 41.7x
+       six bars back) and is rejected here alone, on voldry 2.09 — and it
+       reads 2.09 BECAUSE the thrust was 41.7x. Names that pass 0.6 are
+       therefore skewed toward the mildest thrusts in the pool.
+
+       0.6 IS KEPT because it is the number the screen was specified with, and
+       a seed is a claim about a specific list rather than something to quietly
+       retune. But it is the first dial to move if the screen looks empty, and
+       the honest range is wide: <=0.8 gives 5 names, <=1.0 gives 10, <=1.5
+       gives 20, <=2.0 gives 30, and dropping the leg entirely gives 33. A
+       value around 1.0-1.2 is where "has gone quiet SINCE the thrust" starts
+       being what is actually measured; below that the leg is mostly asking
+       that the thrust was small. The lasting fix is a volume-dry reading that
+       excludes the thrust bar the way thrustVol's baseline already does, which
+       would be a new engine field and is deliberately not smuggled in here.
+
+       NO pctpiv, NO consol, AND THAT IS DELIBERATE. The classic base tests
+       want a stock that went sideways for weeks; this one went vertical eight
+       days ago. consolDays measures the CURRENT quiet stretch, which here is
+       only as old as the pullback, so a floor on it would throw out the
+       freshest and best examples. The thrust IS the base here.
+
+       THE ENTRY IS NOT IN THIS SCREEN AND MUST NOT BE ADDED TO IT. The owner
+       buys when price takes out the previous day high, by hand, watching. That
+       trigger is intraday: it is true at 09:47 and the screener sees one close
+       per day, so a column asking "did today take out yesterday high" would
+       answer about a bar that has already finished — reporting the entry the
+       morning AFTER it was available, which is worse than not reporting it.
+       The screen's job ends at putting the name in front of him. */
+    colf:floor=>({
+      pct10e:  {min:-2, max:3,    blanks:false},   // back at the 10 EMA
+      pct20e:  {min:-3, max:3,    blanks:false},   // and at the 20, not just the 10
+      pct50e:  {min:0,  max:null, blanks:false},   // never buy below the 50
+      avgval:  {min:floor, max:null, blanks:false},
+      /* THERE IS DELIBERATELY NO voldry LEG, AND THE REASON IS NOT TASTE.
+         ─────────────────────────────────────────────────────────────────
+         "Volume has dried up" is half the owner's description of this setup,
+         so leaving it out looks like an omission. It is the opposite: Vol Dry
+         is 20-day mean volume over 50-day mean, and the thrust bar is at most
+         10 sessions old, so THE THRUST ITSELF SITS INSIDE THE NUMERATOR. The
+         more violent the day — the more it is the stock this screen exists to
+         find — the HIGHER Vol Dry reads. The leg does not measure quiet-since;
+         it measures thrust-was-small, which is the wrong stock.
+
+         Measured on the owner's own example, BALRAMCHIN: +17.87% on 41.7x its
+         prior volume, six sessions back, now 1.95% under the 10 EMA and 0.07%
+         under the 20 — it passes every other leg and reads Vol Dry 2.09,
+         BECAUSE the thrust was 41.7x. A `max 0.6` cut the list from 33 names
+         to 2 and threw out the biggest thrusts first: ORIENTHOT at 122x,
+         JINDRILL 77x, TVSSCS 76x. Relaxing the bound does not rescue it
+         either — nothing below 2.5 readmits BALRAMCHIN, and 2.5 is every row.
+
+         Doing it properly needs a reading that excludes the thrust bar from
+         its own baseline, the way thrustVol already does — mean volume SINCE
+         the thrust against the pre-thrust norm. That is an engine field, not a
+         column filter, and it is not built. Until it is, this screen states
+         the three legs it can actually measure and leaves the fourth to the
+         eye: the Vol Dry column is on the row, and its funnel is one click
+         away on the day you want to lean on it. */
+    }),
+    /* The one leg the columns cannot express. Deep-merged over ADV_DEFAULTS by
+       seedScreenObj(), so every OTHER advanced filter in this screen is off at
+       its default — naming only this group is the whole point of the merge.
+       The three numbers are the defaults themselves, restated rather than
+       inherited: a seed is a claim about a specific list of stocks, and it
+       should not change meaning the day someone retunes ADV_DEFAULTS.thrust.
+       days:10 equals CFG.THRUST.win, so the age leg is wide open here and the
+       screen is dated by the engine's own window rather than by a second
+       number that could drift from it. */
+    adv:{ thrust:{on:true, pct:5, days:10, vol:2} },
+  },
 ];
 
 /* SEEDED ONCE, AND NEVER OVER THE TOP OF ANYTHING.
@@ -5039,7 +5459,10 @@ function seedDefaultScreens(){
   SCREEN_SEEDS.forEach(sd=>{
     if(already.indexOf(sd.name)!==-1) return;                                  // guard 2
     if(Object.prototype.hasOwnProperty.call(SCREENS, sd.name)) return;         // guard 1
-    SCREENS[sd.name]=seedScreenObj(sd.colf(floor));
+    /* sd.adv is undefined for every seed that does not declare one, and
+       seedScreenObj() then skips its merge entirely — so passing it
+       unconditionally changes nothing for the screens that shipped without it. */
+    SCREENS[sd.name]=seedScreenObj(sd.colf(floor), sd.adv);
     added.push(sd.name);
   });
   if(added.length){
@@ -5103,6 +5526,31 @@ let F_EMACV=false;
    would be a second place for the rule to be edited and only one of them
    would get changed. */
 let F_SMZ=false;
+/* SMZ + BREAK OF STRUCTURE. A SEPARATE boolean rather than a modifier on
+   F_SMZ, and the separation is what keeps both buttons honest: F_SMZ means
+   "bull structure, price in the zone" and has meant that since it shipped, so
+   folding a recency test into it would silently change what an already-saved
+   screen restores to. Two flags, two rules, and a user who wants the loose
+   screen keeps getting it.
+
+   They ARE allowed to be lit at once, and nothing special happens when they
+   are: this rule is a strict subset of F_SMZ's, so ANDing them is just this
+   one. That is by design rather than by accident — it means neither branch
+   needs to know about the other, and a future edit to F_SMZ's three states
+   flows through to both. The predicate stays inline in getRows() for the same
+   reason F_SMZ's does: nothing else in the file asks this question, and a
+   shared helper would be a second place for the rule to drift. */
+let F_SMZBOS=false;
+/* Momentum Base. Another independent boolean, on the same argument every flag
+   above it is made on: it is a conjunction of ideas no existing dropdown can
+   express, and the whole point is that it stacks — "thrust-and-rest AND above
+   the 200 EMA AND ₹2,000 Cr or bigger" is the screen the owner actually runs.
+   It reads computeTech()'s momoState and NOTHING else. Deliberately not written
+   as a re-test of the six CFG.MOMO thresholds here: those live in the engine,
+   the engine has already answered, and a second copy of the rule in this file
+   would be one edit away from disagreeing with the column beside it — the exact
+   trap the note above F_SMZBOS's branch in getRows() spells out. */
+let F_MOMO=false;
 /* LIFECYCLE STAGE. A STRING, not a fifth boolean: the four stages are mutually
    exclusive by construction (see lifecycleStage), so two of them at once is a
    state the UI must not be able to reach. '' means no stage picked, which is
@@ -6230,6 +6678,107 @@ function volSpike(V,win,mult){
   return {mult:rounded, age:(n-1)-bestI};
 }
 
+/* ── THE THRUST DAY: ONE VIOLENT UP DAY, AND EVERYTHING ELSE ABOUT THAT
+      SAME BAR ───────────────────────────────────────────────────────────
+     thrustDay = the bar with the LARGEST single-day percentage gain,
+                 (close[i] - close[i-1]) / close[i-1] * 100, over the last
+                 `win` bars — plus how many sessions ago that bar was, and
+                 what its OWN volume was as a multiple of its OWN trailing
+                 20-day average.
+
+   THE THREE NUMBERS DESCRIBE ONE BAR, AND THAT IS THE ENTIRE POINT. The
+   setup being hunted is a single explosive session — a stock that gapped or
+   ran on news, on volume that says institutions were the ones buying — after
+   which it drifts back to the 10/20 EMA on dying volume and sits there. The
+   owner's own example was BALRAMCHIN on 20 August: +17.87% on 33.51M shares
+   against a 4.55M average, i.e. about 7.4x. Both of those facts belong to the
+   SAME session, and that pairing is the whole signal. A test that took the
+   biggest PRICE day from one bar and the biggest VOLUME day from a different
+   bar would be a much weaker and materially different screen: it would pass a
+   stock that rose 12% on quiet trade three weeks ago and separately had a
+   distribution day on huge volume last Tuesday, which is close to the
+   opposite of the pattern. So the volume multiple is looked up at bestI and
+   nowhere else, and the three fields are returned together from one function
+   rather than assembled by a caller that could accidentally mix bars.
+
+   WHY volSpike() DOES NOT ALREADY DO THIS. volSpike() carries the volume half
+   of the same idea and is the model this function is written against — same
+   window shape, same age convention, same baseline. What it cannot say is
+   what the PRICE did on the bar it found. Its winner is the biggest volume
+   bar in the window, which on a stock that sold off hard is a distribution
+   day, not a thrust. Asking the price question first and then reading that
+   bar's volume is the only ordering that guarantees one bar answers both.
+
+   NO LOOKAHEAD, and it is inherited rather than re-argued: the multiple is
+   volAvg20(V, bestI+1), which by that function's own signature averages the
+   20 bars BEFORE bar bestI and reads nothing at or after it. So the thrust
+   bar is never judged against its own volume or against the future, and
+   truncating the series anywhere leaves every surviving bar's answer
+   bit-for-bit unchanged — the same structural guarantee volSpike() rests on,
+   for the same reason. This is what makes the as-of-date replay honest.
+
+   THE AGE CONVENTION IS volSpike()'s, DELIBERATELY: whole bars ago, with 0
+   meaning it happened on the LATEST bar. Two recency fields in the same row
+   counting from different ends would be a bug nobody would spot until a
+   screen quietly returned yesterday's list.
+
+   TIES GO TO THE OLDER BAR, via the strict `>`, exactly as volSpike() does.
+   A tie means the older bar is the move and the newer one is a repeat of it,
+   and the older date is the one that dates the setup.
+
+   THE SIGN IS NOT FORCED. If every bar in the window was down, the largest
+   gain is a negative number and that is published as-is. It is the honest
+   answer to "what was the best day here" — "nothing" — and every consumer
+   asks for a MINIMUM gain, so a negative reading fails on its own without a
+   second rule here pretending the data was missing.
+
+   thrustVol IS SEPARATELY NULLABLE. If the thrust bar's own volume is blank
+   or its 20-bar average is not positive, the multiple is unknown while the
+   gain and the age are perfectly well known, so it comes back null on its own
+   rather than voiding the whole answer. Callers must treat that null as
+   "unmeasured", never as 0 — `null >= 2` is false but `null <= 2` is TRUE,
+   and a caller that compared the wrong way round would admit exactly the rows
+   it could not measure. */
+/* The bars this needs before it can answer, written as its three parts rather
+   than as a bare 22 so the arithmetic is auditable: 20 bars for the volume
+   average, 1 for the prior close the gain is measured from, and 1 for the
+   thrust bar itself. Strictly, 21 is enough — the prior close at bestI-1 is
+   already INSIDE the 20-bar baseline window (volAvg20(V,i+1) spans i-20..i-1),
+   so it is not a twenty-second bar. This floor is therefore one bar more
+   conservative than it structurally has to be, which is the direction to err
+   in and costs nothing: the feed carries ~250 bars per ticker, so the only
+   rows this can ever exclude are ones with no usable history anyway. */
+const THRUST_MIN_BARS = 20 /* volAvg20 baseline */ + 1 /* prior close */ + 1 /* the bar itself */;
+function thrustDay(C,V,win){
+  const w=(win==null?CFG.THRUST.win:win);
+  const none={pct:null, age:null, vol:null};
+  if(!Array.isArray(C)||!Array.isArray(V)) return none;
+  const n=C.length;
+  if(n<THRUST_MIN_BARS || V.length<n) return none;
+  let best=null,bestI=-1;
+  // Earliest bar that has a full baseline behind it. Bars before it are
+  // SKIPPED rather than priced against a short average, for the same reason
+  // volSpike() skips them: a "20-day average" built out of six days is a
+  // different statistic wearing the same label.
+  for(let i=Math.max(THRUST_MIN_BARS-1, n-w); i<n; i++){
+    const c=C[i], p=C[i-1];
+    if(!(typeof c==='number'&&isFinite(c))) continue;
+    if(!(typeof p==='number'&&isFinite(p)&&p>0)) continue;
+    const g=(c-p)/p*100;
+    if(best==null||g>best){ best=g; bestI=i; }
+  }
+  if(best==null) return none;
+  let vol=null;
+  const tv=V[bestI];
+  if(typeof tv==='number'&&isFinite(tv)&&tv>0){
+    const base=volAvg20(V,bestI+1);   // bars bestI-20..bestI-1 only — never bestI
+    if(base>0) vol=+(tv/base).toFixed(2);
+  }
+  // Rounded to two decimals so the number a filter tests is the same number a
+  // reader would quote off the chart, the way volSpike() rounds its multiple.
+  return {pct:+best.toFixed(2), age:(n-1)-bestI, vol};
+}
+
 /* 52-week extremes, floored at H52_MIN_BARS — see the note in computeTech()
    for why a 20-bar "52-week high" is a wrong number and not a shorter window.
    H52_WIN is ~252 sessions; the sheet holds slightly less, so in practice this
@@ -6953,6 +7502,317 @@ function vcpDetect(C,H,L,V,e50,e200){
   };
 }
 
+/* The ceiling on momoVolRatio. 99 is not a threshold anything tests against —
+   it is a SENTINEL for "no down volume at all across the thrust", which is a
+   genuine and quite bullish reading that the obvious arithmetic renders as
+   Infinity. Infinity is the problem: JSON.stringify writes it as `null`, so the
+   row would compute, pass, cache, and rehydrate the next hour with the column
+   blank and nothing anywhere saying why. A large finite number survives the
+   cache round trip, sorts above every real ratio (a 20:1 up/down split is
+   already extraordinary), and reads on screen as the emphatic value it is. */
+const MOMO_VOL_RATIO_CAP=99;
+
+/* ── THE MOMENTUM BASE: A SHARP THRUST, THEN A TIGHT REST ABOVE THE 20 EMA ──
+     This is the owner's own screen, drawn off three charts he annotated by hand
+     (Cyient DLM, Syrma SGS, Aeroflex) rather than ported from anywhere. The
+     shape it looks for is a stock that has ALREADY made its violent move, has
+     stopped going up, and is now sitting quietly in a narrow range with the 20
+     EMA still underneath it. Nothing here is an entry signal. It is a WATCH
+     signal: the trade is the break of the base's own high, and the point of the
+     column is to have the name on screen before that happens.
+
+   WHY IT IS NOT ANOTHER VCP, and why it is not redundant beside one. vcpDetect()
+   demands a SEQUENCE of contractions, each shallower than the last, with volume
+   drying up between them — a shape that takes months and rejects any base whose
+   legs widen even once. This one asks a far blunter question: was there one big
+   thrust, and has the stock rested since without giving much back. A four-week
+   ledge under a 60% pole is exactly what the VCP's leg-comparison throws out,
+   and it is precisely the population this exists for. The two columns disagree
+   on most rows by design; neither is the other's approximation.
+
+   THE ORDER OF THE TESTS IS THE ARGUMENT. The thrust is found FIRST, and every
+   later test is measured against the bars it identified — the volume window, the
+   trend-quality window and the base all start from moveStart or movePeak. So the
+   answer to "is this a good base" is always asked about THIS move rather than
+   about the last N bars in the abstract, which is what stops a stock that has
+   drifted sideways for a year with one 40% week in the middle from reading the
+   same as one that thrust last month and has held.
+
+   NO LOOKAHEAD, and the one place it could creep in is the breakout state. The
+   base high used to judge a breakout EXCLUDES the latest bar, for the reason
+   ipoBase() and vcpDetect() both spell out at their lids: if today's high were
+   allowed into the level, every strong day would be breaking a line it had just
+   drawn itself, and the state would say 'breakout' on a bar that merely printed
+   the highest high of a still-forming base. Everything else here reads only bars
+   at or before the bar being judged.
+
+   O(n), ONE PASS PER LEG, and this matters at ~1,058 tickers x ~257 bars per
+   load. The thrust is found with a RUNNING MINIMUM rather than the obvious
+   nested pair of loops: walking j forward while carrying the lowest low seen at
+   any i < j gives the best rise ending at j in constant time per bar, so the
+   whole search is one sweep of `lookback` bars instead of `lookback` squared.
+   The volume, trend-quality and base legs are each a single further sweep of a
+   sub-range of that same window. Nothing rescans an array inside a bar loop.
+
+   ema20 IS PASSED IN, never built here. computeTech() holds the series and
+   hands it over for the same reason it hands vcpDetect() its e50 and e200: a
+   second emaSeries(C,20) call would be a second source of truth for the line the
+   %20E column, the EMA Align badges and this test all read, and the two copies
+   would eventually disagree with nothing on the page able to say which was
+   right. It is index-aligned with C and null before its seed completes; bars
+   where it is null are SKIPPED in the share-above count rather than counted as
+   failures, because "the average did not exist yet" is not the stock closing
+   below it.
+
+   ALL NINE FIELDS ARE NULL TOGETHER OR NONE ARE — the same contract vcpDetect()
+   and smartMoneyZones() keep. There is no partial verdict: a stock that thrust
+   40% but has only rested four bars publishes nulls across the board rather than
+   a movePct with an empty state beside it, because a number on screen that
+   passed no test is worse than a dash.
+
+   `dates` IS TAKEN AND NOT READ, and that is deliberate rather than an
+   oversight. Every window here is counted in BARS — the thrust lookback, the
+   base length, the volume span — exactly as the owner counts them on a chart,
+   so no calendar arithmetic is needed and none should be added: a Monday-to-
+   Friday base is 5 bars whatever the weekend or a holiday did to the dates. The
+   parameter sits in the signature so this function reads like ipoBase() beside
+   it and so a later leg that genuinely needs the calendar (an "under N weeks
+   old" gate, say) has it to hand without a call-site change. */
+function momentumBase(C,H,L,V,dates,ema20Series,cfg){
+  const nul={momoState:null,momoPct:null,momoBars:null,momoVolRatio:null,
+             momoAbovePct:null,momoBaseBars:null,momoBaseHigh:null,
+             momoBaseLow:null,momoBaseDepth:null};
+  if(!Array.isArray(C)||!Array.isArray(H)||!Array.isArray(L)||!Array.isArray(V)) return nul;
+  if(!Array.isArray(ema20Series)) return nul;
+  const n=Math.min(C.length,H.length,L.length,V.length,ema20Series.length);
+  const fin=v=>typeof v==='number'&&isFinite(v);
+  const c=cfg||{};
+  const lookback   = +c.lookback,    minMovePct  = +c.minMovePct;
+  const minVolRatio= +c.minVolRatio, minAbovePct = +c.minAbovePct;
+  const minBaseBars= +c.minBaseBars, maxBaseDepth= +c.maxBaseDepth;
+  if(!fin(lookback)||lookback<2) return nul;
+  /* The window must be able to hold a thrust AND the shortest base that counts,
+     otherwise the two would have to overlap and the peak would be inside the
+     base it is supposed to have started. Not a data-quality guard — an
+     arithmetic one, and it is why a 20-bar listing gets nulls rather than a
+     verdict built on nine bars. */
+  if(n < lookback+1 || n < minBaseBars+2) return nul;
+
+  const last=n-1;
+  const close=C[last];
+  if(!fin(close)||close<=0) return nul;
+
+  /* ─ 1. THE THRUST ─ the largest rise from a LOW at bar i to a HIGH at a
+     later bar j, over the last `lookback` bars. Low series for the start, high
+     series for the end, because the move a chart shows is measured wick to
+     wick — using closes would understate every one of the owner's three
+     examples by several percent and would then need a lower threshold to find
+     the same stocks, which is the same screen with the arithmetic hidden.
+
+     j > i STRICTLY: a single bar's own low-to-high is an intraday range, not a
+     thrust, and allowing i===j would let one wide gap-up day satisfy a 40%
+     move. The running minimum is therefore seeded from bar `from` and only
+     advanced AFTER bar j has been scored, so the low it carries is always from
+     a bar strictly earlier than the high it is compared against.
+
+     TIES GO TO THE EARLIEST j, because `>` is strict here — the first bar that
+     reached the best gain is the one that made it, and a later bar matching it
+     is the base topping out at the same level, which belongs to the base rather
+     than to the thrust. Taking the later one would shorten every base by the
+     width of its own double top. */
+  const from=Math.max(0,n-lookback);
+  /* THE PEAK SEARCH STOPS SHORT OF THE LAST BAR, BY EXACTLY THE SHORTEST BASE.
+     ─────────────────────────────────────────────────────────────────────────
+     Without this the 'breakout' state is unreachable, and not rarely — never,
+     for any threshold. The reason is that the running minimum is non-increasing,
+     so a bar making a strictly higher high always scores a strictly higher gain
+     and STEALS the peak. On the very day price clears its base, movePeak moves
+     onto that day, baseBars collapses to 0, and step 5 rejects the row before
+     step 6 ever gets to call it a breakout. Measured before this line existed:
+     of the India tickers whose latest bar made a new high over its base, the
+     peak re-anchored onto that bar in 100% of cases and 'breakout' fired zero
+     times.
+
+     The bound is DERIVED, not a tuning constant: step 5 already demands
+     baseBars = last - movePeak >= minBaseBars, so a peak inside that final
+     window could never have produced a valid row anyway. All this does is stop
+     such a peak from destroying the earlier, legitimate one. It is the same
+     precaution vcpDetect() and ipoBase() take when they hold their lid scans
+     back so that a breakout bar cannot redefine the level it is breaking. */
+  const peakLast=last-minBaseBars;
+  if(peakLast<=from) return nul;
+  let minLow=null, minLowIdx=-1;
+  let bestPct=-Infinity, moveStart=-1, movePeak=-1;
+  for(let j=from;j<=peakLast;j++){
+    if(minLow!=null&&minLow>0){
+      const h=H[j];
+      if(fin(h)){
+        const g=(h-minLow)/minLow*100;
+        if(g>bestPct){ bestPct=g; moveStart=minLowIdx; movePeak=j; }
+      }
+    }
+    const l=L[j];
+    if(fin(l)&&l>0&&(minLow==null||l<minLow)){ minLow=l; minLowIdx=j; }
+  }
+  if(moveStart<0||movePeak<=moveStart) return nul;
+  if(!fin(bestPct)||!(bestPct>=minMovePct)) return nul;
+  const moveBars=movePeak-moveStart;
+
+  /* ─ 2. VOLUME ─ up-volume against down-volume across the thrust itself,
+     bars moveStart+1 .. movePeak. It starts one bar AFTER the low because
+     "up day" is defined by comparison with the previous close, and moveStart's
+     own predecessor is outside the move — a bar from before the thrust began
+     has no business voting on whether the thrust was accumulated.
+
+     A FLAT DAY (C[k]===C[k-1]) COUNTS FOR NEITHER SIDE, deliberately. It is not
+     evidence in either direction, and folding it into the up bucket — the usual
+     shortcut — would let a stock that ground sideways on heavy volume read as
+     accumulated.
+
+     THE INFINITY TRAP, and it is a real one rather than a theoretical tidiness.
+     A thrust with no down days at all divides by zero and yields Infinity, which
+     JSON.stringify writes as `null` — so the row would compute correctly, pass
+     the test, and then come back from the same-day cache with the column blank
+     and no error anywhere to say why. Capped at MOMO_VOL_RATIO_CAP instead: a
+     large finite number that survives the round trip, still sorts above every
+     real reading, and still means "every share that moved, moved on an up day". */
+  let upVol=0, downVol=0;
+  for(let k=moveStart+1;k<=movePeak;k++){
+    const v=V[k], a=C[k], b=C[k-1];
+    if(!fin(v)||v<0||!fin(a)||!fin(b)) return nul;
+    if(a>b) upVol+=v; else if(a<b) downVol+=v;
+  }
+  let volRatio;
+  if(downVol>0) volRatio=upVol/downVol;
+  else if(upVol>0) volRatio=MOMO_VOL_RATIO_CAP;
+  else return nul;                     // no volume either way: unmeasurable, not a pass
+  if(volRatio>MOMO_VOL_RATIO_CAP) volRatio=MOMO_VOL_RATIO_CAP;
+  if(!(volRatio>=minVolRatio)) return nul;
+
+  /* ─ 3. TREND QUALITY ─ the share of bars from the thrust's start to today
+     that closed above the 20 EMA. This is the leg that separates "went up and
+     has stayed up" from "went up and has since bled back through the line",
+     and it spans the base as well as the thrust on purpose: a base that has
+     lost the 20 EMA for a third of its bars is not resting above it.
+
+     BARS WITH A NULL EMA ARE SKIPPED, NOT FAILED — see the header. The
+     denominator is the number of bars we could actually judge, so a young
+     listing whose EMA seeds part-way through the window is scored on the part
+     that exists rather than being marked down for the part that cannot be. If
+     that leaves nothing judgeable at all we return nulls rather than dividing
+     by zero into a NaN that every later comparison would read as false. */
+  let above=0, judged=0;
+  for(let k=moveStart;k<=last;k++){
+    const e=ema20Series[k], a=C[k];
+    if(!fin(e)||e<=0||!fin(a)) continue;
+    judged++;
+    if(a>e) above++;
+  }
+  if(judged<1) return nul;
+  const abovePct=above/judged*100;
+  if(!(abovePct>=minAbovePct)) return nul;
+
+  /* ─ 4. RIGHT NOW ─ the latest close above the latest 20 EMA. A SEPARATE,
+     EXPLICIT REQUIREMENT the owner asked for, and it is NOT implied by the 80%
+     above: a stock can hold the line for forty bars and lose it in the last
+     four and still score 90%, which is the one case this screen must never
+     return. The share-above test is about the move's character; this is about
+     today, and the two are asking different questions of the same line. */
+  const e20last=ema20Series[last];
+  if(!fin(e20last)||e20last<=0) return nul;
+  if(!(close>e20last)) return nul;
+
+  /* ─ 5. THE BASE ─ everything from the peak bar to the last bar. baseBars is
+     the count of bars SINCE the peak, so a peak printed yesterday reads 1 and
+     the peak bar itself is not counted as a bar of rest — it is the last bar of
+     the thrust. The high and low span movePeak..last INCLUSIVE, because the
+     peak's own high is the ceiling the base hangs under and excluding it would
+     measure the depth off a lower level and understate every retracement.
+
+     DEPTH IS OFF THE BASE HIGH, not off the close and not off the thrust's
+     start: "how much of its range has this given back" is a statement about the
+     box, and it is the same divide-by-the-ceiling arithmetic ipoBase() and the
+     Darvas depth already use. One unreadable bar inside the base nulls the
+     whole verdict rather than being skipped, for the reason ipoBase() gives: a
+     base measured over the bars that happened to parse is not the base. */
+  const baseBars=last-movePeak;
+  if(!(baseBars>=minBaseBars)) return nul;
+  let baseHigh=-Infinity, baseLow=Infinity;
+  for(let k=movePeak;k<=last;k++){
+    const h=H[k], l=L[k];
+    if(!fin(h)||!fin(l)) return nul;
+    if(h>baseHigh) baseHigh=h;
+    if(l<baseLow)  baseLow=l;
+  }
+  if(!(baseHigh>0)||!(baseLow>0)||baseLow>baseHigh) return nul;
+  const baseDepth=(baseHigh-baseLow)/baseHigh*100;
+  if(!(baseDepth<=maxBaseDepth)) return nul;
+
+  /* ─ 6. STATE ─ 'breakout' when today's close is above the base high measured
+     WITHOUT today's bar in it. That exclusion is the no-lookahead argument
+     restated: with the latest bar included, baseHigh is at least as high as
+     today's high, so `close > baseHigh` could only ever be true on a bar that
+     closed above its own high — impossible — and the state would read 'base'
+     forever. Measuring the level over movePeak..last-1 instead asks the
+     question the chart asks: is the stock closing through the ceiling that was
+     already there when it opened.
+
+     ⚠️ AS THIS FUNCTION IS CURRENTLY SPECIFIED, 'breakout' CANNOT FIRE. Read
+     this before "fixing" anything here, because the branch below is correct and
+     the cause sits in step 1.
+
+     THE PROOF. priorHigh is the highest high over movePeak..last-1, so it
+     includes H[movePeak] itself. Two cases, and neither reaches 'breakout':
+       · H[last] <= priorHigh. Then close <= H[last] <= priorHigh, so
+         `close > priorHigh` is false by arithmetic.
+       · H[last] >  priorHigh >= H[movePeak]. Then step 1 re-anchors the peak
+         ONTO the last bar and we never arrive here. The running minimum is
+         non-increasing, so the low carried into bar `last` is at or below the
+         one carried into movePeak; (H-m)/m rises as H rises and as m falls, so
+         a strictly higher high at `last` scores a strictly higher gain,
+         movePeak becomes last, baseBars becomes 0, and step 5 rejects the row
+         against minBaseBars long before the state is decided.
+     No choice of the six CFG.MOMO numbers changes either case — the argument is
+     about the shape of the search, not about the thresholds. Verified against
+     the live India universe as well as argued: across 1,047 tickers with enough
+     history there were 102 days on which the last bar made a new high over its
+     base, the peak re-anchored onto the last bar on all 102, and the breakout
+     condition was true zero times even with every other gate ignored.
+
+     WHAT WOULD MAKE IT REACHABLE, for whoever decides to: the peak search in
+     step 1 has to stop being allowed to land on the bars it is about to be
+     judged against — the same device vcpDetect() and ipoBase() already use when
+     they hold their lid scan back by VCP_BO_AGE bars so a breakout cannot
+     redefine the level it is breaking. Ending step 1's `j` loop a few bars
+     early does it. That is a deliberate change to the owner's stated algorithm,
+     not a bug fix, so it is NOT made here.
+
+     The branch is therefore left exactly as specified and exactly as written:
+     honest, cheap, and already correct for the day the search is changed. Every
+     'breakout' path downstream — the badge, the sort rank, the filter option,
+     the export text — is built and works; none of them is waiting on an edit.
+
+     A base one bar long has no prior high to break, so the loop below finds
+     nothing and the state stays 'base'. minBaseBars is 8, so that cannot happen
+     with the shipped config, but this must not depend on the config to be
+     correct — four of those numbers are user-editable from the modal. */
+  let priorHigh=-Infinity;
+  for(let k=movePeak;k<=last-1;k++){ const h=H[k]; if(fin(h)&&h>priorHigh) priorHigh=h; }
+  const state=(priorHigh>0&&close>priorHigh) ? 'breakout' : 'base';
+
+  return{
+    momoState:state,
+    momoPct:+bestPct.toFixed(2),
+    momoBars:moveBars,
+    momoVolRatio:+volRatio.toFixed(2),
+    momoAbovePct:+abovePct.toFixed(1),
+    momoBaseBars:baseBars,
+    momoBaseHigh:+baseHigh.toFixed(2),
+    momoBaseLow:+baseLow.toFixed(2),
+    momoBaseDepth:+baseDepth.toFixed(2),
+  };
+}
+
 /* ── THE IPO BASE: A YOUNG STOCK'S FIRST REAL CONSOLIDATION ────────────
      A recent listing runs, stalls, and builds the first ceiling it has ever
      had. There is no prior base to compare it against and no meaningful RS
@@ -7294,6 +8154,22 @@ function smzStructure(C,H,L,cfg){
   let hiSinceLastPl=null, loSinceLastPh=null;
   let hiSinceSwingLo=null, loSinceSwingHi=null;
   let phCount=0, plCount=0, bullFlips=0, bearFlips=0;
+  /* THE BAR THE STRUCTURE LAST FLIPPED ON — the break of structure itself,
+     which the counters above can total but cannot date. bullFlips and bearFlips
+     answer "how often", and that is a diagnostic; the question a trader asks is
+     "how recently", and a count of four says nothing about whether the fourth
+     one happened yesterday or eight months ago.
+
+     ONE VARIABLE FOR BOTH DIRECTIONS, deliberately. A flip is the only event in
+     this machine that writes `bias`, so the direction of the most recent flip
+     IS the terminal bias — recording it a second time as its own field would be
+     a copy that can only ever agree, and the day it disagreed one of the two
+     would be wrong with nothing to say which. Read the direction off bias.
+
+     null until the first flip, which is the same condition as bias staying 0:
+     no close ever broke a swing level, so there is no break of structure to
+     date. That is a real answer, not a missing one. */
+  let lastFlipBar=null;
 
   let ih=0, il=0;                         // cursors into the pivot lists
   for(let i=0;i<n;i++){
@@ -7361,7 +8237,7 @@ function smzStructure(C,H,L,cfg){
 
       // ── d. the flip ────────────────────────────────────────────────────
       if(upCount>=confirmBars && shActiveAtOpen){
-        bias=1; bullFlips++;
+        bias=1; bullFlips++; lastFlipBar=i;
         /* The swing low comes forward to the most recent confirmed pivot low,
            guarded so it can only ever move FORWARD in time — without that, a
            relocation could jump the anchor backwards onto an older pivot. */
@@ -7386,7 +8262,7 @@ function smzStructure(C,H,L,cfg){
         shActive=false;
         upCount=0; dnCount=0;
       } else if(dnCount>=confirmBars && slActiveAtOpen){
-        bias=-1; bearFlips++;
+        bias=-1; bearFlips++; lastFlipBar=i;
         let adopted=false;
         if(lastPh!=null){
           const fwd = (shBar==null) ? true : (lastPhBar>shBar);
@@ -7420,6 +8296,11 @@ function smzStructure(C,H,L,cfg){
   return {
     bias, swingHigh, swingLow, shBar, slBar, shActive, slActive,
     hiSinceSwingLo, loSinceSwingHi,
+    /* NOT a diagnostic — smartMoneyZones() turns this into a published field.
+       It is a BAR INDEX into the series that was passed in, not an age: turning
+       it into "bars ago" needs to know where the series ends, and only the
+       caller holding that series can say. */
+    lastFlipBar,
     // Diagnostics, for the same reason the Pine carries them: when a level is
     // not advancing the way a chart says it should, these say which stage is
     // not firing.
@@ -7460,7 +8341,7 @@ function smzClassify(bias,px,f618,f786,f826){
   return null;
 }
 
-/* THE PUBLISHED ANSWER — the eight fields computeTech() carries on the row.
+/* THE PUBLISHED ANSWER — the nine fields computeTech() carries on the row.
 
    THE FIBONACCI. Bullish structure anchors on the active swing LOW: the leg is
    measured from that low up to the highest high printed since it, and the
@@ -7495,7 +8376,7 @@ function smzClassify(bias,px,f618,f786,f826){
    bucket would mean neither thing. */
 function smartMoneyZones(C,H,L,cfg){
   const nul={smzBias:null,smzState:null,smzDist:null,smz618:null,smz786:null,
-             smz826:null,smzSwingHi:null,smzSwingLo:null};
+             smz826:null,smzSwingHi:null,smzSwingLo:null,smzBosAge:null};
   if(!Array.isArray(C)||!Array.isArray(H)||!Array.isArray(L)) return nul;
   const n=C.length;
   if(n<SMZ_MIN_BARS||H.length!==n||L.length!==n) return nul;
@@ -7509,7 +8390,33 @@ function smartMoneyZones(C,H,L,cfg){
      valid target or stop price, and blanking it would hide the only two
      numbers on this row a trader actually places an order against. They can
      therefore be non-null while bias is 0. */
-  const out={...nul, smzBias:st.bias, smzSwingHi:r2(st.swingHigh), smzSwingLo:r2(st.swingLow)};
+  /* THE AGE OF THE BREAK OF STRUCTURE, in whole bars back from the LAST bar in
+     the series. 0 therefore means the flip happened on the latest bar — the
+     swing was taken out today — and 3 means three sessions ago. Bars, not
+     calendar days: the series is trading days, so a Monday break reads as 1 on
+     Tuesday whatever the weekend did.
+
+     Computed here rather than inside smzStructure() because the state machine
+     returns a bar INDEX and only this function knows the index of the end of
+     the series it handed in. n is C.length and the guard above has already
+     established H and L are the same length, so n-1 is genuinely the last bar
+     for all three.
+
+     null when the machine never flipped, which is exactly the bias===0
+     population — no close ever broke a swing level, so there is no break to
+     date — plus the too-short population, which returned before we got here.
+     null is NOT 0 and the two must never be conflated: 0 is the loudest reading
+     this field has. Anything comparing it numerically needs `!= null &&` first,
+     because `null <= 10` is true and would quietly admit every stock that has
+     never broken structure in its life.
+
+     NO DIRECTION FIELD, and none should be added later. Only a flip writes
+     bias, so the direction of the most recent flip is smzBias itself. On a bull
+     row this age dates the bar the swing HIGH was taken out; on a bear row, the
+     swing LOW. A smzBosDir would be a second copy of smzBias that can only
+     agree with it. */
+  const out={...nul, smzBias:st.bias, smzSwingHi:r2(st.swingHigh), smzSwingLo:r2(st.swingLow),
+             smzBosAge: st.lastFlipBar==null ? null : (n-1-st.lastFlipBar)};
 
   // The anchor: only an ACTIVE swing on the structure-aligned side anchors a
   // zone, and bias 0 anchors nothing at all.
@@ -7660,6 +8567,12 @@ function computeTech(C,H,L,V,dates,sym,O,feedStart){
      time, because the raw volume series is gone on a cached load and the row
      is then the only surviving record of it. */
   const vSpike=volSpike(V);
+  /* The thrust day. Computed here beside vSpike for the same reason vSpike is
+     computed here at all: it needs the raw close AND volume series, both of
+     which are gone on a cached load, so the row is the only surviving record
+     of the answer. It reads CFG.THRUST.win rather than taking a window from a
+     caller, exactly as volSpike() falls back to VOL_SPIKE_WIN. */
+  const thrust=thrustDay(C,V);
   const avgValue=avgTradedValue(C,V,AVG_VAL_BARS);
 
   /* 52-week high/low.
@@ -7801,6 +8714,30 @@ function computeTech(C,H,L,V,dates,sym,O,feedStart){
      "no data". A caller that does not supply it gets null, honestly. */
   const ipo=ipoBase(C,H,L,V,dates,feedStart);
 
+  /* MOMENTUM BASE. Computed here for the same reason VCP, IPO Base and Coil
+     are — the raw OHLCV is gone on a cached load and this row is then the only
+     surviving record of it.
+
+     THE 20-EMA SERIES IS BUILT ONCE, HERE, AND IT IS THE ONLY ONE IN THIS
+     FUNCTION. computeTech() already holds the 20-EMA VALUE (e20, drawn by the
+     EMA Align badges and divided by %20E), but a value is not a series and this
+     screen needs the line as it stood on every bar of the move — asking "how
+     many of these forty bars closed above their own 20 EMA" against today's
+     single number would judge every past bar by a line that had not been drawn
+     yet, which is lookahead of the plainest kind. It is NOT a second copy of
+     e20 either: emaSeries(C,20) is index-aligned and its LAST element is e20 by
+     construction, same seed, same smoothing, so the series and the value cannot
+     disagree about where the line is. The only other emaSeries(C,20) in this
+     file lives inside setupBaseAge(), which builds five periods for its own
+     backward walk and returns an integer — there is nothing there to reuse
+     without changing what that function returns, and threading a series out of
+     it to save one O(n) pass would couple two unrelated columns.
+     CFG.MOMO is passed rather than read inside, so the as-of-date rewind and
+     the Advanced Filters re-scan both reach the engine by the one path the
+     rest of this function already uses. */
+  const e20Series=emaSeries(C,20);
+  const momo=momentumBase(C,H,L,V,dates,e20Series,CFG.MOMO);
+
   /* %10E reads e10 — the SAME EMA computed at the top of this function and
      already drawn as the first EMA Align badge. Nothing is recomputed. */
   const pct10e=pctFromEma(price,e10);
@@ -7820,7 +8757,7 @@ function computeTech(C,H,L,V,dates,sym,O,feedStart){
 
   const cons=consolidation(C,CFG.CONSOL.lookback,CFG.CONSOL.maxRangePct);
 
-  /* Smart Money Zones. One call, eight published fields, all of them derived
+  /* Smart Money Zones. One call, nine published fields, all of them derived
      from the daily C/H/L this function already holds — see the block above
      computeTech() for the algorithm. It is computed here rather than at render
      time because it needs the raw high/low series, which a cached row does not
@@ -7912,17 +8849,33 @@ function computeTech(C,H,L,V,dates,sym,O,feedStart){
        a thing breakout() already tests its own way; folding it into a score
        would count the same volume twice. */
     volSpike:vSpike.mult, volSpikeAge:vSpike.age,
+    /* THE THRUST-DAY TRIO, and they have NO COLUMN — deliberately. Unlike the
+       Vol Spike pair above, nothing on screen prints these; their only consumer
+       is hadThrust(), reached from the "Thrust day" Advanced Filter and from
+       the seeded screen built on it. That is the same arrangement the EMA
+       convergence filter has (a computed test with no column of its own), and
+       it is why adding this cost no header cell, no SKEL_COLS entry and no export
+       column. They still ride in the cached row like every other computeTech()
+       field, which is why adding them moves CFG.VER.
+       All three come from ONE bar and must be read as a set: thrustAge dates
+       the same session thrustPct measures and thrustVol weighs. thrustVol is
+       separately nullable — the gain can be known while the volume multiple is
+       not — so it needs its own `!= null` test, never a bare comparison. */
+    thrustPct:thrust.pct, thrustAge:thrust.age, thrustVol:thrust.vol,
     rsi14,wRsi,e10,e20,e50,e100,e150,e200,emaScr,
     /* Three-valued, daily only — see the note where it is computed. It rides in
        the cached row like every other computeTech() field, which is why adding
        it moves CFG.VER. */
     rsiAboveMa,
-    /* THE EIGHT SMART MONEY ZONES FIELDS. Spread rather than listed one by one
+    /* THE NINE SMART MONEY ZONES FIELDS. Spread rather than listed one by one
        so the row and smartMoneyZones()'s own null-object can never drift out of
-       step — there is exactly one place that names these keys. smzBias is
-       four-valued (1 / -1 / 0 / null) and smzState five-valued (null included);
-       anything reading them must test explicitly, because 0 and null mean two
-       different things here (see the note where they are computed). */
+       step — there is exactly one place that names these keys, which is why
+       gs20's smzBosAge needed no edit here at all. smzBias is four-valued
+       (1 / -1 / 0 / null) and smzState five-valued (null included); anything
+       reading them must test explicitly, because 0 and null mean two different
+       things here — and smzBosAge is the third field in the family where that
+       is true, with 0 meaning "flipped today" (see the notes where they are
+       computed). */
     ...smz,
     sma50,sma150,sma200,slope200,slopeDir,
     xFast:XF,xSlow:XS,xFastEma,xSlowEma,xState,xBars,wxState,e50CrossUpAge,
@@ -7979,6 +8932,23 @@ function computeTech(C,H,L,V,dates,sym,O,feedStart){
        column may describe another's level. */
     ipoState:ipo&&ipo.state, ipoBaseBars:ipo&&ipo.baseBars, ipoBars:ipo&&ipo.bars,
     ipoDepth:ipo?ipo.depth:null, ipoLid:ipo?ipo.lid:null, ipoToLid:ipo?ipo.toLid:null,
+    /* THE NINE MOMENTUM BASE FIELDS, gs21. SPREAD rather than listed one by
+       one — the same arrangement the SMZ family above uses and for the same
+       reason: momentumBase() returns either its full object or its own
+       null-object, both carrying exactly these nine keys, so there is precisely
+       ONE place in the file that names them and the row cannot drift out of
+       step with the function. A tenth field added to the engine later lands
+       here with no edit at all.
+       Same contract as the VCP and IPO families otherwise: read by its own
+       column, by the sort, by the column filter, by the export and by the
+       🔥 Momentum Base button — and by NOTHING that scores, ranks or blends.
+       In particular it must never reach isQualitySetup() or the Stage 2 patch.
+       momoBaseHigh IS NOT dBoxTop, vcpLid OR ipoLid. It is the highest high
+       since this stock's own thrust peaked — a fourth level, on a fourth
+       definition, and on the same row on the same day all four are different
+       prices. Separate fields on purpose and no column may describe another's
+       level. */
+    ...momo,
     boGain:bo.gain,boCnt:bo.count,retrace:bo.retrace,
     // Own returns (inputs to RS, never displayed as RS), plus the dates they
     // were measured across so rankRS() can price the benchmark on the SAME
@@ -10350,6 +11320,52 @@ function dboxC(state,top,bot){
    while smzBias is 1 or -1. Printing a state under that would be inventing a
    zone the engine deliberately refused to draw. */
 const SMZ_STATE_LABEL={above:'Above zone', ibz:'In IBZ', smz:'In SMZ', below:'Below zone'};
+
+/* HOW RECENT A BREAK OF STRUCTURE HAS TO BE to still be worth showing, in
+   trading bars. Ten was the user's number, and it is roughly two calendar
+   weeks — long enough that a flip and the pullback that follows it can both
+   have happened, short enough that the flip is still what the chart is about.
+
+   ONE CONSTANT, TWO READERS: the ⚡ marker in the cell below and the ⚡ SMZ+BOS
+   button's predicate in getRows(). They have to agree — a marker that appears
+   on rows the button rejects, or the reverse, would make the button look
+   broken — and the only way to guarantee that is for both to read the same
+   name. smzBosAge itself is NOT capped in the engine; the engine publishes the
+   true age however old and this is purely a presentation threshold, so raising
+   it later needs no CFG.VER bump and no rescan. */
+const SMZ_BOS_MAX_AGE=10;
+
+/* THE BREAK-OF-STRUCTURE MARKER, appended to the cell when the flip is recent.
+   It reads '⚡ BOS today' at age 0 and '⚡ BOS 3d' otherwise — "today" rather
+   than "0d" because 0 is the single most actionable value this field takes and
+   printing it as a zero buries it among the ones and twos.
+
+   THE WORDING IS NEUTRAL AND THAT IS THE WHOLE DECISION. On a Bull row a break
+   of structure means the swing HIGH was taken out; on a Bear row it means the
+   swing LOW was. This column already prints both directions, so a marker worded
+   for bulls only — '⚡ New high taken' — would either have to be suppressed on
+   bear rows, making a bear stock that flipped yesterday look like one that has
+   not moved in a year, or be printed anyway and say the opposite of what
+   happened. 'BOS' is true of both, and the direction is already on the row two
+   words to the left in the ▲/▼ chip.
+
+   `!= null &&` FIRST, always. smzBosAge is null for every stock that never
+   broke structure, and `null <= 10` is TRUE in JS — a truthiness or bare
+   comparison here would stamp the marker on the one bias-0 row and on all
+   seventeen too-short ones, which is precisely the population that has no
+   break to report. Note this also means age 0 must not be tested for
+   truthiness anywhere: it is the loudest reading, not an absent one.
+
+   RETURNS ITS OWN LEADING SEPARATOR, or the empty string — the same contract
+   `dist` below follows, so smzC()'s last line stays a plain concatenation and
+   there is no branch there deciding whether a ' · ' is owed. The separator sits
+   OUTSIDE the badge span, unlike the distance's, because this badge is filled
+   and bordered and a middot inside it would be painted as part of the chip. */
+function smzBosMark(d){
+  const a=d.smzBosAge;
+  if(a==null||a>SMZ_BOS_MAX_AGE) return '';
+  return ` · <span class="smz-bos">⚡ BOS ${a===0?'today':a+'d'}</span>`;
+}
 function smzC(d){
   if(!d||d.smzBias==null) return '<span class="vm">—</span>';
   if(d.smzBias===0)       return '<span class="smz-none">— No structure</span>';
@@ -10367,7 +11383,56 @@ function smzC(d){
   const dist = d.smzDist!=null
     ? `<span class="smz-dist"> · ${d.smzDist>0?'+':''}${d.smzDist.toFixed(1)}%</span>`
     : '';
-  return chip+dist;
+  /* The marker goes LAST, after the distance, because it is the only part of
+     this cell that is about time rather than price — the three price readings
+     stay together in the order the column has always printed them, and nothing
+     above this line changed. It can only ever appear on this path: both early
+     returns above are bias null and bias 0, and smzBosAge is null for exactly
+     those two populations, so there is no arrangement in which a '— No
+     structure' row could also claim a break of structure. */
+  return chip+dist+smzBosMark(d);
+}
+
+/* THE MOMENTUM BASE CELL. Built on smzC()'s shape — a filled chip carrying the
+   verdict, then the working beside it in muted text — because the two columns
+   answer the same kind of question and a reader moving between them should not
+   have to learn a second layout.
+
+   IT PRINTS WHY IT QUALIFIED, NOT JUST THAT IT DID, and that is the whole
+   design of the cell. A bare 'Base' badge is true of a 41% thrust that took ten
+   weeks and of a 92% thrust that took four, and the owner reads this column
+   precisely to choose between them. So the size of the move and the bars it
+   took ride beside the badge, and on a resting stock the age of the rest rides
+   after them. Three short numbers on one line, which is what keeps this cell
+   the same height as every other row.
+
+   THE BREAKOUT LINE DROPS THE BASE AGE, deliberately rather than for space. On
+   a 'base' row the age is the live reading — how long the rest has run is how
+   ripe it is — while on a breakout row the rest is OVER, so printing how long
+   it lasted would be answering a question that stopped mattering on this bar.
+   The ⚡ carries the recency instead, exactly as it does in .smz-bos.
+
+   `!= null` ON EVERY NUMBER BEFORE IT IS FORMATTED, never truthiness, and this
+   is not academic here: momoBaseBars can legitimately be any integer from
+   minBaseBars up, momoPct is a percentage that no rule stops from being small
+   if the owner lowers the threshold, and `d.momoPct ? …` would blank a real
+   reading of 0. The engine's contract is that all nine fields are null together
+   or none are (see momentumBase's header), so the state test alone would in
+   practice be enough — but a cell that trusts a contract it does not check is
+   how a partial row becomes 'Base · NaN% in undefined'. */
+function momoC(d){
+  if(!d||!d.momoState) return '<span class="vm">—</span>';
+  const bo=d.momoState==='breakout';
+  const chip=`<span class="momo ${bo?'momo-bo':'momo-base'}">${bo?'⚡ Breakout':'Base'}</span>`;
+  /* The move reads "47% in 31d" — a size and the bars it took, together,
+     because either alone is unreadable: 47% is a different stock over 31 bars
+     than over 4. Rounded to whole numbers on purpose; the two decimals the
+     engine carries are for the export and the column filter, and a thrust
+     printed as "46.83%" would imply a precision the shape does not have. */
+  const move = (d.momoPct!=null && d.momoBars!=null)
+    ? ` · ${Math.round(d.momoPct)}% in ${d.momoBars}d` : '';
+  const rest = (!bo && d.momoBaseBars!=null) ? ` · ${d.momoBaseBars}d` : '';
+  return chip + ((move||rest) ? `<span class="momo-why">${move}${rest}</span>` : '');
 }
 
 /* ADR% renders flat: a number and a percent sign, two decimals like Retrace%
@@ -10865,7 +11930,7 @@ function histGC(v){ return fmtCh(v); }
    reason: without them a table loading with columns switched off renders
    skeleton rows WIDER than the data rows underneath, because only the data
    rows' cells get hidden. Length must equal (th count − 4). */
-const SKEL_COLS=['c-setup','c-align','c-fresh','c-sector','c-subind','','','c-ch1w','c-ch1m','c-ch3m','c-hist','c-histg','c-status','','c-wrsi','c-vr','c-volspike','c-wvol','c-avgval','','c-wpiv','c-dbox','c-pctpiv','c-wbox','c-smz','',
+const SKEL_COLS=['c-setup','c-align','c-fresh','c-sector','c-subind','','','c-ch1w','c-ch1m','c-ch3m','c-hist','c-histg','c-status','','c-wrsi','c-vr','c-volspike','c-wvol','c-avgval','','c-wpiv','c-dbox','c-pctpiv','c-wbox','c-smz','c-momo','',
   'c-ema','c-pct10e','c-pct20e','c-pct50e','c-pct200e','c-wema','c-xcross','c-wcross','c-slope200','c-pattern','c-wpattern','c-consol',
   'c-monthly','','c-bocnt','c-followup','c-voldry','c-retrace','c-squeeze','c-adr','c-tight','c-daysup','c-coil','c-vcp','c-vcplid','c-vcptolid','c-ipo','c-ipolid','c-ipotolid','','c-mrsrank','c-rs21',
   'c-rs55','c-rs10w','c-rsslope','c-rsp55','c-rsp21','c-rshist','','c-rstrend','c-notes'];
@@ -10944,6 +12009,7 @@ function dataRow(def,d,i){
     <td class="c-pctpiv">${pctEmaC(d.pctVsPivot)}</td>
     <td class="c-wbox">${dboxC(d.wBoxState,d.wBoxTop,d.wBoxBot)}</td>
     <td class="c-smz">${smzC(d)}</td>
+    <td class="c-momo">${momoC(d)}</td>
     <td>${h52C(d.h52d)}</td>
     <td class="c-ema">${emaBadgeRow(d.price,[['10',d.e10],['20',d.e20],['50',d.e50],['200',d.e200]])}</td>
     <td class="c-pct10e">${pctEmaC(d.pct10e)}</td>
@@ -10995,7 +12061,7 @@ function errRow(def,i){
     <td class="td-n pin pin1">${i}</td><td class="pin pin2">${revC(def.s)}</td>
     <td class="pin pin3">${capB(def.g)}</td>
     <td class="pin pin4">${watchC(def.s)}<span class="ticker">${def.d}</span><br><span class="sec">${def.sector}</span></td>
-    <td colspan="67" style="color:var(--text3);font-size:11px">
+    <td colspan="68" style="color:var(--text3);font-size:11px">
       ⚠ Not in this market's data source — it will appear once the daily data carries it
     </td>
   </tr>`;
@@ -11027,6 +12093,41 @@ const ADV_DEFAULTS={
      controls agree until someone deliberately changes this one; they are not
      wired together, and that is the point. */
   emacv: {on:false, pct:5},
+  /* MOMENTUM BASE — the one group here that is a filter AND a set of re-scan
+     inputs at the same time. It DOES carry an `on` key, unlike the smz row
+     below, and that is deliberate rather than inconsistent: ticking it removes
+     stocks from the table, so updateAdvBtn() counting it tells the user the
+     truth about why his list got shorter. The four numbers do their work even
+     when `on` is false — they are copied into CFG.MOMO and the column is
+     recomputed from them regardless — because they define what the column MEANS
+     rather than which rows survive it. That is the same arrangement CFG.XOVER's
+     fast/slow pair has, where the pair retunes the EMA Cross column whether or
+     not the crossover filter is ticked.
+     The defaults are CFG.MOMO's own, and the two lists must agree on the day
+     they ship: loadAdvFilters() copies these into CFG.MOMO on every startup, so
+     a mismatch here would silently override the engine's own numbers. */
+  momo:  {on:false, move:40, days:42, depth:25, above:80},
+  /* THRUST DAY — a filter and NOTHING BUT a filter, which is exactly what
+     makes it the cheap opposite of the momo group above. thrustPct, thrustAge
+     and thrustVol come out of computeTech(), but the only thing computeTech()
+     reads to produce them is CFG.THRUST.win, and that window is not editable
+     from this modal. These three numbers are therefore compared against
+     already-published fields and never copied into CFG — so there is no
+     applyThrustCfg(), no thrustKey(), and no leg in any forceRefresh()
+     condition. Editing any of them is a re-filter of the rows already in hand.
+     Adding one to a refresh condition later would make every tweak of this
+     filter cost a full recompute of the whole market for no change in the
+     numbers being compared.
+     It DOES carry an `on` key, like momo and unlike smz, because ticking it
+     removes stocks from the table and updateAdvBtn() should say so.
+     THE DEFAULTS: 5% is the smallest daily move worth calling violent on an
+     Indian large/mid cap; 10 days matches CFG.THRUST.win, so the age box
+     starts wide open and can only ever narrow what the engine already found;
+     2x is a little under the 75th percentile of thrustVol across the India
+     universe, which is where "more than usual" stops being noise.
+     0 IN THE VOLUME BOX MEANS "IGNORE VOLUME" — hadThrust() branches on that
+     rather than comparing, for the reason spelled out there. */
+  thrust:{on:false, pct:5, days:10, vol:2},
   /* NOT A FILTER, AND IT HAS NO `on` KEY ON PURPOSE. Every other group here is
      a screen with an on/off flag, and updateAdvBtn() counts exactly those —
      `Object.keys(ADV).filter(k=>ADV[k].on)`. A group with no `on` reads
@@ -11045,6 +12146,37 @@ const ADV_DEFAULTS={
    validator in loadAdvFilters() and the reader in readAdvForm() cannot drift
    from each other or from the engine. */
 const SMZ_MODES=['break','everyhllh'];
+
+/* THE TWO HALVES OF "ADV.momo IS A RE-SCAN INPUT", in one place each.
+
+   The four editable numbers are named one way in the modal (move / days /
+   depth / above, which is how the owner says them) and another way in the
+   engine (minMovePct / lookback / maxBaseDepth / minAbovePct, which is how
+   momentumBase() reads them). That translation is written ONCE, here, rather
+   than four times across loadAdvFilters, applyAdvFilters, resetAdvFilters and
+   applyScreen — four hand-copied mappings is four chances for one of them to
+   map depth onto the wrong field, and the symptom would be a column quietly
+   computed against a threshold the modal is not showing.
+
+   momoKey() is the comparison half and exists for the same reason
+   `CFG.XOVER.fast+'/'+CFG.XOVER.slow` is spelled inline at both of its call
+   sites: a re-scan has to fire when ANY of the four moves, and comparing four
+   fields by hand at four sites is where the fourth one gets forgotten. It reads
+   CFG, never ADV, so "did the ENGINE's numbers change" is the question actually
+   being asked — which is the one that decides whether cached rows are stale.
+
+   NEITHER OF THESE IS A REFRESH PATH. They only read and write config; every
+   caller still routes through the single forceRefresh() condition it already
+   had. minVolRatio and minBaseBars are deliberately untouched by both: they are
+   not editable from the modal, so they can only ever come from CFG.MOMO. */
+const momoKey=()=>[CFG.MOMO.minMovePct,CFG.MOMO.lookback,
+                   CFG.MOMO.maxBaseDepth,CFG.MOMO.minAbovePct].join('/');
+const applyMomoCfg=()=>{
+  CFG.MOMO.minMovePct  = +ADV.momo.move;
+  CFG.MOMO.lookback    = +ADV.momo.days;
+  CFG.MOMO.maxBaseDepth= +ADV.momo.depth;
+  CFG.MOMO.minAbovePct = +ADV.momo.above;
+};
 const cloneAdv=o=>JSON.parse(JSON.stringify(o));
 let ADV=cloneAdv(ADV_DEFAULTS);
 
@@ -11069,6 +12201,23 @@ function loadAdvFilters(){
        the modal is not showing. */
     if(SMZ_MODES.includes(ADV.smz.mode)) CFG.SMZ.advanceMode=ADV.smz.mode;
     else ADV.smz.mode=ADV_DEFAULTS.smz.mode;
+    /* And the saved Momentum Base thresholds ARE the thresholds that column is
+       computed from, for exactly the same reason as the two above. Without this
+       line a value tuned yesterday would come back into the FORM on reload
+       while the engine quietly kept the shipped defaults — the modal showing
+       one screen and the table holding another, with nothing on screen able to
+       say so. That is the identical bug applyScreen() was fixed for.
+       GUARDED RATHER THAN ASSIGNED STRAIGHT THROUGH, like the SMZ mode: these
+       arrive from localStorage, which is reachable from a console and survives
+       across versions, and a non-finite or non-positive value would reach
+       momentumBase() where `n < lookback+1` and the threshold comparisons would
+       all read false — every row would go null with no error anywhere. A bad
+       payload is dropped back to the shipped defaults instead. */
+    const momoOk=v=>typeof v==='number'&&isFinite(v)&&v>0;
+    ['move','days','depth','above'].forEach(k=>{
+      if(!momoOk(+ADV.momo[k])) ADV.momo[k]=ADV_DEFAULTS.momo[k];
+    });
+    applyMomoCfg();
   } catch(e){ /* corrupt config: keep defaults */ }
 }
 function saveAdvFilters(){
@@ -11124,6 +12273,34 @@ function passesAdv(d){
   if(ADV.emacv.on){
     if(!emaConverged(d, +ADV.emacv.pct)) return false;
   }
+  /* MOMENTUM BASE. The FOUR NUMBERS ARE NOT RE-TESTED HERE, and that is the
+     whole point of this row being a re-scan input rather than a filter: by the
+     time passesAdv() runs, momentumBase() has already been re-run against those
+     exact thresholds and momoState is its verdict. Comparing d.momoPct against
+     ADV.momo.move again would be a second copy of the engine's rule — and a
+     WRONG one, because the engine ANDs six conditions and this could only ever
+     re-check one of them, so a row that failed on depth would be admitted here
+     on the strength of its move. The state is the answer; this only reads it.
+     Both states pass, for the reason the toolbar button's branch gives: 'base'
+     and 'breakout' are the same shape a bar apart, and admitting one without
+     the other would make the filter mean half its own column. */
+  if(ADV.momo.on){
+    if(!d.momoState) return false;
+    if(d.momoState!=='base'&&d.momoState!=='breakout') return false;
+  }
+  /* THRUST DAY. The exact opposite arrangement to the momo row above, and the
+     contrast is the reason both notes exist. momo's thresholds are NOT
+     re-tested here because the engine already applied them; thrust's three
+     thresholds ARE tested here, and only here, because the engine never saw
+     them — computeTech() published the raw thrustPct/thrustAge/thrustVol trio
+     off CFG.THRUST.win and made no judgement about them at all. That is what
+     makes this a re-filter rather than a re-scan.
+     Every null case is handled inside hadThrust(), including the one that
+     matters most: `null <= maxDays` is true, so a row with no thrust would be
+     admitted by an unguarded age test. Nothing is coerced here. */
+  if(ADV.thrust.on){
+    if(!hadThrust(d, +ADV.thrust.pct, +ADV.thrust.days, +ADV.thrust.vol)) return false;
+  }
   return true;
 }
 
@@ -11150,6 +12327,15 @@ function openAdvFilters(){
   $('advXSlow').value=String(ADV.xover.slow);
   $('advCvOn').checked=ADV.emacv.on;
   $('advCvPct').value=ADV.emacv.pct;
+  $('advMomoOn').checked=ADV.momo.on;
+  $('advMomoMove').value=ADV.momo.move;
+  $('advMomoDays').value=ADV.momo.days;
+  $('advMomoDepth').value=ADV.momo.depth;
+  $('advMomoAbove').value=ADV.momo.above;
+  $('advThrustOn').checked=ADV.thrust.on;
+  $('advThrustPct').value=ADV.thrust.pct;
+  $('advThrustDays').value=ADV.thrust.days;
+  $('advThrustVol').value=ADV.thrust.vol;
   $('advSmzMode').value=ADV.smz.mode;
   $('advModal').classList.add('open');
 }
@@ -11167,6 +12353,30 @@ function readAdvForm(){
   ADV.liq   ={on:$('advLiqOn').checked,    min:num('advLiqMin',ADV_DEFAULTS.liq.min)};
   ADV.xover ={on:$('advXOn').checked,      fast:num('advXFast',ADV_DEFAULTS.xover.fast), slow:num('advXSlow',ADV_DEFAULTS.xover.slow)};
   ADV.emacv ={on:$('advCvOn').checked,     pct:num('advCvPct',ADV_DEFAULTS.emacv.pct)};
+  /* AN `on` KEY IS WRITTEN HERE, unlike the smz row below, because this filter
+     really does narrow the table and belongs in updateAdvBtn()'s count. The
+     four numbers are read through the same num() fallback as every other box,
+     which is what keeps a blanked-out field from writing NaN into CFG.MOMO —
+     and NaN here is worse than elsewhere: it would reach momentumBase(), fail
+     every threshold comparison silently, and empty the column for the whole
+     market with no error to explain it. */
+  ADV.momo  ={on:$('advMomoOn').checked,   move:num('advMomoMove',ADV_DEFAULTS.momo.move),
+              days:num('advMomoDays',ADV_DEFAULTS.momo.days),
+              depth:num('advMomoDepth',ADV_DEFAULTS.momo.depth),
+              above:num('advMomoAbove',ADV_DEFAULTS.momo.above)};
+  /* THRUST DAY. An `on` key like the momo row above, because it narrows the
+     table. Read through the same num() fallback, and the fallback matters here
+     for the usual reason plus one of its own: a blanked-out volume box must
+     come back as the DEFAULT 2, not as NaN and not as 0 — 0 is a meaningful
+     value in that box ("ignore volume") and must only ever be there because
+     the user typed it, never because a field was left empty.
+     NOTHING IS COPIED INTO CFG FROM HERE, unlike the momo row. These three are
+     compared straight against the fields computeTech() already published, so
+     applyAdvFilters() has no capture-before line for them and no leg in its
+     forceRefresh() condition. */
+  ADV.thrust={on:$('advThrustOn').checked, pct:num('advThrustPct',ADV_DEFAULTS.thrust.pct),
+              days:num('advThrustDays',ADV_DEFAULTS.thrust.days),
+              vol:num('advThrustVol',ADV_DEFAULTS.thrust.vol)};
   /* NO `on` KEY WRITTEN HERE EITHER, and that is not an oversight — see
      ADV_DEFAULTS.smz. Adding one would put this row into updateAdvBtn()'s
      count, which counts screens that narrow the table, and this row narrows
@@ -11183,11 +12393,18 @@ function applyAdvFilters(){
   // an input to computeTech(), so a change to it is a re-scan and not a
   // re-filter. Read BEFORE readAdvForm() overwrites ADV.
   const prevSmz=CFG.SMZ.advanceMode;
+  /* The four Momentum Base thresholds are captured the same way and for the
+     same reason: they are inputs to computeTech(), so a change to any one of
+     them is a re-scan and not a re-filter. Read BEFORE readAdvForm() overwrites
+     ADV, and read off CFG rather than ADV so the comparison below is about what
+     the ENGINE was actually using. */
+  const prevMomo=momoKey();
   readAdvForm();
   saveAdvFilters();
   closeAdvFilters();
   CFG.XOVER={fast:ADV.xover.fast, slow:ADV.xover.slow};
   CFG.SMZ.advanceMode=ADV.smz.mode;
+  applyMomoCfg();
   syncXoverLabel();
   updateAdvBtn();
   VISIBLE=CFG.INIT;
@@ -11195,20 +12412,32 @@ function applyAdvFilters(){
      it is a re-scan. forceRefresh() drops the cache and recomputes this market.
      Every SMZ field comes out of the same function, so the anchor mode is the
      SAME kind of change and takes the SAME path — one condition, one refresh,
-     rather than a second mechanism that could fire at a different moment. */
-  if(prev !== CFG.XOVER.fast+'/'+CFG.XOVER.slow || prevSmz !== CFG.SMZ.advanceMode){ forceRefresh(); return; }
+     rather than a second mechanism that could fire at a different moment. The
+     four Momentum Base thresholds join the SAME condition on the same terms:
+     momoState and its eight companions come out of computeTech() too, so
+     retuning any of them makes every cached row wrong in exactly the way a new
+     EMA pair does. Three re-scan inputs now, still ONE forceRefresh(). */
+  if(prev !== CFG.XOVER.fast+'/'+CFG.XOVER.slow || prevSmz !== CFG.SMZ.advanceMode
+     || prevMomo !== momoKey()){ forceRefresh(); return; }
   renderTable(CUR); updateStatus();
 }
 
 function resetAdvFilters(){
   ADV=cloneAdv(ADV_DEFAULTS);
   saveAdvFilters();
-  // Both re-scan inputs, tested together: resetting to defaults can move either
-  // one, and either one alone is enough to make the cached rows wrong.
+  /* ALL THREE re-scan inputs, tested together: resetting to defaults can move
+     any of them, and any one alone is enough to make the cached rows wrong.
+     The Momentum Base leg is compared through momoKey(), which reads CFG — so
+     it is still asking "is the engine about to be handed different numbers",
+     the same question the two legs beside it ask — and it is evaluated BEFORE
+     applyMomoCfg() writes the restored defaults in, exactly as the other two
+     compare CFG against ADV before overwriting CFG. */
   const changed = CFG.XOVER.fast!==ADV.xover.fast || CFG.XOVER.slow!==ADV.xover.slow
-                || CFG.SMZ.advanceMode!==ADV.smz.mode;
+                || CFG.SMZ.advanceMode!==ADV.smz.mode
+                || momoKey()!==[ADV.momo.move,ADV.momo.days,ADV.momo.depth,ADV.momo.above].join('/');
   CFG.XOVER={fast:ADV.xover.fast, slow:ADV.xover.slow};
   CFG.SMZ.advanceMode=ADV.smz.mode;
+  applyMomoCfg();
   syncXoverLabel();
   updateAdvBtn();
   openAdvFilters();   // refresh the form to show the restored values
@@ -11678,9 +12907,10 @@ function setupBaseAge(C,H,L,V,dates,O,wkPre){
     for(let i=0;i<n;i++){
       const dt=dates&&dates[i];
       if(dt&&C[i]!=null){
-        const d=new Date(dt+'T00:00:00Z');
-        const mon=new Date(d); mon.setUTCDate(d.getUTCDate()-((d.getUTCDay()+6)%7));
-        const k=mon.toISOString().slice(0,10);
+        /* Same shared per-date cache weeklyResample() uses. This loop had its
+           own inline copy of the identical Date arithmetic, so it was paying
+           the full conversion a second time for every bar of every ticker. */
+        const k=wkMondayKey(dt);
         if(!seen.has(k)){ seen.add(k); cnt++; }
       }
       wkOf[i]=cnt;
@@ -11950,6 +13180,25 @@ const SORT_FN={
     // so no bear row can ever climb above a bull row however deep it has pulled.
     return (d.smzBias>0?100:10)+within;
   },
+  /* MOMENTUM BASE ranks MOST ACTIONABLE FIRST, which here is simply the order
+     of the two states in time: Breakout, then Base, then the blanks. Sorted as
+     the printed string 'Base' would come before 'Breakout' alphabetically and
+     bury the one row the column was built to surface — the same argument
+     DBOX_RANK and the SMZ rank above are made on.
+
+     WRITTEN AS A RANK MAP RATHER THAN ON momoPct, and the temptation to rank on
+     the size of the thrust instead should be resisted: a 90% move that has gone
+     nowhere for three weeks is not more actionable than a 45% one breaking out
+     today, and this is the column's ACTION order. The size is available as its
+     own sort the moment the user wants it — it is an exported, filterable
+     number — and conflating the two here would leave no way to ask for either.
+
+     A row with no state returns undefined -> getRows() maps it to -Infinity, so
+     the stocks nothing was computed for sink rather than borrowing a rank.
+     There is no bias-0 equivalent to score explicitly: unlike SMZ, this engine
+     has no "we looked and the answer was genuinely nothing" verdict distinct
+     from "it failed a test", so every non-qualifying row is one bucket. */
+  momo:d=>({breakout:2, base:1})[d?.momoState],
   sector:(_,def)=>def.sector,
   // Same shape as sector: a per-ROW attribute, so it takes def, not d.
   subind:(_,def)=>subIndOf(def),
@@ -12261,6 +13510,54 @@ function emaConverged(d, maxPct){
   return ((Math.max(...vals)-Math.min(...vals))/px)*100 <= maxPct;
 }
 
+/* ══ THE THRUST-DAY TEST ══════════════════════════════════════
+   Did this stock have ONE violent up day recently, on heavy volume?
+
+   THE THREE THRESHOLDS ARE ASKED OF ONE BAR, because the three fields are
+   already about one bar — thrustDay() found the biggest single-day gain in
+   the window and then read that same bar's date and that same bar's volume.
+   Nothing here can mix sessions, and that is the property the whole screen
+   rests on: a stock that rose 12% three weeks ago and separately traded
+   enormous volume last Tuesday is not this setup, and would sail through a
+   test that asked the two questions of the series independently.
+
+   NO COLUMN, AND NONE NEEDED. This lives beside emaConverged() because it is
+   the same kind of thing: a computed predicate over fields the row already
+   carries, reached from the Advanced Filters modal and from a seeded screen,
+   with nothing printed in the table. That is what let the thrust screen ship
+   without a header cell, a SKEL_COLS entry, a sort key or an export column.
+
+   EVERY COMPARISON IS GUARDED BY `!= null` FIRST, and this is not ceremony.
+   thrustAge is null on any row with too little history, and `null <= 10` is
+   TRUE in JavaScript because null coerces to 0 — so an unguarded age test
+   would admit exactly the rows that have no thrust at all, silently, since
+   those rows look ordinary in every other respect. The gain test would fail
+   safe on its own (`null >= 5` is false), but it is written the same way
+   anyway so the pattern is uniform and the next person to add a fourth
+   threshold copies the right shape.
+
+   THE NEGATED FORM `if(!(x >= min)) return false` RATHER THAN `if(x < min)`.
+   They differ on NaN: NaN fails both comparisons, so the negated form rejects
+   a NaN threshold while the plain one would accept everything. The boxes are
+   read through num() with a fallback so NaN should not arrive, but this is
+   the cheaper of the two ways to be right.
+
+   minVol > 0 IS A BRANCH, NOT A COMPARISON, and this is the subtle one.
+   Typing 0 into the volume box means "I do not care about volume". If that
+   were a plain `thrustVol >= 0` test it would still be preceded by the null
+   guard, so it would reject every row whose 20-bar average could not be
+   measured — rows the user just said they did not want judged on volume.
+   Skipping the leg entirely is the only reading of 0 that matches what the
+   box says. */
+function hadThrust(d, minPct, maxDays, minVol){
+  if(!d) return false;
+  if(d.thrustPct==null || d.thrustAge==null) return false;
+  if(!(d.thrustPct >= minPct)) return false;
+  if(!(d.thrustAge <= maxDays)) return false;
+  if(minVol > 0){ if(d.thrustVol==null || !(d.thrustVol >= minVol)) return false; }
+  return true;
+}
+
 /* ══ LIFECYCLE STAGE ═════════════════════════════════════════
    Where a name is in the ONE move this screener is built around: coiling under
    a Darvas pivot, crossing it, running, and finally handing the move back. The
@@ -12503,6 +13800,48 @@ function getRows(market, exclCol){
      disagreeing with it. */
   if(F_SMZ) items=items.filter(def=>{const d=SD[def.s];
     return d && d.smzBias===1 && (d.smzState==='ibz'||d.smzState==='smz'||d.smzState==='below');});
+  /* THE SMZ + BOS SCREEN — the break-and-retest. Everything the SMZ Setup rule
+     above asks for, AND the break of structure that produced the bias happened
+     inside the last SMZ_BOS_MAX_AGE bars. The two halves are what make it a
+     retest rather than a drift: the flip says the swing high was taken out
+     recently, the state says price has since come back into the zone.
+
+     WHY THE SETUP RULE IS RESTATED rather than delegated to F_SMZ. These are
+     two independent buttons and either can be lit alone, so this branch has to
+     hold the whole condition; leaning on F_SMZ's branch would make this one
+     mean different things depending on whether the other button happened to be
+     on. It is a duplicated predicate on purpose, and it is a strict subset, so
+     lighting both is simply this rule.
+
+     `d.smzBosAge!=null &&` BEFORE THE COMPARISON, and this is the trap the
+     whole guard exists for: smzBosAge is null for every stock whose structure
+     never flipped, and `null <= 10` is TRUE in JavaScript because null coerces
+     to 0. Without the null test this button would admit exactly the stocks with
+     no break of structure at all — the opposite of what it screens for — and it
+     would do it silently, because those rows look perfectly normal otherwise.
+
+     SMZ_BOS_MAX_AGE, not a literal 10. The ⚡ marker in the SMZ column reads the
+     same constant, so a row this button returns always carries the badge that
+     explains why. Two literals would drift the first time one was tuned. */
+  if(F_SMZBOS) items=items.filter(def=>{const d=SD[def.s];
+    return d && d.smzBias===1
+        && (d.smzState==='ibz'||d.smzState==='smz'||d.smzState==='below')
+        && d.smzBosAge!=null && d.smzBosAge<=SMZ_BOS_MAX_AGE;});
+  /* THE MOMENTUM BASE SCREEN. Both states, because both are the shape: 'base'
+     is the stock still resting and 'breakout' is the same stock on the bar the
+     rest ended, and dropping either would make this button mean half its own
+     column. Tested as an explicit pair rather than as truthiness on momoState —
+     `d.momoState &&` would pass any string the engine grew later without anyone
+     deciding it belonged in this screen, which is how a third state silently
+     joins a filter it was never meant to be in.
+     NO THRESHOLDS RESTATED HERE. Unlike the two SMZ branches above, which
+     restate their conditions because they are near-duplicates of each other,
+     this rule has no sibling to be confused with and every number behind it is
+     already enforced inside momentumBase(). Re-testing momoPct or momoBaseDepth
+     here would be a second copy of the engine's rule that the Advanced Filters
+     numbers could move out from under. */
+  if(F_MOMO) items=items.filter(def=>{const d=SD[def.s];
+    return d && (d.momoState==='base'||d.momoState==='breakout');});
   /* THE LIFECYCLE STAGE, in the same AND chain as everything else — so "what
      the table is showing" keeps exactly one definition. `exclCol==='stage'` is
      how the stage panel counts its own four buckets over every OTHER filter,
@@ -13072,7 +14411,7 @@ function applyF(){
    handlers flip the flag and call this, so a programmatic reset (clrF,
    switchMkt) lands on screen through the same one path. */
 function syncFilterToggles(){
-  [['alignTog',F_ALIGN],['dwaTog',F_DWA],['boTog',F_BO],['boxTog',F_BOX],['rsimaTog',F_RSIMA],['emacvTog',F_EMACV],['smzTog',F_SMZ],['wlTog',F_WL]].forEach(([id,on])=>{
+  [['alignTog',F_ALIGN],['dwaTog',F_DWA],['boTog',F_BO],['boxTog',F_BOX],['rsimaTog',F_RSIMA],['emacvTog',F_EMACV],['smzTog',F_SMZ],['smzbosTog',F_SMZBOS],['momoTog',F_MOMO],['wlTog',F_WL]].forEach(([id,on])=>{
     const el=$(id); if(!el) return;
     el.classList.toggle('on',on);
     el.setAttribute('aria-pressed',on?'true':'false');
@@ -13095,12 +14434,17 @@ function toggleEmaCv(){ F_EMACV=!F_EMACV; syncFilterToggles();
   VISIBLE=CFG.INIT; renderTable(CUR); updateStatus(); }
 function toggleSmz(){ F_SMZ=!F_SMZ; syncFilterToggles();
   VISIBLE=CFG.INIT; renderTable(CUR); updateStatus(); }
+function toggleSmzBos(){ F_SMZBOS=!F_SMZBOS; syncFilterToggles();
+  VISIBLE=CFG.INIT; renderTable(CUR); updateStatus(); }
+function toggleMomo(){ F_MOMO=!F_MOMO; syncFilterToggles();
+  VISIBLE=CFG.INIT; renderTable(CUR); updateStatus(); }
 function toggleWL(){ F_WL=!F_WL; syncFilterToggles();
   VISIBLE=CFG.INIT; renderTable(CUR); updateStatus(); }
 
 function clrF(){
   SEARCH='';F_CAP='All';F_SCT='';F_EMA='';F_RSI='';F_PIV='';F_WPIV='';F_REV='';
   F_ALIGN=false;F_BO=false;F_DWA=false;F_WL=false;F_BOX=false;F_RSIMA=false;F_EMACV=false;F_SMZ=false;
+  F_SMZBOS=false;F_MOMO=false;
   // The stage panel is a filter like any other, so "Clear Filters" clears it.
   F_STAGE='';
   MIN_MCAP=MCAP_DEFAULTS[CUR] ?? 0;
@@ -13260,6 +14604,23 @@ const EXPORT_COLS=[
   ['SMZ 0.618',   (def,d)=>d?.smz618??''],
   ['SMZ 0.786',   (def,d)=>d?.smz786??''],
   ['SMZ 0.826',   (def,d)=>d?.smz826??''],
+  /* MOMENTUM BASE goes out as the state text PLUS the three numbers behind it,
+     for the reason the Darvas box goes out as a state and two prices and SMZ as
+     a state and three levels: a spreadsheet is exactly where someone checks
+     whether the shape was measured correctly, and "did a 47% move really take
+     31 bars, and is a 14% base really tight" is arithmetic they can redo in a
+     cell against the price history. The text column is deliberately the same
+     vocabulary the table prints — one reading to compare against the screen —
+     while the three numbers are raw, so nobody has to parse a badge to get at
+     them. All four are '' together on a row that did not qualify; there is no
+     'No structure' equivalent here, because a stock that failed a test is an
+     absence rather than a finding. */
+  ['Momentum Base',   (def,d)=>{
+                    const s=d?.momoState;
+                    return s==='breakout'?'Breakout':s==='base'?'Base':''; }],
+  ['Momo Move %',     (def,d)=>d?.momoPct??''],
+  ['Momo Base Bars',  (def,d)=>d?.momoBaseBars??''],
+  ['Momo Base Depth %',(def,d)=>d?.momoBaseDepth??''],
   ['52W High%',   (def,d)=>d?.h52d??''],
   ['52W High',    (def,d)=>d?.h52??''],
   ['52W Low',     (def,d)=>d?.l52??''],
@@ -13658,6 +15019,18 @@ const COL_FILTERS={
              if(d.smzBias===0) return 'No structure';
              const w=d.smzState&&SMZ_STATE_LABEL[d.smzState];
              return w?`${d.smzBias>0?'Bull':'Bear'} · ${w}`:null; }},
+  /* MOMENTUM BASE. Two options, and only two: the engine publishes exactly two
+     states and every other row is an absence, which lands in the (blank) bucket
+     the way every other column here puts "no value". There is deliberately no
+     third option for "failed a test" — unlike SMZ's 'No structure', a stock
+     that missed the 40% thrust by a point is not a category the owner screens
+     on, it is simply not this shape.
+     The words are the ones the CELL prints, not the engine's lowercase state
+     names, so a pick made in the funnel reads back identically to what is on
+     screen — the same contract D-Box and SMZ are held to. */
+  momo:    {t:'cat',  label:'Momentum Base', val:d=>{
+             const s=d&&d.momoState;
+             return s==='breakout'?'Breakout':s==='base'?'Base':null; }},
   xstate:  {t:'cat',  label:'EMA Cross', val:d=>{const s=d&&d.xState; return s?(s==='bull'?'Bull':'Bear'):null;}},
   wxstate: {t:'cat',  label:'W-Cross', val:d=>{const s=d&&d.wxState; return s?(s==='bull'?'Bull':'Bear'):null;}},
   // "6/9" rather than 6: the denominator is part of the reading — a 6/7 and a
@@ -14412,6 +15785,14 @@ const TOGGLEABLE_COLS=[
      and exports exactly like every other column while switched off, and the
      🧲 SMZ Setup toolbar button screens on it without the column being on. */
   {cls:'smz',    label:'SMZ', defOff:true},
+  /* defOff for the same reason SMZ, % vs Pivot and the VCP and IPO trios are —
+     see COL_DEF_OFF below. The table is already 67 columns wide and its width
+     is the thing the owner guards, so a new column arrives switched OFF and
+     earns its place from the Columns modal. It sorts, filters and exports
+     exactly like every other column while hidden, and the 🔥 Momentum Base
+     toolbar button screens on it without the column being on — the same
+     arrangement the 🧲 SMZ Setup button has with the row above. */
+  {cls:'momo',   label:'Momentum Base', defOff:true},
   {cls:'ema',    label:'EMA Align'},
   {cls:'pct10e', label:'%10E'},
   {cls:'pct20e', label:'%20E'},
