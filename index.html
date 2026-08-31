@@ -560,6 +560,46 @@ td:last-child{border-right:none}
 .ipo-pivot{background:var(--blue-bg);color:var(--blue);border-color:var(--blue)}
 .ipo-forming{background:var(--surface2);color:var(--text2);border-color:var(--border)}
 
+/* ─── SMART MONEY ZONES BADGE ─── */
+/* A FOURTH badge family, and a fourth one on purpose, for exactly the reason
+   .ipo is not .vcp and .vcp is not .dbx. Those three all describe a CEILING —
+   a box top, a base lid, a post-listing high — and this one describes a
+   RETRACEMENT LEVEL underneath a swing, which is a different kind of price
+   entirely. Sharing a class would put four unrelated levels one stylesheet
+   edit away from reading as one measurement.
+
+   THE COLOUR RULE IS THE HOUSE RULE, applied to this column's own question.
+   Elsewhere "actionable now" means filled and bordered while "still waiting"
+   recedes; here the thing being waited for is a PULLBACK, so the ordering
+   inverts relative to a breakout badge. In-zone is the arrival, not the miss:
+   .smz-smz is the deep 0.786-0.826 band and takes green, .smz-ibz the shallower
+   0.618-0.786 band and takes blue, and both are filled because both are places
+   an order gets placed. .smz-above recedes — the stock has not pulled back yet,
+   so there is nothing to act on. .smz-below is red text with no fill, mirroring
+   .dbx-below: the retracement has run past what the zone allows for, which is a
+   warning rather than a level. .smz-none is a resolved direction with no zone
+   anchored under it and reads as muted text.
+
+   Tokens only, no hard-coded hex, so a theme switch repaints it with no JS.
+   The tokens are the ones .vcp and .ipo already use, so the AA contrast proven
+   for those two is the same arithmetic here. */
+.smz{display:inline-block;padding:2px 7px;border-radius:var(--rs);
+  font-size:10px;font-weight:700;border:1px solid transparent;white-space:nowrap}
+/* .smz-smz is not a typo. The class is built mechanically as `smz-${smzState}`,
+   the same way .dbx-${state} is, and 'smz' is a genuine state name inside the
+   family called SMZ — the deep band. Renaming it here to read better would put
+   the stylesheet one state name out of step with the engine. */
+.smz-smz{background:var(--green-bg);color:var(--green);border-color:var(--green)}
+.smz-ibz{background:var(--blue-bg);color:var(--blue);border-color:var(--blue)}
+.smz-above{background:var(--surface2);color:var(--text2);border-color:var(--border)}
+.smz-below{color:var(--red);font-weight:700}
+.smz-none{color:var(--text3);font-weight:600}
+/* The distance rides beside the badge rather than under it: it is one short
+   number, and a second line here would make this cell taller than every other
+   row in the table for no extra information. Muted like .dbx-rng because it is
+   the WORKING behind the badge, not a second verdict. */
+.smz-dist{font-size:9.5px;color:var(--text3);white-space:nowrap}
+
 /* ─── FRESH-MOMENTUM BADGE ────── */
 /* One badge naming the most recent trigger, or a count when several fired on
    the same row. Green because everything this column reports is a turn that
@@ -783,6 +823,13 @@ body.asof-on .tbl-wrap{outline:3px solid var(--orange)}
 .c-wrsi,.c-wvol,.c-wpiv,.c-wema,.c-voldry,.c-retrace,.c-rstrend,.c-notes,
 .c-wcross,.c-wpattern,.c-monthly,.c-rs10w,.c-rsslope,.c-rshist,.c-slope200,
 .c-followup,.c-hist,.c-wbox,.c-rsp55,.c-rsp21,
+/* SMZ is GROUP A, beside W-Box rather than beside D-Box, because it is read on
+   the same clock: a 5-bar pivot structure with a Fibonacci zone hung off it
+   describes weeks, and weeks are the WORKING behind an entry rather than the
+   entry itself. The cell is also the widest badge in the table — direction,
+   state and distance on one line — so it is the first thing that should go
+   when the viewport gets tight. */
+.c-smz,
 /* %50E and %200E are GROUP A, not B: they answer "which regime am I in", which
    is the WORKING behind the decision rather than the decision itself. The one
    of the three that is a live stop level — %20E — is in group B below. */
@@ -856,6 +903,7 @@ body.hide-wpiv    .c-wpiv,
 body.hide-dbox    .c-dbox,
 body.hide-pctpiv  .c-pctpiv,
 body.hide-wbox    .c-wbox,
+body.hide-smz     .c-smz,
 body.hide-ema     .c-ema,
 body.hide-wema    .c-wema,
 body.hide-bocnt   .c-bocnt,
@@ -974,6 +1022,14 @@ body.hide-fresh   .c-fresh{display:none!important}
    padded pill is inset differently and the eye can no longer scan the column.
    Transparent rather than grey so a zero still reads as quieter than a value. */
 .sb-zero{background:transparent;color:var(--text3);font-weight:600}
+/* THE STALE-ROW CHIP. Rendered inside the ticker cell rather than as a new
+   column, so no <th>/<td> count moves and the pinned-column widths are
+   untouched. Two tiers: amber for 1-2 days behind (noticeable), red at 3+ where
+   the indicators are meaningfully describing a different stock. */
+.stale-chip{display:inline-block;margin-left:5px;padding:1px 5px;border-radius:var(--rs);
+  font-size:9px;font-weight:800;letter-spacing:.2px;vertical-align:middle;white-space:nowrap;cursor:help}
+.stale-warn{background:var(--amber-bg,var(--accent-bg));color:var(--amber,var(--accent-dk))}
+.stale-bad{background:var(--red-bg);color:var(--red)}
 /* EXTENDED ROWS. Dimmed, not hidden — see isExtended(). Opacity rather than a
    colour so every badge, pill and conditional colour inside the row fades with
    it; recolouring the text alone would leave the green and red cells at full
@@ -1218,7 +1274,7 @@ body.dd-lock{overflow:hidden}
   .metrics-row{grid-template-columns:repeat(4,1fr)}
   .c-wrsi,.c-wvol,.c-wpiv,.c-wema,.c-voldry,.c-retrace,.c-rstrend,.c-notes,
   .c-wcross,.c-wpattern,.c-monthly,.c-rs10w,.c-rsslope,.c-rshist,.c-slope200,
-  .c-followup,.c-hist,.c-wbox,.c-rsp55,.c-rsp21,
+  .c-followup,.c-hist,.c-wbox,.c-rsp55,.c-rsp21,.c-smz,
   .c-pct50e,.c-pct200e{display:none!important}
 }
 @media (max-width:768px){
@@ -1355,12 +1411,15 @@ body.dd-lock{overflow:hidden}
     <button class="ref-btn" onclick="openSectorBreadth()" data-tip="See RSI, momentum, and breakout stats broken down by sector — click any row to filter the main table to just that sector">📊 Sector View</button>
     <button class="ref-btn" id="sortDefBtn" onclick="resetSort()" data-tip="Return to the default Setup Score order: quality setups first (starred in the Setup column), strongest sectors first within each group, then each stock's own 55-day relative strength. Clicking any column header sorts by that column instead — clicking the same header a third time also brings you back here.">↕ Default (Setup Score)</button>
     <button class="ref-btn" onclick="openRSSettings()" data-tip="Set the benchmark ticker that RS / MRS Rank is measured against">⚙️ RS Settings</button>
-    <button class="ref-btn" id="advBtn" onclick="openAdvFilters()" data-tip="Consolidation, 52W high proximity, breakout age, RSI, volume ratio, minimum average traded value and EMA-crossover screens — each one switched on independently">⚙ Advanced Filters</button>
+    <button class="ref-btn" id="advBtn" onclick="openAdvFilters()" data-tip="Consolidation, 52W high proximity, breakout age, RSI, volume ratio, minimum average traded value, EMA-crossover and EMA-convergence screens — each one switched on independently">⚙ Advanced Filters</button>
     <div class="fsep"></div>
     <button class="ftog" id="alignTog" aria-pressed="false" onclick="toggleAlign()" data-tip="One click for the same screen as the EMA Filter's All EMAs Bullish option: price above enough of the 10, 20, 50 and 200-day moving averages to score 0.8 or better. Combines with every other filter rather than replacing them.">📈 EMAs Aligned</button>
     <button class="ftog" id="dwaTog" aria-pressed="false" onclick="toggleDWA()" data-tip="Keep only stocks scoring 7 or more of the Align checks that could actually be run for them. This is the swing-trade condition in one click: the daily and the weekly chart have to be saying the same thing. A stock with only 7 usable inputs qualifies on 7/7 — it is judged on what could be measured, never penalised for data that was missing. Combines with every other filter rather than replacing them.">🔗 Aligned D+W</button>
     <button class="ftog" id="boTog" aria-pressed="false" onclick="toggleBO()" data-tip="Keep only stocks with at least one volume-confirmed 52-bar breakout somewhere in the available history — BO Count above zero. Pair it with the Follow-up column to find the ones that broke out recently.">🚀 Breakout Stocks</button>
     <button class="ftog" id="boxTog" aria-pressed="false" onclick="toggleBox()" data-tip="The Darvas box screen in one click: price above the 20, 50 AND 200-day EMAs, and the daily Darvas box state is Inside, Near or Break — that is, the stock is in a confirmed uptrend and is still consolidating inside its box, sitting within 1% of the box top, or crossing it on the latest bar. Stocks already trading above the box are left out on purpose: the move has happened and a fresh entry there is late. A stock whose EMA 200 cannot be calculated (under 200 bars of history) is excluded rather than waved through. Combines with every other filter rather than replacing them.">📦 Box Setup</button>
+    <button class="ftog" id="rsimaTog" aria-pressed="false" onclick="toggleRsiMa()" data-tip="Keep only stocks whose RSI(14) is trading above a 14-period moving average of the RSI line itself — momentum judged against its own recent trend rather than against a fixed 50 or 70 level. It can turn up while RSI is still well under 70, which is what makes it an entry screen rather than an overbought reading. Daily only: there is deliberately no weekly version of this test. A stock with under about 45 bars of history has no settled RSI average yet and is left OUT rather than waved through — 'we could not measure it' is never treated as a pass here. Combines with every other filter rather than replacing them.">📉 RSI &gt; MA</button>
+    <button class="ftog" id="emacvTog" aria-pressed="false" onclick="toggleEmaCv()" data-tip="Keep only stocks where price is at or above every one of the 10, 20, 50 and 200-day EMAs AND those EMAs have run together — the gap from the highest to the lowest is 5% of price or less. Bunched on its own is not enough: a stock rolling over squeezes its averages together just as neatly, so price has to be sitting on top of the whole cluster. Daily only; there is deliberately no weekly version. A stock too young to have a 200 EMA is judged on the EMAs it does have, as long as at least two of them exist — one average is not agreement. The 5% is fixed for this button; the Advanced Filters panel carries its own editable percentage if you want it tighter. Combines with every other filter rather than replacing them.">🎯 EMAs Converge</button>
+    <button class="ftog" id="smzTog" aria-pressed="false" onclick="toggleSmz()" data-tip="Stocks in BULL structure that have pulled back into or through the institutional zone: bias is bullish and the price is anywhere from the swing low up to the 0.618 line. Stocks still ABOVE the zone are left out on purpose — they have not pulled back yet, so there is nothing to buy into. A stock that closes below its swing low stops being bull structure altogether and drops off this list on its own the next day, so the button needs no separate stop rule. Use the SMZ column funnel to narrow further to just In IBZ and In SMZ; this button deliberately keeps Below zone too, because a retracement that overran is still a bull structure and still worth a look.">🧲 SMZ Setup</button>
     <button class="ftog" id="wlTog" aria-pressed="false" onclick="toggleWL()" data-tip="Show only the stocks you have starred. The star sits next to each ticker; the list is saved in this browser and is shared across all three markets, so a name starred on the India tab is still starred when you come back tomorrow.">⭐ Watchlist</button>
     <select class="fsel" id="emaFil" onchange="applyF()">
       <option value="">EMA Filter</option>
@@ -1526,6 +1585,7 @@ body.dd-lock{overflow:hidden}
             <th class="c-dbox" data-s="dbox" data-tip="Darvas Box on daily bars, box length 5. HOW IT IS BUILT: a bar whose high beats the highest high of the previous 5 bars sets a candidate top; if the next 3 bars make no new high, that high becomes the box TOP and the lowest low of the 5 bars up to the confirming bar becomes the box BOTTOM. The box PERSISTS until the next one forms — a level to trade against, not a one-bar flag. THE STATES: Break = the close crossed above the top on the latest bar and was below it the day before — the freshest · Near = below the top but within 1% of it · Inside = between the bottom and the top, still consolidating · Above = already over the top, so the move is under way and a new entry is late · Below = under the box bottom, the setup has failed · a dash means no box has formed yet or there are fewer than 9 bars of history. Sorting puts Break and Near first, then Inside — the ones you can still act on.">D-Box<span class="sort-ico"></span></th>
             <th class="c-pctpiv" data-s="pctpiv" data-tip="How far the latest close sits from the DAILY Darvas box TOP, as a percentage of that top: % vs Pivot = 100 &times; ( Close &minus; Box Top ) / Box Top. THE BOX TOP IS THE BREAKOUT LEVEL — the number printed as the upper figure in the D-Box cell beside this one, and drawn as the upper line on the chart — and the owner buys ABOVE it. So a NEGATIVE reading means NOT YET TRIGGERED, and its size is how far the stock still has to travel: &minus;4.10% is 4.1% under the trigger; a POSITIVE one means the level has already been taken out. %20E measures the distance to the STOP; this measures the distance to the ENTRY. It divides by the box top the D-Box column itself publishes — no box is recomputed here. A dash, never a zero, when no box has formed, when the top is missing or not positive, or when there is no close; zero is a real reading, sitting exactly on the pivot. Hidden by default — switch it on in Columns.">% vs Pivot<span class="sort-ico"></span></th>
             <th class="c-wbox" data-s="wbox" data-tip="The same Darvas Box construction run on WEEKLY bars, so both the box and the states describe months rather than days. A weekly box needs 9 weekly bars (roughly 45 trading days) before it can exist, and it moves far less often than the daily one — a weekly Break is a much rarer and heavier signal than a daily one. The five states mean exactly what they mean in the D-Box column.">W-Box<span class="sort-ico"></span></th>
+            <th class="c-smz" data-s="smz" data-tip="Smart Money Zones, ported from the TradingView study of the same name. Structure is read from 5-bar pivot highs and lows: a close through a swing high turns the bias bullish, a close through a swing low turns it bearish. The zone is then drawn back from the extreme of that move to the swing that started it — 0.618 to 0.786 is the IBZ (Institutional Buying Zone), 0.786 to 0.826 the deeper SMZ. The cell reads direction, then where the price sits inside that retracement, then how far it still has to travel to the 0.618 edge — negative means it is already inside or through. '— No structure' is a finding: a full year of bars and no swing was ever broken, so there is nothing to anchor a zone to. A plain dash is an absence: fewer than 60 bars, so it was never tried.">SMZ<span class="sort-ico"></span></th>
             <th data-s="h52" data-tip="% below the highest high in the available window. The data source holds ~1 trading year (~250 bars), so in practice this is a ~50-week high, not a full 52. Shows — for stocks with under 120 bars of history.">52W High<span class="sort-ico"></span></th>
             <th class="c-ema" data-s="ema" data-tip="How many of the 10, 20, 50 and 200-day moving averages the price is trading above, one badge each. All four green is the textbook shape of a healthy uptrend.">EMA Align<span class="sort-ico"></span></th>
             <th class="c-pct10e" data-s="pct10e" data-tip="How far the latest close sits above or below the 10-day EMA, as a percentage of that EMA: %10E = 100 &times; ( Close &minus; EMA10 ) / EMA10. ITS ROLE: with the 20 EMA it marks the PULLBACK ZONE a stock drops into after a fast, high-volume move; the 10 is the tighter of the two, so the gap between them is the depth of the pullback. It is not a stop level — that is %20E in a normal market, %50E in a weak one. A POSITIVE number means the close is ABOVE the average, a NEGATIVE number means it is BELOW it. It reuses the EMA the EMA Align badges beside it are drawn from — no moving average is recomputed. A dash means the EMA could not be computed on the history available, or came back zero or negative; never a zero, because zero is a real reading: the close sitting exactly on the average. Sortable and filterable.">%10E<span class="sort-ico"></span></th>
@@ -1780,6 +1840,33 @@ body.dd-lock{overflow:hidden}
           — keeps rows whose fast EMA is above the slow one
         </div>
       </div>
+      <!-- Independent of the 🎯 EMAs Converge toolbar button ON PURPOSE. The
+           button is a fixed CFG.EMACV_PCT screen; this box is the same test with
+           a number you can edit, and switching both on just ANDs them. -->
+      <div class="adv-row">
+        <label class="adv-name"><input type="checkbox" id="advCvOn"/> EMA convergence</label>
+        <div class="adv-fields">
+          10/20/50/200 EMAs within <input type="number" id="advCvPct" min="0.1" step="0.5"/> % of price,
+          and price at or above all of them
+        </div>
+      </div>
+      <!-- NOT A FILTER, AND IT CARRIES NO CHECKBOX FOR THAT REASON. Every other
+           row in this modal removes stocks from the table; this one changes how
+           the SMZ zones are CALCULATED, so it re-runs the scan exactly the way
+           the EMA pair above does. It is deliberately outside the on/off count
+           the toolbar button reports — see readAdvForm()'s note — because a
+           calculation setting appearing as "Advanced Filters (1)" would tell the
+           user his table is narrowed when it is not. -->
+      <div class="adv-row">
+        <label class="adv-name" for="advSmzMode">SMZ zone anchor</label>
+        <div class="adv-fields">
+          <select id="advSmzMode" data-tip="Which pivot the zone is anchored to. Structure Break Only re-anchors it just once a close breaks a swing level, so the lines sit still until the trend itself changes. Every HL/LH — TradingView calls it Every Higher Low / Lower High — re-anchors on every new pivot in the direction of the bias, so the zone tracks the most recent higher low in an uptrend or lower high in a downtrend. That means the lines move far more often, and a stock can leave the SMZ Setup list because the ZONE shifted underneath it rather than because the price went anywhere. Changing this re-runs the whole scan for this market, because the SMZ columns are computed from it.">
+            <option value="break">Structure Break Only (default)</option>
+            <option value="everyhllh">Every HL/LH</option>
+          </select>
+          — how often the Smart Money Zone re-anchors
+        </div>
+      </div>
     </div>
     <p id="advXNote" style="font-size:10.5px;color:var(--text3)">Changing the EMA pair re-runs the whole scan for this market, because the crossover columns are computed from it.</p>
 
@@ -1958,7 +2045,66 @@ const CFG = {
      bars ≈ 45 trading days) fits inside a year of data with room to spare. */
   DARVAS: {boxp:5, nearPct:1.0},
 
-  VER:  'gs17',     // gs16 -> gs17: computeTech() returns SIX more fields — the IPO-base family.
+  /* ── Smart Money Zones (port of the user's Pine v6 "Smart Money Zones - APX") ──
+     Every value here IS a Pine input, carrying the Pine default, for the same
+     reason DARVAS does: a port that freezes a tunable input is not a port.
+
+       pivotLeft / pivotRight  ta.pivothigh(high, 5, 5) — the Pine "Pivot Length"
+                               pair. 5/5 is the author's recommendation for a
+                               daily chart, and 5 on the RIGHT is also the whole
+                               cost of the indicator's honesty: a pivot centred
+                               on bar i is not knowable until bar i+5.
+       confirmBars             How many consecutive qualifying closes a structure
+                               break needs. 1 reproduces the author's behaviour
+                               exactly — flip on the first close through.
+       minPenPct               Penetration filter. 0 means any close beyond the
+                               swing level qualifies; 0.5 would demand the close
+                               clear it by half a percent.
+       advanceMode             The Pine "Swing Advances On" input.
+                               'break'     = "Structure Break Only" (default):
+                                             the protected swing only relocates
+                                             when the OPPOSITE swing is taken out.
+                               'everyhllh' = "Every Higher Low / Lower High": the
+                                             swing low tracks every confirmed
+                                             higher low while bullish (and the
+                                             swing high every lower high while
+                                             bearish) without waiting for a break.
+                                             More responsive; re-anchors the zone
+                                             while the range is still intact.
+     The engine honours BOTH modes today even though nothing on screen switches
+     between them yet — the alternative is a dead branch that has never once run
+     by the time some later pass wires a control to it. */
+  SMZ: {pivotLeft:5, pivotRight:5, confirmBars:1, minPenPct:0, advanceMode:'break'},
+
+  /* The EMA-convergence TOGGLE's threshold: the widest the 10/20/50/200 EMAs
+     may be spread, as a percentage of price, before the button stops calling
+     them bunched. 5 rather than the 2 a very tight coil would want, because at
+     2% almost nothing but a multi-week flat base qualifies and the button would
+     look broken on most days. It lives here so the one-click screen has exactly
+     one number behind it. The Advanced Filters entry deliberately does NOT read
+     this — it carries its own editable percentage, so the button keeps meaning
+     the same thing no matter what the modal is set to, and switching both on
+     simply ANDs the tighter of the two. */
+  EMACV_PCT: 5,
+
+  VER:  'gs19',     // gs18 -> gs19: computeTech() returns EIGHT more fields — the Smart Money Zones
+                    // family. smzBias, smzState, smzDist, smz618, smz786, smz826, smzSwingHi and
+                    // smzSwingLo, the ported Pine "Smart Money Zones - APX" structure read. Every
+                    // one of them is replayed from the raw daily high/low/close series — the whole
+                    // point of the indicator is that structure is path-dependent — and a cached row
+                    // carries none of those series, so a gs18 row could not be repaired at render
+                    // time even in principle. It would rehydrate with the fields simply absent, and
+                    // `undefined` is neither the 0 that means "no structure resolved" nor the null
+                    // that means "not enough history to try", so both of those distinctions would
+                    // silently collapse. Bumping the version forces the one rescan that fills them in.
+                    // gs17 -> gs18: computeTech() returns ONE more field — rsiAboveMa, the daily
+                    // "RSI(14) above a 14-EMA of the RSI series" flag behind the RSI > MA toggle.
+                    // It is three-valued (true / false / null) and it needs the raw close series a
+                    // cached row does not carry, so a gs17 row would rehydrate with the field simply
+                    // absent — and `undefined === true` is false, which would silently drop every
+                    // cached stock out of the new filter with nothing on screen explaining why.
+                    // Bumping the version is what forces the one rescan that fills it in.
+                    // gs16 -> gs17: computeTech() returns SIX more fields — the IPO-base family.
                     // ipoState (forming / pivot / broke out), ipoBaseBars (how many bars the base
                     // runs), ipoBars (how many bars the ticker has listed here at all), ipoDepth,
                     // ipoLid (the highest high since the ticker's FIRST bar — a THIRD level, not
@@ -4363,7 +4509,7 @@ const SCREENS_LS_KEY='sm_saved_screens_v1';
 const SCREEN_GET={
   F_CAP:()=>F_CAP, F_SCT:()=>F_SCT, F_EMA:()=>F_EMA, F_RSI:()=>F_RSI,
   F_PIV:()=>F_PIV, F_WPIV:()=>F_WPIV, F_REV:()=>F_REV, F_ALIGN:()=>F_ALIGN, F_BO:()=>F_BO,
-  F_DWA:()=>F_DWA, F_BOX:()=>F_BOX, F_STAGE:()=>F_STAGE,
+  F_DWA:()=>F_DWA, F_BOX:()=>F_BOX, F_RSIMA:()=>F_RSIMA, F_EMACV:()=>F_EMACV, F_SMZ:()=>F_SMZ, F_STAGE:()=>F_STAGE,
   MIN_MCAP:()=>MIN_MCAP, SEARCH:()=>SEARCH, SORT_C:()=>SORT_C, SORT_D:()=>SORT_D,
   /* Deep-cloned both ways: COLF holds nested arrays and objects, and a shared
      reference would make every saved screen mutate along with the live one —
@@ -4377,7 +4523,7 @@ const SCREEN_GET={
 const SCREEN_SET={
   F_CAP:v=>{F_CAP=v}, F_SCT:v=>{F_SCT=v}, F_EMA:v=>{F_EMA=v}, F_RSI:v=>{F_RSI=v},
   F_PIV:v=>{F_PIV=v}, F_WPIV:v=>{F_WPIV=v}, F_REV:v=>{F_REV=v}, F_ALIGN:v=>{F_ALIGN=!!v}, F_BO:v=>{F_BO=!!v},
-  F_DWA:v=>{F_DWA=!!v}, F_BOX:v=>{F_BOX=!!v},
+  F_DWA:v=>{F_DWA=!!v}, F_BOX:v=>{F_BOX=!!v}, F_RSIMA:v=>{F_RSIMA=!!v}, F_EMACV:v=>{F_EMACV=!!v}, F_SMZ:v=>{F_SMZ=!!v},
   /* VALIDATED on the way in, unlike the booleans. A screen saved against a
      stage that no longer exists (or a hand-edited localStorage payload) would
      otherwise filter the table to a value lifecycleStage() can never return,
@@ -4633,7 +4779,7 @@ const SCREEN_LIQ_FLOOR={india:5, us:10, etf:10};
 function screenSeedBase(){
   return {
     F_CAP:'All', F_SCT:'', F_EMA:'', F_RSI:'', F_PIV:'', F_WPIV:'', F_REV:'',
-    F_ALIGN:false, F_BO:false, F_DWA:false, F_BOX:false, F_STAGE:'',
+    F_ALIGN:false, F_BO:false, F_DWA:false, F_BOX:false, F_RSIMA:false, F_EMACV:false, F_SMZ:false, F_STAGE:'',
     MIN_MCAP:(MCAP_DEFAULTS[CUR] ?? 0), SEARCH:'', SORT_C:'', SORT_D:'desc',
     COLF:{}, HIST_DATE:'',
   };
@@ -4934,6 +5080,29 @@ let F_WL=false;
    EMA dropdown because it is a conjunction of two independent ideas (trend
    filter AND box position) and must still stack with everything else. */
 let F_BOX=false;
+/* RSI above its own 14-EMA. Another independent boolean rather than a fifth
+   option on the RSI dropdown, because it answers a different question: the
+   dropdown asks where RSI IS (over 70, 50-70, under 40), this asks which way it
+   is TURNING. The two are meant to be usable together — "RSI 50-70 and rising
+   against its own average" is the screen — and a dropdown could only ever offer
+   one of them at a time. Reads computeTech()'s three-valued rsiAboveMa. */
+let F_RSIMA=false;
+/* EMA convergence. Its own boolean rather than a sixth EMA-dropdown option for
+   the usual reason — it has to stack with the dropdown, not replace it — and
+   kept SEPARATE from the Advanced Filters entry of the same name on the user's
+   explicit instruction: the button is a fixed 5% one-click screen, the modal
+   holds an editable percentage, and having both on simply ANDs them. Two
+   controls, two values, one shared predicate in emaConverged(). */
+let F_EMACV=false;
+/* SMART MONEY ZONE SETUP. Its own boolean for the same reason F_BOX is one: it
+   is a conjunction of two independent readings — the direction structure points
+   and where inside the retracement the price sits — and it has to stack with
+   every other filter rather than replace one. The predicate lives inline in
+   getRows() rather than in a helper because, unlike boxSetup() or
+   emaConverged(), nothing else in the file asks this question; a helper here
+   would be a second place for the rule to be edited and only one of them
+   would get changed. */
+let F_SMZ=false;
 /* LIFECYCLE STAGE. A STRING, not a fifth boolean: the four stages are mutually
    exclusive by construction (see lifecycleStage), so two of them at once is a
    state the UI must not be able to reach. '' means no stage picked, which is
@@ -5438,6 +5607,50 @@ function rsi(closes, p=14) {
   return Math.round(100-100/(1+ag/al));
 }
 
+/* The SAME Wilder calculation as rsi() above, but kept at every bar instead of
+   thrown away down to the last one — and left UNROUNDED, because a 14-period
+   EMA taken over integers would step in whole points and cross its own average
+   on rounding noise rather than on momentum. Aligned index-for-index with
+   `closes`, null for every bar before the seed is complete, for the same reason
+   emaSeries() is: index i of the output is the value AS OF closes[i], and an
+   array that quietly starts short would shift every later bar by one.
+
+   rsi() is deliberately left untouched — a dozen columns, filters and exports
+   read its rounded integer — so the one contract that matters here is that
+   Math.round(rsiSeries(C,p).at(-1)) === rsi(C,p) for the same input. Keep the
+   seed and the smoothing below identical to rsi() and that holds by
+   construction. */
+function rsiSeries(closes, p=14){
+  const out=new Array(closes?closes.length:0).fill(null);
+  if(!closes||closes.length<p+1) return out;
+  let g=0,l=0;
+  for(let i=1;i<=p;i++){const d=closes[i]-closes[i-1];d>0?g+=d:l+=Math.abs(d)}
+  let ag=g/p, al=l/p;
+  // A zero average loss means nothing but up-closes in the window; RSI is
+  // defined as 100 there rather than dividing by zero. Same branch as rsi().
+  out[p]=al?100-100/(1+ag/al):100;
+  for(let i=p+1;i<closes.length;i++){
+    const d=closes[i]-closes[i-1];
+    ag=(ag*(p-1)+Math.max(d,0))/p;
+    al=(al*(p-1)+Math.max(-d,0))/p;
+    out[i]=al?100-100/(1+ag/al):100;
+  }
+  return out;
+}
+
+/* How much history the "RSI above its own moving average" test needs before it
+   is allowed to answer at all. Two separate warm-ups stack here and both are
+   real: rsi(C,14) produces its FIRST value only on the 15th close (p+1), and a
+   14-period EMA laid over those RSI values is seeded from a plain average and
+   then has to be walked forward far enough that the seed stops dominating it.
+   Thirty RSI values is that "far enough" — a little over two EMA periods, past
+   the point where the seeding average still moves the answer. The close count
+   is written as the sum rather than as a bare 45 so that changing either period
+   moves the floor with it instead of leaving a stale magic number behind. */
+const RSI_MA_PERIOD=14;
+const RSI_MA_MIN_RSI_VALUES=30;
+const RSI_MA_MIN_CLOSES=(RSI_MA_PERIOD+1)+RSI_MA_MIN_RSI_VALUES;   // 15 + 30 = 45
+
 function pivots(h,l,c){
   const pp=(h+l+c)/3;
   return{pp,r1:2*pp-l,r2:pp+(h-l),s1:2*pp-h,s2:pp-(h-l)};
@@ -5570,6 +5783,41 @@ function squeeze(C,H,L){
   return kcW?Math.max(0,Math.min(100,+((1-bbW/kcW)*100).toFixed(1))):0;
 }
 
+/* THE TRADING CALENDAR IS SHARED, SO THE DATE MATHS IS DONE ONCE PER DATE.
+   weeklyResample() used to build two Date objects and call toISOString() for
+   every bar of every ticker. India alone is ~272 distinct trading dates across
+   ~1,058 tickers, so that was ~272,000 conversions of 272 distinct answers —
+   measured at 58% of the entire per-load compute budget, and by a wide margin
+   the most expensive thing the page did.
+
+   These two caches are keyed on the DATE STRING and nothing else. That is what
+   makes them safe to share across markets, across tickers and across the as-of
+   mode: "which Monday opens the ISO week containing 2026-08-31" has one answer
+   everywhere, unlike GSHEET_DATA, whose per-market contents must never be
+   shared. Nothing here reads a price, a market or any mutable page state.
+   Bounded by the number of distinct dates the page has ever seen — a few
+   hundred per market, so a few kilobytes at most. */
+const WK_MONDAY=new Map();   // 'YYYY-MM-DD' -> Monday opening that ISO week
+const WK_SUNDAY=new Map();   // Monday key   -> the Sunday that closes it
+function wkMondayKey(dt){
+  let k=WK_MONDAY.get(dt);
+  if(k!==undefined) return k;
+  const d=new Date(dt+'T00:00:00Z');
+  const mon=new Date(d); mon.setUTCDate(d.getUTCDate()-((d.getUTCDay()+6)%7));
+  k=mon.toISOString().slice(0,10);
+  WK_MONDAY.set(dt,k);
+  return k;
+}
+function wkSundayKey(mondayKey){
+  let s=WK_SUNDAY.get(mondayKey);
+  if(s!==undefined) return s;
+  const d=new Date(mondayKey+'T00:00:00Z');
+  d.setUTCDate(d.getUTCDate()+6);
+  s=d.toISOString().slice(0,10);
+  WK_SUNDAY.set(mondayKey,s);
+  return s;
+}
+
 /* O is optional and LAST so the old 5-arg call sites keep working.
    The weekly OPEN is the open of the first trading day of that week and must be
    captured only when the bucket is created — take it on every row and you get
@@ -5579,10 +5827,7 @@ function weeklyResample(C,H,L,V,dates,O){
   const wks=new Map();
   dates.forEach((dt,i)=>{
     if(!dt||C[i]==null) return;
-    const d=new Date(dt+'T00:00:00Z');
-    const dow=(d.getUTCDay()+6)%7;
-    const mon=new Date(d); mon.setUTCDate(d.getUTCDate()-dow);
-    const k=mon.toISOString().slice(0,10);
+    const k=wkMondayKey(dt);
     if(!wks.has(k)) wks.set(k,{o:(O&&O[i]!=null)?O[i]:C[i],h:H[i]||0,l:L[i]||Infinity,c:C[i],v:0});
     const w=wks.get(k);
     w.h=Math.max(w.h,H[i]||0);
@@ -5597,9 +5842,7 @@ function weeklyResample(C,H,L,V,dates,O){
        same week ended Friday must yield the IDENTICAL key, or aligning the two
        weekly series by date would pair the stock's week with the benchmark's
        PREVIOUS one and understate a whole week of relative strength. */
-    dates:keys.map(k=>{const d=new Date(k+'T00:00:00Z');
-                       d.setUTCDate(d.getUTCDate()+6);
-                       return d.toISOString().slice(0,10);}),
+    dates:keys.map(wkSundayKey),
     closes:keys.map(k=>wks.get(k).c),
     opens:keys.map(k=>wks.get(k).o),
     highs:keys.map(k=>wks.get(k).h),
@@ -6868,6 +7111,437 @@ function ipoBase(C,H,L,V,dates,feedStart){
   };
 }
 
+/* ══════════════════════════════════
+   SMART MONEY ZONES — a port of the user's Pine v6 "Smart Money Zones - APX"
+   ─────────────────────────────────
+   DAILY ONLY. The Pine script exposes a separate Pivot Timeframe and builds an
+   MTF table on request.security(); neither is ported. Everything below reads
+   the daily series computeTech() already holds. That is also why the as-of-date
+   mode rewinds this for free: every function here takes its prices as
+   ARGUMENTS and reads no module-level price state, so handing it a truncated
+   C/H/L reproduces the structure exactly as it stood on that day, with no
+   cache to invalidate and no "latest bar" hidden anywhere in the maths.
+
+   WHAT THE INDICATOR DOES, in three stages:
+
+   1. PIVOTS. ta.pivothigh(high,5,5) / ta.pivotlow(low,5,5), with the Pine
+      "Pivot Source" input on its default of Wick — so highs and lows are
+      compared, never bodies.
+
+   2. EXTERNAL STRUCTURE. Exactly one swing high and one swing low are tracked.
+      A pivot forming BEYOND a swing level extends that extreme and leaves bias
+      alone (a sweep widens the range without shifting structure); a pivot
+      forming INSIDE the range is internal — it is recorded, but it moves no
+      level, anchors nothing and shifts no structure. A CLOSE through a swing
+      level breaks structure: a wick through it never does. The break flips the
+      bias and drags the OPPOSITE swing forward to the most recent pivot that
+      had already formed.
+
+   3. ZONES. With the author's current default (Legacy Raw-Pivot Zones OFF) the
+      Fibonacci is measured from the EXTERNAL swing rather than from whichever
+      raw pivot happens to be newest — the raw pivot list contains internal
+      pivots, which is precisely what the structure model exists to exclude.
+
+   WHY THE WHOLE HISTORY IS REPLAYED BAR BY BAR rather than read off the last
+   bar. Structure is path-dependent in three separate ways: which pivots were
+   taken depends on where the swings stood when each one confirmed, a break is
+   measured against the level as it stood at that bar's OPEN, and a relocation
+   is bounded by the bar the break happened on. There is no shortcut that reads
+   the answer off the current bar — the same set of pivots in a different order
+   produces a different bias.
+
+   NO LOOKAHEAD, and this is the one rule the port cannot get wrong. A pivot
+   centred on bar c is not knowable until bar c+right. smzPivots() scans the
+   completed array up front because that is the cheap way to find them, but
+   each pivot carries `confirmedAt = bar + right` and the state machine below
+   refuses to consume one before that bar arrives. Feeding a pivot in at bar c
+   would silently invent profitable history — the structure would appear to
+   have flipped five bars before the market could possibly have known.
+
+   PERFORMANCE. ~900 tickers × ~250 bars on every market load, so the whole
+   engine is O(n) per ticker: the pivot scan touches a FIXED 11-bar window per
+   bar (left+right+1, a constant, not a growing lookback), and the "highest
+   high since the swing low" that the Fibonacci needs is maintained as a
+   running extreme — one comparison per bar — exactly as the Pine does, rather
+   than rescanning the series from the anchor on every bar. */
+
+/* Enough bars to have a fighting chance of resolving structure at all: a
+   single pivot needs left+right+1 = 11 bars, and a bias needs at least a
+   pivot high, a pivot low and a close through one of them — realistically
+   three or four legs. 60 is that with room to spare, and it is well inside the
+   ~250-bar feed. Below it every SMZ field is null, which is NOT the same
+   answer as 0 — see the note on smzBias in smartMoneyZones(). */
+const SMZ_MIN_BARS=60;
+
+/* PIVOT DETECTION. Bar c is a pivot high when its high is strictly greater
+   than all `left` highs before it AND all `right` highs after it; a pivot low
+   mirrors that with strictly less on the lows.
+
+   TIES YIELD NO PIVOT, DELIBERATELY. The comparison is strict on BOTH sides,
+   so a bar that merely equals a neighbour's high is not a pivot high. This
+   matters more than it looks: a flat two-bar top — the same high printed twice
+   — is common on illiquid NSE names and on any stock that has been sitting on
+   a round number, and under strict-both-sides neither bar registers, so the
+   swing level simply does not move there. The alternative (strict one side,
+   non-strict the other) picks one of the two bars essentially at random
+   depending on which side is relaxed, and the two conventions disagree about
+   the STRUCTURE, not just about a label on a chart. Strict/strict is the
+   conservative reading: it never invents a pivot, it only ever misses one.
+
+   Holes in the data fail the comparison rather than being skipped — a window
+   containing an unreadable bar is not a window we can judge a pivot in.
+
+   Returns pivots in centre order, each carrying the bar it is CENTRED on and
+   the bar it becomes KNOWN on. Both are needed: the structure rules are
+   written against the centre bar (a relocation asks "did this pivot form
+   before the break bar"), while the replay must not see it until confirmedAt. */
+function smzPivots(H,L,left,right){
+  const lf=Math.max(1,Math.floor(left||0)), rt=Math.max(1,Math.floor(right||0));
+  const out={highs:[],lows:[],left:lf,right:rt};
+  if(!Array.isArray(H)||!Array.isArray(L)) return out;
+  const n=Math.min(H.length,L.length);
+  if(n<lf+rt+1) return out;
+  const fin=v=>typeof v==='number'&&isFinite(v);
+  for(let c=lf;c<=n-1-rt;c++){
+    const hc=H[c], lc=L[c];
+    if(fin(hc)){
+      let ok=true;
+      for(let j=c-lf;j<=c+rt;j++){
+        if(j===c) continue;
+        const v=H[j];
+        if(!fin(v)||!(hc>v)){ ok=false; break; }
+      }
+      if(ok) out.highs.push({bar:c, level:hc, confirmedAt:c+rt});
+    }
+    if(fin(lc)){
+      let ok=true;
+      for(let j=c-lf;j<=c+rt;j++){
+        if(j===c) continue;
+        const v=L[j];
+        if(!fin(v)||!(lc<v)){ ok=false; break; }
+      }
+      if(ok) out.lows.push({bar:c, level:lc, confirmedAt:c+rt});
+    }
+  }
+  return out;
+}
+
+/* THE STRUCTURE STATE MACHINE. One pass over the bars, and the ORDER of the
+   four steps inside each bar is load-bearing — this is a Pine v2 bug fix the
+   author had to make and the port has to keep:
+
+     a. SNAPSHOT the swing levels as they stand at the bar's open.
+     b. Process any pivot that becomes KNOWN on this bar.
+     c. Evaluate the break with this bar's close against the SNAPSHOT.
+     d. Apply the flip.
+
+   Without (a), a pivot confirming below the swing low on the very same bar as
+   a close through that low would lower the level first and the break would
+   then be measured against the new, lower level — the break vanishes, and
+   structure stays bullish while the swing low quietly drops underneath it.
+
+   Returns the terminal state, not a series: the zones are only ever drawn at
+   the last bar, and keeping ~250 snapshots per ticker alive for ~900 tickers
+   would cost far more than it tells anyone. */
+function smzStructure(C,H,L,cfg){
+  const K=cfg||{};
+  const lf=Math.max(1,Math.floor(K.pivotLeft||5));
+  const rt=Math.max(1,Math.floor(K.pivotRight||5));
+  const confirmBars=Math.max(1,Math.floor(K.confirmBars||1));
+  const minPen=(typeof K.minPenPct==='number'&&isFinite(K.minPenPct))?K.minPenPct:0;
+  // 'everyhllh' is Pine's "Every Higher Low / Lower High"; anything else is the
+  // default "Structure Break Only".
+  const everyHL=(K.advanceMode==='everyhllh');
+
+  const n=Math.min(C.length,H.length,L.length);
+  const fin=v=>typeof v==='number'&&isFinite(v);
+  const piv=smzPivots(H,L,lf,rt);
+
+  /* The SEED for a running extreme. When a pivot centred at bar b confirms at
+     bar i, the extreme "since the pivot" already covers bars b..i — eleven at
+     most, a constant — and every bar after that is a single comparison. This
+     is the Pine's ta.highest(high, pivot_right + 1) seed, which it uses for
+     exactly this reason. An unreadable bar inside the seed window is skipped
+     rather than poisoning the seed; only a window with nothing readable in it
+     at all returns null. */
+  const seed=(A,a,b,max)=>{
+    let m=null;
+    for(let j=Math.max(0,a);j<=b;j++){
+      const v=A[j];
+      if(!fin(v)) continue;
+      m = m==null ? v : (max?Math.max(m,v):Math.min(m,v));
+    }
+    return m;
+  };
+
+  let swingHigh=null, swingLow=null;      // the two external swing LEVELS
+  let shBar=null, slBar=null;             // the bars they were set from
+  let shActive=false, slActive=false;     // is this level still an unbroken reference
+  let bias=0;                             // 0 undetermined · 1 bullish · -1 bearish
+  let lastPh=null, lastPhBar=null;        // most recent CONFIRMED pivot high, taken or not
+  let lastPl=null, lastPlBar=null;
+  /* A break may still be OWED its relocation. The low made during the leg that
+     produced the break has usually not confirmed yet — a 5/5 pivot needs five
+     more bars — so these let that one low be adopted when it finally lands,
+     while a low that forms AFTER the break never can be. That bound is the
+     whole reason an intact range cannot quietly re-anchor itself. */
+  let phPending=false, plPending=false;
+  let breakBarUp=null, breakBarDn=null;
+  let upCount=0, dnCount=0;               // consecutive qualifying closes
+  // Running extremes. *SinceLast* track from the newest pivot of that type;
+  // *SinceSwing* track from the pivot that actually anchors the swing, and are
+  // handed the former's value at the moment that pivot is adopted.
+  let hiSinceLastPl=null, loSinceLastPh=null;
+  let hiSinceSwingLo=null, loSinceSwingHi=null;
+  let phCount=0, plCount=0, bullFlips=0, bearFlips=0;
+
+  let ih=0, il=0;                         // cursors into the pivot lists
+  for(let i=0;i<n;i++){
+    // ── a. snapshot at the bar's open ────────────────────────────────────
+    const shAtOpen=swingHigh, slAtOpen=swingLow;
+    const shActiveAtOpen=shActive, slActiveAtOpen=slActive;
+
+    // ── b. pivots that become KNOWN on this bar ──────────────────────────
+    // `<=` rather than `===` so a cursor can never be stranded; confirmedAt is
+    // strictly increasing within each list, so this consumes each pivot once.
+    while(ih<piv.highs.length && piv.highs[ih].confirmedAt<=i){
+      const pp=piv.highs[ih++];
+      phCount++;
+      lastPh=pp.level; lastPhBar=pp.bar;
+      loSinceLastPh=seed(L,pp.bar,i,false);
+      /* Nested exactly as the Pine is, so no comparison against a missing
+         level is ever evaluated and so the level survives being consumed by a
+         break: with the high inactive (just broken) or never set, the pivot is
+         taken unconditionally, which is what lets the ratchet run leg by leg. */
+      let take=true;
+      if(shActive && swingHigh!=null){
+        take = pp.level>swingHigh;                                  // beyond: extends the extreme
+        if(!take && everyHL && bias<0) take = pp.level<swingHigh;   // every lower high, while bearish
+        if(!take && phPending && pp.level<swingHigh && breakBarDn!=null)
+          take = pp.bar<breakBarDn;                                 // the relocation this break is owed
+      }
+      // A pivot forming at or after the break closes that window for good,
+      // whether or not this particular pivot was taken.
+      if(phPending && breakBarDn!=null && pp.bar>=breakBarDn) phPending=false;
+      if(take){
+        swingHigh=pp.level; shBar=pp.bar; shActive=true; phPending=false;
+        loSinceSwingHi=loSinceLastPh;
+      }
+    }
+    while(il<piv.lows.length && piv.lows[il].confirmedAt<=i){
+      const pp=piv.lows[il++];
+      plCount++;
+      lastPl=pp.level; lastPlBar=pp.bar;
+      hiSinceLastPl=seed(H,pp.bar,i,true);
+      let take=true;
+      if(slActive && swingLow!=null){
+        take = pp.level<swingLow;
+        if(!take && everyHL && bias>0) take = pp.level>swingLow;
+        if(!take && plPending && pp.level>swingLow && breakBarUp!=null)
+          take = pp.bar<breakBarUp;
+      }
+      if(plPending && breakBarUp!=null && pp.bar>=breakBarUp) plPending=false;
+      if(take){
+        swingLow=pp.level; slBar=pp.bar; slActive=true; plPending=false;
+        hiSinceSwingLo=hiSinceLastPl;
+      }
+    }
+
+    // ── c. the break test, against the AT-OPEN snapshot ──────────────────
+    const px=C[i];
+    if(fin(px)){
+      // minPenPct 0 (the default) makes these the bare levels, so any close
+      // beyond one qualifies.
+      const upTrig=(shActiveAtOpen && shAtOpen!=null) ? shAtOpen*(1+minPen/100) : null;
+      const dnTrig=(slActiveAtOpen && slAtOpen!=null) ? slAtOpen*(1-minPen/100) : null;
+      // `!= null &&` before the comparison, always: a null trigger would
+      // coerce to 0 and `px > 0` is true for every stock on the list.
+      upCount = (upTrig!=null && px>upTrig) ? upCount+1 : 0;
+      dnCount = (dnTrig!=null && px<dnTrig) ? dnCount+1 : 0;
+
+      // ── d. the flip ────────────────────────────────────────────────────
+      if(upCount>=confirmBars && shActiveAtOpen){
+        bias=1; bullFlips++;
+        /* The swing low comes forward to the most recent confirmed pivot low,
+           guarded so it can only ever move FORWARD in time — without that, a
+           relocation could jump the anchor backwards onto an older pivot. */
+        let adopted=false;
+        if(lastPl!=null){
+          const fwd = (slBar==null) ? true : (lastPlBar>slBar);
+          if(fwd){
+            swingLow=lastPl; slBar=lastPlBar; hiSinceSwingLo=hiSinceLastPl;
+            adopted=true;
+          }
+        }
+        // Nothing fresher had confirmed yet, so wait for the low formed during
+        // this leg — and only for that one.
+        plPending=!adopted;
+        breakBarUp=i;
+        phPending=false;
+        slActive=(swingLow!=null);
+        /* The broken high is CONSUMED, not nulled. Keeping the level while
+           clearing the flag is what lets the next pivot high replace it by the
+           unconditional branch above, leg after leg — and it keeps the level
+           available as a target price even though it has been traded through. */
+        shActive=false;
+        upCount=0; dnCount=0;
+      } else if(dnCount>=confirmBars && slActiveAtOpen){
+        bias=-1; bearFlips++;
+        let adopted=false;
+        if(lastPh!=null){
+          const fwd = (shBar==null) ? true : (lastPhBar>shBar);
+          if(fwd){
+            swingHigh=lastPh; shBar=lastPhBar; loSinceSwingHi=loSinceLastPh;
+            adopted=true;
+          }
+        }
+        phPending=!adopted;
+        breakBarDn=i;
+        plPending=false;
+        shActive=(swingHigh!=null);
+        slActive=false;
+        upCount=0; dnCount=0;
+      }
+    }
+
+    // Advance the running extremes by one bar. AFTER the flip block and before
+    // anything reads them, which is the Pine's order.
+    const hi=H[i], lo=L[i];
+    if(fin(hi)){
+      if(hiSinceLastPl!=null) hiSinceLastPl=Math.max(hiSinceLastPl,hi);
+      if(hiSinceSwingLo!=null) hiSinceSwingLo=Math.max(hiSinceSwingLo,hi);
+    }
+    if(fin(lo)){
+      if(loSinceLastPh!=null) loSinceLastPh=Math.min(loSinceLastPh,lo);
+      if(loSinceSwingHi!=null) loSinceSwingHi=Math.min(loSinceSwingHi,lo);
+    }
+  }
+
+  return {
+    bias, swingHigh, swingLow, shBar, slBar, shActive, slActive,
+    hiSinceSwingLo, loSinceSwingHi,
+    // Diagnostics, for the same reason the Pine carries them: when a level is
+    // not advancing the way a chart says it should, these say which stage is
+    // not firing.
+    phCount, plCount, bullFlips, bearFlips, bars:n,
+  };
+}
+
+/* WHERE PRICE SITS RELATIVE TO THE THREE LEVELS. Split out so it can be tested
+   on levels alone, with no series behind it.
+
+   ONE VOCABULARY ACROSS BOTH BIASES. The names mean the same thing whichever
+   way structure points, and the bias carries the direction:
+     'above' — price has not retraced into the zone yet (for a bearish
+               structure that literally means price is still BELOW the levels;
+               the word describes the position in the RETRACEMENT, not on the
+               chart)
+     'ibz'   — inside the Institutional band, 0.618 to 0.786
+     'smz'   — inside the Smart Money band, 0.786 to 0.826, the deep one
+     'below' — through the far side of the zone; the retracement has gone
+               further than the zone allows for
+   The bands are half-open where they meet so no price can ever satisfy two of
+   them: 0.786 belongs to 'smz' and 0.618 belongs to 'ibz'. */
+function smzClassify(bias,px,f618,f786,f826){
+  if(px==null||!isFinite(px)) return null;
+  if(f618==null||f786==null||f826==null) return null;
+  if(bias>0){
+    if(px>f618) return 'above';
+    if(px>f786) return 'ibz';        // f786 < px <= f618
+    if(px>=f826) return 'smz';       // f826 <= px <= f786
+    return 'below';
+  }
+  if(bias<0){
+    if(px<f618) return 'above';
+    if(px<f786) return 'ibz';        // f618 <= px < f786
+    if(px<=f826) return 'smz';       // f786 <= px <= f826
+    return 'below';
+  }
+  return null;
+}
+
+/* THE PUBLISHED ANSWER — the eight fields computeTech() carries on the row.
+
+   THE FIBONACCI. Bullish structure anchors on the active swing LOW: the leg is
+   measured from that low up to the highest high printed since it, and the
+   retracements come back DOWN off that high, so f618 > f786 > f826. Bearish
+   mirrors it off the swing high and the lowest low since, ascending. This is
+   the "External Swing" anchoring the author's current script uses; the legacy
+   raw-pivot anchoring is not ported, because raw pivots include the internal
+   ones the structure model exists to exclude.
+
+   ROUNDING HAPPENS BEFORE CLASSIFICATION, not after. The state and the
+   distance are computed off the same 2dp levels the row publishes, so the cell
+   printing "121.40" and the state saying 'smz' can never disagree about which
+   side of that number the close is on. Rounding afterwards would let them
+   differ by a paisa at a boundary, and a state that contradicts the numbers
+   printed beside it is unexplainable on screen. The known cost is at the very
+   bottom of the price scale: on a sub-₹2 stock a whole retracement band can be
+   narrower than a paisa, so 0.786 and 0.826 round to the SAME number and the
+   'smz' band collapses to a single price (GTLINFRA at ₹1.20 does exactly this
+   today). The state is still correct and still agrees with the printed levels
+   — the band is genuinely that thin — and the alternative, publishing levels at
+   a finer precision than every other price on the row, would buy resolution
+   nobody can trade against.
+
+   smzBias IS THREE-VALUED PLUS NULL, and the distinction is the point:
+     null — fewer than SMZ_MIN_BARS of history, or unusable prices. We did not
+            try. A young listing is not a stock without structure.
+     0    — we replayed the whole history and structure never resolved: no
+            close ever broke a swing level, so there is no bias, no anchor and
+            no zone. That is a real, reportable finding about the stock.
+   Collapsing the two would put "too new to say" and "genuinely rangebound with
+   no break in a year" into one bucket, and a filter written against that
+   bucket would mean neither thing. */
+function smartMoneyZones(C,H,L,cfg){
+  const nul={smzBias:null,smzState:null,smzDist:null,smz618:null,smz786:null,
+             smz826:null,smzSwingHi:null,smzSwingLo:null};
+  if(!Array.isArray(C)||!Array.isArray(H)||!Array.isArray(L)) return nul;
+  const n=C.length;
+  if(n<SMZ_MIN_BARS||H.length!==n||L.length!==n) return nul;
+  const px=C[n-1];
+  if(typeof px!=='number'||!isFinite(px)||px<=0) return nul;
+
+  const st=smzStructure(C,H,L,cfg||{});
+  const r2=v=>(v==null||!isFinite(v))?null:+v.toFixed(2);
+  /* The swing levels are published RAW — not gated on the active flags — for
+     the reason the Pine gives: a level that has been traded through is still a
+     valid target or stop price, and blanking it would hide the only two
+     numbers on this row a trader actually places an order against. They can
+     therefore be non-null while bias is 0. */
+  const out={...nul, smzBias:st.bias, smzSwingHi:r2(st.swingHigh), smzSwingLo:r2(st.swingLow)};
+
+  // The anchor: only an ACTIVE swing on the structure-aligned side anchors a
+  // zone, and bias 0 anchors nothing at all.
+  let anchor=null, extreme=null;
+  if(st.bias>0 && st.slActive && st.swingLow!=null && st.hiSinceSwingLo!=null){
+    anchor=st.swingLow; extreme=st.hiSinceSwingLo;
+  } else if(st.bias<0 && st.shActive && st.swingHigh!=null && st.loSinceSwingHi!=null){
+    anchor=st.swingHigh; extreme=st.loSinceSwingHi;
+  }
+  if(anchor==null||extreme==null||!isFinite(anchor)||!isFinite(extreme)) return out;
+
+  // A zero or inverted range is not a shallow zone, it is no zone: the swing
+  // and the extreme are the same price, so all three levels would collapse
+  // onto it and every close would read as 'smz'.
+  const range=st.bias>0 ? (extreme-anchor) : (anchor-extreme);
+  if(!(range>0)) return out;
+
+  const f618=r2(st.bias>0 ? extreme-range*0.618 : extreme+range*0.618);
+  const f786=r2(st.bias>0 ? extreme-range*0.786 : extreme+range*0.786);
+  const f826=r2(st.bias>0 ? extreme-range*0.826 : extreme+range*0.826);
+  if(f618==null||f786==null||f826==null) return out;
+
+  out.smz618=f618; out.smz786=f786; out.smz826=f826;
+  out.smzState=smzClassify(st.bias,px,f618,f786,f826);
+  /* DISTANCE TO THE 0.618 EDGE, as a percent of the close — the Pine's
+     ms_dist_pct. Signed so it reads the same way in both biases: POSITIVE is
+     "price still has this far to travel before it even touches the zone",
+     negative is "already inside it, or through it". */
+  out.smzDist=+((st.bias>0 ? (px-f618)/px*100 : (f618-px)/px*100).toFixed(2));
+  return out;
+}
+
 function computeTech(C,H,L,V,dates,sym,O,feedStart){
   // A 2-row stock (e.g. IPO'd a few days ago)
   // is real data, not a failure. Every derived indicator below (RSI, EMA,
@@ -6949,6 +7623,27 @@ function computeTech(C,H,L,V,dates,sym,O,feedStart){
   const emaScr=ec?+(eu/ec).toFixed(2):0;
 
   const rsi14=rsi(C,14);
+  /* "RSI above its own moving average" — momentum measured against momentum's
+     own recent trend rather than against a fixed 50/70 line. THREE-VALUED on
+     purpose. A stock with only 30 bars has an RSI but no settled EMA of it, and
+     answering `false` there would put "we could not tell" and "no, RSI is below
+     its average" into the same bucket — the filter would then read as a real
+     rejection for every young listing. null keeps the two apart, and the filter
+     that consumes this tests === true so null is excluded rather than passed.
+     DAILY ONLY: there is deliberately no weekly twin. wRsi already exists for
+     the weekly read, and a second smoothing on ~52 weekly bars would be seeded
+     from almost the whole series. */
+  let rsiAboveMa=null;
+  if(n>=RSI_MA_MIN_CLOSES){
+    const rs=rsiSeries(C,14).filter(v=>v!=null);
+    // The tail is contiguous — rsiSeries() only ever nulls the LEADING warm-up
+    // bars — so filtering the nulls out cannot leave a hole in the middle.
+    if(rs.length>=RSI_MA_MIN_RSI_VALUES){
+      const rMa=ema(rs,RSI_MA_PERIOD);       // the file's one EMA helper, reused
+      const last=rs[rs.length-1];
+      if(rMa!=null && isFinite(rMa) && isFinite(last)) rsiAboveMa = last > rMa;
+    }
+  }
   const wk=weeklyResample(C,H,L,V,dates,O);
   const wRsi=wk.closes.length>=15?rsi(wk.closes,14):null;
 
@@ -7052,7 +7747,7 @@ function computeTech(C,H,L,V,dates,sym,O,feedStart){
      only surviving record of the ticker — and a badge that drops its age on
      every day but the one you first downloaded the sheet is worse than no
      badge. One integer per ticker; see the note on setupBaseAge(). */
-  const setupBaseA=setupBaseAge(C,H,L,V,dates,O);
+  const setupBaseA=setupBaseAge(C,H,L,V,dates,O,wk);
   const sq=squeeze(C.slice(-20),H.slice(-20),L.slice(-20));
   const bo=breakout(C,V);
 
@@ -7124,6 +7819,14 @@ function computeTech(C,H,L,V,dates,sym,O,feedStart){
     : null;
 
   const cons=consolidation(C,CFG.CONSOL.lookback,CFG.CONSOL.maxRangePct);
+
+  /* Smart Money Zones. One call, eight published fields, all of them derived
+     from the daily C/H/L this function already holds — see the block above
+     computeTech() for the algorithm. It is computed here rather than at render
+     time because it needs the raw high/low series, which a cached row does not
+     carry: a row written before these fields existed cannot be repaired later
+     even in principle, which is what makes this a CFG.VER bump. */
+  const smz=smartMoneyZones(C,H,L,CFG.SMZ);
 
   /* Volume drying up: 20d average against 50d average. Both averages are taken
      over the same trailing window, so the 20d is a SUBSET of the 50d — this is
@@ -7210,6 +7913,17 @@ function computeTech(C,H,L,V,dates,sym,O,feedStart){
        would count the same volume twice. */
     volSpike:vSpike.mult, volSpikeAge:vSpike.age,
     rsi14,wRsi,e10,e20,e50,e100,e150,e200,emaScr,
+    /* Three-valued, daily only — see the note where it is computed. It rides in
+       the cached row like every other computeTech() field, which is why adding
+       it moves CFG.VER. */
+    rsiAboveMa,
+    /* THE EIGHT SMART MONEY ZONES FIELDS. Spread rather than listed one by one
+       so the row and smartMoneyZones()'s own null-object can never drift out of
+       step — there is exactly one place that names these keys. smzBias is
+       four-valued (1 / -1 / 0 / null) and smzState five-valued (null included);
+       anything reading them must test explicitly, because 0 and null mean two
+       different things here (see the note where they are computed). */
+    ...smz,
     sma50,sma150,sma200,slope200,slopeDir,
     xFast:XF,xSlow:XS,xFastEma,xSlowEma,xState,xBars,wxState,e50CrossUpAge,
     pattern,wPattern,
@@ -7982,6 +8696,64 @@ function setGSheetStatus(market){
    otherwise be able to under-report the whole market's freshness, and reporting
    data as OLDER than it is would send the user off to re-run a pipeline that is
    working. It runs on load and on tab switch, not per render. */
+/* HOW MANY TRADING DAYS THIS ONE ROW IS BEHIND ITS OWN MARKET.
+   ─────────────────────────────────────────────────────────────
+   The freshness banner answers "is the SHEET current". This answers "is THIS
+   STOCK current", which is a different question and the one that matters when
+   the daily cycle cannot finish in a day: the market's newest bar can be
+   yesterday's while a third of the rows are still on last Tuesday's, and every
+   indicator on those rows — RS, the EMAs, the box, the stage — is computed from
+   stale closes while looking exactly as authoritative as a fresh one.
+
+   COUNTED IN WEEKDAYS, not calendar days, so a row that is merely on Friday's
+   close over a weekend reads as 0 behind rather than 2. Weekends are not
+   staleness. Holidays are NOT excluded — the page has no exchange calendar, so
+   a market holiday will show every row as 1 behind for that day. That
+   over-reports rather than under-reports, which is the right direction for a
+   warning; under-reporting would be a stale row presenting itself as current.
+
+   Returns null when it cannot tell — no series, no dates, or no market max —
+   and null must never render as 0. */
+function rowDaysBehind(sym,market){
+  const map=GSHEET_BY_MARKET[market||CUR];
+  const gd=map&&map[sym];
+  const ds=gd&&gd.dates;
+  if(!Array.isArray(ds)||!ds.length) return null;
+  let last=null;
+  for(let i=ds.length-1;i>=0;i--){ if(typeof ds[i]==='string'&&ds[i]){ last=ds[i]; break; } }
+  if(!last) return null;
+  const mx=seriesMaxDate(market||CUR);
+  if(!mx || last>=mx) return 0;
+  return weekdaysBetween(last,mx);
+}
+
+/* Whole weekdays strictly after `from`, up to and including `to`. Parsed at
+   noon UTC so a daylight-saving shift in the host timezone cannot roll a date
+   across midnight and add a phantom day. */
+function weekdaysBetween(from,to){
+  const a=new Date(from+'T12:00:00Z'), b=new Date(to+'T12:00:00Z');
+  if(!isFinite(a.getTime())||!isFinite(b.getTime())||b<=a) return 0;
+  let n=0;
+  const d=new Date(a);
+  while(d<b){
+    d.setUTCDate(d.getUTCDate()+1);
+    const w=d.getUTCDay();
+    if(w!==0&&w!==6) n++;
+  }
+  return n;
+}
+
+/* The badge. Blank when the row is current, because a marker on every row is
+   not a warning — it is wallpaper, and the eye stops seeing it. */
+const STALE_WARN_DAYS=1;         // 1+ weekdays behind is worth showing
+const STALE_BAD_DAYS=3;          // 3+ and the indicators are meaningfully wrong
+function staleBadge(sym,market){
+  const n=rowDaysBehind(sym,market);
+  if(n==null||n<STALE_WARN_DAYS) return '';
+  const cls = n>=STALE_BAD_DAYS ? 'stale-bad' : 'stale-warn';
+  return ` <span class="stale-chip ${cls}" data-tip="This row's newest price bar is ${n} trading day${n===1?'':'s'} older than the newest bar anywhere in this market. Every indicator on the row — RS, the EMAs, the Darvas box, the stage — is computed from that older close, so it is describing where the stock was, not where it is. Weekends are not counted; a market holiday will show as one day behind because the page has no exchange calendar.">${n}d old</span>`;
+}
+
 function seriesMaxDate(market){
   let max=null;
   const consider=ser=>{
@@ -9551,6 +10323,53 @@ function dboxC(state,top,bot){
   return `<span class="dbx dbx-${state}">${DBOX_LABEL[state]||state}</span>`
        + `<br><span class="dbx-rng">${n(bot)}–${n(top)}</span>`;
 }
+/* Smart Money Zones cell — THREE READINGS IN ONE LINE, in the order a swing
+   trader asks for them: which way is structure pointing, where does the price
+   sit inside the retracement, and how far is it from the near edge of the zone.
+   The distance is printed with the sign the engine publishes, because the sign
+   alone answers the question the column exists for: POSITIVE means the price
+   still has that far to fall before it even touches the 0.618 line, negative
+   means it is already inside the zone or through it.
+
+   THE TWO EMPTY ANSWERS ARE DIFFERENT ANSWERS, and the cell must not let them
+   look alike — smartMoneyZones() went to the trouble of publishing them apart.
+     smzBias === 0   we replayed every available bar and no close ever broke a
+                     swing level, so this stock genuinely has no structure and
+                     nothing to anchor a zone to. That is a finding about the
+                     stock, and it prints as one: '— No structure'.
+     smzBias == null there were fewer than SMZ_MIN_BARS of history, so it was
+                     never attempted. That prints the same plain dash every
+                     other column uses for a value it could not compute.
+   Note the `== null` rather than a truthiness test. `!d.smzBias` is true for 0
+   and for null alike and would collapse the very distinction being drawn — the
+   same null-coerces-to-zero trap the numeric columns guard against.
+
+   A RESOLVED BIAS WITH NO STATE IS POSSIBLE, and prints the direction alone.
+   Structure can point somewhere while no zone is drawn: the aligned swing is no
+   longer active, so there is a direction but no levels, and smzState stays null
+   while smzBias is 1 or -1. Printing a state under that would be inventing a
+   zone the engine deliberately refused to draw. */
+const SMZ_STATE_LABEL={above:'Above zone', ibz:'In IBZ', smz:'In SMZ', below:'Below zone'};
+function smzC(d){
+  if(!d||d.smzBias==null) return '<span class="vm">—</span>';
+  if(d.smzBias===0)       return '<span class="smz-none">— No structure</span>';
+  const dir = d.smzBias>0 ? '▲ Bull' : '▼ Bear';
+  const st  = d.smzState ? SMZ_STATE_LABEL[d.smzState] : null;
+  // Built mechanically off the state name, the same way dboxC() builds dbx-*,
+  // so a state the stylesheet has not been told about cannot be styled as if
+  // it had been. See .smz-smz's note on why one of the five reads oddly.
+  const cls = st ? `smz-${d.smzState}` : 'smz-none';
+  const chip = `<span class="smz ${cls}">${dir}${st?` · ${st}`:''}</span>`;
+  /* != null, not a truthiness test, and this one is not academic: a price
+     sitting exactly on the 0.618 line publishes 0.00, which is the single most
+     interesting reading this column can produce, and `d.smzDist ? …` would
+     blank it. */
+  const dist = d.smzDist!=null
+    ? `<span class="smz-dist"> · ${d.smzDist>0?'+':''}${d.smzDist.toFixed(1)}%</span>`
+    : '';
+  return chip+dist;
+}
+
 /* ADR% renders flat: a number and a percent sign, two decimals like Retrace%
    and 1D% beside it. NO COLOUR ON PURPOSE — "high ADR" is not good or bad, it
    is a property of the instrument, and a green/red split here would invent a
@@ -10046,7 +10865,7 @@ function histGC(v){ return fmtCh(v); }
    reason: without them a table loading with columns switched off renders
    skeleton rows WIDER than the data rows underneath, because only the data
    rows' cells get hidden. Length must equal (th count − 4). */
-const SKEL_COLS=['c-setup','c-align','c-fresh','c-sector','c-subind','','','c-ch1w','c-ch1m','c-ch3m','c-hist','c-histg','c-status','','c-wrsi','c-vr','c-volspike','c-wvol','c-avgval','','c-wpiv','c-dbox','c-pctpiv','c-wbox','',
+const SKEL_COLS=['c-setup','c-align','c-fresh','c-sector','c-subind','','','c-ch1w','c-ch1m','c-ch3m','c-hist','c-histg','c-status','','c-wrsi','c-vr','c-volspike','c-wvol','c-avgval','','c-wpiv','c-dbox','c-pctpiv','c-wbox','c-smz','',
   'c-ema','c-pct10e','c-pct20e','c-pct50e','c-pct200e','c-wema','c-xcross','c-wcross','c-slope200','c-pattern','c-wpattern','c-consol',
   'c-monthly','','c-bocnt','c-followup','c-voldry','c-retrace','c-squeeze','c-adr','c-tight','c-daysup','c-coil','c-vcp','c-vcplid','c-vcptolid','c-ipo','c-ipolid','c-ipotolid','','c-mrsrank','c-rs21',
   'c-rs55','c-rs10w','c-rsslope','c-rsp55','c-rsp21','c-rshist','','c-rstrend','c-notes'];
@@ -10099,7 +10918,7 @@ function dataRow(def,d,i){
     <td class="td-n pin pin1">${i}</td>
     <td class="pin pin2">${revC(def.s)}</td>
     <td class="pin pin3">${capB(cap)}</td>
-    <td class="pin pin4">${watchC(def.s)}<span class="ticker dd-open" role="button" tabindex="0" data-tip="${escAttr(DD_TIP)}" onclick="openDrill('${safeSym}')" onkeydown="ddKey(event,'${safeSym}')">${flag} ${def.d}</span><br><span class="sec">${def.sector}</span>${mcapLine}</td>
+    <td class="pin pin4">${watchC(def.s)}<span class="ticker dd-open" role="button" tabindex="0" data-tip="${escAttr(DD_TIP)}" onclick="openDrill('${safeSym}')" onkeydown="ddKey(event,'${safeSym}')">${flag} ${def.d}</span>${staleBadge(def.s,CUR)}<br><span class="sec">${def.sector}</span>${mcapLine}</td>
     <td class="c-setup">${setupC(d)}</td>
     <td class="c-align">${alignC(d)}</td>
     <td class="c-fresh">${freshC(d)}</td>
@@ -10124,6 +10943,7 @@ function dataRow(def,d,i){
     <td class="c-dbox">${dboxC(d.dBoxState,d.dBoxTop,d.dBoxBot)}</td>
     <td class="c-pctpiv">${pctEmaC(d.pctVsPivot)}</td>
     <td class="c-wbox">${dboxC(d.wBoxState,d.wBoxTop,d.wBoxBot)}</td>
+    <td class="c-smz">${smzC(d)}</td>
     <td>${h52C(d.h52d)}</td>
     <td class="c-ema">${emaBadgeRow(d.price,[['10',d.e10],['20',d.e20],['50',d.e50],['200',d.e200]])}</td>
     <td class="c-pct10e">${pctEmaC(d.pct10e)}</td>
@@ -10175,7 +10995,7 @@ function errRow(def,i){
     <td class="td-n pin pin1">${i}</td><td class="pin pin2">${revC(def.s)}</td>
     <td class="pin pin3">${capB(def.g)}</td>
     <td class="pin pin4">${watchC(def.s)}<span class="ticker">${def.d}</span><br><span class="sec">${def.sector}</span></td>
-    <td colspan="66" style="color:var(--text3);font-size:11px">
+    <td colspan="67" style="color:var(--text3);font-size:11px">
       ⚠ Not in this market's data source — it will appear once the daily data carries it
     </td>
   </tr>`;
@@ -10202,7 +11022,29 @@ const ADV_DEFAULTS={
      the same order of magnitude of tradability in both. */
   liq:   {on:false, min:5},
   xover: {on:false, fast:10,   slow:20},
+  /* EMA convergence — the SAME emaConverged() test the toolbar button runs, but
+     on a percentage the user owns. Default 5 to match CFG.EMACV_PCT so the two
+     controls agree until someone deliberately changes this one; they are not
+     wired together, and that is the point. */
+  emacv: {on:false, pct:5},
+  /* NOT A FILTER, AND IT HAS NO `on` KEY ON PURPOSE. Every other group here is
+     a screen with an on/off flag, and updateAdvBtn() counts exactly those —
+     `Object.keys(ADV).filter(k=>ADV[k].on)`. A group with no `on` reads
+     undefined there, so this one is excluded from the count by construction
+     rather than by a special case somebody has to remember. That matters: this
+     row does not remove a single stock from the table, and a button reading
+     "Advanced Filters (1)" because of it would be telling the user his table is
+     narrowed when nothing has been narrowed.
+     It rides in ADV anyway rather than in a fourth storage key because it is
+     set from this modal, saved with this modal's blob, and restored by the same
+     per-group merge in loadAdvFilters() — the same arrangement CFG.XOVER's
+     fast/slow pair already has, and for the same reason. */
+  smz:   {mode:'break'},
 };
+/* The two values smzStructure() honours, in one place, so the <select>, the
+   validator in loadAdvFilters() and the reader in readAdvForm() cannot drift
+   from each other or from the engine. */
+const SMZ_MODES=['break','everyhllh'];
 const cloneAdv=o=>JSON.parse(JSON.stringify(o));
 let ADV=cloneAdv(ADV_DEFAULTS);
 
@@ -10218,6 +11060,15 @@ function loadAdvFilters(){
     });
     // The saved EMA pair IS the crossover pair the columns are computed from.
     if(ADV.xover.fast && ADV.xover.slow) CFG.XOVER={fast:+ADV.xover.fast, slow:+ADV.xover.slow};
+    /* And the saved anchor mode IS the mode the SMZ columns are computed from,
+       for exactly the same reason. VALIDATED against the two values the engine
+       actually honours rather than assigned straight through: a hand-edited or
+       stale localStorage payload would otherwise put a third string into
+       CFG.SMZ.advanceMode, where smzStructure() would silently treat it as the
+       non-break branch and every zone on the page would be anchored somewhere
+       the modal is not showing. */
+    if(SMZ_MODES.includes(ADV.smz.mode)) CFG.SMZ.advanceMode=ADV.smz.mode;
+    else ADV.smz.mode=ADV_DEFAULTS.smz.mode;
   } catch(e){ /* corrupt config: keep defaults */ }
 }
 function saveAdvFilters(){
@@ -10267,6 +11118,12 @@ function passesAdv(d){
   if(ADV.xover.on){
     if(d.xState!=='bull') return false;
   }
+  /* emaConverged() does its own null-guarding — a row with fewer than two
+     usable EMAs, or no price, is DROPPED rather than kept, the same way the
+     liquidity leg above treats an unmeasurable row. */
+  if(ADV.emacv.on){
+    if(!emaConverged(d, +ADV.emacv.pct)) return false;
+  }
   return true;
 }
 
@@ -10291,6 +11148,9 @@ function openAdvFilters(){
   $('advXOn').checked=ADV.xover.on;
   $('advXFast').value=String(ADV.xover.fast);
   $('advXSlow').value=String(ADV.xover.slow);
+  $('advCvOn').checked=ADV.emacv.on;
+  $('advCvPct').value=ADV.emacv.pct;
+  $('advSmzMode').value=ADV.smz.mode;
   $('advModal').classList.add('open');
 }
 function closeAdvFilters(){ $('advModal').classList.remove('open'); }
@@ -10306,28 +11166,49 @@ function readAdvForm(){
   ADV.vol   ={on:$('advVolOn').checked,    min:num('advVolMin',ADV_DEFAULTS.vol.min)};
   ADV.liq   ={on:$('advLiqOn').checked,    min:num('advLiqMin',ADV_DEFAULTS.liq.min)};
   ADV.xover ={on:$('advXOn').checked,      fast:num('advXFast',ADV_DEFAULTS.xover.fast), slow:num('advXSlow',ADV_DEFAULTS.xover.slow)};
+  ADV.emacv ={on:$('advCvOn').checked,     pct:num('advCvPct',ADV_DEFAULTS.emacv.pct)};
+  /* NO `on` KEY WRITTEN HERE EITHER, and that is not an oversight — see
+     ADV_DEFAULTS.smz. Adding one would put this row into updateAdvBtn()'s
+     count, which counts screens that narrow the table, and this row narrows
+     nothing. Validated on the way in for the same reason loadAdvFilters()
+     validates it: a <select> is not a guarantee once the DOM is reachable from
+     a console, and an unrecognised mode would reach smzStructure() as "not
+     break" without the modal ever saying so. */
+  ADV.smz   ={mode: SMZ_MODES.includes($('advSmzMode').value) ? $('advSmzMode').value : ADV_DEFAULTS.smz.mode};
 }
 
 function applyAdvFilters(){
   const prev=CFG.XOVER.fast+'/'+CFG.XOVER.slow;
+  // The SMZ anchor mode is captured the same way and for the same reason: it is
+  // an input to computeTech(), so a change to it is a re-scan and not a
+  // re-filter. Read BEFORE readAdvForm() overwrites ADV.
+  const prevSmz=CFG.SMZ.advanceMode;
   readAdvForm();
   saveAdvFilters();
   closeAdvFilters();
   CFG.XOVER={fast:ADV.xover.fast, slow:ADV.xover.slow};
+  CFG.SMZ.advanceMode=ADV.smz.mode;
   syncXoverLabel();
   updateAdvBtn();
   VISIBLE=CFG.INIT;
-  // xState/xBars come out of computeTech(), so a new pair is not a re-filter —
-  // it is a re-scan. forceRefresh() drops the cache and recomputes this market.
-  if(prev !== CFG.XOVER.fast+'/'+CFG.XOVER.slow){ forceRefresh(); return; }
+  /* xState/xBars come out of computeTech(), so a new pair is not a re-filter —
+     it is a re-scan. forceRefresh() drops the cache and recomputes this market.
+     Every SMZ field comes out of the same function, so the anchor mode is the
+     SAME kind of change and takes the SAME path — one condition, one refresh,
+     rather than a second mechanism that could fire at a different moment. */
+  if(prev !== CFG.XOVER.fast+'/'+CFG.XOVER.slow || prevSmz !== CFG.SMZ.advanceMode){ forceRefresh(); return; }
   renderTable(CUR); updateStatus();
 }
 
 function resetAdvFilters(){
   ADV=cloneAdv(ADV_DEFAULTS);
   saveAdvFilters();
-  const changed = CFG.XOVER.fast!==ADV.xover.fast || CFG.XOVER.slow!==ADV.xover.slow;
+  // Both re-scan inputs, tested together: resetting to defaults can move either
+  // one, and either one alone is enough to make the cached rows wrong.
+  const changed = CFG.XOVER.fast!==ADV.xover.fast || CFG.XOVER.slow!==ADV.xover.slow
+                || CFG.SMZ.advanceMode!==ADV.smz.mode;
   CFG.XOVER={fast:ADV.xover.fast, slow:ADV.xover.slow};
+  CFG.SMZ.advanceMode=ADV.smz.mode;
   syncXoverLabel();
   updateAdvBtn();
   openAdvFilters();   // refresh the form to show the restored values
@@ -10771,10 +11652,20 @@ const SETUP_AGE_MAX=30;
    day-stamped cache the size it was.
 
    Capped at SETUP_AGE_MAX: past that the RS leg cannot be answered anyway. */
-function setupBaseAge(C,H,L,V,dates,O){
+/* wkPre is optional and LAST, on the same convention as O above: every existing
+   6-argument caller keeps working and simply pays for its own resample. Its
+   only legitimate value is the result of weeklyResample() on the IDENTICAL
+   C/H/L/V/dates/O this call was given — computeTech() already builds exactly
+   that a few lines before it calls us, and rebuilding it here was costing a
+   second full pass over every bar of every ticker for a byte-identical answer.
+   Passing anything else — a different ticker's weeks, or a truncated as-of
+   series against a live one — would silently date-shift the weekly EMA leg of
+   the Setup test, so this parameter is an optimisation hand-off and not a
+   general-purpose override. */
+function setupBaseAge(C,H,L,V,dates,O,wkPre){
   const n=(C&&C.length)||0;
   if(n<2) return 0;
-  const wk=weeklyResample(C,H,L,V,dates,O);
+  const wk=wkPre||weeklyResample(C,H,L,V,dates,O);
   /* Weekly bucket count per daily bar, so the weekly EMA 20 can be read AS IT
      STOOD on bar i without resampling a prefix once per bar — that is n Date
      parses per bar per ticker, and across ~900 tickers it is seconds. Every
@@ -11033,6 +11924,32 @@ const SORT_FN={
      "furthest below the trigger first", which is the watch-list order. */
   pctpiv:d=>d?.pctVsPivot,
   wbox:d=>DBOX_RANK[d?.wBoxState],
+  /* SMZ ranks on DIRECTION FIRST, then on where the price sits in the
+     retracement — the same argument as xstate and wxstate below, and for the
+     same reason DBOX_RANK exists: sorted as the printed string, 'Bear · In SMZ'
+     would outrank every bull row alphabetically, which is the exact opposite of
+     what a swing trader clicked the header for.
+
+     THE ORDER IS BY USEFULNESS, MOST ACTIONABLE FIRST, not by depth of
+     retracement. Bull in the deep 0.786-0.826 band is the setup this column was
+     built to find, so it sorts top; Bull in the shallower IBZ next; Bull below
+     the zone after that, because the retracement has overrun but the structure
+     has not broken and the row is still worth a look; Bull above the zone last
+     of the four, because nothing has happened yet. Then the bear mirror in the
+     same internal order, then the rows with no structure, then the blanks.
+
+     A row with no bias at all returns undefined -> getRows() maps it to
+     -Infinity, so "too new to say" sinks rather than borrowing a rank. Bias 0
+     is scored explicitly at 1 instead, because "no structure" is a real finding
+     and belongs above the rows nothing was computed for. */
+  smz:d=>{
+    if(!d||d.smzBias==null) return null;
+    if(d.smzBias===0) return 1;
+    const within={smz:4, ibz:3, below:2, above:1}[d.smzState] ?? 0;
+    // Direction dominates by an order of magnitude the state can never reach,
+    // so no bear row can ever climb above a bull row however deep it has pulled.
+    return (d.smzBias>0?100:10)+within;
+  },
   sector:(_,def)=>def.sector,
   // Same shape as sector: a per-ROW attribute, so it takes def, not d.
   subind:(_,def)=>subIndOf(def),
@@ -11304,6 +12221,46 @@ function boxSetup(d){
   return BOX_SETUP_STATES.includes(d.dBoxState);
 }
 
+/* ══ EMA CONVERGENCE ═════════════════════════════════════════
+   The moving averages have run together AND price is sitting on top of all of
+   them. Two legs, and both are load-bearing:
+
+   BUNCHED — (highest EMA − lowest EMA) / price. Divided by price rather than
+   left in currency so the same threshold means the same thing for a ₹80 stock
+   and a $800 one; that is the whole reason it is a percentage.
+
+   PRICE AT OR ABOVE EVERY ONE OF THEM — because bunched on its own says nothing
+   about direction. A stock rolling over collapses its EMAs together just as
+   neatly as one coiling before a run, and the two look identical on the spread
+   alone. Requiring price above the whole cluster is what separates "coiled and
+   breaking out" from "coiled and about to fail". At-or-above (not strictly
+   above) so a bar that closes exactly on its 10 EMA is not thrown out on a
+   rounding artefact.
+
+   AT LEAST TWO NON-NULL EMAs — a spread needs two points to be a spread at all.
+   With one EMA the max and the min are the same number, the distance is always
+   0, and every young listing would sail through a screen whose entire premise
+   is that several averages agree. One EMA is not agreement.
+
+   ONLY 10/20/50/200. e100 and e150 exist on the row and are deliberately left
+   out: they sit between the others and can only ever widen the max-minus-min
+   without adding information the 50 and the 200 do not already carry, so
+   including them would quietly tighten the threshold for long-history stocks
+   only — the opposite of the fallback behaviour intended here.
+
+   Takes the threshold as a PARAMETER rather than reading CFG, because it has
+   two callers with two independent numbers: the toolbar button (CFG.EMACV_PCT)
+   and the Advanced Filters entry (ADV.emacv.pct). */
+function emaConverged(d, maxPct){
+  if(!d) return false;
+  const px=d.price;
+  if(px==null || !(px>0)) return false;
+  const vals=[d.e10,d.e20,d.e50,d.e200].filter(v=>v!=null && isFinite(v));
+  if(vals.length<2) return false;
+  if(vals.some(v=>v>px)) return false;
+  return ((Math.max(...vals)-Math.min(...vals))/px)*100 <= maxPct;
+}
+
 /* ══ LIFECYCLE STAGE ═════════════════════════════════════════
    Where a name is in the ONE move this screener is built around: coiling under
    a Darvas pivot, crossing it, running, and finally handing the move back. The
@@ -11516,6 +12473,36 @@ function getRows(market, exclCol){
   if(F_DWA)   items=items.filter(def=>dwAligned(SD[def.s]));
   if(F_BO)    items=items.filter(def=>hasBreakout(SD[def.s]));
   if(F_BOX)   items=items.filter(def=>boxSetup(SD[def.s]));
+  /* === true, not a truthiness test. rsiAboveMa is deliberately three-valued,
+     and a row that has not got the history to answer must be EXCLUDED rather
+     than pass — which is exactly what a bare `SD[def.s].rsiAboveMa` would do
+     wrong in the other direction if the field were ever absent on a stale
+     cached row. Strict equality gives one answer for null, undefined and
+     false alike: not shown. */
+  if(F_RSIMA) items=items.filter(def=>SD[def.s] && SD[def.s].rsiAboveMa===true);
+  /* The BUTTON's convergence screen, on CFG.EMACV_PCT. The Advanced Filters
+     entry of the same name runs separately inside passesAdv() on its own
+     percentage; with both switched on the row has to clear both, which is just
+     the tighter of the two. */
+  if(F_EMACV) items=items.filter(def=>emaConverged(SD[def.s],CFG.EMACV_PCT));
+  /* THE SMZ SETUP SCREEN. Bull structure only, and price anywhere from the
+     swing low up to the 0.618 line — the three states that mean "the pullback
+     has happened", with 'above' left out because it means it has not.
+
+     smzBias===1 STRICTLY, and the strictness is the whole guard. smzBias is
+     four-valued: 1, -1, 0 and null. A truthy test would pass -1, putting bear
+     structures into a bull screen; a `>=1`-style comparison would be no better,
+     because null coerces to 0 and 0 is a stock with no structure at all. One
+     strict equality answers all three wrong cases the same way: not shown.
+
+     NO SEPARATE STOP CONDITION, deliberately. A close below the swing low is
+     what FLIPS the structure — smzStructure() rewrites the bias on that break —
+     so a stock that loses its swing low stops satisfying smzBias===1 and leaves
+     this list by itself. Adding a price-vs-swing-low test here would be a
+     second copy of a rule the engine already enforces, one edit away from
+     disagreeing with it. */
+  if(F_SMZ) items=items.filter(def=>{const d=SD[def.s];
+    return d && d.smzBias===1 && (d.smzState==='ibz'||d.smzState==='smz'||d.smzState==='below');});
   /* THE LIFECYCLE STAGE, in the same AND chain as everything else — so "what
      the table is showing" keeps exactly one definition. `exclCol==='stage'` is
      how the stage panel counts its own four buckets over every OTHER filter,
@@ -12085,7 +13072,7 @@ function applyF(){
    handlers flip the flag and call this, so a programmatic reset (clrF,
    switchMkt) lands on screen through the same one path. */
 function syncFilterToggles(){
-  [['alignTog',F_ALIGN],['dwaTog',F_DWA],['boTog',F_BO],['boxTog',F_BOX],['wlTog',F_WL]].forEach(([id,on])=>{
+  [['alignTog',F_ALIGN],['dwaTog',F_DWA],['boTog',F_BO],['boxTog',F_BOX],['rsimaTog',F_RSIMA],['emacvTog',F_EMACV],['smzTog',F_SMZ],['wlTog',F_WL]].forEach(([id,on])=>{
     const el=$(id); if(!el) return;
     el.classList.toggle('on',on);
     el.setAttribute('aria-pressed',on?'true':'false');
@@ -12102,12 +13089,18 @@ function toggleBO(){ F_BO=!F_BO; syncFilterToggles();
   VISIBLE=CFG.INIT; renderTable(CUR); updateStatus(); }
 function toggleBox(){ F_BOX=!F_BOX; syncFilterToggles();
   VISIBLE=CFG.INIT; renderTable(CUR); updateStatus(); }
+function toggleRsiMa(){ F_RSIMA=!F_RSIMA; syncFilterToggles();
+  VISIBLE=CFG.INIT; renderTable(CUR); updateStatus(); }
+function toggleEmaCv(){ F_EMACV=!F_EMACV; syncFilterToggles();
+  VISIBLE=CFG.INIT; renderTable(CUR); updateStatus(); }
+function toggleSmz(){ F_SMZ=!F_SMZ; syncFilterToggles();
+  VISIBLE=CFG.INIT; renderTable(CUR); updateStatus(); }
 function toggleWL(){ F_WL=!F_WL; syncFilterToggles();
   VISIBLE=CFG.INIT; renderTable(CUR); updateStatus(); }
 
 function clrF(){
   SEARCH='';F_CAP='All';F_SCT='';F_EMA='';F_RSI='';F_PIV='';F_WPIV='';F_REV='';
-  F_ALIGN=false;F_BO=false;F_DWA=false;F_WL=false;F_BOX=false;
+  F_ALIGN=false;F_BO=false;F_DWA=false;F_WL=false;F_BOX=false;F_RSIMA=false;F_EMACV=false;F_SMZ=false;
   // The stage panel is a filter like any other, so "Clear Filters" clears it.
   F_STAGE='';
   MIN_MCAP=MCAP_DEFAULTS[CUR] ?? 0;
@@ -12250,7 +13243,23 @@ const EXPORT_COLS=[
   ['% vs Pivot',  (def,d)=>d?.pctVsPivot??''],
   ['W-Box State', (def,d)=>d?.wBoxState??''],
   ['W-Box Top',   (def,d)=>d?.wBoxTop??''],
-  ['W-Box Bottom',(def,d)=>d?.wBoxBot??''],
+  /* SMZ goes out as the plain text form PLUS the three levels, for the reason
+     the Darvas box goes out as a state and two prices: a spreadsheet is exactly
+     where someone checks whether the zone was drawn correctly, and 0.618 /
+     0.786 / 0.826 of a range is arithmetic they can redo in a cell. The text
+     column is deliberately the same vocabulary the table prints — one reading
+     to compare against the screen — while the three numbers are raw, so nobody
+     has to parse a badge to get at them.
+     The empty answers stay apart here too: '' for a bias that was never
+     computed, 'No structure' for one that was and resolved to nothing. */
+  ['SMZ',         (def,d)=>{
+                    if(!d||d.smzBias==null) return '';
+                    if(d.smzBias===0) return 'No structure';
+                    const w=d.smzState&&SMZ_STATE_LABEL[d.smzState];
+                    return `${d.smzBias>0?'Bull':'Bear'}${w?` · ${w}`:''}`; }],
+  ['SMZ 0.618',   (def,d)=>d?.smz618??''],
+  ['SMZ 0.786',   (def,d)=>d?.smz786??''],
+  ['SMZ 0.826',   (def,d)=>d?.smz826??''],
   ['52W High%',   (def,d)=>d?.h52d??''],
   ['52W High',    (def,d)=>d?.h52??''],
   ['52W Low',     (def,d)=>d?.l52??''],
@@ -12624,6 +13633,31 @@ const COL_FILTERS={
   wpattern:{t:'cat',  label:'W-Pattern', val:d=>(d&&d.wPattern)||null},
   dbox:    {t:'cat',  label:'D-Box',   val:d=>{const s=d&&d.dBoxState; return s?(DBOX_LABEL[s]||s):null;}},
   wbox:    {t:'cat',  label:'W-Box',   val:d=>{const s=d&&d.wBoxState; return s?(DBOX_LABEL[s]||s):null;}},
+  /* SMZ. THE OPTION IS THE BIAS AND THE STATE TOGETHER, one string, and that is
+     the whole design of this filter. The four state words mean the same thing
+     in both directions — smzClassify() says so explicitly — so an option list
+     of bare states would let a bear row satisfy a pick made by someone looking
+     for bulls, and 'In SMZ' would silently mean two opposite trades. Pairing
+     them makes every option unambiguous on its own and gives the nine the user
+     actually screens on: four bull, four bear, and 'No structure'.
+
+     NINE, NOT TEN. bias 0 is a category — structure never resolved, a real
+     finding — and gets its own option. bias null is NOT: nothing was computed,
+     so it returns null and lands in the (blank) bucket alongside a resolved
+     bias whose swing has gone inactive, which is where every other column puts
+     "no value here". Note the `== null` guard before the ===0 test: `!d.smzBias`
+     would fold the two together and the option would then mean neither thing.
+
+     The options are OFFERED in whatever order colfCmpVal() sorts them, which is
+     alphabetical — so the four Bear options group together and then the four
+     Bull ones, rather than in the bull-first reading order the column sorts by.
+     That is the same contract every other category column here is held to, and
+     a bespoke order for this one would be a second ordering rule to keep. */
+  smz:     {t:'cat',  label:'SMZ',     val:d=>{
+             if(!d||d.smzBias==null) return null;
+             if(d.smzBias===0) return 'No structure';
+             const w=d.smzState&&SMZ_STATE_LABEL[d.smzState];
+             return w?`${d.smzBias>0?'Bull':'Bear'} · ${w}`:null; }},
   xstate:  {t:'cat',  label:'EMA Cross', val:d=>{const s=d&&d.xState; return s?(s==='bull'?'Bull':'Bear'):null;}},
   wxstate: {t:'cat',  label:'W-Cross', val:d=>{const s=d&&d.wxState; return s?(s==='bull'?'Bull':'Bear'):null;}},
   // "6/9" rather than 6: the denominator is part of the reading — a 6/7 and a
@@ -13372,6 +14406,12 @@ const TOGGLEABLE_COLS=[
      filters and exports exactly like every other column while hidden. */
   {cls:'pctpiv', label:'% vs Pivot', defOff:true},
   {cls:'wbox',   label:'W-Box (Darvas)'},
+  /* defOff for the same reason % vs Pivot, Coil and the VCP and IPO trios are —
+     see COL_DEF_OFF below. It is also the widest badge in the table, so taking
+     a default slot would cost more width than any of them. It sorts, filters
+     and exports exactly like every other column while switched off, and the
+     🧲 SMZ Setup toolbar button screens on it without the column being on. */
+  {cls:'smz',    label:'SMZ', defOff:true},
   {cls:'ema',    label:'EMA Align'},
   {cls:'pct10e', label:'%10E'},
   {cls:'pct20e', label:'%20E'},
