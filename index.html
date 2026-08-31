@@ -814,6 +814,32 @@ body.asof-on .tbl-wrap{outline:3px solid var(--orange)}
 .adv-fields select{padding:4px 6px;border-radius:6px;border:1.5px solid var(--border2);
   font-size:11.5px;background:var(--surface);color:var(--text)}
 
+/* THE ROWS SCROLL; THE DIALOG DOES NOT — the same answer .modal-grid gives the
+   column picker, and for the same reason. This dialog grew from six filter rows
+   to eleven, and on a laptop the last rows plus Reset/Apply fell below the fold:
+   the owner reported having to zoom the browser out to reach Apply. Capping the
+   LIST rather than the dialog keeps the title and both buttons on screen at any
+   viewport height, and it keeps working as rows are added, which a fixed pixel
+   height on the dialog would not. */
+.adv-body{margin-top:12px;max-height:min(56vh,460px);overflow-y:auto;padding-right:6px}
+
+/* PHONE. The dialog is a fixed 460px wide with .modal's max-width:92vw behind
+   it, so it shrinks — but .adv-row is a flex row with a 132px fixed label, and
+   below ~430px the number boxes were pushed past the right edge. Stacking the
+   label above its fields is the only change needed; nothing about the desktop
+   layout moves. The 44px minimum on the inputs is the touch-target floor —
+   a 58px-wide, 24px-tall number box is not tappable with a thumb. */
+@media (max-width:520px){
+  .adv-modal{width:100%}
+  .modal{padding:16px}
+  .adv-row{flex-direction:column;align-items:flex-start;gap:5px}
+  .adv-row > label.adv-name{width:auto}
+  .adv-fields{font-size:11px}
+  .adv-fields input[type=number]{width:64px;min-height:32px}
+  .adv-fields select{min-height:32px}
+  .adv-body{max-height:62vh}
+}
+
 /* notes */
 .note-in{border:none;background:transparent;outline:none;font-size:11px;
   color:var(--text2);width:85px;font-family:inherit}
@@ -897,7 +923,7 @@ body.asof-on .tbl-wrap{outline:3px solid var(--orange)}
 /* Vol Spike is GROUP B, with Vol Ratio: the two are read together (one says
    what today did, the other what the last two weeks did) and dropping one of
    the pair on a narrow screen leaves half an answer. */
-.c-volspike,
+.c-volspike,.c-thrust,
 .c-vr,.c-align,.c-ema,.c-bocnt,.c-squeeze,.c-mrsrank,.c-setup,
 .c-sector,.c-subind,.c-status,.c-xcross,.c-pattern,.c-consol,.c-rs21,.c-rs55,
 .c-ch1w,.c-ch1m,.c-ch3m,.c-histg,.c-dbox,.c-avgval,.c-fresh,
@@ -956,6 +982,7 @@ body.hide-histg   .c-histg,
 body.hide-wrsi    .c-wrsi,
 body.hide-vr      .c-vr,
 body.hide-volspike .c-volspike,
+body.hide-thrust   .c-thrust,
 body.hide-wvol    .c-wvol,
 body.hide-avgval  .c-avgval,
 body.hide-wpiv    .c-wpiv,
@@ -1090,13 +1117,13 @@ body.hide-fresh   .c-fresh{display:none!important}
   font-size:9px;font-weight:800;letter-spacing:.2px;vertical-align:middle;white-space:nowrap;cursor:help}
 .stale-warn{background:var(--amber-bg,var(--accent-bg));color:var(--amber,var(--accent-dk))}
 .stale-bad{background:var(--red-bg);color:var(--red)}
-/* EXTENDED ROWS. Dimmed, not hidden — see isExtended(). Opacity rather than a
-   colour so every badge, pill and conditional colour inside the row fades with
-   it; recolouring the text alone would leave the green and red cells at full
-   strength and the row would not read as set aside. Full opacity on hover so
-   the row is still properly readable when you go looking at it. */
-tbody tr.ext-row{opacity:.55}
-tbody tr.ext-row:hover{opacity:1}
+/* EXTENDED ROWS ARE NO LONGER DIMMED — the owner asked for full strength on
+   every row, and he is right: a faded row is hard to read at a glance and the
+   information it carries is no less true than any other row's. isExtended() and
+   the `ext-row` class are DELIBERATELY LEFT IN PLACE, because the default sort
+   still uses them to push extended names to the bottom, which is the part that
+   was actually doing the work. Only the visual dimming is gone. Do not
+   reintroduce an opacity rule here without asking. */
 .sb-hi{background:var(--green-bg);color:var(--green)}
 .sb-mid{background:var(--orange-bg);color:var(--orange)}
 .sb-lo{background:var(--red-bg);color:var(--red)}
@@ -1146,7 +1173,15 @@ tbody tr.ext-row:hover{opacity:1}
      showTip() sets an exact max-height in px from the live window height; this
      is the static backstop for anything that renders before that runs. */
   max-height:min(42vh,340px);overflow-y:auto;overscroll-behavior:contain;
-  padding:9px 12px;border-radius:var(--r);pointer-events:none;box-shadow:0 8px 22px rgba(0,0,0,.34)}
+  /* pointer-events:AUTO, and this is a deliberate reversal. The box has had
+     overflow-y:auto for as long as it has had a max-height, so a long tooltip
+     has always rendered a scrollbar — but with pointer-events:none the mouse
+     passed straight through it and that scrollbar could not be grabbed or
+     wheeled. A visible control that cannot be operated is worse than no
+     control: the owner reported exactly this. Making it interactive costs a
+     hover bridge (see hideTipSoon) so that moving the pointer from the header
+     INTO the box does not dismiss it mid-reach. */
+  padding:9px 12px;border-radius:var(--r);pointer-events:auto;box-shadow:0 8px 22px rgba(0,0,0,.34)}
 
 /* ─── PER-COLUMN HEADER FILTERS ───
    The funnel is an EMPTY button with a CSS glyph: a header's visible text is
@@ -1361,7 +1396,7 @@ body.dd-lock{overflow:hidden}
 }
 @media (max-width:480px){
   .metrics-row{grid-template-columns:repeat(2,1fr)}
-  .c-volspike,.c-vr,.c-align,.c-ema,.c-bocnt,.c-squeeze,.c-mrsrank,.c-setup,
+  .c-volspike,.c-thrust,.c-vr,.c-align,.c-ema,.c-bocnt,.c-squeeze,.c-mrsrank,.c-setup,
   .c-sector,.c-subind,.c-status,.c-xcross,.c-pattern,.c-consol,.c-rs21,.c-rs55,
   .c-ch1w,.c-ch1m,.c-ch3m,.c-histg,.c-dbox,.c-pctpiv,.c-avgval,.c-fresh,
   .c-pct10e,.c-pct20e,.c-adr,.c-tight,.c-daysup,.c-coil,
@@ -1480,7 +1515,7 @@ body.dd-lock{overflow:hidden}
     <button class="ftog" id="rsimaTog" aria-pressed="false" onclick="toggleRsiMa()" data-tip="Keep only stocks whose RSI(14) is trading above a 14-period moving average of the RSI line itself — momentum judged against its own recent trend rather than against a fixed 50 or 70 level. It can turn up while RSI is still well under 70, which is what makes it an entry screen rather than an overbought reading. Daily only: there is deliberately no weekly version of this test. A stock with under about 45 bars of history has no settled RSI average yet and is left OUT rather than waved through — 'we could not measure it' is never treated as a pass here. Combines with every other filter rather than replacing them.">📉 RSI &gt; MA</button>
     <button class="ftog" id="emacvTog" aria-pressed="false" onclick="toggleEmaCv()" data-tip="Keep only stocks where price is at or above every one of the 10, 20, 50 and 200-day EMAs AND those EMAs have run together — the gap from the highest to the lowest is 5% of price or less. Bunched on its own is not enough: a stock rolling over squeezes its averages together just as neatly, so price has to be sitting on top of the whole cluster. Daily only; there is deliberately no weekly version. A stock too young to have a 200 EMA is judged on the EMAs it does have, as long as at least two of them exist — one average is not agreement. The 5% is fixed for this button; the Advanced Filters panel carries its own editable percentage if you want it tighter. Combines with every other filter rather than replacing them.">🎯 EMAs Converge</button>
     <button class="ftog" id="smzTog" aria-pressed="false" onclick="toggleSmz()" data-tip="Stocks in BULL structure that have pulled back into or through the institutional zone: bias is bullish and the price is anywhere from the swing low up to the 0.618 line. Stocks still ABOVE the zone are left out on purpose — they have not pulled back yet, so there is nothing to buy into. A stock that closes below its swing low stops being bull structure altogether and drops off this list on its own the next day, so the button needs no separate stop rule. Use the SMZ column funnel to narrow further to just In IBZ and In SMZ; this button deliberately keeps Below zone too, because a retracement that overran is still a bull structure and still worth a look.">🧲 SMZ Setup</button>
-    <button class="ftog" id="smzbosTog" aria-pressed="false" onclick="toggleSmzBos()" data-tip="The break-and-retest case: structure flipped BULLISH within the last 10 trading days AND price has since pulled back into or through the institutional zone. It is the 🧲 SMZ Setup screen narrowed to setups where the break itself is still fresh, so it is always a subset of that button. A stock that broke out and kept running will NOT appear — it is still above the zone, so it has not offered an entry yet, and it only shows up here if it comes back within those ten days. Bear structures are excluded outright: the ⚡ BOS marker in the SMZ column is neutral and marks both directions, but this button is bull-only. Stocks that have never broken structure have no break to date and are excluded too.">⚡ SMZ + BOS</button>
+    <button class="ftog" id="smzbosTog" aria-pressed="false" onclick="toggleSmzBos()" data-tip="The break-and-retest case: structure flipped BULLISH within the last 20 trading days AND price has since pulled back into or through the institutional zone. It is the 🧲 SMZ Setup screen narrowed to setups where the break itself is still fresh, so it is always a subset of that button. A stock that broke out and kept running will NOT appear — it is still above the zone, so it has not offered an entry yet, and it only shows up here if it comes back within those ten days. Bear structures are excluded outright: the ⚡ BOS marker in the SMZ column is neutral and marks both directions, but this button is bull-only. Stocks that have never broken structure have no break to date and are excluded too.">⚡ SMZ + BOS</button>
     <!-- 🔥 rather than the 🚀 this screen naturally wants: 🚀 is already the
          Breakout Stocks button eight rows up, and two rockets in one toolbar
          would read as two views of one screen when these two share nothing —
@@ -1645,6 +1680,7 @@ body.dd-lock{overflow:hidden}
             <th class="c-wrsi" data-s="wrsi" data-tip="The same 14-period momentum gauge measured on weekly bars, so it describes months rather than days and is much slower to change direction.">W-RSI<span class="sort-ico"></span></th>
             <th class="c-vr" data-s="vr" data-tip="The latest day's traded volume divided by the average of the 20 days before it (today itself is excluded, so a spike cannot dilute its own baseline). 2.0x means twice the usual number of shares changed hands — genuine interest rather than drift.">Vol Ratio<span class="sort-ico"></span></th>
             <th class="c-volspike" data-s="volspike" data-tip="The BIGGEST volume bar of the last 10 sessions, measured against its OWN trailing 20-day average volume, and how many sessions ago it happened (0d = today). THE EXACT DEFINITION: for each of the last 10 bars, that bar's volume over the average volume of the 20 bars before it; the column shows the largest such multiple and its age. WHY IT EXISTS: Vol Ratio beside it only ever describes TODAY, so once a stock has spiked and pulled back into the 10/20 EMA zone — which is the entry — today's volume is normal again and Vol Ratio reads about 1.0x. This column remembers the move. Every bar is priced against its own past: the 20-day average for a bar is built only from the bars BEFORE it, never from the whole series. A dash means the biggest multiple in the window was under 1.5x, or there are fewer than 21 bars of history. Sorting and filtering work on the MULTIPLE, not on the age.">Vol Spike<span class="sort-ico"></span></th>
+            <th class="c-thrust" data-s="thrust" data-tip="All three numbers describe ONE bar: the biggest single-day GAIN of the last 10 sessions, that same day's volume against its own trailing 20-day average, and how many sessions ago it was (0d = today). Read it beside Vol Spike: that column finds the biggest VOLUME bar, this one the biggest PRICE bar, and they are often not the same day. WHY THE MULTIPLE LOOKS HUGE: the average is built only from the 20 bars BEFORE the thrust, never from the whole series, so a chart's own volume average — which includes the spike itself and every elevated day since — will read far lower for the same bar. BALRAMCHIN's 20 Aug bar is 41.7x here and about 7.4x on the chart; both are right, they measure different things. Dimmed below 5%, the Thrust day filter's own default. Sorting and filtering work on the GAIN.">Thrust<span class="sort-ico"></span></th>
             <th class="c-wvol" data-s="wvol" data-tip="The same volume comparison on weekly bars: the latest week's total volume against the average of the 10 weeks before it, which smooths out one-day spikes. Needs 11 weekly bars, so it shows — for anything younger.">W-VOL<span class="sort-ico"></span></th>
             <th class="c-avgval" data-s="avgval" data-tip="Average daily traded VALUE over the last 20 trading bars — the mean of close × volume — shown in ₹ crore for Indian stocks and $ million for US stocks and ETFs. This is the tradability check, and it is deliberately value and not share volume: 100,000 shares of a ₹12 stock is ₹12 lakh of turnover while 100,000 shares of a ₹4,000 stock is ₹40 crore, so raw volume cannot be compared across names. Green above ₹25 Cr / $25M, red below ₹1 Cr / $1M, where a position of any size would move the price against you. Needs 20 bars; below that it shows a dash rather than a zero. The Advanced Filters modal has a minimum on this figure.">Avg Value<span class="sort-ico"></span></th>
             <th data-s="dpiv" data-tip="Where the price sits among the classic daily pivot levels, from below S2 (weakest) up to above R2 (strongest). Anything above the pivot point is the bullish half of the day's range.">D-Pivot<span class="sort-ico"></span></th>
@@ -1652,7 +1688,7 @@ body.dd-lock{overflow:hidden}
             <th class="c-dbox" data-s="dbox" data-tip="Darvas Box on daily bars, box length 5. HOW IT IS BUILT: a bar whose high beats the highest high of the previous 5 bars sets a candidate top; if the next 3 bars make no new high, that high becomes the box TOP and the lowest low of the 5 bars up to the confirming bar becomes the box BOTTOM. The box PERSISTS until the next one forms — a level to trade against, not a one-bar flag. THE STATES: Break = the close crossed above the top on the latest bar and was below it the day before — the freshest · Near = below the top but within 1% of it · Inside = between the bottom and the top, still consolidating · Above = already over the top, so the move is under way and a new entry is late · Below = under the box bottom, the setup has failed · a dash means no box has formed yet or there are fewer than 9 bars of history. Sorting puts Break and Near first, then Inside — the ones you can still act on.">D-Box<span class="sort-ico"></span></th>
             <th class="c-pctpiv" data-s="pctpiv" data-tip="How far the latest close sits from the DAILY Darvas box TOP, as a percentage of that top: % vs Pivot = 100 &times; ( Close &minus; Box Top ) / Box Top. THE BOX TOP IS THE BREAKOUT LEVEL — the number printed as the upper figure in the D-Box cell beside this one, and drawn as the upper line on the chart — and the owner buys ABOVE it. So a NEGATIVE reading means NOT YET TRIGGERED, and its size is how far the stock still has to travel: &minus;4.10% is 4.1% under the trigger; a POSITIVE one means the level has already been taken out. %20E measures the distance to the STOP; this measures the distance to the ENTRY. It divides by the box top the D-Box column itself publishes — no box is recomputed here. A dash, never a zero, when no box has formed, when the top is missing or not positive, or when there is no close; zero is a real reading, sitting exactly on the pivot. Hidden by default — switch it on in Columns.">% vs Pivot<span class="sort-ico"></span></th>
             <th class="c-wbox" data-s="wbox" data-tip="The same Darvas Box construction run on WEEKLY bars, so both the box and the states describe months rather than days. A weekly box needs 9 weekly bars (roughly 45 trading days) before it can exist, and it moves far less often than the daily one — a weekly Break is a much rarer and heavier signal than a daily one. The five states mean exactly what they mean in the D-Box column.">W-Box<span class="sort-ico"></span></th>
-            <th class="c-smz" data-s="smz" data-tip="Smart Money Zones, ported from the TradingView study. Structure comes from 5-bar pivots: a close through a swing high turns the bias bullish, through a swing low bearish. The zone is drawn back from the extreme of that move to the swing that began it — 0.618 to 0.786 is the IBZ (Institutional Buying Zone), 0.786 to 0.826 the deeper SMZ. The cell reads direction, then where price sits in that retracement, then how far it must still travel to the 0.618 edge — negative means already inside or through. ⚡ BOS dates the most recent break of structure and appears only for 10 trading days after it: on a Bull row the swing HIGH was taken out, on a Bear row the swing LOW. 'BOS today' means it flipped on the latest bar. '— No structure' is a finding: no swing was ever broken, so nothing anchors a zone. A plain dash is an absence: fewer than 60 bars, so it was never tried.">SMZ<span class="sort-ico"></span></th>
+            <th class="c-smz" data-s="smz" data-tip="Smart Money Zones, ported from the TradingView study. Structure comes from 5-bar pivots: a close through a swing high turns the bias bullish, through a swing low bearish. The zone is drawn back from the extreme of that move to the swing that began it — 0.618 to 0.786 is the IBZ (Institutional Buying Zone), 0.786 to 0.826 the deeper SMZ. The cell reads direction, then where price sits in that retracement, then how far it must still travel to the 0.618 edge — negative means already inside or through. ⚡ BOS dates the most recent break of structure and appears only for 20 trading days after it: on a Bull row the swing HIGH was taken out, on a Bear row the swing LOW. 'BOS today' means it flipped on the latest bar. '— No structure' is a finding: no swing was ever broken, so nothing anchors a zone. A plain dash is an absence: fewer than 60 bars, so it was never tried.">SMZ<span class="sort-ico"></span></th>
             <th class="c-momo" data-s="momo" data-tip="The thrust-then-rest shape, from the owner's own annotated charts. It finds a stock that has ALREADY made its violent move and has since gone quiet: a rise of at least 40% from a low to a later high inside the last 42 bars, more volume on that move's up days than on its down days, at least 80% of the bars since it began closing above the 20-day EMA, the close still above that EMA today, and then a rest of 8 bars or more whose range is no deeper than 25% off its own high. A WATCH signal, never an entry — the trade is the break of the base's own high, and this column exists to put the name on screen before that happens. The cell reads the state, then the size of the thrust and the bars it took, then how long the rest has run. All four thresholds are editable in Advanced Filters, and changing one re-runs the scan. A dash means a test failed.">Momentum Base<span class="sort-ico"></span></th>
             <th data-s="h52" data-tip="% below the highest high in the available window. The data source holds ~1 trading year (~250 bars), so in practice this is a ~50-week high, not a full 52. Shows — for stocks with under 120 bars of history.">52W High<span class="sort-ico"></span></th>
             <th class="c-ema" data-s="ema" data-tip="How many of the 10, 20, 50 and 200-day moving averages the price is trading above, one badge each. All four green is the textbook shape of a healthy uptrend.">EMA Align<span class="sort-ico"></span></th>
@@ -1852,7 +1888,7 @@ body.dd-lock{overflow:hidden}
     <h3>⚙ Advanced Filters</h3>
     <p>Each filter applies only while its own box is ticked, so an unused row can never quietly narrow your results. Settings are remembered.</p>
 
-    <div style="margin-top:12px">
+    <div class="adv-body">
       <div class="adv-row">
         <label class="adv-name"><input type="checkbox" id="advConsolOn"/> Consolidation</label>
         <div class="adv-fields">
@@ -1959,7 +1995,8 @@ body.dd-lock{overflow:hidden}
         <div class="adv-fields" data-tip="One violent up day, then quiet. Keeps stocks whose biggest single-day close-to-close gain in the last 10 sessions was at least this big, happened no more than this many days ago, and came on at least this multiple of that day's own trailing 20-day average volume. All three tests describe the SAME session — the same bar supplies the gain, the date and the volume — so this cannot pass a stock that rose sharply on one day and traded heavily on a different one. The volume multiple excludes the thrust day itself from its own average, so it answers how big that day was against what was normal BEFORE it. Set the volume box to 0 to ignore volume entirely. Age 0 means it happened on the latest bar. Changing any of these three re-filters the table; it does not re-run the scan.">
           gain at least <input type="number" id="advThrustPct" min="0" step="1"/> %,
           no more than <input type="number" id="advThrustDays" min="0" step="1"/> bars ago,
-          on <input type="number" id="advThrustVol" min="0" step="0.5"/> x that day's own 20-bar average volume
+          on <input type="number" id="advThrustVol" min="0" step="0.5"/> x that day's own 20-bar average volume,
+          and volume since no more than <input type="number" id="advThrustFade" min="0" max="5" step="0.05"/> x that day's volume
         </div>
       </div>
       <!-- NOT A FILTER, AND IT CARRIES NO CHECKBOX FOR THAT REASON. Every other
@@ -2257,7 +2294,9 @@ const CFG = {
      this window already found. */
   THRUST: {win:10},
 
-  VER:  'gs22',     // gs21 -> gs22: computeTech() returns THREE more fields — the thrust-day trio
+  VER:  'gs23',     // gs22 -> gs23: computeTech() returns ONE more field — thrustFade,
+                    // mean volume SINCE the thrust over the thrust bar's own volume. A gs22
+                    // cached row has no such key, and the fade leg would read it as a refusal.
                     // (thrustPct, thrustAge, thrustVol). All three describe ONE bar: the biggest
                     // single-day percentage gain in the last CFG.THRUST.win sessions, how many bars
                     // ago it was, and that same bar's volume over its own trailing 20-day average.
@@ -5380,7 +5419,7 @@ const SCREEN_SEEDS=[
        days:10 equals CFG.THRUST.win, so the age leg is wide open here and the
        screen is dated by the engine's own window rather than by a second
        number that could drift from it. */
-    adv:{ thrust:{on:true, pct:5, days:10, vol:2} },
+    adv:{ thrust:{on:true, pct:5, days:10, vol:2, fade:0.5} },
   },
 ];
 
@@ -6751,7 +6790,7 @@ function volSpike(V,win,mult){
 const THRUST_MIN_BARS = 20 /* volAvg20 baseline */ + 1 /* prior close */ + 1 /* the bar itself */;
 function thrustDay(C,V,win){
   const w=(win==null?CFG.THRUST.win:win);
-  const none={pct:null, age:null, vol:null};
+  const none={pct:null, age:null, vol:null, fade:null};
   if(!Array.isArray(C)||!Array.isArray(V)) return none;
   const n=C.length;
   if(n<THRUST_MIN_BARS || V.length<n) return none;
@@ -6774,9 +6813,33 @@ function thrustDay(C,V,win){
     const base=volAvg20(V,bestI+1);   // bars bestI-20..bestI-1 only — never bestI
     if(base>0) vol=+(tv/base).toFixed(2);
   }
+  /* THE FADE — has the crowd left since the thrust?
+     ────────────────────────────────────────────────
+     Mean volume of every bar AFTER the thrust, over the thrust bar's OWN
+     volume. Below 1 means the days since have been quieter than the event
+     itself; 0.23 means they have run at under a quarter of it.
+
+     WHY NOT AGAINST THE PRE-THRUST AVERAGE, which is the more obvious choice:
+     it answers a different question and it answers it wrongly for this setup.
+     Measured across the 219 India names with a 5%+ thrust, the median stock
+     was still running at 1.37x its PRE-thrust norm and the owner's own example
+     at 9.45x — a stock that has just been discovered does not go back to being
+     ignored in six sessions. Judged that way almost nothing reads as dry and
+     the example he sent is rejected. Against the thrust bar he sits at 0.227,
+     against a median of 0.331, which is what the eye reads off the chart: a
+     tall bar, then visibly shorter ones.
+
+     Null when the thrust IS the latest bar — there are no bars since, and a
+     mean of nothing is not zero. */
+  let fade=null;
+  if(bestI<n-1 && typeof tv==='number' && isFinite(tv) && tv>0){
+    let sum=0,cnt=0;
+    for(let k=bestI+1;k<n;k++){ const v=V[k]; if(typeof v==='number'&&isFinite(v)&&v>=0){ sum+=v; cnt++; } }
+    if(cnt) fade=+((sum/cnt)/tv).toFixed(3);
+  }
   // Rounded to two decimals so the number a filter tests is the same number a
   // reader would quote off the chart, the way volSpike() rounds its multiple.
-  return {pct:+best.toFixed(2), age:(n-1)-bestI, vol};
+  return {pct:+best.toFixed(2), age:(n-1)-bestI, vol, fade};
 }
 
 /* 52-week extremes, floored at H52_MIN_BARS — see the note in computeTech()
@@ -8861,7 +8924,7 @@ function computeTech(C,H,L,V,dates,sym,O,feedStart){
        the same session thrustPct measures and thrustVol weighs. thrustVol is
        separately nullable — the gain can be known while the volume multiple is
        not — so it needs its own `!= null` test, never a bare comparison. */
-    thrustPct:thrust.pct, thrustAge:thrust.age, thrustVol:thrust.vol,
+    thrustPct:thrust.pct, thrustAge:thrust.age, thrustVol:thrust.vol, thrustFade:thrust.fade,
     rsi14,wRsi,e10,e20,e50,e100,e150,e200,emaScr,
     /* Three-valued, daily only — see the note where it is computed. It rides in
        the cached row like every other computeTech() field, which is why adding
@@ -11241,6 +11304,37 @@ function vrC(r){
    Thresholds come from the named constants, never re-typed here: the number
    the cell refuses to print below is VOL_SPIKE_MULT, and the number it paints
    green at is VOL_SPIKE_BIG. */
+/* THRUST. One bar, three facts, and they must be read together — the gain, the
+   volume multiple ON THAT SAME BAR, and its age. Splitting them across columns
+   would invite reading the biggest price day against the biggest volume day,
+   which are frequently different bars and would overstate both.
+
+   THE MULTIPLE IS NOT THE CHART'S MULTIPLE, and the difference is not an error
+   to be reconciled. volAvg20(V,i+1) reads only the 20 bars BEFORE bar i, so a
+   thrust is priced against the market as it stood before the thrust happened.
+   A chart's rolling volume average includes the spike and every elevated day
+   after it, so it reads several times lower on exactly the bars that matter.
+   BALRAMCHIN 20 Aug: 41.7x here, ~7.4x there. The tooltip says so, because the
+   owner compares this table against his own charts and would otherwise be
+   right to think one of them was broken.
+
+   MUTED BELOW 5%, not blanked: 5 is ADV_DEFAULTS.thrust.pct, so the eye and the
+   filter agree by construction, but a 3% day is still a fact worth seeing when
+   you have gone looking at the column deliberately. */
+function thrustC(d){
+  if(!d||d.thrustPct==null) return '<span class="vm">—</span>';
+  const pct=d.thrustPct, age=d.thrustAge, vol=d.thrustVol;
+  const weak = pct < (ADV_DEFAULTS.thrust ? ADV_DEFAULTS.thrust.pct : 5);
+  const parts=[`+${pct.toFixed(1)}%`];
+  if(vol!=null&&isFinite(vol)) parts.push(`${vol.toFixed(1)}×`);
+  if(age!=null) parts.push(`${age}d`);
+  if(d.thrustFade!=null) parts.push(`↓${d.thrustFade.toFixed(2)}`);
+  return `<span class="${weak?'vm':'vg'}" title="Biggest single-day gain in the last `
+       + `${CFG.THRUST.win} sessions${age==null?'':`, ${age} session(s) ago`}`
+       + `${vol==null?'':`, on ${vol.toFixed(1)}× that bar's own prior 20-day average volume`}">`
+       + `${parts.join(' · ')}</span>`;
+}
+
 function volSpikeC(v,age){
   if(v==null) return '<span class="vm">—</span>';
   const c=v>=VOL_SPIKE_BIG?'vg':'';
@@ -11333,7 +11427,7 @@ const SMZ_STATE_LABEL={above:'Above zone', ibz:'In IBZ', smz:'In SMZ', below:'Be
    name. smzBosAge itself is NOT capped in the engine; the engine publishes the
    true age however old and this is purely a presentation threshold, so raising
    it later needs no CFG.VER bump and no rescan. */
-const SMZ_BOS_MAX_AGE=10;
+const SMZ_BOS_MAX_AGE=20;
 
 /* THE BREAK-OF-STRUCTURE MARKER, appended to the cell when the flip is recent.
    It reads '⚡ BOS today' at age 0 and '⚡ BOS 3d' otherwise — "today" rather
@@ -11930,7 +12024,7 @@ function histGC(v){ return fmtCh(v); }
    reason: without them a table loading with columns switched off renders
    skeleton rows WIDER than the data rows underneath, because only the data
    rows' cells get hidden. Length must equal (th count − 4). */
-const SKEL_COLS=['c-setup','c-align','c-fresh','c-sector','c-subind','','','c-ch1w','c-ch1m','c-ch3m','c-hist','c-histg','c-status','','c-wrsi','c-vr','c-volspike','c-wvol','c-avgval','','c-wpiv','c-dbox','c-pctpiv','c-wbox','c-smz','c-momo','',
+const SKEL_COLS=['c-setup','c-align','c-fresh','c-sector','c-subind','','','c-ch1w','c-ch1m','c-ch3m','c-hist','c-histg','c-status','','c-wrsi','c-vr','c-volspike','c-thrust','c-wvol','c-avgval','','c-wpiv','c-dbox','c-pctpiv','c-wbox','c-smz','c-momo','',
   'c-ema','c-pct10e','c-pct20e','c-pct50e','c-pct200e','c-wema','c-xcross','c-wcross','c-slope200','c-pattern','c-wpattern','c-consol',
   'c-monthly','','c-bocnt','c-followup','c-voldry','c-retrace','c-squeeze','c-adr','c-tight','c-daysup','c-coil','c-vcp','c-vcplid','c-vcptolid','c-ipo','c-ipolid','c-ipotolid','','c-mrsrank','c-rs21',
   'c-rs55','c-rs10w','c-rsslope','c-rsp55','c-rsp21','c-rshist','','c-rstrend','c-notes'];
@@ -12001,6 +12095,7 @@ function dataRow(def,d,i){
     <td class="c-wrsi">${rsiC(d.wRsi)}</td>
     <td class="c-vr">${vrC(d.vRatio)}</td>
     <td class="c-volspike">${volSpikeC(d.volSpike,d.volSpikeAge)}</td>
+    <td class="c-thrust">${thrustC(d)}</td>
     <td class="c-wvol">${vrC(d.wVolRatio)}</td>
     <td class="c-avgval">${avgValC(d.avgValue,d.currency)}</td>
     <td>${pivC(d.dpz)}</td>
@@ -12061,7 +12156,7 @@ function errRow(def,i){
     <td class="td-n pin pin1">${i}</td><td class="pin pin2">${revC(def.s)}</td>
     <td class="pin pin3">${capB(def.g)}</td>
     <td class="pin pin4">${watchC(def.s)}<span class="ticker">${def.d}</span><br><span class="sec">${def.sector}</span></td>
-    <td colspan="68" style="color:var(--text3);font-size:11px">
+    <td colspan="69" style="color:var(--text3);font-size:11px">
       ⚠ Not in this market's data source — it will appear once the daily data carries it
     </td>
   </tr>`;
@@ -12127,7 +12222,7 @@ const ADV_DEFAULTS={
      universe, which is where "more than usual" stops being noise.
      0 IN THE VOLUME BOX MEANS "IGNORE VOLUME" — hadThrust() branches on that
      rather than comparing, for the reason spelled out there. */
-  thrust:{on:false, pct:5, days:10, vol:2},
+  thrust:{on:false, pct:5, days:10, vol:2, fade:0.5},
   /* NOT A FILTER, AND IT HAS NO `on` KEY ON PURPOSE. Every other group here is
      a screen with an on/off flag, and updateAdvBtn() counts exactly those —
      `Object.keys(ADV).filter(k=>ADV[k].on)`. A group with no `on` reads
@@ -12299,7 +12394,7 @@ function passesAdv(d){
      matters most: `null <= maxDays` is true, so a row with no thrust would be
      admitted by an unguarded age test. Nothing is coerced here. */
   if(ADV.thrust.on){
-    if(!hadThrust(d, +ADV.thrust.pct, +ADV.thrust.days, +ADV.thrust.vol)) return false;
+    if(!hadThrust(d, +ADV.thrust.pct, +ADV.thrust.days, +ADV.thrust.vol, +ADV.thrust.fade)) return false;
   }
   return true;
 }
@@ -12336,6 +12431,7 @@ function openAdvFilters(){
   $('advThrustPct').value=ADV.thrust.pct;
   $('advThrustDays').value=ADV.thrust.days;
   $('advThrustVol').value=ADV.thrust.vol;
+  $('advThrustFade').value=ADV.thrust.fade;
   $('advSmzMode').value=ADV.smz.mode;
   $('advModal').classList.add('open');
 }
@@ -12376,7 +12472,8 @@ function readAdvForm(){
      forceRefresh() condition. */
   ADV.thrust={on:$('advThrustOn').checked, pct:num('advThrustPct',ADV_DEFAULTS.thrust.pct),
               days:num('advThrustDays',ADV_DEFAULTS.thrust.days),
-              vol:num('advThrustVol',ADV_DEFAULTS.thrust.vol)};
+              vol:num('advThrustVol',ADV_DEFAULTS.thrust.vol),
+              fade:num('advThrustFade',ADV_DEFAULTS.thrust.fade)};
   /* NO `on` KEY WRITTEN HERE EITHER, and that is not an oversight — see
      ADV_DEFAULTS.smz. Adding one would put this row into updateAdvBtn()'s
      count, which counts screens that narrow the table, and this row narrows
@@ -13122,6 +13219,7 @@ const SORT_FN={
      answer a question nobody asked — the age is context for the multiple, not
      a ranking. Descending (the first click) is the useful direction. */
   volspike:d=>d?.volSpike,
+  thrust:d=>d?.thrustPct,
   vr:d=>d?.vRatio,wvol:d=>d?.wVolRatio,h52:d=>d?.h52d,ema:d=>d?.emaScr,wema:d=>d?.weEmaScr,
   /* Sorted on the DISPLAY unit (₹ Cr / $M), not the raw currency amount. A
      table holding both INR and USD rows would otherwise rank a ₹1 Cr Indian
@@ -13549,12 +13647,18 @@ function emaConverged(d, maxPct){
    measured — rows the user just said they did not want judged on volume.
    Skipping the leg entirely is the only reading of 0 that matches what the
    box says. */
-function hadThrust(d, minPct, maxDays, minVol){
+function hadThrust(d, minPct, maxDays, minVol, maxFade){
   if(!d) return false;
   if(d.thrustPct==null || d.thrustAge==null) return false;
   if(!(d.thrustPct >= minPct)) return false;
   if(!(d.thrustAge <= maxDays)) return false;
   if(minVol > 0){ if(d.thrustVol==null || !(d.thrustVol >= minVol)) return false; }
+  /* THE FADE LEG — has the crowd left since the thrust? 0 means "ignore this
+     test", exactly as the volume box above does, so a cleared box can never be
+     read as "reject everything". A NULL fade is a refusal rather than a pass:
+     null means the thrust IS the latest bar, so nothing has had a chance to go
+     quiet yet, and a stock that spiked this morning is not a stock resting. */
+  if(maxFade > 0){ if(d.thrustFade==null || !(d.thrustFade <= maxFade)) return false; }
   return true;
 }
 
@@ -14039,7 +14143,19 @@ const TOUR=[
      changes what every other column MEANS, so a user who meets it by accident
      rather than by explanation is the user most likely to misread a rewound
      table as today's. */
-  {el:'asofBtn', t:'8 · Testing whether your filters actually work',
+  /* THE THREE ADDED LAST. Deliberately only three of the five new buttons: a
+     tour that stops for everything is a tour people skip, and these are the
+     ones the owner actually works from. RSI > MA and EMAs Converge are
+     self-explanatory from their own tooltips and are left out on purpose.
+     Two to three sentences each — the steps above already run long and the
+     limit exists because of that, not in spite of it. */
+  {el:'smzTog',    t:'8 · Buying the pullback, not the breakout',
+   b:'The SMZ column marks where a stock sits inside its institutional zone — the band between its swing low and swing high where big money tends to accumulate — and whether the structure is still bullish. This button keeps the stocks in bull structure that have pulled back into or through that zone, which is the pullback entry rather than the chase. A ⚡ BOS mark means the structure broke recently, and SMZ + BOS beside it narrows to that break-then-retest case.'},
+  {el:'momoTog',   t:'9 · The thrust, then the rest',
+   b:'Momentum Base finds a stock that has already made a violent move — 40% or more inside 42 sessions — and has since gone quiet in a tight base above its 20-day average. It is a watch signal, never an entry: the trade is the break of the base’s own high, and this puts the name on your screen before that happens. The four numbers behind it are editable in Advanced Filters.'},
+  {el:'screenSel', t:'10 · Thrust Then Rest',
+   b:'The last saved screen is the owner’s own entry setup: one violent up day on heavy volume, price since drifted back to the 10 and 20 EMA, and volume faded to well under that day’s. Two things it deliberately does NOT screen — the entry trigger, which is intraday and yours to watch, and anything that would reject the biggest thrusts. Turn on the Thrust column to see the gain, the volume multiple and the fade on one row.'},
+  {el:'asofBtn', t:'11 · Testing whether your filters actually work',
    b:'Pick a date up to 50 trading days back and every column rewinds to that day — Setup, Fresh, Align, Tight, RS, the boxes — computed from only the bars that existed then, with nothing peeking at what came after. One number deliberately does the opposite: Gain% since flips to show what the stock did AFTER that date, so you screen on the past and read the outcome, which is how you find out which of your rules actually paid. An amber strip and a Rewound stamp make the mode impossible to miss, Back to live returns you, and it never survives a reload.'},
 ];
 let TOUR_I=0;
@@ -14298,16 +14414,19 @@ function updateStatus(){
   const base = matching===universe
     ? `Showing ${shown} of ${matching}`
     : `Showing ${shown} of ${matching} matching · ${universe} total`;
-  /* THE LEGEND FOR THE FADED ROWS, and it appears only when there is something
-     to explain: the default sort is in force AND at least one row on screen is
-     actually dimmed. A permanent note would be noise on every other view, and a
-     note that appears while nothing is faded is worse than none — it sends the
-     user looking for a thing that is not there. Counted over the rows the table
-     will RENDER, not the whole match set, for the same reason. */
+  /* THE LEGEND FOR THE EXTENDED ROWS. It used to say "faded", which stopped
+     being true the moment the dimming was removed at the owner's request — a
+     legend describing a visual effect that no longer exists is worse than no
+     legend, because it sends the reader hunting for it. The rows are still
+     SORTED to the bottom under the default sort, so the count is still worth
+     stating; only the word changed. Same appearance rule as before: shown only
+     when the default sort is in force AND at least one such row is on screen,
+     and counted over the rows the table will RENDER rather than the whole match
+     set, so the number always matches what the eye can check. */
   const dimmed = SORT_C ? 0
     : rows.slice(0,shown).filter(def=>isExtended(SD[def.s])).length;
   $('smLbl').textContent = dimmed
-    ? `${base} · ${dimmed} faded = extended (more than 1× ADR above the 20 EMA, so no room for a stop) — sorted to the bottom, hover to read`
+    ? `${base} · ${dimmed} extended (more than 1× ADR above the 20 EMA, so no room for a stop) — sorted to the bottom`
     : base;
   colfChip();
   // The collapsed filter header states the same count the chip does, from the
@@ -14567,6 +14686,10 @@ const EXPORT_COLS=[
      the table's one-cell constraint and "2.4x · 6d" is not a number anything
      downstream can sort or filter on. */
   ['Vol Spike',   (def,d)=>d?.volSpike??''],
+  ['Thrust %',    (def,d)=>d?.thrustPct??''],
+  ['Thrust Vol x',(def,d)=>d?.thrustVol??''],
+  ['Thrust Age',  (def,d)=>d?.thrustAge??''],
+  ['Thrust Fade', (def,d)=>d?.thrustFade??''],
   ['Vol Spike Age',(def,d)=>d?.volSpikeAge??''],
   ['W-Vol',       (def,d)=>d?.wVolRatio??''],
   /* Both the raw figure and the screening unit go out. The raw one is what the
@@ -14850,6 +14973,12 @@ function tipBox(){
   if(!TIP_BOX){
     TIP_BOX=document.createElement('div');
     TIP_BOX.className='tip-box';
+    /* THE HOVER BRIDGE. Entering the box cancels the pending hide so the
+       tooltip survives the trip from the header to its own scrollbar; leaving
+       it dismisses immediately, with no delay, so the box can never be left
+       stranded over the table. Bound once, on creation, rather than per show. */
+    TIP_BOX.addEventListener('mouseenter',()=>{ if(TIP_HIDE_T){clearTimeout(TIP_HIDE_T);TIP_HIDE_T=null;} });
+    TIP_BOX.addEventListener('mouseleave',hideTip);
     document.body.appendChild(TIP_BOX);
   }
   return TIP_BOX;
@@ -14865,6 +14994,9 @@ let TIP_SHOWN=null;
    CSS-only absolute box growing upwards out of the top of the screen. */
 function showTip(el){
   if(!el) return;
+  // Moving straight from one header to the next must not be undone by the
+  // previous header's pending hide.
+  if(TIP_HIDE_T){ clearTimeout(TIP_HIDE_T); TIP_HIDE_T=null; }
   const rich = el.querySelector ? el.querySelector('.s2-tooltip') : null;
   const txt  = el.getAttribute ? el.getAttribute('data-tip') : null;
   if(!rich && !txt) return;
@@ -14917,7 +15049,20 @@ function showTip(el){
   b.style.left=left+'px';
   b.style.top=top+'px';
 }
+/* A SHORT GRACE PERIOD, AND ONLY ON THE WAY OUT OF A TRIGGER.
+   The pointer has to cross a few pixels of nothing to get from a column header
+   to the tooltip hanging below it. Hiding on the header's mouseout would fire
+   during that crossing and the box would vanish just as the user reached for
+   its scrollbar. 140ms is long enough to cross the gap and short enough that a
+   deliberate move away still feels immediate. Every other dismissal — leaving
+   the box, scrolling, opening a dialog — remains instant via hideTip(). */
+let TIP_HIDE_T=null;
+function hideTipSoon(){
+  if(TIP_HIDE_T) clearTimeout(TIP_HIDE_T);
+  TIP_HIDE_T=setTimeout(()=>{ TIP_HIDE_T=null; hideTip(); },140);
+}
 function hideTip(){
+  if(TIP_HIDE_T){ clearTimeout(TIP_HIDE_T); TIP_HIDE_T=null; }
   if(TIP_BOX) TIP_BOX.style.display='none';
   if(TIP_SHOWN && TIP_SHOWN!==TIP_BOX){ TIP_SHOWN.style.display='none'; TIP_SHOWN.style.maxHeight=''; }
   TIP_SHOWN=null;
@@ -14933,7 +15078,8 @@ function initTips(){
   });
   document.addEventListener('mouseout',e=>{
     const el=e.target&&e.target.closest&&e.target.closest(TIP_SEL);
-    if(el) hideTip();
+    // Deferred, so the pointer can reach the box itself — see hideTipSoon().
+    if(el) hideTipSoon();
   });
   // Capture phase: .tbl-scroll's own scroll events do not bubble to window.
   window.addEventListener('scroll',hideTip,true);
@@ -15071,6 +15217,7 @@ const COL_FILTERS={
      prints. Note volSpike is the FIELD and volspike is the key: the key must
      match the <th>'s data-s, which is lower-case throughout the header. */
   volspike:{t:'num',  label:'Vol Spike', val:d=>d&&d.volSpike},
+  thrust:  {t:'num',  label:'Thrust %',  val:d=>d&&d.thrustPct},
   /* WAS t:'cat' with a Dry/No checkbox pair — see the ratio's note in
      computeTech. As a category it could only ever offer the verdict; "max 0.6",
      the screen the owner actually wants (volume down to under two thirds of its
@@ -15769,6 +15916,7 @@ const TOGGLEABLE_COLS=[
   {cls:'wrsi',   label:'W-RSI'},
   {cls:'vr',     label:'Vol Ratio'},
   {cls:'volspike',label:'Vol Spike'},
+  {cls:'thrust',  label:'Thrust', defOff:true},
   {cls:'wvol',   label:'W-VOL'},
   {cls:'avgval', label:'Avg Value'},
   {cls:'wpiv',   label:'W-Pivot'},
@@ -16773,7 +16921,13 @@ function ddApplyTabs(){
      but still an iframe streaming a chart nobody can see. */
   const box=$('ddTvBox');
   if(box && !live){ box.innerHTML=''; box.style.display='none'; }
-  if(note) note.innerHTML = live ? '' : ddLiveNote();
+  /* THE NSE EXPLANATION IS NO LONGER PRINTED. It was correct — NSE data cannot
+     be embedded off tradingview.com — but the owner reads these charts many
+     times a day and a six-line paragraph repeating an unchangeable fact on
+     every Indian stock is noise, not help. The node is still emptied on every
+     open so a note left over from a previous ticker can never persist. The
+     header's own "Open in TradingView ↗" already covers what to do instead. */
+  if(note) note.innerHTML = '';
 }
 
 /* What the user reads when the widget cannot be had. Plain English about the
@@ -16809,6 +16963,12 @@ function ddLiveFallback(){
    this very ticker and is on screen the whole time; a duplicate anchor two
    inches below it is the kind of redundancy that later drifts out of step. The
    line points AT the header button instead. */
+/* ⚠️ NO LONGER CALLED — the owner asked for this note to stop appearing, so its
+   single call site now writes ''. The function is kept rather than deleted only
+   because the offline suites are not runnable in this environment and `t4`
+   holds a defined-list of top-level functions; deleting it unverified is the
+   kind of change that passes a syntax check and kills the page on load. Delete
+   it in a session where the suites can actually be run. */
 function ddLiveNote(){
   return '<b>Live chart:</b> India\'s NSE does not make its price data available to charts '
        + 'placed on other websites, so a live NSE chart can only be drawn on TradingView\'s '
