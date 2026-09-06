@@ -1458,6 +1458,14 @@ body.dd-lock{overflow:hidden}
 .rot-lead{background:#dcfce7;color:#166534}.rot-up{background:#e0f2fe;color:#075985}.rot-cool{background:#fef3c7;color:#92400e}.rot-lag{background:#fee2e2;color:#991b1b}.rot-neu{background:var(--surface2);color:var(--muted)}
 .rot-v4-empty{padding:18px;color:var(--muted);text-align:center}
 @media(max-width:700px){.rotation-v4{max-width:100vw;max-height:92vh}.rot-v4-toolbar{align-items:stretch}.rot-v4-tabs{width:100%}.rot-v4-note{font-size:9.5px}.rot-v4-table{font-size:10px}.rot-v4-table th,.rot-v4-table td{padding:6px}.rot-v4-table th:first-child,.rot-v4-table td:first-child{min-width:150px}}
+.rot-market-badge{display:inline-flex;align-items:center;gap:5px;border:1px solid var(--border);background:var(--surface2);color:var(--text);border-radius:999px;padding:6px 10px;font-size:11px;font-weight:800;white-space:nowrap}
+.rot-market-badge.india{border-color:#93c5fd;background:#eff6ff;color:#1e3a8a}.rot-market-badge.usa{border-color:#c4b5fd;background:#f5f3ff;color:#5b21b6}.rot-market-badge.etf{border-color:#99f6e4;background:#f0fdfa;color:#115e59}
+.rot-sort{border:0;background:transparent;color:inherit;font:inherit;font-size:inherit;font-weight:800;cursor:pointer;padding:0;white-space:nowrap}.rot-sort:hover{text-decoration:underline}.rot-sort-ind{font-size:8px;margin-left:3px;color:var(--accent)}
+.rot-v4-table th.sortable{cursor:pointer}.rot-v4-table th.sortable:hover{background:var(--blue-bg)}
+.rot-section-head th{background:var(--surface2)!important;color:var(--muted);text-align:left!important;font-size:9px;letter-spacing:.5px}
+.rot-change-up{background:var(--green-bg);color:var(--green);font-weight:800;border-radius:var(--rs);padding:2px 6px;display:inline-flex}.rot-change-down{background:var(--red-bg);color:var(--red);font-weight:800;border-radius:var(--rs);padding:2px 6px;display:inline-flex}.rot-change-neutral{background:transparent;color:var(--text3);font-weight:700}
+.rot-metric-good{background:var(--green-bg);color:var(--green);font-weight:800;border-radius:var(--rs);padding:2px 6px}.rot-metric-bad{background:var(--red-bg);color:var(--red);font-weight:800;border-radius:var(--rs);padding:2px 6px}
+
 
 .rot-v4-crumb{display:flex;align-items:center;gap:5px;flex-wrap:wrap;margin:6px 0 8px}.rot-crumb{border:0;background:transparent;color:var(--muted);font-size:11px;padding:3px 5px;cursor:pointer}.rot-crumb.active{color:var(--text);font-weight:800}.rot-arrow{color:var(--muted)}.bo-date{font-size:9px;color:var(--muted);white-space:nowrap}</style>
 </head>
@@ -17577,7 +17585,7 @@ function closeDrill(){
     <h3>💸 Money Flow Radar</h3>
     <div class="rot-v4-toolbar">
       <div class="rot-v4-tabs" id="moneyFlowTabs"></div>
-      <select id="moneyFlowMarket" class="fsel" onchange="renderMoneyFlowRadar()"><option value="india">India</option><option value="usa">US</option><option value="etf">ETF</option></select>
+      <span id="moneyFlowMarketBadge" class="rot-market-badge india" title="Money Flow is locked to the market currently selected in the main screener">🇮🇳 India</span>
     </div>
     <p class="rot-v4-note" id="moneyFlowNote"></p>
     <div class="rot-v4-wrap"><table class="rot-v4-table"><thead id="moneyFlowHead"></thead><tbody id="moneyFlowBody"></tbody></table></div>
@@ -17591,7 +17599,7 @@ function closeDrill(){
     <h3>🔄 Money Flow & Rotation</h3>
     <div class="rot-v4-toolbar">
       <div class="rot-v4-tabs" id="rotationV4Tabs"></div>
-      <select id="rotationV4Market" class="fsel" onchange="renderRotationV4()"><option value="india">India</option><option value="usa">US</option><option value="etf">ETF</option></select>
+      <span id="rotationV4MarketBadge" class="rot-market-badge india" title="Rotation is locked to the market currently selected in the main screener">🇮🇳 India</span>
     </div>
     <p class="rot-v4-note" id="rotationV4Note"></p>
     <div class="rot-v4-crumb" id="rotationV4Crumb"></div>
@@ -17603,7 +17611,7 @@ function closeDrill(){
 <script>
 
 /* ══════════════════════════════════════════════════════════════════════════
-   GLOBALSCREENER v7 — MONEY FLOW / ROTATION / DAILY HISTORY LAYER
+   GLOBALSCREENER v10 — EARLY X-RAY / MONEY FLOW / ROTATION / DAILY HISTORY LAYER
    Uses only the existing Google-Sheets universe + computed SD rows.
    No additional price-data source, API or request is introduced.
    Classification is deliberately labelled RESEARCH TAXONOMY until a complete
@@ -17759,6 +17767,41 @@ function rotV4Crumb(level,parentLevel,parentName){
   return parts.map((p,i)=>`<button class="rot-crumb ${p.label===level?'active':''}" ${p.click?`onclick="${p.fn}"`:''}>${escHtml(p.label)}</button>${i<parts.length-1?'<span class="rot-arrow">›</span>':''}`).join('');
 }
 
+const ROT_SORT={rotation:{key:null,dir:-1},stocks:{key:null,dir:-1},money:{key:null,dir:-1},changesGroups:{key:null,dir:-1},changesStocks:{key:null,dir:-1}};
+function rotMarketLabel(m){return m==='usa'?['🇺🇸','US','usa']:m==='etf'?['📊','ETF','etf']:['🇮🇳','India','india'];}
+function setRotMarketBadge(id,m){const el=$(id);if(!el)return;const [ico,label,cls]=rotMarketLabel(m);el.className='rot-market-badge '+cls;el.textContent=ico+' '+label;}
+function rotCmpVal(v){
+  if(v==null||v==='—'||v==='') return {n:-Infinity,s:''};
+  if(typeof v==='number'&&isFinite(v)) return {n:v,s:String(v)};
+  const num=parseFloat(String(v).replace(/[^0-9+\-.]/g,''));
+  return {n:isFinite(num)?num:-Infinity,s:String(v).toLowerCase()};
+}
+function rotSortRows(rows,key,dir){
+  if(!key) return rows;
+  return rows.slice().sort((a,b)=>{
+    const av=rotCmpVal(typeof key==='function'?key(a):a[key]), bv=rotCmpVal(typeof key==='function'?key(b):b[key]);
+    if(av.n!==-Infinity||bv.n!==-Infinity){ if(av.n!==bv.n) return (av.n-bv.n)*dir; }
+    return av.s.localeCompare(bv.s)*dir;
+  });
+}
+function rotSortClick(scope,key){
+  const st=ROT_SORT[scope]||{key:null,dir:-1};
+  if(st.key===key) st.dir*=-1; else {st.key=key;st.dir=-1;}
+  ROT_SORT[scope]=st;
+  if(scope==='rotation'||scope==='stocks') renderRotationV4(); else renderMoneyFlowRadar();
+}
+function rotSortHead(label,key,scope,tip=''){
+  const st=ROT_SORT[scope]||{}; const active=st.key===key; const ind=active?(st.dir===-1?'▼':'▲'):'';
+  return `<th class="sortable" title="${escAttr(tip||('Sort by '+label))}" onclick="event.stopPropagation();rotSortClick('${scope}','${key}')"><button class="rot-sort">${label}<span class="rot-sort-ind">${ind}</span></button></th>`;
+}
+function rotDefaultRotationSort(rows){
+  const rank={'Powering Up':4,'Turning Up':3,'Cooling':2,'Falling Back':1,'—':0};
+  return rows.slice().sort((a,b)=>(rank[b.rotation]||0)-(rank[a.rotation]||0)||(b.flowScore??-999)-(a.flowScore??-999)||(b.primePct??-999)-(a.primePct??-999)||(b.earlyPct??-999)-(a.earlyPct??-999)||(b.rsChg??-999)-(a.rsChg??-999)||(b.rs??-999)-(a.rs??-999));
+}
+function rotDefaultStockSort(rows){return rows.slice().sort((a,b)=>rotV5StateRank(b.state)-rotV5StateRank(a.state)||(b.e.score??-999)-(a.e.score??-999)||(b.rsChg??-999)-(a.rsChg??-999)||(b.d.rs55??-999)-(a.d.rs55??-999));}
+function rotDefaultMoneySort(rows){return rows.slice().sort((a,b)=>mfStateRank(b.state)-mfStateRank(a.state)||(b.e.score??-999)-(a.e.score??-999)||(b.rsChg??-999)-(a.rsChg??-999)||(b.d.rs55??-999)-(a.d.rs55??-999));}
+function rotNumCell(v,dec=1,unit=''){return v==null?'<span class="sb-pill sb-zero">—</span>':(isFinite(v)?Number(v).toFixed(dec)+unit:escHtml(String(v)));}
+function rotSignedPill(v,dec=1){if(v==null)return '<span class="sb-pill sb-zero">—</span>';const txt=(v>=0?'+':'')+Number(v).toFixed(dec);return `<span class="sb-pill ${v>=0?'sb-hi':'sb-lo'}">${txt}</span>`;}
 function rotV5StateRank(state){
   state=String(state||'').toLowerCase();
   return state==='prime'?5:state==='watch'?4:state==='accumulation'?3:state==='developing'?2:state==='breakout'?4:1;
@@ -17766,41 +17809,42 @@ function rotV5StateRank(state){
 function rotV5EarlyLabel(state){return ({prime:'Prime',watch:'Watch',accumulation:'Accumulation',developing:'Developing',breakout:'Breakout'})[state]||'—';}
 function rotV5StockRows(market){
   const defs=UNI[market]||[];
-  return defs.map(def=>{
+  const rows=defs.map(def=>{
     const d=SD[def.s]; if(!d) return null;
     const e=d.early||{};
     const rsChg=d.rsSlope!=null?d.rsSlope:(d.rs21!=null&&d.rs55!=null?d.rs21-d.rs55:null);
     return {def,d,e,rsChg,macro:rotV4Macro(def),sector:rotV4Sector(def),industry:rotV4Industry(def),narrow:rotV4Narrow(def),state:e.state||'—'};
-  }).filter(Boolean).sort((a,b)=>{
-    const sr=rotV5StateRank(b.state)-rotV5StateRank(a.state); if(sr) return sr;
-    const ep=(b.e.score??-999)-(a.e.score??-999); if(ep) return ep;
-    return (b.d.rs55??-999)-(a.d.rs55??-999);
-  });
+  }).filter(Boolean);
+  const st=ROT_SORT.stocks;
+  return st.key?rotSortRows(rows,st.key,st.dir):rotDefaultStockSort(rows);
 }
 function renderRotationV5Stocks(m){
+  setRotMarketBadge('rotationV4MarketBadge',m);
   const rows=rotV5StockRows(m);
   const stateFilter=window.ROT_V5_STOCK_FILTER||'all';
   const filtered=rows.filter(x=>stateFilter==='all'||(stateFilter==='prime'&&x.state==='prime')||(stateFilter==='early'&&x.e.score>=70)||(stateFilter==='bo'&&(x.d.boAge!=null&&x.d.boAge<=5)));
-  $('rotationV4Note').textContent=`Stocks • ${filtered.length} shown • sorted by strongest Early state, then Early score, then RS55. Use the filter to see Prime / Early / Breakout names.`;
+  $('rotationV4Note').textContent=`Stocks • ${filtered.length} shown • default order: strongest Early state → Early score → improving RS → RS55. Click any column header to sort; click again to reverse.`;
   $('rotationV4Crumb').innerHTML='<div class="rot-stock-filters">'+[['all','All'],['prime','Prime'],['early','Early ≥70'],['bo','Recent BO']].map(([k,l])=>`<button class="rot-crumb ${stateFilter===k?'active':''}" onclick="window.ROT_V5_STOCK_FILTER='${k}';renderRotationV4()">${l}</button>`).join('')+'</div>';
-  $('rotationV4Head').innerHTML='<tr><th>Stock</th><th>Macro</th><th>Sector</th><th>Industry</th><th>RS55</th><th>RS Δ</th><th>Early</th><th>State</th><th>BO Gain</th><th>BO Age</th><th>BO Date</th></tr>';
-  $('rotationV4Body').innerHTML=filtered.length?filtered.map(x=>`<tr class="rot-v4-row" onclick="openDrill('${escAttr(x.def.s)}')"><td><b>${escHtml(x.def.d||x.def.s)}</b><br><span style="font-size:9px;color:var(--muted)">${escHtml(x.def.s)}</span></td><td>${escHtml(x.macro)}</td><td>${escHtml(x.sector)}</td><td>${escHtml(x.industry)}</td><td>${x.d.rs55==null?'—':x.d.rs55.toFixed(1)}</td><td>${x.rsChg==null?'—':(x.rsChg>=0?'+':'')+x.rsChg.toFixed(1)}</td><td>${x.e.score==null?'—':x.e.score}</td><td><span class="rot-pill ${x.state==='prime'?'rot-lead':x.state==='watch'?'rot-up':x.state==='breakout'?'rot-lead':'rot-neu'}">${rotV5EarlyLabel(x.state)}</span></td><td>${x.d.boGain==null?'—':(x.d.boGain>=0?'+':'')+x.d.boGain+'%'}</td><td>${boDateC(x.d.boDate)||'—'}</td></tr>`).join(''):'<tr><td colspan="10" class="rot-v4-empty">No stocks match this filter.</td></tr>';
+  $('rotationV4Head').innerHTML='<tr>'+rotSortHead('Stock','name','stocks','Stock/company name')+rotSortHead('Macro','macro','stocks','Research macro grouping')+rotSortHead('Sector','sector','stocks','Research sector grouping')+rotSortHead('Industry','industry','stocks','Research industry grouping')+rotSortHead('RS55','rs55','stocks','55-day relative strength level')+rotSortHead('RS Δ','rsChg','stocks','Relative-strength direction; positive is improving')+rotSortHead('Early','score','stocks','Early Breakout score, 0–100')+rotSortHead('State','state','stocks','Early state: Prime, Watch, Accumulation, Breakout, Developing')+rotSortHead('BO Gain','boGain','stocks','Gain since the latest detected breakout')+rotSortHead('BO Age','boAge','stocks','Bars since latest breakout')+rotSortHead('BO Date','boDate','stocks','Date of latest detected breakout')+'</tr>';
+  $('rotationV4Body').innerHTML=filtered.length?filtered.map(x=>`<tr class="rot-v4-row" onclick="openDrill('${escAttr(x.def.s)}')"><td><b>${escHtml(x.def.d||x.def.s)}</b><br><span style="font-size:9px;color:var(--muted)">${escHtml(x.def.s)}</span></td><td>${escHtml(x.macro)}</td><td>${escHtml(x.sector)}</td><td>${escHtml(x.industry)}</td><td>${x.d.rs55==null?'—':x.d.rs55.toFixed(1)}</td><td>${rotSignedPill(x.rsChg,1)}</td><td>${x.e.score==null?'—':x.e.score}</td><td><span class="rot-pill ${x.state==='prime'?'rot-lead':x.state==='watch'?'rot-up':x.state==='accumulation'?'rot-cool':x.state==='breakout'?'rot-lead':'rot-neu'}">${rotV5EarlyLabel(x.state)}</span></td><td>${x.d.boGain==null?'—':rotSignedPill(x.d.boGain,0)}</td><td>${x.d.boAge==null?'—':x.d.boAge+'d'}</td><td>${boDateC(x.d.boDate)||'—'}</td></tr>`).join(''):'<tr><td colspan="11" class="rot-v4-empty">No stocks match this filter.</td></tr>';
 }
 
 function renderRotationV4(){
-  const m=$('rotationV4Market')?.value||CUR||'india';
+  const m=CUR||'india'; setRotMarketBadge('rotationV4MarketBadge',m);
   const level=window.ROT_V4_LEVEL||'macro';
   const parentLevel=window.ROT_V4_PARENT_LEVEL||null, parentName=window.ROT_V4_PARENT_NAME||null;
   if(level==='stocks'){ renderRotationV5Stocks(m); $('rotationV4Tabs').innerHTML=[['macro','Macro'],['sector','Sector'],['industry','Industry'],['narrow','Narrow Group'],['stocks','Stocks']].map(([k,l])=>`<button class="rot-v4-tab ${level===k?'active':''}" onclick="rotV4SetLevel('${k}',null,null,null,null);renderRotationV4()">${l}</button>`).join(''); return; }
-  const rows=rotV4Rows(m,level,parentLevel,parentName);
+  const raw=rotV4Rows(m,level,parentLevel,parentName);
+  const rows=ROT_SORT.rotation.key?rotSortRows(raw,ROT_SORT.rotation.key,ROT_SORT.rotation.dir):rotDefaultRotationSort(raw);
   const title=level==='macro'?'Macro':level==='sector'?'Sector':level==='industry'?'Industry':'Narrow Group';
-  $('rotationV4Note').textContent=`Money-flow ranking • strongest first: Powering Up → Turning Up → Cooling → Falling Back. Flow = RS strength + RS improvement + Early participation. Hierarchy: Macro → Sector → Industry → Basic Industry / Narrow Group → Stocks. Click a row to drill down. Rotation is context, not a buy/sell rule.`;
+  $('rotationV4Note').textContent=`${title} rotation • default order: Powering Up → Turning Up → Cooling → Falling Back, then Flow → Prime → Early → RS improvement. Click any column header to sort; click again to reverse. Rotation is context, not a buy/sell rule.`;
   $('rotationV4Crumb').innerHTML=rotV4Crumb(level,parentLevel,parentName);
-  $('rotationV4Head').innerHTML='<tr><th>'+title+'</th><th>RS55</th><th>RS Δ</th><th>Flow</th><th>≥50E</th><th>Early</th><th>Prime</th><th>BO</th><th>Vol↑</th><th>Rotation</th></tr>';
-  $('rotationV4Body').innerHTML=rows.length?rows.map(r=>`<tr class="rot-v4-row" onclick="rotationV4Drill('${escAttr(r.name)}','${level}','${m}')"><td><b>${escHtml(r.name)}</b><br><span style="font-size:9px;color:var(--muted)">${r.n} stocks</span></td><td>${r.rs==null?'—':r.rs.toFixed(1)}</td><td>${r.rsChg==null?'—':(r.rsChg>=0?'+':'')+r.rsChg.toFixed(1)}</td><td>${r.flowScore==null?'—':r.flowScore}</td><td>${r.breadth==null?'—':r.breadth.toFixed(0)+'%'}</td><td>${r.earlyPct==null?'—':r.earlyPct.toFixed(0)+'%'}</td><td>${r.primePct==null?'—':r.primePct.toFixed(0)+'%'}</td><td>${r.boPct==null?'—':r.boPct.toFixed(0)+'%'}</td><td>${r.volPct==null?'—':r.volPct.toFixed(0)+'%'}</td><td><span class="rot-pill ${rotV4Cls(r.rotation)}">${r.rotation}</span></td></tr>`).join(''):'<tr><td colspan="10" class="rot-v4-empty">No computed data yet.</td></tr>';
+  $('rotationV4Head').innerHTML='<tr>'+rotSortHead(title,'name','rotation',title+' name')+rotSortHead('RS55','rs','rotation','Median 55-day relative strength level')+rotSortHead('RS Δ','rsChg','rotation','Median relative-strength direction; positive is improving')+rotSortHead('Flow','flowScore','rotation','Combined ranking of RS strength, RS improvement and Early participation')+rotSortHead('≥50E','breadth','rotation','Percentage of stocks above the 50-day EMA')+rotSortHead('Early','earlyPct','rotation','Percentage of stocks with Early score ≥70')+rotSortHead('Prime','primePct','rotation','Percentage of stocks in Prime Early state')+rotSortHead('BO','boPct','rotation','Percentage with a detected breakout')+rotSortHead('Vol↑','volPct','rotation','Percentage showing improving volume transition')+rotSortHead('Rotation','rotation','rotation','Powering Up = strong and rising; Turning Up = weaker but rising; Cooling = strong but falling; Falling Back = weak and falling')+'</tr>';
+  $('rotationV4Body').innerHTML=rows.length?rows.map(r=>`<tr class="rot-v4-row" onclick="rotationV4Drill('${escAttr(r.name)}','${level}','${m}')"><td><b>${escHtml(r.name)}</b><br><span style="font-size:9px;color:var(--muted)">${r.n} stocks</span></td><td>${r.rs==null?'—':r.rs.toFixed(1)}</td><td>${rotSignedPill(r.rsChg,1)}</td><td>${r.flowScore==null?'—':`<span class="sb-pill ${r.flowScore>=70?'sb-hi':r.flowScore>=50?'sb-mid':'sb-lo'}">${r.flowScore}</span>`}</td><td>${r.breadth==null?'—':pillFmt(Math.round(r.breadth))}</td><td>${r.earlyPct==null?'—':pillFmt(Math.round(r.earlyPct))}</td><td>${r.primePct==null?'—':pillFmt(Math.round(r.primePct))}</td><td>${r.boPct==null?'—':pillFmt(Math.round(r.boPct))}</td><td>${r.volPct==null?'—':pillFmt(Math.round(r.volPct))}</td><td><span class="sb-pill ${ROT_CLS[r.rotation]||'sb-mid'}">${r.rotation}</span></td></tr>`).join(''):'<tr><td colspan="10" class="rot-v4-empty">No computed data yet.</td></tr>';
   const tabs=[['macro','Macro'],['sector','Sector'],['industry','Industry'],['narrow','Narrow Group'],['stocks','Stocks']];
   $('rotationV4Tabs').innerHTML=tabs.map(([k,l])=>`<button class="rot-v4-tab ${level===k?'active':''}" onclick="rotV4SetLevel('${k}',null,null,null,null);renderRotationV4()">${l}</button>`).join('');
 }
+
 function rotationV4Drill(name,level,market){
   const macro=window.ROT_V4_MACRO_NAME||null, sector=window.ROT_V4_SECTOR_NAME||null;
   if(level==='macro') return rotV4SetLevel('sector','macro',name,name,null),renderRotationV4();
@@ -17813,12 +17857,12 @@ function rotationV4Drill(name,level,market){
   $('rotationV4Crumb').innerHTML=`<button class="rot-crumb" onclick="rotationV4Back()">← Back</button>`;
 }
 function rotationV4Back(){renderRotationV4()}
-function openRotationV4(){rotV4SetLevel('macro',null,null,null,null);const sel=$('rotationV4Market');if(sel)sel.value=CUR||'india';renderRotationV4();$('rotationV4Modal').classList.add('open')}
+function openRotationV4(){rotV4SetLevel('macro',null,null,null,null);ROT_SORT.rotation={key:null,dir:-1};ROT_SORT.stocks={key:null,dir:-1};renderRotationV4();$('rotationV4Modal').classList.add('open')}
 
 function mfStateRank(v){return v==='New Money'?5:v==='Prime Leader'?4:v==='Watching'?3:v==='Post-Breakout / Retest'?2:v==='Money Leaving'?1:0;}
 function mfRows(market){
   const defs=UNI[market]||[];
-  return defs.map(def=>{
+  const rows=defs.map(def=>{
     const d=SD[def.s]; if(!d) return null;
     const e=d.early||{};
     const score=e.score;
@@ -17827,7 +17871,7 @@ function mfRows(market){
     const recentBO=d.boAge!=null&&isFinite(d.boAge)&&d.boAge<=15;
     const positiveBO=recentBO&&d.boGain!=null&&d.boGain>=0;
     const controlledRetest=positiveBO&&d.retrace!=null&&d.retrace>=-12&&above50;
-    const prime= e.state==='prime' || (score!=null&&score>=80&&e.triggerDist!=null&&e.triggerDist<=5&&e.volumePhase==='expanding');
+    const prime=e.state==='prime' || (score!=null&&score>=80&&e.triggerDist!=null&&e.triggerDist<=5&&e.volumePhase==='expanding');
     const improving=rsChg!=null&&rsChg>0;
     const weakening=rsChg!=null&&rsChg<0;
     let state='';
@@ -17838,24 +17882,25 @@ function mfRows(market){
     else if(weakening && (score==null||score<60) && (!recentBO || !positiveBO || !controlledRetest)) state='Money Leaving';
     else return null;
     return {def,d,e,rsChg,state,macro:rotV4Macro(def),sector:rotV4Sector(def),industry:rotV4Industry(def),narrow:rotV4Narrow(def),recentBO,positiveBO,controlledRetest};
-  }).filter(Boolean).sort((a,b)=>{
-    const sr=mfStateRank(b.state)-mfStateRank(a.state); if(sr)return sr;
-    const ep=(b.e.score??-999)-(a.e.score??-999); if(ep)return ep;
-    return (b.d.rs55??-999)-(a.d.rs55??-999);
-  });
+  }).filter(Boolean);
+  const st=ROT_SORT.money;
+  return st.key?rotSortRows(rows,st.key,st.dir):rotDefaultMoneySort(rows);
 }
 function renderMoneyFlowRadar(){
-  const m=$('moneyFlowMarket')?.value||CUR||'india';
+  const m=CUR||'india'; setRotMarketBadge('moneyFlowMarketBadge',m);
   const tab=window.MF_TAB||'new';
+  if(tab==='changes'){ renderMoneyFlowChanges(m); renderMoneyFlowTabs(); return; }
   const rows=mfRows(m);
-  if(tab==='changes'){ renderMoneyFlowChanges(m); $('moneyFlowTabs').innerHTML=[['changes','What Changed'],['new','New Money'],['prime','Prime Leaders'],['watch','Watching'],['retest','Post-Breakout / Retest'],['leaving','Money Leaving']].map(([k,l])=>`<button class="rot-v4-tab ${tab===k?'active':''}" data-mf="${k}" title="${k==='changes'?'Compare the latest two daily market snapshots':k==='new'?'Strong Early setup with improving relative strength':k==='prime'?'Stocks currently in the Prime Early state':k==='watch'?'Early setup is developing with constructive RS':k==='retest'?'Recent positive-volume breakout followed by a controlled pullback':'RS/participation deterioration without a constructive breakout retest'}" onclick="window.MF_TAB='${k}';renderMoneyFlowRadar()">${l}</button>`).join(''); return; }
   const filter=tab==='new'?x=>x.state==='New Money':tab==='prime'?x=>x.state==='Prime Leader':tab==='watch'?x=>x.state==='Watching':tab==='retest'?x=>x.state==='Post-Breakout / Retest':x=>x.state==='Money Leaving';
   const shown=rows.filter(filter);
+  renderMoneyFlowTabs();
+  $('moneyFlowNote').textContent='Default order: strongest state first, then Early score, improving RS and RS55. New Money = strong Early + improving RS; Prime Leaders = Prime; Watching = Early ≥70 and constructive; Post-Breakout / Retest = recent positive-volume breakout followed by a controlled pullback while price remains above 50EMA; Money Leaving = genuine deterioration. Click any column header to sort; click again to reverse.';
+  $('moneyFlowHead').innerHTML='<tr>'+rotSortHead('Stock','name','money','Stock/company name')+rotSortHead('Macro','macro','money','Research macro grouping')+rotSortHead('Sector','sector','money','Research sector grouping')+rotSortHead('Industry','industry','money','Research industry grouping')+rotSortHead('RS55','rs55','money','55-day relative strength level')+rotSortHead('RS Δ','rsChg','money','Relative-strength direction; positive is improving')+rotSortHead('Early','score','money','Early Breakout score, 0–100')+rotSortHead('State','state','money','Current Money Flow state')+rotSortHead('BO Gain','boGain','money','Gain since latest detected breakout')+rotSortHead('BO Age','boAge','money','Bars since latest breakout')+rotSortHead('BO Date','boDate','money','Latest breakout date')+'</tr>';
+  $('moneyFlowBody').innerHTML=shown.length?shown.map(x=>`<tr class="rot-v4-row" onclick="openDrill('${escAttr(x.def.s)}')"><td><b>${escHtml(x.def.d||x.def.s)}</b><br><span style="font-size:9px;color:var(--muted)">${escHtml(x.def.s)}</span></td><td>${escHtml(x.macro)}</td><td>${escHtml(x.sector)}</td><td>${escHtml(x.industry)}</td><td>${x.d.rs55==null?'—':x.d.rs55.toFixed(1)}</td><td>${rotSignedPill(x.rsChg,1)}</td><td>${x.e.score==null?'—':x.e.score}</td><td><span class="rot-pill ${x.state==='Money Leaving'?'mf-state-leaving':x.state==='Prime Leader'?'mf-state-prime':x.state==='New Money'?'mf-state-new':x.state==='Post-Breakout / Retest'?'mf-state-retest':'mf-state-watch'}" title="${escAttr(x.state==='Post-Breakout / Retest'?'Recent breakout with controlled pullback; not automatically a sell signal':x.state)}">${x.state}</span></td><td>${x.d.boGain==null?'—':rotSignedPill(x.d.boGain,0)}</td><td>${x.d.boAge==null?'—':x.d.boAge+'d'}</td><td>${boDateC(x.d.boDate)||'—'}</td></tr>`).join(''):'<tr><td colspan="11" class="rot-v4-empty">No candidates in this bucket.</td></tr>';
+}
+function renderMoneyFlowTabs(){
   const labels=[['changes','What Changed'],['new','New Money'],['prime','Prime Leaders'],['watch','Watching'],['retest','Post-Breakout / Retest'],['leaving','Money Leaving']];
-  $('moneyFlowTabs').innerHTML=labels.map(([k,l])=>`<button class="rot-v4-tab ${tab===k?'active':''}" data-mf="${k}" title="${k==='changes'?'Compare the latest two daily market snapshots':k==='new'?'Strong Early setup with improving relative strength':k==='prime'?'Stocks currently in the Prime Early state':k==='watch'?'Early setup is developing with constructive RS':k==='retest'?'Recent positive-volume breakout followed by a controlled pullback': 'RS/participation deterioration without a constructive breakout retest'}" onclick="window.MF_TAB='${k}';renderMoneyFlowRadar()">${l}</button>`).join('');
-  $('moneyFlowNote').textContent='Current-state radar: New Money = strong Early + improving RS; Prime Leaders = Prime; Watching = Early ≥70 and constructive; Post-Breakout / Retest = recent positive-volume breakout followed by a controlled pullback while price remains above 50EMA; Money Leaving = genuine deterioration. A pullback after a successful breakout is not automatically negative.';
-  $('moneyFlowHead').innerHTML='<tr><th>Stock</th><th>Macro</th><th>Sector</th><th>Industry</th><th>RS55</th><th>RS Δ</th><th>Early</th><th>State</th><th>BO Gain</th><th>BO Age</th><th>BO Date</th></tr>';
-  $('moneyFlowBody').innerHTML=shown.length?shown.map(x=>`<tr class="rot-v4-row" onclick="openDrill('${escAttr(x.def.s)}')"><td><b>${escHtml(x.def.d||x.def.s)}</b><br><span style="font-size:9px;color:var(--muted)">${escHtml(x.def.s)}</span></td><td>${escHtml(x.macro)}</td><td>${escHtml(x.sector)}</td><td>${escHtml(x.industry)}</td><td>${x.d.rs55==null?'—':x.d.rs55.toFixed(1)}</td><td>${x.rsChg==null?'—':(x.rsChg>=0?'+':'')+x.rsChg.toFixed(1)}</td><td>${x.e.score==null?'—':x.e.score}</td><td><span class="rot-pill ${x.state==='Money Leaving'?'mf-state-leaving':x.state==='Prime Leader'?'mf-state-prime':x.state==='New Money'?'mf-state-new':x.state==='Post-Breakout / Retest'?'mf-state-retest':'mf-state-watch'}" title="${escAttr(x.state==='Post-Breakout / Retest'?'Recent breakout with controlled pullback; not automatically a sell signal':x.state)}">${x.state}</span></td><td>${x.d.boGain==null?'—':(x.d.boGain>=0?'+':'')+x.d.boGain+'%'}</td><td>${x.d.boAge==null?'—':x.d.boAge+'d'}</td><td>${boDateC(x.d.boDate)||'—'}</td></tr>`).join(''):'<tr><td colspan="11" class="rot-v4-empty">No candidates in this bucket.</td></tr>';
+  $('moneyFlowTabs').innerHTML=labels.map(([k,l])=>`<button class="rot-v4-tab ${window.MF_TAB===k?'active':''}" data-mf="${k}" title="${k==='changes'?'Compare the latest two daily market snapshots':k==='new'?'Strong Early setup with improving relative strength':k==='prime'?'Stocks currently in the Prime Early state':k==='watch'?'Early setup with constructive relative strength':k==='retest'?'Recent positive-volume breakout followed by a controlled pullback': 'RS/participation deterioration without a constructive breakout retest'}" onclick="window.MF_TAB='${k}';ROT_SORT.money={key:null,dir:-1};renderMoneyFlowRadar()">${l}</button>`).join('');
 }
 
 /* ══════════════════════════════════════════════════════════════════════════
@@ -17982,21 +18027,24 @@ function mfChanges(m){
   return {prev,cur,stocks,groups};
 }
 function renderMoneyFlowChanges(m){
+  setRotMarketBadge('moneyFlowMarketBadge',m);
   const ch=mfChanges(m);
   if(!ch.prev){
-    $('moneyFlowNote').textContent='No prior daily snapshot exists yet. Refresh the live market once today and again on a later trading day; the screener will then show what entered/left Prime and where participation changed.';
+    $('moneyFlowNote').textContent='No prior daily snapshot exists yet. This market is kept separate from US and ETF. Once two daily snapshots exist, What Changed will compare them here.';
     $('moneyFlowHead').innerHTML='<tr><th>History</th></tr>';
     $('moneyFlowBody').innerHTML='<tr><td class="rot-v4-empty">Daily history is ready, but it needs at least two snapshots to calculate changes.</td></tr>';
     return;
   }
-  $('moneyFlowNote').textContent=`Changes from ${ch.prev.date} → ${ch.cur.date}. Groups are sorted by rising Prime/Early participation; stocks are sorted by score/RS improvement. This is the first version of the daily change engine.`;
-  const gRows=ch.groups.slice(0,30).map(g=>`<tr><td><b>${escHtml(g.name)}</b><br><span style="font-size:9px;color:var(--muted)">${escHtml(g.sector||g.macro||'')} · ${g.n} stocks</span></td><td>${g.primeDelta>0?'+':''}${g.primeDelta}</td><td>${g.earlyDelta>0?'+':''}${g.earlyDelta}</td><td>${g.primePct==null?'—':g.primePct.toFixed(0)+'%'}</td><td>${g.earlyPct==null?'—':g.earlyPct.toFixed(0)+'%'}</td><td>${g.avgRs==null?'—':(g.avgRs>=0?'+':'')+g.avgRs.toFixed(1)}</td></tr>`).join('');
-  const sRows=ch.stocks.slice(0,40).map(x=>`<tr class="rot-v4-row" onclick="openDrill('${escAttr(x.s)}')"><td><b>${escHtml(x.n)}</b><br><span style="font-size:9px;color:var(--muted)">${escHtml(x.s)}</span></td><td>${escHtml(x.prevBucket)} → <b>${escHtml(x.bucket)}</b></td><td>${x.scoreDelta==null?'—':(x.scoreDelta>=0?'+':'')+x.scoreDelta}</td><td>${x.rsDelta==null?'—':(x.rsDelta>=0?'+':'')+x.rsDelta.toFixed(1)}</td><td>${x.state==='prime'?'Prime':x.state==='watch'?'Watch':x.score>=70?'Early':mfStateBucket(x.state)}</td><td>${x.boGain==null?'—':(x.boGain>=0?'+':'')+x.boGain+'%'}</td><td>${boDateC(x.boDate)||'—'}</td></tr>`).join('');
-  $('moneyFlowHead').innerHTML=`<tr><th colspan="6">GROUP PARTICIPATION CHANGES</th></tr><tr><th>Industry</th><th>Prime Δ</th><th>Early Δ</th><th>Prime%</th><th>Early%</th><th>Avg RS Δ</th></tr><tr><th colspan="7">STOCKS WITH MATERIAL CHANGE</th></tr><tr><th>Stock</th><th>State</th><th>Early Δ</th><th>RS55 Δ</th><th>Current</th><th>BO Gain</th><th>BO Date</th></tr>`;
+  $('moneyFlowNote').textContent=`${m.toUpperCase()} changes from ${ch.prev.date} → ${ch.cur.date}. Groups default to rising Prime/Early participation; stocks default to improving Early/RS. Click any column header to sort.`;
+  const gs=ROT_SORT.changesGroups.key?rotSortRows(ch.groups.slice(0,30),ROT_SORT.changesGroups.key,ROT_SORT.changesGroups.dir):ch.groups.slice(0,30);
+  const ss=ROT_SORT.changesStocks.key?rotSortRows(ch.stocks.slice(0,40),ROT_SORT.changesStocks.key,ROT_SORT.changesStocks.dir):ch.stocks.slice(0,40);
+  const gRows=gs.map(g=>`<tr><td><b>${escHtml(g.name)}</b><br><span style="font-size:9px;color:var(--muted)">${escHtml(g.sector||g.macro||'')} · ${g.n} stocks</span></td><td>${g.primeDelta>0?'<span class="rot-change-up">+':''}${g.primeDelta}${g.primeDelta>0?'</span>':''}</td><td>${g.earlyDelta>0?'<span class="rot-change-up">+':''}${g.earlyDelta}${g.earlyDelta>0?'</span>':''}</td><td>${g.primePct==null?'—':pillFmt(Math.round(g.primePct))}</td><td>${g.earlyPct==null?'—':pillFmt(Math.round(g.earlyPct))}</td><td>${rotSignedPill(g.avgRs,1)}</td></tr>`).join('');
+  const sRows=ss.map(x=>`<tr class="rot-v4-row" onclick="openDrill('${escAttr(x.s)}')"><td><b>${escHtml(x.n)}</b><br><span style="font-size:9px;color:var(--muted)">${escHtml(x.s)}</span></td><td>${escHtml(x.prevBucket)} → <b>${escHtml(x.bucket)}</b></td><td>${rotSignedPill(x.scoreDelta,0)}</td><td>${rotSignedPill(x.rsDelta,1)}</td><td><span class="rot-pill ${x.state==='prime'?'rot-lead':x.state==='watch'?'rot-up':x.state==='accumulation'?'rot-cool':'rot-neu'}">${x.state==='prime'?'Prime':x.state==='watch'?'Watch':x.score>=70?'Early':mfStateBucket(x.state)}</span></td><td>${x.boGain==null?'—':rotSignedPill(x.boGain,0)}</td><td>${boDateC(x.boDate)||'—'}</td></tr>`).join('');
+  $('moneyFlowHead').innerHTML=`<tr class="rot-section-head"><th colspan="6">GROUP PARTICIPATION CHANGES</th></tr><tr>${rotSortHead('Industry','name','changesGroups','Industry/group name')}${rotSortHead('Prime Δ','primeDelta','changesGroups','Change in number of Prime stocks')}${rotSortHead('Early Δ','earlyDelta','changesGroups','Change in number of Early ≥70 stocks')}${rotSortHead('Prime%','primePct','changesGroups','Current Prime participation')}${rotSortHead('Early%','earlyPct','changesGroups','Current Early participation')}${rotSortHead('Avg RS Δ','avgRs','changesGroups','Current average RS direction')}</tr><tr class="rot-section-head"><th colspan="7">STOCKS WITH MATERIAL CHANGE</th></tr><tr>${rotSortHead('Stock','n','changesStocks','Stock/company name')}${rotSortHead('State','bucket','changesStocks','Previous → current state bucket')}${rotSortHead('Early Δ','scoreDelta','changesStocks','Early score change')}${rotSortHead('RS55 Δ','rsDelta','changesStocks','RS55 change')}${rotSortHead('Current','state','changesStocks','Current Early state')}${rotSortHead('BO Gain','boGain','changesStocks','Gain since latest breakout')}${rotSortHead('BO Date','boDate','changesStocks','Latest breakout date')}</tr>`;
   $('moneyFlowBody').innerHTML=(gRows||'<tr><td colspan="6">No group participation change.</td></tr>')+(sRows||'<tr><td colspan="7">No material stock changes.</td></tr>');
 }
 
-function openMoneyFlowRadar(){window.MF_TAB='new';const sel=$('moneyFlowMarket');if(sel)sel.value=CUR||'india';renderMoneyFlowRadar();$('moneyFlowRadarModal').classList.add('open');}
+function openMoneyFlowRadar(){window.MF_TAB='new';ROT_SORT.money={key:null,dir:-1};renderMoneyFlowRadar();$('moneyFlowRadarModal').classList.add('open');}
 function closeMoneyFlowRadar(){$('moneyFlowRadarModal').classList.remove('open');}
 
 function closeRotationV4(){$('rotationV4Modal').classList.remove('open')}
