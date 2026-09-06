@@ -1112,6 +1112,10 @@ body.hide-fresh   .c-fresh{display:none!important}
 .sector-table tr.sector-row{cursor:pointer;transition:background .1s}
 .sector-table tr.sector-row:hover{background:var(--blue-bg)}
 .sector-table tr.sector-row td:first-child{font-weight:600;color:var(--text)}
+.rotation-tabs{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}
+.rotation-tab{border:1px solid var(--border2);background:var(--surface2);color:var(--text2);padding:6px 10px;border-radius:999px;font-size:11px;font-weight:700;cursor:pointer}
+.rotation-tab.active{background:var(--accent-bg);color:var(--accent-dk);border-color:var(--accent)}
+.rotation-note{margin-top:8px;font-size:10.5px;color:var(--text3);line-height:1.4}
 .sb-pill{display:inline-flex;align-items:center;justify-content:center;min-width:36px;
   padding:2px 6px;border-radius:var(--rs);font-size:10.5px;font-weight:700}
 /* THE ZERO/BLANK PILL. Same box, no colour. Every cell in a numeric column has
@@ -1513,7 +1517,7 @@ body.dd-lock{overflow:hidden}
     <div class="seg-grp" id="segGrp"><!-- JS --></div>
     <div class="fsep"></div>
     <select class="fsel" id="sctFil" onchange="applyF()"><option value="">All Sectors</option></select>
-    <button class="ref-btn" onclick="openSectorBreadth()" data-tip="See RSI, momentum, and breakout stats broken down by sector — click any row to filter the main table to just that sector">📊 Sector View</button>
+    <button class="ref-btn" onclick="openSectorBreadth()" data-tip="Market rotation: sector and industry relative strength, RS acceleration, breadth, Early density and recent breakouts. Click a row to filter the main table.">📊 Rotation</button>
     <button class="ref-btn" id="sortDefBtn" onclick="resetSort()" data-tip="Return to the default Setup Score order: quality setups first (starred in the Setup column), strongest sectors first within each group, then each stock's own 55-day relative strength. Clicking any column header sorts by that column instead — clicking the same header a third time also brings you back here.">↕ Default (Setup Score)</button>
     <button class="ref-btn" onclick="openRSSettings()" data-tip="Set the benchmark ticker that RS / MRS Rank is measured against">⚙️ RS Settings</button>
     <button class="ref-btn" id="advBtn" onclick="openAdvFilters()" data-tip="Consolidation, 52W high proximity, breakout age, RSI, volume ratio, minimum average traded value, EMA-crossover and EMA-convergence screens — each one switched on independently">⚙ Advanced Filters</button>
@@ -1678,7 +1682,7 @@ body.dd-lock{overflow:hidden}
             <th class="c-align" data-s="align" data-tip="How much the daily and the weekly timeframe agree, out of 8 checks: 1. price above the daily 20 EMA · 2. price above the daily 50 EMA · 3. price above the weekly 10 EMA · 4. price above the weekly 20 EMA · 5. daily RSI 50 or above · 6. weekly RSI 50 or above · 7. positive 21-day relative strength · 8. positive 10-week relative strength. A swing trade wants both clocks pointing the same way, so 7 or 8 is the shortlist. Each check needs its own input, and a check that cannot be run is left OUT OF THE TOTAL rather than counted as a failure — that is why some rows read 6/7 instead of 6/8. Sorting puts the higher score first and, on a tie, the row that could be fully measured above the one that could not.">Align<span class="sort-ico"></span></th>
             <th class="c-fresh" data-s="fresh" data-tip="Stocks that have JUST turned, not ones merely in a good state. Four events: 1. close crossed ABOVE the 50-day EMA (last 3 bars) · 2. RS21 (21-day excess return) crossed above zero (last 5 bars) · 3. base breakout: a 20-bar-plus consolidation broke out (last 3 bars) · 4. RSP ↑90: RS Position, the stock/benchmark ratio's place in its own last 21 bars, crossed UP through 90 within the last 5 bars, having been at or under 80 in the 5 bars before that crossing. READ 4 AND 2 AS A PAIR: the ratio makes new range-highs before the excess return turns positive, so RSP is the EARLY WARNING and RS21 the CONFIRMATION, not two independent signals. The 80 floor matters: RSP pins near its ceiling in a trend. The cell names the most recent flag and its age. A dash means none fired, or an input was missing: under 51 bars has no 50-EMA cross, no benchmark means no RS21 or RS Position. Freshest sorts first.">Fresh<span class="sort-ico"></span></th>
             <th class="c-sector" data-s="sector" data-tip="Sector from the built-in universe — for India these are NSE's own macro industry groups, taken from the Nifty Total Market constituent list. It is not cosmetic: the default Setup Score order ranks sectors by the median RS55 of their members, so this label decides which group a stock is judged inside. Sortable, so the table can be grouped by sector without using the sector filter.">Sector<span class="sort-ico"></span></th>
-            <th class="c-subind" data-s="subind" data-tip="Which NSE sectoral INDEX carries this stock — a finer grouping READ UNDER Sector, never instead of it. It is INDEX MEMBERSHIP, not an official classification: &quot;Private Bank&quot; means the stock is one of the ten in the Nifty Private Bank index, not that anyone classified the business that way. Membership is size-ranked, so these labels SKEW TO THE LARGER companies and a smaller peer doing the identical business is simply left out. Where a stock sits in several indices the narrowest wins, in a fixed order written into the source: Private Bank, PSU Bank, Housing Finance, Insurance, NBFC, Bank, Pharma, Hospitals, Retail, Cement, Telecommunications. &quot;&lt;Sector&gt; (other)&quot; means NO index carried this stock — it does NOT mean the business is miscellaneous. India only; US and ETF rows are blank. Hidden by default — switch it on in Columns.">Sub-Industry<span class="sort-ico"></span></th>
+            <th class="c-subind" data-s="subind" data-tip="Research Industry group. Known subgroup memberships are mapped into broader industry families; stocks without a finer subgroup use their parent sector as the fallback. This is a research taxonomy, not a claim that every row is a complete current NSE four-tier classification.">Industry<span class="sort-ico"></span></th>
             <th data-s="price" data-tip="The most recent closing price in the stock's own currency. It comes from the end-of-day data feed, so it is yesterday's close, not a live quote.">Price<span class="sort-ico"></span></th>
             <th data-s="ch1d" data-tip="How much the price moved on its latest trading day, as a percentage of the previous close. Green is up, red is down.">1D%<span class="sort-ico"></span></th>
             <th class="c-ch1w" data-s="ch1w" data-tip="Price change over the last 5 trading bars — one trading week. Measured bar-to-bar, not calendar days, so holidays and weekends never dilute it. Needs at least 6 bars of history; below that it shows a dash rather than pretending the change was zero.">1W%<span class="sort-ico"></span></th>
@@ -1838,8 +1842,14 @@ body.dd-lock{overflow:hidden}
 <div class="overlay" id="sectorModal">
   <div class="modal sector-modal">
     <button class="modal-x" onclick="closeSectorBreadth()">✕</button>
-    <h3>📊 Sector Breadth</h3>
-    <p id="sectorModalSub">Click any row to filter the main table to that sector.</p>
+    <h3>📊 Market Rotation</h3>
+    <div class="rotation-tabs" role="tablist" aria-label="Rotation level">
+      <button class="rotation-tab active" id="rotTabSector" onclick="setRotationView('sector')">Sector</button>
+      <button class="rotation-tab" id="rotTabIndustry" onclick="setRotationView('industry')">Industry</button>
+      <button class="rotation-tab" id="rotTabMacro" onclick="setRotationView('macro')">Macro</button>
+    </div>
+    <p id="sectorModalSub">Click any row to filter the main table.</p>
+    <div class="rotation-note" id="rotationNote">The rotation layer uses the same Google Sheets price data already loaded. Industry is a compact research taxonomy built from the existing subgroup metadata with a sector fallback; it is not presented as a complete current NSE company-by-company classification.</div>
     <div class="sector-table-wrap">
       <table class="sector-table">
         <thead>
@@ -4183,6 +4193,43 @@ function subIndOf(def){
   return SUBIND[def.s] || (def.sector ? def.sector+' (other)' : '');
 }
 
+/* Compact research taxonomy.  It deliberately uses metadata already present
+   in the file, so the price backend remains Google Sheets with zero extra API
+   calls.  Known subgroup labels are promoted to an industry family; residual
+   names fall back to the existing parent sector rather than pretending we
+   know an exact company classification we do not have. */
+const MACRO_BY_SECTOR={
+  'Auto & Components':'Consumer Discretionary','Cap Goods':'Industrials','Chemicals':'Commodities',
+  'Constr Materials':'Materials','Construction':'Industrials','Consumer Durables':'Consumer Discretionary',
+  'Consumer Services':'Consumer Discretionary','Diversified':'Diversified','FMCG':'Fast Moving Consumer Goods',
+  'Financials':'Financial Services','Forest Materials':'Commodities','Healthcare':'Healthcare',
+  'IT':'Information Technology','Media':'Consumer Discretionary','Metals & Mining':'Commodities',
+  'Oil & Gas':'Energy','Other':'Diversified','Power':'Utilities','Realty':'Real Estate',
+  'Services':'Services','Telecom':'Communication Services','Textiles':'Consumer Discretionary','Utilities':'Utilities'
+};
+const INDUSTRY_BY_SUB={
+  'Private Bank':'Banking','PSU Bank':'Banking','Bank':'Banking','Housing Finance':'Finance',
+  'NBFC':'Finance','Insurance':'Insurance','Pharma':'Pharmaceuticals','Hospitals':'Healthcare Services',
+  'Retail':'Retail','Cement':'Construction Materials','Telecommunications':'Telecommunications'
+};
+const INDUSTRY_BY_SECTOR={
+  'Auto & Components':'Auto & Auto Components','Cap Goods':'Capital Goods','Chemicals':'Chemicals & Petrochemicals',
+  'Constr Materials':'Construction Materials','Construction':'Construction','Consumer Durables':'Consumer Durables',
+  'Consumer Services':'Consumer Services','Diversified':'Diversified','FMCG':'Food & Household Products',
+  'Financials':'Financial Services','Forest Materials':'Forest Materials','Healthcare':'Healthcare',
+  'IT':'IT Services & Software','Media':'Media & Entertainment','Metals & Mining':'Metals & Mining',
+  'Oil & Gas':'Oil & Gas','Other':'Other','Power':'Power & Utilities','Realty':'Real Estate',
+  'Services':'Services','Telecom':'Telecommunications','Textiles':'Textiles & Apparel','Utilities':'Utilities'
+};
+function macroOf(def){ return def ? (MACRO_BY_SECTOR[def.sector] || def.sector || 'Other') : ''; }
+function industryOf(def){
+  if(!def) return '';
+  const sub=subIndOf(def);
+  if(sub && INDUSTRY_BY_SUB[sub]) return INDUSTRY_BY_SUB[sub];
+  return INDUSTRY_BY_SECTOR[def.sector] || def.sector || 'Other';
+}
+function taxonomyOf(def){ return {macro:macroOf(def),sector:def?.sector||'',industry:industryOf(def),source:subIndOf(def)?'subgroup':'sector-fallback'}; }
+
 /* Same idea for US stocks, but in $ Billion (US convention, not Rs Crore):
    Large Cap  >= $10B
    Mid Cap    >= $2B
@@ -5459,7 +5506,7 @@ const SCREEN_SEEDS=[
    The consequence of (2) is deliberate and worth stating: once deleted, a
    seeded screen stays deleted. Clearing this browser's storage brings both
    back, which is the same rule every other persisted thing here follows. */
-const SCREEN_SEED_KEY='sm_seeded_screens_v3';
+const SCREEN_SEED_KEY='sm_seeded_screens_v4';
 function seededScreenNames(){
   try{
     const raw=lsRead(SCREEN_SEED_KEY);
@@ -10736,47 +10783,78 @@ function pillFmt(pct){
   return `<span class="sb-pill ${cls}">${pct}%</span>`;
 }
 
-function renderSectorBreadth(){
-  const agg=calcSectorBreadth(CUR);
-  const rows=agg.rows;
-  $('sectorModalSub').innerHTML =
-    `${rows.length} sectors · <b>${agg.total}</b> stocks — exactly the rows the table is showing right now, with every active filter applied.` +
-    // Spelled out rather than hidden: a partially backfilled sheet otherwise
-    // looks like the averages are wrong instead of merely incomplete.
-    (agg.noData
-      ? ` <b>${agg.noData}</b> of them have no computed data yet, so they are counted here but contribute nothing to the averages (those show — where nothing could be measured).`
-      : ` All of them have computed data.`) +
-    ` Click any row to filter the main table to that sector.`;
+let ROT_VIEW='sector';
+let ROT_SORT='medRs55', ROT_DIR='desc';
 
-  const fn=SECTOR_COLS.find(c=>c.key===SECTOR_SORT_COL);
-  rows.sort((a,b)=>{
-    const va=a[SECTOR_SORT_COL], vb=b[SECTOR_SORT_COL];
-    /* Rotation is a string column whose value is legitimately null on a sector
-       too small to label. Testing only `va` sent a null-vs-string pair down the
-       numeric branch, where `null??-Infinity` minus a string is NaN and the
-       comparator stops ordering anything. Suppressed labels sort as the empty
-       string: together, at one end, never interleaved with real ones. */
-    if(typeof va==='string'||typeof vb==='string'){
-      const sa=va??'', sb=vb??'';
-      return SECTOR_SORT_DIR==='asc' ? sa.localeCompare(sb) : sb.localeCompare(sa);
-    }
-    const na=va??-Infinity, nb=vb??-Infinity;
-    return SECTOR_SORT_DIR==='asc' ? na-nb : nb-na;
+function calcRotationRows(market,level){
+  const rows=getRows(market), groups={};
+  rows.forEach(def=>{
+    const t=taxonomyOf(def);
+    const key=level==='macro'?t.macro:(level==='industry'?t.industry:t.sector);
+    (groups[key]=groups[key]||[]).push(def);
   });
-
-  /* data-tip only where a column HAS one — the delegated [data-tip] listener
-     picks these up inside the modal for free, and the tip box is body-level
-     and fixed, so it is not clipped by the modal's own scroll wrapper. */
-  $('sectorTableHead').innerHTML=SECTOR_COLS.map(c=>
-    `<th onclick="sortSectorTable('${c.key}')"${c.tip?` data-tip="${escAttr(c.tip)}"`:''}>${c.label}${SECTOR_SORT_COL===c.key?(SECTOR_SORT_DIR==='asc'?' ↑':' ↓'):''}</th>`
-  ).join('');
-
-  $('sectorTableBody').innerHTML=rows.map(r=>
-    `<tr class="sector-row" onclick="filterToSector('${escAttr(r.sector)}')">
-      ${SECTOR_COLS.map(c=>`<td>${c.fmt(r[c.key])}</td>`).join('')}
-    </tr>`
-  ).join('');
+  const out=Object.keys(groups).map(name=>{
+    const defs=groups[name], ds=defs.map(x=>SD[x.s]).filter(Boolean), n=defs.length, m=ds.length;
+    const pct=a=>m?Math.round(a/m*100):null;
+    const vals=k=>ds.map(d=>d[k]).filter(v=>v!=null);
+    const rs=vals('rs55'), ch=ds.map(rsChangeOf).filter(v=>v!=null);
+    const medRs55=rs.length>=SECTOR_ROT_MIN_MEMBERS?median(rs):null;
+    const rsChg=ch.length?+median(ch).toFixed(2):null;
+    const early=ds.map(d=>d.early).filter(Boolean);
+    const prime=early.filter(e=>e.state==='prime').length;
+    const watch=early.filter(e=>e.state==='watch').length;
+    const bo=ds.filter(d=>d.boAge!=null&&isFinite(d.boAge)&&d.boAge<=10).length;
+    return {name,count:n,noData:n-m,medRs55,rsChg,rot:null,breadth20:pct(ds.filter(d=>d.e20&&d.price>d.e20).length),breadth50:pct(ds.filter(d=>d.e50&&d.price>d.e50).length),breadth200:pct(ds.filter(d=>d.e200&&d.price>d.e200).length),earlyPrime:prime,earlyWatch:watch,breakouts:bo,avgVol:vals('vRatio').length?+(vals('vRatio').reduce((a,b)=>a+b,0)/vals('vRatio').length).toFixed(2):null};
+  });
+  const levels=out.map(r=>r.medRs55).filter(v=>v!=null), split=levels.length?median(levels):null;
+  out.forEach(r=>r.rot=rotLabel(r.medRs55,r.rsChg,split));
+  return {rows:out,total:rows.length,noData:out.reduce((a,r)=>a+r.noData,0),split};
 }
+const ROT_COLS=[
+ {key:'name',label:'Group',fmt:v=>v},
+ {key:'count',label:'#',fmt:v=>v},
+ {key:'medRs55',label:'RS55',fmt:v=>v==null?'—':v.toFixed(1)},
+ {key:'rsChg',label:'ΔRS',fmt:v=>v==null?'—':(v>=0?'+':'')+v.toFixed(1)},
+ {key:'rot',label:'Rotation',fmt:v=>v?`<span class="sb-pill ${ROT_CLS[v]||'sb-zero'}">${v}</span>`:'—'},
+ {key:'breadth20',label:'>20E',fmt:pillFmt},
+ {key:'breadth50',label:'>50E',fmt:pillFmt},
+ {key:'breadth200',label:'>200E',fmt:pillFmt},
+ {key:'earlyPrime',label:'Early P',fmt:v=>v},
+ {key:'earlyWatch',label:'Early W',fmt:v=>v},
+ {key:'breakouts',label:'BO 10D',fmt:v=>v},
+ {key:'avgVol',label:'VolR',fmt:v=>v==null?'—':v.toFixed(2)+'x'}
+];
+function setRotationView(view){
+  ROT_VIEW=view;
+  ['sector','industry','macro'].forEach(v=>{const el=$('rotTab'+v[0].toUpperCase()+v.slice(1));if(el)el.classList.toggle('active',v===view);});
+  renderSectorBreadth();
+}
+function filterToRotation(name){
+  SEARCH=name||'';
+  const q=$('searchQ'); if(q) q.value=SEARCH;
+  VISIBLE=CFG.INIT; renderTable(CUR); updateStatus(); closeSectorBreadth();
+  document.querySelector('.tbl-sec')?.scrollIntoView({behavior:'smooth',block:'start'});
+}
+
+function renderSectorBreadth(){
+  if(ROT_VIEW!=='sector'){
+    const agg=calcRotationRows(CUR,ROT_VIEW), rows=agg.rows;
+    $('sectorModalSub').innerHTML=`${rows.length} ${ROT_VIEW} groups · <b>${agg.total}</b> stocks. Click a row to filter the main table by that group.`;
+    $('sectorTableHead').innerHTML=ROT_COLS.map(c=>`<th onclick="sortRotationTable('${c.key}')">${c.label}${ROT_SORT===c.key?(ROT_DIR==='asc'?' ↑':' ↓'):''}</th>`).join('');
+    rows.sort((a,b)=>{const va=a[ROT_SORT],vb=b[ROT_SORT];if(typeof va==='string'||typeof vb==='string'){const x=va||'',y=vb||'';return ROT_DIR==='asc'?x.localeCompare(y):y.localeCompare(x)}const x=va??-Infinity,y=vb??-Infinity;return ROT_DIR==='asc'?x-y:y-x});
+    $('sectorTableBody').innerHTML=rows.map(r=>`<tr class="sector-row" onclick="filterToRotation('${escAttr(r.name)}')">${ROT_COLS.map(c=>`<td>${c.fmt(r[c.key])}</td>`).join('')}</tr>`).join('');
+    $('rotationNote').textContent=ROT_VIEW==='industry'?'Industry is a research grouping derived from the existing subgroup metadata with a parent-sector fallback. It is designed to find clusters and rotation, not to masquerade as a full official NSE company taxonomy.':'Macro groups are broad research buckets derived from the existing India sector labels.';
+    return;
+  }
+  const agg=calcSectorBreadth(CUR), rows=agg.rows;
+  $('sectorModalSub').innerHTML=`${rows.length} sectors · <b>${agg.total}</b> stocks. Click any row to filter the main table to that sector.`+(agg.noData?` <b>${agg.noData}</b> have no computed data yet.`:'');
+  $('rotationNote').textContent='Sector view retains the existing detailed breadth/rotation calculations. Industry and Macro tabs add the new hierarchy without changing the stock calculations.';
+  const fn=SECTOR_COLS.find(c=>c.key===SECTOR_SORT_COL);
+  rows.sort((a,b)=>{const va=a[SECTOR_SORT_COL],vb=b[SECTOR_SORT_COL];if(typeof va==='string'||typeof vb==='string'){const x=va||'',y=vb||'';return SECTOR_SORT_DIR==='asc'?x.localeCompare(y):y.localeCompare(x)}const x=va??-Infinity,y=vb??-Infinity;return SECTOR_SORT_DIR==='asc'?x-y:y-x});
+  $('sectorTableHead').innerHTML=SECTOR_COLS.map(c=>`<th onclick="sortSectorTable('${c.key}')"${c.tip?` data-tip="${escAttr(c.tip)}"`:''}>${c.label}${SECTOR_SORT_COL===c.key?(SECTOR_SORT_DIR==='asc'?' ↑':' ↓'):''}</th>`).join('');
+  $('sectorTableBody').innerHTML=rows.map(r=>`<tr class="sector-row" onclick="filterToSector('${escAttr(r.sector)}')">${SECTOR_COLS.map(c=>`<td>${c.fmt(r[c.key])}</td>`).join('')}</tr>`).join('');
+}
+function sortRotationTable(col){ if(ROT_SORT===col) ROT_DIR=ROT_DIR==='asc'?'desc':'asc'; else {ROT_SORT=col;ROT_DIR=col==='name'?'asc':'desc';} renderSectorBreadth(); }
 
 function sortSectorTable(col){
   if(SECTOR_SORT_COL===col) SECTOR_SORT_DIR = SECTOR_SORT_DIR==='asc'?'desc':'asc';
@@ -12273,7 +12351,7 @@ function dataRow(def,d,i){
     <td class="c-align">${alignC(d)}</td>
     <td class="c-fresh">${freshC(d)}</td>
     <td class="c-sector">${def.sector||'—'}</td>
-    <td class="c-subind">${subIndOf(def)||'—'}</td>
+    <td class="c-subind">${industryOf(def)||'—'}</td>
     <td style="font-weight:600">${fmtP(d.price,d.currency)}</td>
     <td>${fmtCh(d.ch1d)}</td>
     <td class="c-ch1w">${fmtCh(d.ch1w)}</td>
@@ -13490,7 +13568,7 @@ const SORT_FN={
   momo:d=>({breakout:2, base:1})[d?.momoState],
   sector:(_,def)=>def.sector,
   // Same shape as sector: a per-ROW attribute, so it takes def, not d.
-  subind:(_,def)=>subIndOf(def),
+  subind:(_,def)=>industryOf(def),
   // Sort on the same fraction the badge is bucketed from, not on the raw score:
   // a 6/9 and a 6/7 are not the same setup.
   status:d=>d?.s2?.total?d.s2.score/d.s2.total:null,
@@ -14028,7 +14106,7 @@ function getRows(market, exclCol){
      see ASOF_ABSENT. Empty (and therefore free) when live. */
   if(ASOF_DATE&&ASOF_ABSENT.size) items=items.filter(def=>!ASOF_ABSENT.has(def.s));
   const q=SEARCH.toLowerCase().trim();
-  if(q) items=items.filter(def=>def.d.toLowerCase().includes(q)||def.sector.toLowerCase().includes(q));
+  if(q) items=items.filter(def=>def.d.toLowerCase().includes(q)||def.sector.toLowerCase().includes(q)||industryOf(def).toLowerCase().includes(q)||macroOf(def).toLowerCase().includes(q));
   if(F_SCT && exclCol!=='sector') items=items.filter(def=>def.sector===F_SCT);
 
   // Market cap filter (India + US — both now have per-stock mcap data; ETF skipped, no mcap concept)
@@ -15316,7 +15394,7 @@ const COL_FILTERS={
   /* Filterable WHILE HIDDEN, like every other defOff column: the value comes
      from def, not from the rendered cell, so hiding the column cannot change
      what the filter sees. */
-  subind:  {t:'text', label:'Sub-Industry', val:(d,def)=>subIndOf(def)},
+  subind:  {t:'text', label:'Industry', val:(d,def)=>industryOf(def)},
   notes:   {t:'text', label:'Notes',   val:(d,def)=>NOTES[def.s]||''},
 
   /* ── category ───────────────────────────────────────────────────── */
@@ -16106,7 +16184,7 @@ const TOGGLEABLE_COLS=[
      table is already 66 columns wide and its width is the thing the owner
      guards, so a new column arrives switched OFF and earns its place from
      the Columns modal. It still sorts, filters and exports while hidden. */
-  {cls:'subind', label:'Sub-Industry', defOff:true},
+  {cls:'subind', label:'Industry', defOff:true},
   {cls:'status', label:'Status'},
   {cls:'ch1w',   label:'1W%'},
   {cls:'ch1m',   label:'1M%'},
