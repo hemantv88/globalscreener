@@ -914,6 +914,16 @@ body.asof-on .tbl-wrap{outline:3px solid var(--orange)}
    entry rather than the entry itself — and its cell is the same shape as SMZ's:
    a badge plus two numbers of working on one line, which is the first thing
    that should go when the viewport gets tight. */
+/* EARLY PRE-BREAKOUT ENGINE — compact single-cell readout. */
+.c-early{min-width:76px;max-width:92px;text-align:center;white-space:nowrap}
+.early-cell{display:flex;flex-direction:column;align-items:center;gap:2px;line-height:1.05}
+.early-score{font-weight:800;font-variant-numeric:tabular-nums}
+.early-state{font-size:10px;font-weight:700;letter-spacing:.02em}
+.early-sub{font-size:9px;color:var(--text3);font-variant-numeric:tabular-nums}
+.early-prime .early-score,.early-breakout .early-score{color:var(--green)}
+.early-watch .early-score{color:var(--amber)}
+.early-accum .early-score{color:var(--text2)}
+.early-dev .early-score{color:var(--text3)}
 .c-momo,
 /* %50E and %200E are GROUP A, not B: they answer "which regime am I in", which
    is the WORKING behind the decision rather than the decision itself. The one
@@ -924,7 +934,7 @@ body.asof-on .tbl-wrap{outline:3px solid var(--orange)}
    what today did, the other what the last two weeks did) and dropping one of
    the pair on a narrow screen leaves half an answer. */
 .c-volspike,.c-thrust,
-.c-vr,.c-align,.c-ema,.c-bocnt,.c-squeeze,.c-mrsrank,.c-setup,
+.c-vr,.c-align,.c-ema,.c-bocnt,.c-squeeze,.c-mrsrank,.c-setup,.c-early,
 .c-sector,.c-subind,.c-status,.c-xcross,.c-pattern,.c-consol,.c-rs21,.c-rs55,
 .c-ch1w,.c-ch1m,.c-ch3m,.c-histg,.c-dbox,.c-avgval,.c-fresh,
 /* %10E is GROUP B for the same reason %20E is, and it is listed FIRST because
@@ -1664,6 +1674,7 @@ body.dd-lock{overflow:hidden}
             <th class="pin pin3" data-s="cap" data-tip="Size bucket taken from market capitalisation: Large, Mid, Small or Micro. Larger companies generally move more slowly and are easier to buy or sell in quantity. Where no market cap is on file the stock is shown as Small rather than blank, so treat SC on a name with no ₹ figure underneath the ticker as unknown, not measured.">Cap<span class="sort-ico"></span></th>
             <th class="pin pin4" data-s="ticker" data-tip="The exchange symbol, with the sector and market capitalisation printed underneath it. The star to its left adds the stock to your watchlist, which is saved in this browser and shared across all three markets. Sorting on this column puts the list in alphabetical order.">Ticker<span class="sort-ico"></span></th>
             <th class="c-setup" data-s="setup" data-tip="A star marks a quality setup, all four true at once: within 30% of its 52-week high, price above every moving average that could be computed, positive relative strength against the benchmark, and a full Stage 2 uptrend score. They sort to the top by default. THE NUMBER BESIDE THE STAR IS THE AGE: how many consecutive sessions, ending with the latest bar, all four have been true. Read it as an anti-chasing check — a setup lit today still has its stop close underneath it, while one lit for nine sessions has given up the easy move and widened the risk. Each past session is judged by this same rule, never on anything that came after it. THE MAXIMUM IS 30d, a limit of the data not the stock: only about 30 sessions of relative-strength history are carried, so a streak filling that window shows as 30d+. No age at all means it could not be measured (no benchmark), not that the setup is new.">Setup<span class="sort-ico"></span></th>
+            <th class="c-early" data-s="early" data-tip="Early Breakout Engine — a 0–100 diagnostic for finding the transition BEFORE a conventional breakout. Five independent legs: trend structure, relative-strength lead, compression, volume transition and distance to a structural trigger. RSP 21 can lead RS21; recent volume expansion is checked separately from the old Vol Dry measure, and a recent thrust is excluded from its own post-thrust baseline. Prime/Watch/Accumulation are watch states, not buy signals. Breakout means the existing volume-confirmed breakout machinery has already fired recently. The score is deliberately NOT blended into Setup, Stage 2 or MRS Rank. Use the Rewind/As-of date to test whether an Early signal existed before the subsequent move — no future bars are used. Hover for component details.">Early<span class="sort-ico"></span></th>
             <th class="c-align" data-s="align" data-tip="How much the daily and the weekly timeframe agree, out of 8 checks: 1. price above the daily 20 EMA · 2. price above the daily 50 EMA · 3. price above the weekly 10 EMA · 4. price above the weekly 20 EMA · 5. daily RSI 50 or above · 6. weekly RSI 50 or above · 7. positive 21-day relative strength · 8. positive 10-week relative strength. A swing trade wants both clocks pointing the same way, so 7 or 8 is the shortlist. Each check needs its own input, and a check that cannot be run is left OUT OF THE TOTAL rather than counted as a failure — that is why some rows read 6/7 instead of 6/8. Sorting puts the higher score first and, on a tie, the row that could be fully measured above the one that could not.">Align<span class="sort-ico"></span></th>
             <th class="c-fresh" data-s="fresh" data-tip="Stocks that have JUST turned, not ones merely in a good state. Four events: 1. close crossed ABOVE the 50-day EMA (last 3 bars) · 2. RS21 (21-day excess return) crossed above zero (last 5 bars) · 3. base breakout: a 20-bar-plus consolidation broke out (last 3 bars) · 4. RSP ↑90: RS Position, the stock/benchmark ratio's place in its own last 21 bars, crossed UP through 90 within the last 5 bars, having been at or under 80 in the 5 bars before that crossing. READ 4 AND 2 AS A PAIR: the ratio makes new range-highs before the excess return turns positive, so RSP is the EARLY WARNING and RS21 the CONFIRMATION, not two independent signals. The 80 floor matters: RSP pins near its ceiling in a trend. The cell names the most recent flag and its age. A dash means none fired, or an input was missing: under 51 bars has no 50-EMA cross, no benchmark means no RS21 or RS Position. Freshest sorts first.">Fresh<span class="sort-ico"></span></th>
             <th class="c-sector" data-s="sector" data-tip="Sector from the built-in universe — for India these are NSE's own macro industry groups, taken from the Nifty Total Market constituent list. It is not cosmetic: the default Setup Score order ranks sectors by the median RS55 of their members, so this label decides which group a stock is judged inside. Sortable, so the table can be grouped by sector without using the sector filter.">Sector<span class="sort-ico"></span></th>
@@ -5132,6 +5143,17 @@ function seedScreenObj(colf, adv){
    screen; 0 is the honest bound and the difference is not a stock anyone would
    want excluded on a technicality. */
 const SCREEN_SEEDS=[
+  {
+    name:'0 · Early Pre-Breakout',
+    desc:'Research watchlist for Stage 1 → Stage 2 transition before the conventional breakout: Early Score 70+, still below an existing structural trigger, with the stock improving on trend, relative strength, compression and volume participation. Use Rewind to test the signal before later price movement.',
+    colf:floor=>({
+      early:   {min:70,max:null,blanks:false},
+      pct20e:  {min:0,max:null,blanks:false},
+      pct50e:  {min:0,max:null,blanks:false},
+      pctpiv:  {min:null,max:3,blanks:false},
+      avgval:  {min:floor,max:null,blanks:false},
+    }),
+  },
   /* ORDER IS THE RECOMMENDATION, and buildScreenDropdown() renders seeded
      screens in THIS order before any of the user's own. Sorting the whole list
      alphabetically put "52-Week High" first purely because of a digit, which is
@@ -5437,7 +5459,7 @@ const SCREEN_SEEDS=[
    The consequence of (2) is deliberate and worth stating: once deleted, a
    seeded screen stays deleted. Clearing this browser's storage brings both
    back, which is the same rule every other persisted thing here follows. */
-const SCREEN_SEED_KEY='sm_seeded_screens_v1';
+const SCREEN_SEED_KEY='sm_seeded_screens_v3';
 function seededScreenNames(){
   try{
     const raw=lsRead(SCREEN_SEED_KEY);
@@ -8512,6 +8534,50 @@ function smartMoneyZones(C,H,L,cfg){
   return out;
 }
 
+/* ══ EARLY BREAKOUT VOLUME TRANSITION ═══════════════════════════════════════
+   Two separate volume questions, both no-lookahead:
+   1) recent5/prior15 asks whether participation is STARTING TO EXPAND while
+      the stock is still below its trigger;
+   2) post-thrust/pre-thrust asks whether the crowd cooled after a recent
+      explosive move, using the 20 bars BEFORE the thrust as the baseline and
+      EXCLUDING the thrust bar itself. This is deliberately separate from the
+      legacy Vol Dry ratio, whose 20-day numerator can be contaminated by the
+      very thrust we are trying to recognise.
+
+   These fields are diagnostic inputs to Early only. Existing Vol Dry, Setup,
+   Stage 2 and all legacy screens keep their original definitions. */
+function earlyVolumeTransition(C,V,thrust){
+  const n=Math.min(Array.isArray(C)?C.length:0,Array.isArray(V)?V.length:0);
+  const none={recent5Prior15:null,upDown10:null,postThrustPre:null,postThrustFade:null};
+  if(n<21) return none;
+  const fin=v=>typeof v==='number'&&isFinite(v)&&v>=0;
+  // Exclude today's bar from both windows so the signal cannot grade itself.
+  let r5=0,r5n=0,p15=0,p15n=0;
+  for(let i=Math.max(0,n-6);i<n-1;i++){const v=V[i];if(fin(v)){r5+=v;r5n++;}}
+  for(let i=Math.max(0,n-21);i<n-6;i++){const v=V[i];if(fin(v)){p15+=v;p15n++;}}
+  if(r5n===5&&p15n===15&&p15>0) none.recent5Prior15=+(r5/5/(p15/15)).toFixed(2);
+
+  let up=0,down=0;
+  for(let i=Math.max(1,n-11);i<n-1;i++){
+    const v=V[i], c=C[i], p=C[i-1];
+    if(!fin(v)||!isFinite(c)||!isFinite(p)) continue;
+    if(c>p) up+=v; else if(c<p) down+=v;
+  }
+  if(up>0||down>0) none.upDown10=+(down>0?up/down:9.99).toFixed(2);
+
+  const age=thrust&&thrust.age!=null?thrust.age:null;
+  const idx=age==null?null:n-1-age;
+  if(idx!=null&&idx>=20&&idx<n-1){
+    let pre=0,prec=0,post=0,postc=0;
+    for(let i=idx-20;i<idx;i++){const v=V[i];if(fin(v)){pre+=v;prec++;}}
+    // Use the first 10 post-thrust bars or the available tail, never the thrust bar.
+    for(let i=idx+1;i<Math.min(n,idx+11);i++){const v=V[i];if(fin(v)){post+=v;postc++;}}
+    if(prec===20&&postc>=3&&pre>0) none.postThrustPre=+(post/postc/(pre/prec)).toFixed(2);
+  }
+  if(thrust&&thrust.fade!=null) none.postThrustFade=thrust.fade;
+  return none;
+}
+
 function computeTech(C,H,L,V,dates,sym,O,feedStart){
   // A 2-row stock (e.g. IPO'd a few days ago)
   // is real data, not a failure. Every derived indicator below (RSI, EMA,
@@ -8636,6 +8702,7 @@ function computeTech(C,H,L,V,dates,sym,O,feedStart){
      of the answer. It reads CFG.THRUST.win rather than taking a window from a
      caller, exactly as volSpike() falls back to VOL_SPIKE_WIN. */
   const thrust=thrustDay(C,V);
+  const earlyVol=earlyVolumeTransition(C,V,thrust);
   const avgValue=avgTradedValue(C,V,AVG_VAL_BARS);
 
   /* 52-week high/low.
@@ -8925,6 +8992,8 @@ function computeTech(C,H,L,V,dates,sym,O,feedStart){
        separately nullable — the gain can be known while the volume multiple is
        not — so it needs its own `!= null` test, never a bare comparison. */
     thrustPct:thrust.pct, thrustAge:thrust.age, thrustVol:thrust.vol, thrustFade:thrust.fade,
+    earlyVolTrend:earlyVol.recent5Prior15,earlyUpDown10:earlyVol.upDown10,
+    earlyPostThrustPre:earlyVol.postThrustPre,earlyPostThrustFade:earlyVol.postThrustFade,
     rsi14,wRsi,e10,e20,e50,e100,e150,e200,emaScr,
     /* Three-valued, daily only — see the note where it is computed. It rides in
        the cached row like every other computeTech() field, which is why adding
@@ -9314,6 +9383,14 @@ function rankRS(market){
   const bi   = b ? benchIndex(b.dates,b.C) : null;
   const bwk  = b ? weeklyResample(b.C,b.H,b.L,b.V,b.dates) : null;
   const bwi  = bwk ? benchIndex(bwk.dates,bwk.closes) : null;
+  // Market regime is context only; it never hard-gates Early. It is derived from
+  // the benchmark series available at the SAME as-of date.
+  let marketRegime='unknown';
+  if(b&&Array.isArray(b.C)&&b.C.length>=200){
+    const n=b.C.length, e20=emaSeries(b.C,20).at(-1), e50=emaSeries(b.C,50).at(-1), e200=emaSeries(b.C,200).at(-1);
+    const c=b.C[n-1];
+    if([c,e20,e50,e200].every(earlyFinite)) marketRegime=(c>e20&&c>e50&&c>e200)?'bull':(c<e20&&c<e50&&c<e200)?'bear':'mixed';
+  }
 
   // No benchmark => every RS field stays null. There is deliberately no `else`
   // branch here: the absence of a fallback IS the fix.
@@ -9353,6 +9430,8 @@ function rankRS(market){
        else: a min-max position still may not reach mrsRank, the Stage 2 patch
        or any other composite. */
     d.rspHist21 = rspHistory(d.rsCloses,d.rsDates,bi,FRESH_RSP_LEN,FRESH_RSP_HIST);
+    d.marketRegime=marketRegime;
+    d.early=calcEarlyBreakout(d,market);
     d.rs=null; d.mrsRank=null;
   });
 
@@ -9377,6 +9456,117 @@ function rankRS(market){
     }
   });
 }
+/* ══ EARLY BREAKOUT ENGINE v3 ═════════════════════════════════════════════
+   Purpose: find the structural transition BEFORE the conventional breakout.
+
+   The engine is intentionally additive. It does NOT rewrite Setup, Stage 2,
+   MRS Rank, Fresh, Darvas, VCP, Momentum Base or the existing breakout test.
+   Those remain the established readings. Early is a separate research signal
+   that can be back-tested with the page's historical/as-of rewind.
+
+   100 points = five 20-point legs:
+     Trend      — 20/50/200 EMA position and 200 EMA slope
+     RS Lead    — RSP/RS acceleration, with RSP allowed to lead RS21
+     Compression — coil/tightness/consolidation/squeeze
+     Volume     — dry -> expansion + directional volume + post-thrust context
+     Structure  — distance to existing Darvas/VCP/IPO trigger levels
+
+   No future bars are read. In as-of mode computeTech() is fed the truncated
+   series, then rankRS() rebuilds the benchmark-relative fields on that date.
+   That makes this suitable for forward-return testing with histGainFor(). */
+const EARLY_NEAR_TRIGGER=5;
+const EARLY_STATE_ORDER={breakout:4,prime:3,watch:2,accumulation:1,developing:0};
+function earlyFinite(v){return typeof v==='number'&&isFinite(v);}
+function earlyMinTrigger(d){
+  if(!d) return null;
+  const p=earlyFinite(d.price)?d.price:null;
+  if(p==null||p<=0) return null;
+  const vals=[];
+  if(earlyFinite(d.dBoxTop)&&d.dBoxTop>0) vals.push(100*(d.dBoxTop-p)/p);
+  if(earlyFinite(d.vcpLid)&&d.vcpLid>0) vals.push(100*(d.vcpLid-p)/p);
+  if(earlyFinite(d.ipoLid)&&d.ipoLid>0) vals.push(100*(d.ipoLid-p)/p);
+  if(!vals.length) return null;
+  return +Math.max(0,Math.min(...vals)).toFixed(2);
+}
+function earlyRSPLead(d){
+  if(!d) return {pts:0,lead:false,cross:false};
+  let pts=0;
+  if(earlyFinite(d.rsp21)){if(d.rsp21>=90) pts+=8; else if(d.rsp21>=80) pts+=5;}
+  if(earlyFinite(d.rsp55)&&d.rsp55>=85) pts+=3;
+  if(earlyFinite(d.rsSlope)&&d.rsSlope>0) pts+=5;
+  if(earlyFinite(d.rs21)&&d.rs21>0) pts+=4;
+  let cross=false;
+  const h=d.rspHist21;
+  if(Array.isArray(h)&&h.length>=2){
+    for(let i=h.length-1;i>0;i--){
+      const a=h[i-1],b=h[i];
+      if(earlyFinite(a)&&earlyFinite(b)&&a<=80&&b>90){cross=true;break;}
+    }
+  }
+  if(cross) pts=Math.min(20,pts+3);
+  return {pts:Math.min(20,pts),lead:(earlyFinite(d.rsp21)&&d.rsp21>=90),cross};
+}
+function earlyCompression(d){
+  if(!d) return 0;
+  let p=0;
+  if(earlyFinite(d.coil)){if(d.coil<=0.70)p+=8;else if(d.coil<=0.85)p+=6;else if(d.coil<=1)p+=3;}
+  if(earlyFinite(d.tight)){if(d.tight<=50)p+=5;else if(d.tight<=60)p+=4;else if(d.tight<=75)p+=2;}
+  if(earlyFinite(d.consolDays)){if(d.consolDays>=10)p+=4;else if(d.consolDays>=5)p+=3;else if(d.consolDays>=3)p+=1;}
+  if(earlyFinite(d.sq)){if(d.sq>=75)p+=3;else if(d.sq>=65)p+=2;}
+  return Math.min(20,p);
+}
+function earlyVolumeScore(d){
+  if(!d) return {pts:0,phase:'unknown'};
+  let p=0;
+  if(earlyFinite(d.volDryRatio)){if(d.volDryRatio<0.75)p+=5;else if(d.volDryRatio<1)p+=3;}
+  if(earlyFinite(d.earlyPostThrustPre)){if(d.earlyPostThrustPre<=0.75)p+=4;else if(d.earlyPostThrustPre<=1)p+=2;}
+  if(earlyFinite(d.earlyVolTrend)){if(d.earlyVolTrend>=1.50)p+=6;else if(d.earlyVolTrend>=1.15)p+=4;else if(d.earlyVolTrend>=1.05)p+=2;}
+  if(earlyFinite(d.earlyUpDown10)){if(d.earlyUpDown10>=1.50)p+=5;else if(d.earlyUpDown10>=1.20)p+=3;}
+  const phase=earlyFinite(d.earlyVolTrend)&&d.earlyVolTrend>=1.15?'expanding':
+              earlyFinite(d.volDryRatio)&&d.volDryRatio<1?'drying':'neutral';
+  return {pts:Math.min(20,p),phase};
+}
+function earlyTrendScore(d){
+  if(!d) return 0;
+  let p=0;
+  if(earlyFinite(d.pct20e)&&d.pct20e>0)p+=5;
+  if(earlyFinite(d.pct50e)&&d.pct50e>0)p+=5;
+  if(earlyFinite(d.pct200e)&&d.pct200e>-10)p+=5;
+  if(earlyFinite(d.slope200)&&d.slope200>0)p+=5;
+  return p;
+}
+function earlyStructureScore(d){
+  if(!d) return {pts:0,dist:null};
+  const dist=earlyMinTrigger(d); let p=0;
+  if(dist!=null){if(dist<=3)p+=10;else if(dist<=5)p+=8;else if(dist<=10)p+=5;else if(dist<=15)p+=3;}
+  if(d.dBoxState==='near'||d.dBoxState==='inside')p+=4;
+  if(earlyFinite(d.vcpToLid)&&d.vcpToLid>=0&&d.vcpToLid<=3)p+=3;
+  if(earlyFinite(d.ipoToLid)&&d.ipoToLid>=0&&d.ipoToLid<=3)p+=3;
+  return {pts:Math.min(20,p),dist};
+}
+function calcEarlyBreakout(d,market){
+  if(!d) return null;
+  const rs=earlyRSPLead(d), vol=earlyVolumeScore(d), tr=earlyTrendScore(d), co=earlyCompression(d), st=earlyStructureScore(d);
+  const score=Math.max(0,Math.min(100,tr+rs.pts+co+vol.pts+st.pts));
+  const bo=(d.boAge!=null&&isFinite(d.boAge)&&d.boAge<=5);
+  let state='developing';
+  if(bo) state='breakout';
+  else if(score>=80 && st.dist!=null && st.dist<=5 && vol.phase==='expanding') state='prime';
+  else if(score>=70 && st.dist!=null && st.dist<=10) state='watch';
+  else if(score>=60) state='accumulation';
+  const regime=d.marketRegime||'unknown';
+  return {score,state,trend:tr,rs:rs.pts,rsLead:rs.lead,rsCross:rs.cross,compression:co,volume:vol.pts,volumePhase:vol.phase,structure:st.pts,triggerDist:st.dist,marketRegime:regime};
+}
+function earlyC(d){
+  const e=d&&d.early;
+  if(!e) return '<span class="vm">—</span>';
+  const label={breakout:'BO',prime:'Prime',watch:'Watch',accumulation:'Accum',developing:'Dev'}[e.state]||'Dev';
+  const cls='early-'+e.state;
+  const dist=e.triggerDist==null?'—':(e.triggerDist<=0?'0':e.triggerDist.toFixed(1)+'%');
+  const tip=`Early ${e.score}/100 · ${label}. Trend ${e.trend}/20 · RS ${e.rs}/20${e.rsLead?' · RSP lead':''}${e.rsCross?' · RSP cross':''} · Compression ${e.compression}/20 · Volume ${e.volume}/20 (${e.volumePhase}) · Structure ${e.structure}/20 · trigger ${dist} · market ${e.marketRegime}. Research signal only; not part of Setup/Stage2/MRS.`;
+  return `<div class="early-cell ${cls}" data-tip="${escAttr(tip)}"><span class="early-score">${e.score}</span><span class="early-state">${label}</span><span class="early-sub">${dist}</span></div>`;
+}
+
 
 /* ══════════════════════════════════
    HELPERS
@@ -12024,7 +12214,7 @@ function histGC(v){ return fmtCh(v); }
    reason: without them a table loading with columns switched off renders
    skeleton rows WIDER than the data rows underneath, because only the data
    rows' cells get hidden. Length must equal (th count − 4). */
-const SKEL_COLS=['c-setup','c-align','c-fresh','c-sector','c-subind','','','c-ch1w','c-ch1m','c-ch3m','c-hist','c-histg','c-status','','c-wrsi','c-vr','c-volspike','c-thrust','c-wvol','c-avgval','','c-wpiv','c-dbox','c-pctpiv','c-wbox','c-smz','c-momo','',
+const SKEL_COLS=['c-setup','c-early','c-align','c-fresh','c-sector','c-subind','','','c-ch1w','c-ch1m','c-ch3m','c-hist','c-histg','c-status','','c-wrsi','c-vr','c-volspike','c-thrust','c-wvol','c-avgval','','c-wpiv','c-dbox','c-pctpiv','c-wbox','c-smz','c-momo','',
   'c-ema','c-pct10e','c-pct20e','c-pct50e','c-pct200e','c-wema','c-xcross','c-wcross','c-slope200','c-pattern','c-wpattern','c-consol',
   'c-monthly','','c-bocnt','c-followup','c-voldry','c-retrace','c-squeeze','c-adr','c-tight','c-daysup','c-coil','c-vcp','c-vcplid','c-vcptolid','c-ipo','c-ipolid','c-ipotolid','','c-mrsrank','c-rs21',
   'c-rs55','c-rs10w','c-rsslope','c-rsp55','c-rsp21','c-rshist','','c-rstrend','c-notes'];
@@ -12079,6 +12269,7 @@ function dataRow(def,d,i){
     <td class="pin pin3">${capB(cap)}</td>
     <td class="pin pin4">${watchC(def.s)}<span class="ticker dd-open" role="button" tabindex="0" data-tip="${escAttr(DD_TIP)}" onclick="openDrill('${safeSym}')" onkeydown="ddKey(event,'${safeSym}')">${flag} ${def.d}</span>${staleBadge(def.s,CUR)}<br><span class="sec">${def.sector}</span>${mcapLine}</td>
     <td class="c-setup">${setupC(d)}</td>
+    <td class="c-early">${earlyC(d)}</td>
     <td class="c-align">${alignC(d)}</td>
     <td class="c-fresh">${freshC(d)}</td>
     <td class="c-sector">${def.sector||'—'}</td>
@@ -13206,7 +13397,7 @@ function sortBySetupScore(items,market){
 // pivZone()'s return values.
 const PIV_RANK={'R2+':7,'R1→R2':6,'PP→R1':5,'PP':4,'S1→PP':3,'S2→S1':2,'<S2':1};
 const SORT_FN={
-  price:d=>d?.price,ch1d:d=>d?.ch1d,rsi:d=>d?.rsi14,wrsi:d=>d?.wRsi,
+  price:d=>d?.price,early:d=>d?.early?.score,ch1d:d=>d?.ch1d,rsi:d=>d?.rsi14,wrsi:d=>d?.wRsi,
   ch1w:d=>d?.ch1w,ch1m:d=>d?.ch1m,ch3m:d=>d?.ch3m,
   /* Historical price / gain. Keyed off def.s rather than off `d`, because the
      close series lives in the sheet map, not in the computed row. Both return
@@ -14657,6 +14848,13 @@ const EXPORT_COLS=[
   ['Sub-Industry',(def,d)=>subIndOf(def)],
   ['Cap',         (def,d)=>d?.g||def.g||''],
   ['Setup',       (def,d)=>d?(isQualitySetup(d)?'Y':'N'):''],
+  ['Early Score', (def,d)=>d?.early?.score??''],
+  ['Early State', (def,d)=>d?.early?.state??''],
+  ['Early Trigger Dist%', (def,d)=>d?.early?.triggerDist??''],
+  ['Early Market Regime', (def,d)=>d?.early?.marketRegime??''],
+  ['Early Vol Trend', (def,d)=>d?.earlyVolTrend??''],
+  ['Early Up/Down Vol', (def,d)=>d?.earlyUpDown10??''],
+  ['Early PostThrust/Pre', (def,d)=>d?.earlyPostThrustPre??''],
   /* Exported as "7/8", the same string the cell shows, so the denominator
      travels with the score. A bare 7 in a spreadsheet is unreadable — 7 out of
      what? — and splitting it into two columns invites someone to average the
@@ -15201,6 +15399,7 @@ const COL_FILTERS={
              return {up:'Rising',down:'Falling',flat:'Flat'}[d.slopeDir||'flat']||'Flat'; }},
 
   /* ── numeric ────────────────────────────────────────────────────── */
+  early:   {t:'num',  label:'Early Score', val:d=>d&&d.early&&d.early.score},
   price:   {t:'num',  label:'Price',   val:d=>d&&d.price},
   ch1d:    {t:'num',  label:'1D%',     val:d=>d&&d.ch1d},
   ch1w:    {t:'num',  label:'1W%',     val:d=>d&&d.ch1w},
@@ -15899,6 +16098,7 @@ document.addEventListener('DOMContentLoaded',()=>{
 ══════════════════════════════════ */
 const TOGGLEABLE_COLS=[
   {cls:'setup',  label:'Setup'},
+  {cls:'early',  label:'Early'},
   {cls:'align',  label:'Align D+W'},
   {cls:'fresh',  label:'Fresh'},
   {cls:'sector', label:'Sector'},
