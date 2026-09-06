@@ -924,6 +924,19 @@ body.asof-on .tbl-wrap{outline:3px solid var(--orange)}
 .early-watch .early-score{color:var(--amber)}
 .early-accum .early-score{color:var(--text2)}
 .early-dev .early-score{color:var(--text3)}
+/* EARLY X-RAY */
+.ex-wrap{margin-top:12px;border:1px solid var(--border);border-radius:10px;background:var(--surface);padding:12px}
+.ex-head{display:flex;justify-content:space-between;gap:10px;align-items:flex-start;margin-bottom:10px}
+.ex-title{font-weight:800;font-size:13px}.ex-score{font-size:22px;font-weight:900;line-height:1}
+.ex-muted{font-size:10px;color:var(--text3)}
+.ex-grid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:7px}
+.ex-leg{border:1px solid var(--border);border-radius:8px;padding:8px;min-width:0}
+.ex-leg b{display:block;font-size:10px;margin-bottom:5px}.ex-bar{height:5px;background:var(--border);border-radius:99px;overflow:hidden;margin:5px 0}
+.ex-fill{height:100%;background:var(--accent);border-radius:99px}.ex-val{font-size:12px;font-weight:800}.ex-diag{font-size:9px;color:var(--text3);line-height:1.25}
+.ex-meta{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:7px;margin-top:9px}.ex-k{border-top:1px solid var(--border);padding-top:6px}.ex-k span{display:block;font-size:9px;color:var(--text3)}.ex-k b{font-size:11px}
+.ex-traj{margin-top:10px;padding-top:9px;border-top:1px solid var(--border)}.ex-traj-line{font-size:11px;line-height:1.6;word-break:break-word}.ex-arrow{color:var(--text3);padding:0 3px}.ex-now{font-weight:900}
+@media(max-width:700px){.ex-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.ex-meta{grid-template-columns:repeat(2,minmax(0,1fr))}}
+
 .c-momo,
 /* %50E and %200E are GROUP A, not B: they answer "which regime am I in", which
    is the WORKING behind the decision rather than the decision itself. The one
@@ -1112,10 +1125,6 @@ body.hide-fresh   .c-fresh{display:none!important}
 .sector-table tr.sector-row{cursor:pointer;transition:background .1s}
 .sector-table tr.sector-row:hover{background:var(--blue-bg)}
 .sector-table tr.sector-row td:first-child{font-weight:600;color:var(--text)}
-.rotation-tabs{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}
-.rotation-tab{border:1px solid var(--border2);background:var(--surface2);color:var(--text2);padding:6px 10px;border-radius:999px;font-size:11px;font-weight:700;cursor:pointer}
-.rotation-tab.active{background:var(--accent-bg);color:var(--accent-dk);border-color:var(--accent)}
-.rotation-note{margin-top:8px;font-size:10.5px;color:var(--text3);line-height:1.4}
 .sb-pill{display:inline-flex;align-items:center;justify-content:center;min-width:36px;
   padding:2px 6px;border-radius:var(--rs);font-size:10.5px;font-weight:700}
 /* THE ZERO/BLANK PILL. Same box, no colour. Every cell in a numeric column has
@@ -1418,7 +1427,29 @@ body.dd-lock{overflow:hidden}
   .c-ipo,.c-ipolid,.c-ipotolid{display:none!important}
   .search-bar input{width:80px}
 }
-</style>
+
+/* v4 rotation hierarchy */
+.rotation-v4{width:1050px;max-width:96vw;max-height:86vh;display:flex;flex-direction:column}
+.rot-v4-toolbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:8px 0 4px}
+.rot-v4-tabs{display:flex;gap:5px;overflow:auto;padding-bottom:2px}
+.rot-v4-tab{border:1px solid var(--border);background:var(--surface2);color:var(--text);border-radius:999px;padding:6px 10px;font-size:11px;cursor:pointer;white-space:nowrap}
+.rot-v4-tab.active{background:var(--accent-bg);border-color:var(--accent);font-weight:700}
+.rot-v4-note{font-size:10px;color:var(--muted);line-height:1.35;margin:0 0 8px}
+.rot-v4-wrap{overflow:auto;border:1px solid var(--border);border-radius:var(--r);flex:1;min-height:0}
+.rot-v4-table{width:100%;border-collapse:separate;border-spacing:0;font-size:11px;white-space:nowrap}
+.rot-v4-table th{position:sticky;top:0;z-index:2;background:var(--surface2);padding:7px 8px;text-align:right;font-size:9px;letter-spacing:.25px;border-bottom:1px solid var(--border)}
+.rot-v4-table td{padding:6px 8px;border-bottom:1px solid var(--border);text-align:right}
+.rot-v4-table th:first-child,.rot-v4-table td:first-child{text-align:left;position:sticky;left:0;background:var(--surface);z-index:1}
+.rot-v4-table th:first-child{z-index:3;background:var(--surface2)}
+.rot-v4-row{cursor:pointer}
+.rot-v4-row:hover td{background:var(--blue-bg)}
+.rot-v4-row:hover td:first-child{background:var(--blue-bg)}
+.rot-pill{display:inline-block;border-radius:999px;padding:2px 6px;font-size:9px;font-weight:700}
+.rot-lead{background:#dcfce7;color:#166534}.rot-up{background:#e0f2fe;color:#075985}.rot-cool{background:#fef3c7;color:#92400e}.rot-lag{background:#fee2e2;color:#991b1b}.rot-neu{background:var(--surface2);color:var(--muted)}
+.rot-v4-empty{padding:18px;color:var(--muted);text-align:center}
+@media(max-width:700px){.rotation-v4{max-width:100vw;max-height:92vh}.rot-v4-toolbar{align-items:stretch}.rot-v4-tabs{width:100%}.rot-v4-note{font-size:9.5px}.rot-v4-table{font-size:10px}.rot-v4-table th,.rot-v4-table td{padding:6px}.rot-v4-table th:first-child,.rot-v4-table td:first-child{min-width:150px}}
+
+.rot-v4-crumb{display:flex;align-items:center;gap:5px;flex-wrap:wrap;margin:6px 0 8px}.rot-crumb{border:0;background:transparent;color:var(--muted);font-size:11px;padding:3px 5px;cursor:pointer}.rot-crumb.active{color:var(--text);font-weight:800}.rot-arrow{color:var(--muted)}.bo-date{font-size:9px;color:var(--muted);white-space:nowrap}</style>
 </head>
 <body>
 
@@ -1517,7 +1548,9 @@ body.dd-lock{overflow:hidden}
     <div class="seg-grp" id="segGrp"><!-- JS --></div>
     <div class="fsep"></div>
     <select class="fsel" id="sctFil" onchange="applyF()"><option value="">All Sectors</option></select>
-    <button class="ref-btn" onclick="openSectorBreadth()" data-tip="Market rotation: sector and industry relative strength, RS acceleration, breadth, Early density and recent breakouts. Click a row to filter the main table.">📊 Rotation</button>
+    <button class="ref-btn" onclick="openSectorBreadth()" data-tip="See RSI, momentum, and breakout stats broken down by sector — click any row to filter the main table to just that sector">📊 Sector View</button>
+    <button class="ref-btn" onclick="openRotationV4()" data-tip="Sector → Industry → Narrow Group rotation and Early-setup density">🔄 Rotation</button>
+    <button class="ref-btn" onclick="openMoneyFlowRadar()" data-tip="See current New Money, Prime leaders and Money Leaving candidates across the hierarchy">💸 Money Flow</button>
     <button class="ref-btn" id="sortDefBtn" onclick="resetSort()" data-tip="Return to the default Setup Score order: quality setups first (starred in the Setup column), strongest sectors first within each group, then each stock's own 55-day relative strength. Clicking any column header sorts by that column instead — clicking the same header a third time also brings you back here.">↕ Default (Setup Score)</button>
     <button class="ref-btn" onclick="openRSSettings()" data-tip="Set the benchmark ticker that RS / MRS Rank is measured against">⚙️ RS Settings</button>
     <button class="ref-btn" id="advBtn" onclick="openAdvFilters()" data-tip="Consolidation, 52W high proximity, breakout age, RSI, volume ratio, minimum average traded value, EMA-crossover and EMA-convergence screens — each one switched on independently">⚙ Advanced Filters</button>
@@ -1682,7 +1715,7 @@ body.dd-lock{overflow:hidden}
             <th class="c-align" data-s="align" data-tip="How much the daily and the weekly timeframe agree, out of 8 checks: 1. price above the daily 20 EMA · 2. price above the daily 50 EMA · 3. price above the weekly 10 EMA · 4. price above the weekly 20 EMA · 5. daily RSI 50 or above · 6. weekly RSI 50 or above · 7. positive 21-day relative strength · 8. positive 10-week relative strength. A swing trade wants both clocks pointing the same way, so 7 or 8 is the shortlist. Each check needs its own input, and a check that cannot be run is left OUT OF THE TOTAL rather than counted as a failure — that is why some rows read 6/7 instead of 6/8. Sorting puts the higher score first and, on a tie, the row that could be fully measured above the one that could not.">Align<span class="sort-ico"></span></th>
             <th class="c-fresh" data-s="fresh" data-tip="Stocks that have JUST turned, not ones merely in a good state. Four events: 1. close crossed ABOVE the 50-day EMA (last 3 bars) · 2. RS21 (21-day excess return) crossed above zero (last 5 bars) · 3. base breakout: a 20-bar-plus consolidation broke out (last 3 bars) · 4. RSP ↑90: RS Position, the stock/benchmark ratio's place in its own last 21 bars, crossed UP through 90 within the last 5 bars, having been at or under 80 in the 5 bars before that crossing. READ 4 AND 2 AS A PAIR: the ratio makes new range-highs before the excess return turns positive, so RSP is the EARLY WARNING and RS21 the CONFIRMATION, not two independent signals. The 80 floor matters: RSP pins near its ceiling in a trend. The cell names the most recent flag and its age. A dash means none fired, or an input was missing: under 51 bars has no 50-EMA cross, no benchmark means no RS21 or RS Position. Freshest sorts first.">Fresh<span class="sort-ico"></span></th>
             <th class="c-sector" data-s="sector" data-tip="Sector from the built-in universe — for India these are NSE's own macro industry groups, taken from the Nifty Total Market constituent list. It is not cosmetic: the default Setup Score order ranks sectors by the median RS55 of their members, so this label decides which group a stock is judged inside. Sortable, so the table can be grouped by sector without using the sector filter.">Sector<span class="sort-ico"></span></th>
-            <th class="c-subind" data-s="subind" data-tip="Research Industry group. Known subgroup memberships are mapped into broader industry families; stocks without a finer subgroup use their parent sector as the fallback. This is a research taxonomy, not a claim that every row is a complete current NSE four-tier classification.">Industry<span class="sort-ico"></span></th>
+            <th class="c-subind" data-s="subind" data-tip="Which NSE sectoral INDEX carries this stock — a finer grouping READ UNDER Sector, never instead of it. It is INDEX MEMBERSHIP, not an official classification: &quot;Private Bank&quot; means the stock is one of the ten in the Nifty Private Bank index, not that anyone classified the business that way. Membership is size-ranked, so these labels SKEW TO THE LARGER companies and a smaller peer doing the identical business is simply left out. Where a stock sits in several indices the narrowest wins, in a fixed order written into the source: Private Bank, PSU Bank, Housing Finance, Insurance, NBFC, Bank, Pharma, Hospitals, Retail, Cement, Telecommunications. &quot;&lt;Sector&gt; (other)&quot; means NO index carried this stock — it does NOT mean the business is miscellaneous. India only; US and ETF rows are blank. Hidden by default — switch it on in Columns.">Sub-Industry<span class="sort-ico"></span></th>
             <th data-s="price" data-tip="The most recent closing price in the stock's own currency. It comes from the end-of-day data feed, so it is yesterday's close, not a live quote.">Price<span class="sort-ico"></span></th>
             <th data-s="ch1d" data-tip="How much the price moved on its latest trading day, as a percentage of the previous close. Green is up, red is down.">1D%<span class="sort-ico"></span></th>
             <th class="c-ch1w" data-s="ch1w" data-tip="Price change over the last 5 trading bars — one trading week. Measured bar-to-bar, not calendar days, so holidays and weekends never dilute it. Needs at least 6 bars of history; below that it shows a dash rather than pretending the change was zero.">1W%<span class="sort-ico"></span></th>
@@ -1842,14 +1875,8 @@ body.dd-lock{overflow:hidden}
 <div class="overlay" id="sectorModal">
   <div class="modal sector-modal">
     <button class="modal-x" onclick="closeSectorBreadth()">✕</button>
-    <h3>📊 Market Rotation</h3>
-    <div class="rotation-tabs" role="tablist" aria-label="Rotation level">
-      <button class="rotation-tab active" id="rotTabSector" onclick="setRotationView('sector')">Sector</button>
-      <button class="rotation-tab" id="rotTabIndustry" onclick="setRotationView('industry')">Industry</button>
-      <button class="rotation-tab" id="rotTabMacro" onclick="setRotationView('macro')">Macro</button>
-    </div>
-    <p id="sectorModalSub">Click any row to filter the main table.</p>
-    <div class="rotation-note" id="rotationNote">The rotation layer uses the same Google Sheets price data already loaded. Industry is a compact research taxonomy built from the existing subgroup metadata with a sector fallback; it is not presented as a complete current NSE company-by-company classification.</div>
+    <h3>📊 Sector Breadth</h3>
+    <p id="sectorModalSub">Click any row to filter the main table to that sector.</p>
     <div class="sector-table-wrap">
       <table class="sector-table">
         <thead>
@@ -4193,43 +4220,6 @@ function subIndOf(def){
   return SUBIND[def.s] || (def.sector ? def.sector+' (other)' : '');
 }
 
-/* Compact research taxonomy.  It deliberately uses metadata already present
-   in the file, so the price backend remains Google Sheets with zero extra API
-   calls.  Known subgroup labels are promoted to an industry family; residual
-   names fall back to the existing parent sector rather than pretending we
-   know an exact company classification we do not have. */
-const MACRO_BY_SECTOR={
-  'Auto & Components':'Consumer Discretionary','Cap Goods':'Industrials','Chemicals':'Commodities',
-  'Constr Materials':'Materials','Construction':'Industrials','Consumer Durables':'Consumer Discretionary',
-  'Consumer Services':'Consumer Discretionary','Diversified':'Diversified','FMCG':'Fast Moving Consumer Goods',
-  'Financials':'Financial Services','Forest Materials':'Commodities','Healthcare':'Healthcare',
-  'IT':'Information Technology','Media':'Consumer Discretionary','Metals & Mining':'Commodities',
-  'Oil & Gas':'Energy','Other':'Diversified','Power':'Utilities','Realty':'Real Estate',
-  'Services':'Services','Telecom':'Communication Services','Textiles':'Consumer Discretionary','Utilities':'Utilities'
-};
-const INDUSTRY_BY_SUB={
-  'Private Bank':'Banking','PSU Bank':'Banking','Bank':'Banking','Housing Finance':'Finance',
-  'NBFC':'Finance','Insurance':'Insurance','Pharma':'Pharmaceuticals','Hospitals':'Healthcare Services',
-  'Retail':'Retail','Cement':'Construction Materials','Telecommunications':'Telecommunications'
-};
-const INDUSTRY_BY_SECTOR={
-  'Auto & Components':'Auto & Auto Components','Cap Goods':'Capital Goods','Chemicals':'Chemicals & Petrochemicals',
-  'Constr Materials':'Construction Materials','Construction':'Construction','Consumer Durables':'Consumer Durables',
-  'Consumer Services':'Consumer Services','Diversified':'Diversified','FMCG':'Food & Household Products',
-  'Financials':'Financial Services','Forest Materials':'Forest Materials','Healthcare':'Healthcare',
-  'IT':'IT Services & Software','Media':'Media & Entertainment','Metals & Mining':'Metals & Mining',
-  'Oil & Gas':'Oil & Gas','Other':'Other','Power':'Power & Utilities','Realty':'Real Estate',
-  'Services':'Services','Telecom':'Telecommunications','Textiles':'Textiles & Apparel','Utilities':'Utilities'
-};
-function macroOf(def){ return def ? (MACRO_BY_SECTOR[def.sector] || def.sector || 'Other') : ''; }
-function industryOf(def){
-  if(!def) return '';
-  const sub=subIndOf(def);
-  if(sub && INDUSTRY_BY_SUB[sub]) return INDUSTRY_BY_SUB[sub];
-  return INDUSTRY_BY_SECTOR[def.sector] || def.sector || 'Other';
-}
-function taxonomyOf(def){ return {macro:macroOf(def),sector:def?.sector||'',industry:industryOf(def),source:subIndOf(def)?'subgroup':'sector-fallback'}; }
-
 /* Same idea for US stocks, but in $ Billion (US convention, not Rs Crore):
    Large Cap  >= $10B
    Mid Cap    >= $2B
@@ -5506,7 +5496,7 @@ const SCREEN_SEEDS=[
    The consequence of (2) is deliberate and worth stating: once deleted, a
    seeded screen stays deleted. Clearing this browser's storage brings both
    back, which is the same rule every other persisted thing here follows. */
-const SCREEN_SEED_KEY='sm_seeded_screens_v4';
+const SCREEN_SEED_KEY='sm_seeded_screens_v3';
 function seededScreenNames(){
   try{
     const raw=lsRead(SCREEN_SEED_KEY);
@@ -10451,15 +10441,19 @@ function parseSheetPayload(raw){
    needs the age. Scans backwards and stops at the first hit, so the common case
    (a recent breakout) costs a handful of comparisons, not a full re-scan.
    IF YOU CHANGE breakout()'s CONDITION, CHANGE IT HERE TOO. */
-function boBarsSince(closes,volumes){
-  const n=closes.length; if(n<55) return null;
+function boLatest(closes,volumes,dates){
+  const n=closes.length; if(n<55) return {age:null,date:null};
   const av=volumes.slice(-21,-1).filter(v=>v>0);
   const avgV=av.length?av.reduce((a,b)=>a+b,0)/av.length:0;
   for(let i=n-2;i>=52;i--){
     const ph=Math.max(...closes.slice(Math.max(0,i-52),i));
-    if(closes[i]>ph && (volumes[i]||0)>avgV*1.5) return (n-1)-i;
+    if(closes[i]>ph && (volumes[i]||0)>avgV*1.5)
+      return {age:(n-1)-i,date:Array.isArray(dates)?(dates[i]||null):null};
   }
-  return null;
+  return {age:null,date:null};
+}
+function boBarsSince(closes,volumes){
+  return boLatest(closes,volumes,null).age;
 }
 
 function fetchStock(def, data){
@@ -10474,7 +10468,7 @@ function fetchStock(def, data){
      from GSHEET_DATA, so a tab switch mid-load cannot price one market's
      ticker against another market's calendar. */
   const d = computeTech(gd.C,gd.H,gd.L,gd.V,gd.dates,def.s,gd.O,feedStartOf(map)) || null;
-  if(d) d.boAge = boBarsSince(gd.C,gd.V);
+  if(d){ const boLast=boLatest(gd.C,gd.V,gd.dates); d.boAge=boLast.age; d.boDate=boLast.date; }
   return d;
 }
 
@@ -10783,78 +10777,47 @@ function pillFmt(pct){
   return `<span class="sb-pill ${cls}">${pct}%</span>`;
 }
 
-let ROT_VIEW='sector';
-let ROT_SORT='medRs55', ROT_DIR='desc';
-
-function calcRotationRows(market,level){
-  const rows=getRows(market), groups={};
-  rows.forEach(def=>{
-    const t=taxonomyOf(def);
-    const key=level==='macro'?t.macro:(level==='industry'?t.industry:t.sector);
-    (groups[key]=groups[key]||[]).push(def);
-  });
-  const out=Object.keys(groups).map(name=>{
-    const defs=groups[name], ds=defs.map(x=>SD[x.s]).filter(Boolean), n=defs.length, m=ds.length;
-    const pct=a=>m?Math.round(a/m*100):null;
-    const vals=k=>ds.map(d=>d[k]).filter(v=>v!=null);
-    const rs=vals('rs55'), ch=ds.map(rsChangeOf).filter(v=>v!=null);
-    const medRs55=rs.length>=SECTOR_ROT_MIN_MEMBERS?median(rs):null;
-    const rsChg=ch.length?+median(ch).toFixed(2):null;
-    const early=ds.map(d=>d.early).filter(Boolean);
-    const prime=early.filter(e=>e.state==='prime').length;
-    const watch=early.filter(e=>e.state==='watch').length;
-    const bo=ds.filter(d=>d.boAge!=null&&isFinite(d.boAge)&&d.boAge<=10).length;
-    return {name,count:n,noData:n-m,medRs55,rsChg,rot:null,breadth20:pct(ds.filter(d=>d.e20&&d.price>d.e20).length),breadth50:pct(ds.filter(d=>d.e50&&d.price>d.e50).length),breadth200:pct(ds.filter(d=>d.e200&&d.price>d.e200).length),earlyPrime:prime,earlyWatch:watch,breakouts:bo,avgVol:vals('vRatio').length?+(vals('vRatio').reduce((a,b)=>a+b,0)/vals('vRatio').length).toFixed(2):null};
-  });
-  const levels=out.map(r=>r.medRs55).filter(v=>v!=null), split=levels.length?median(levels):null;
-  out.forEach(r=>r.rot=rotLabel(r.medRs55,r.rsChg,split));
-  return {rows:out,total:rows.length,noData:out.reduce((a,r)=>a+r.noData,0),split};
-}
-const ROT_COLS=[
- {key:'name',label:'Group',fmt:v=>v},
- {key:'count',label:'#',fmt:v=>v},
- {key:'medRs55',label:'RS55',fmt:v=>v==null?'—':v.toFixed(1)},
- {key:'rsChg',label:'ΔRS',fmt:v=>v==null?'—':(v>=0?'+':'')+v.toFixed(1)},
- {key:'rot',label:'Rotation',fmt:v=>v?`<span class="sb-pill ${ROT_CLS[v]||'sb-zero'}">${v}</span>`:'—'},
- {key:'breadth20',label:'>20E',fmt:pillFmt},
- {key:'breadth50',label:'>50E',fmt:pillFmt},
- {key:'breadth200',label:'>200E',fmt:pillFmt},
- {key:'earlyPrime',label:'Early P',fmt:v=>v},
- {key:'earlyWatch',label:'Early W',fmt:v=>v},
- {key:'breakouts',label:'BO 10D',fmt:v=>v},
- {key:'avgVol',label:'VolR',fmt:v=>v==null?'—':v.toFixed(2)+'x'}
-];
-function setRotationView(view){
-  ROT_VIEW=view;
-  ['sector','industry','macro'].forEach(v=>{const el=$('rotTab'+v[0].toUpperCase()+v.slice(1));if(el)el.classList.toggle('active',v===view);});
-  renderSectorBreadth();
-}
-function filterToRotation(name){
-  SEARCH=name||'';
-  const q=$('searchQ'); if(q) q.value=SEARCH;
-  VISIBLE=CFG.INIT; renderTable(CUR); updateStatus(); closeSectorBreadth();
-  document.querySelector('.tbl-sec')?.scrollIntoView({behavior:'smooth',block:'start'});
-}
-
 function renderSectorBreadth(){
-  if(ROT_VIEW!=='sector'){
-    const agg=calcRotationRows(CUR,ROT_VIEW), rows=agg.rows;
-    $('sectorModalSub').innerHTML=`${rows.length} ${ROT_VIEW} groups · <b>${agg.total}</b> stocks. Click a row to filter the main table by that group.`;
-    $('sectorTableHead').innerHTML=ROT_COLS.map(c=>`<th onclick="sortRotationTable('${c.key}')">${c.label}${ROT_SORT===c.key?(ROT_DIR==='asc'?' ↑':' ↓'):''}</th>`).join('');
-    rows.sort((a,b)=>{const va=a[ROT_SORT],vb=b[ROT_SORT];if(typeof va==='string'||typeof vb==='string'){const x=va||'',y=vb||'';return ROT_DIR==='asc'?x.localeCompare(y):y.localeCompare(x)}const x=va??-Infinity,y=vb??-Infinity;return ROT_DIR==='asc'?x-y:y-x});
-    $('sectorTableBody').innerHTML=rows.map(r=>`<tr class="sector-row" onclick="filterToRotation('${escAttr(r.name)}')">${ROT_COLS.map(c=>`<td>${c.fmt(r[c.key])}</td>`).join('')}</tr>`).join('');
-    $('rotationNote').textContent=ROT_VIEW==='industry'?'Industry is a research grouping derived from the existing subgroup metadata with a parent-sector fallback. It is designed to find clusters and rotation, not to masquerade as a full official NSE company taxonomy.':'Macro groups are broad research buckets derived from the existing India sector labels.';
-    return;
-  }
-  const agg=calcSectorBreadth(CUR), rows=agg.rows;
-  $('sectorModalSub').innerHTML=`${rows.length} sectors · <b>${agg.total}</b> stocks. Click any row to filter the main table to that sector.`+(agg.noData?` <b>${agg.noData}</b> have no computed data yet.`:'');
-  $('rotationNote').textContent='Sector view retains the existing detailed breadth/rotation calculations. Industry and Macro tabs add the new hierarchy without changing the stock calculations.';
+  const agg=calcSectorBreadth(CUR);
+  const rows=agg.rows;
+  $('sectorModalSub').innerHTML =
+    `${rows.length} sectors · <b>${agg.total}</b> stocks — exactly the rows the table is showing right now, with every active filter applied.` +
+    // Spelled out rather than hidden: a partially backfilled sheet otherwise
+    // looks like the averages are wrong instead of merely incomplete.
+    (agg.noData
+      ? ` <b>${agg.noData}</b> of them have no computed data yet, so they are counted here but contribute nothing to the averages (those show — where nothing could be measured).`
+      : ` All of them have computed data.`) +
+    ` Click any row to filter the main table to that sector.`;
+
   const fn=SECTOR_COLS.find(c=>c.key===SECTOR_SORT_COL);
-  rows.sort((a,b)=>{const va=a[SECTOR_SORT_COL],vb=b[SECTOR_SORT_COL];if(typeof va==='string'||typeof vb==='string'){const x=va||'',y=vb||'';return SECTOR_SORT_DIR==='asc'?x.localeCompare(y):y.localeCompare(x)}const x=va??-Infinity,y=vb??-Infinity;return SECTOR_SORT_DIR==='asc'?x-y:y-x});
-  $('sectorTableHead').innerHTML=SECTOR_COLS.map(c=>`<th onclick="sortSectorTable('${c.key}')"${c.tip?` data-tip="${escAttr(c.tip)}"`:''}>${c.label}${SECTOR_SORT_COL===c.key?(SECTOR_SORT_DIR==='asc'?' ↑':' ↓'):''}</th>`).join('');
-  $('sectorTableBody').innerHTML=rows.map(r=>`<tr class="sector-row" onclick="filterToSector('${escAttr(r.sector)}')">${SECTOR_COLS.map(c=>`<td>${c.fmt(r[c.key])}</td>`).join('')}</tr>`).join('');
+  rows.sort((a,b)=>{
+    const va=a[SECTOR_SORT_COL], vb=b[SECTOR_SORT_COL];
+    /* Rotation is a string column whose value is legitimately null on a sector
+       too small to label. Testing only `va` sent a null-vs-string pair down the
+       numeric branch, where `null??-Infinity` minus a string is NaN and the
+       comparator stops ordering anything. Suppressed labels sort as the empty
+       string: together, at one end, never interleaved with real ones. */
+    if(typeof va==='string'||typeof vb==='string'){
+      const sa=va??'', sb=vb??'';
+      return SECTOR_SORT_DIR==='asc' ? sa.localeCompare(sb) : sb.localeCompare(sa);
+    }
+    const na=va??-Infinity, nb=vb??-Infinity;
+    return SECTOR_SORT_DIR==='asc' ? na-nb : nb-na;
+  });
+
+  /* data-tip only where a column HAS one — the delegated [data-tip] listener
+     picks these up inside the modal for free, and the tip box is body-level
+     and fixed, so it is not clipped by the modal's own scroll wrapper. */
+  $('sectorTableHead').innerHTML=SECTOR_COLS.map(c=>
+    `<th onclick="sortSectorTable('${c.key}')"${c.tip?` data-tip="${escAttr(c.tip)}"`:''}>${c.label}${SECTOR_SORT_COL===c.key?(SECTOR_SORT_DIR==='asc'?' ↑':' ↓'):''}</th>`
+  ).join('');
+
+  $('sectorTableBody').innerHTML=rows.map(r=>
+    `<tr class="sector-row" onclick="filterToSector('${escAttr(r.sector)}')">
+      ${SECTOR_COLS.map(c=>`<td>${c.fmt(r[c.key])}</td>`).join('')}
+    </tr>`
+  ).join('');
 }
-function sortRotationTable(col){ if(ROT_SORT===col) ROT_DIR=ROT_DIR==='asc'?'desc':'asc'; else {ROT_SORT=col;ROT_DIR=col==='name'?'asc':'desc';} renderSectorBreadth(); }
 
 function sortSectorTable(col){
   if(SECTOR_SORT_COL===col) SECTOR_SORT_DIR = SECTOR_SORT_DIR==='asc'?'desc':'asc';
@@ -12244,9 +12207,15 @@ function tvLink(sym,interval,tip,label,cls){
 
 const TV_TIP_D='Open this stock on TradingView as a daily chart, in a new tab.';
 
-function boGC(v){
+function boDateC(v){
+  if(!v) return '';
+  const dt=new Date(v);
+  if(Number.isNaN(dt.getTime())) return `<span class="bo-date">${escHtml(String(v))}</span>`;
+  return `<span class="bo-date">${dt.toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'})}</span>`;
+}
+function boGC(v,date){
   if(v==null) return '<span class="vm">—</span>';
-  return `<span class="${v>=0?'vg':'vr'}">${v>=0?'+':''}${v}%</span>`;
+  return `<span class="${v>=0?'vg':'vr'}">${v>=0?'+':''}${v}%</span>${date?`<br>${boDateC(date)}`:''}`;
 }
 function retC(v){
   if(v==null) return '<span class="vm">—</span>';
@@ -12351,7 +12320,7 @@ function dataRow(def,d,i){
     <td class="c-align">${alignC(d)}</td>
     <td class="c-fresh">${freshC(d)}</td>
     <td class="c-sector">${def.sector||'—'}</td>
-    <td class="c-subind">${industryOf(def)||'—'}</td>
+    <td class="c-subind">${subIndOf(def)||'—'}</td>
     <td style="font-weight:600">${fmtP(d.price,d.currency)}</td>
     <td>${fmtCh(d.ch1d)}</td>
     <td class="c-ch1w">${fmtCh(d.ch1w)}</td>
@@ -12388,7 +12357,7 @@ function dataRow(def,d,i){
     <td class="c-wpattern">${patC(d.wPattern)}</td>
     <td class="c-consol">${consolC(d)}</td>
     <td class="c-monthly">${boolC(d.monthlySetup,'✓ Yes','✗ No')}</td>
-    <td>${boGC(d.boGain)}</td>
+    <td>${boGC(d.boGain,d.boDate)}</td>
     <td class="c-bocnt">${bocC(d.boCnt)}</td>
     <td class="c-followup">${boFuC(d.boAge)}</td>
     <td class="c-voldry">${volDryC(d.volDryRatio)}</td>
@@ -13568,7 +13537,7 @@ const SORT_FN={
   momo:d=>({breakout:2, base:1})[d?.momoState],
   sector:(_,def)=>def.sector,
   // Same shape as sector: a per-ROW attribute, so it takes def, not d.
-  subind:(_,def)=>industryOf(def),
+  subind:(_,def)=>subIndOf(def),
   // Sort on the same fraction the badge is bucketed from, not on the raw score:
   // a 6/9 and a 6/7 are not the same setup.
   status:d=>d?.s2?.total?d.s2.score/d.s2.total:null,
@@ -14106,7 +14075,7 @@ function getRows(market, exclCol){
      see ASOF_ABSENT. Empty (and therefore free) when live. */
   if(ASOF_DATE&&ASOF_ABSENT.size) items=items.filter(def=>!ASOF_ABSENT.has(def.s));
   const q=SEARCH.toLowerCase().trim();
-  if(q) items=items.filter(def=>def.d.toLowerCase().includes(q)||def.sector.toLowerCase().includes(q)||industryOf(def).toLowerCase().includes(q)||macroOf(def).toLowerCase().includes(q));
+  if(q) items=items.filter(def=>def.d.toLowerCase().includes(q)||def.sector.toLowerCase().includes(q));
   if(F_SCT && exclCol!=='sector') items=items.filter(def=>def.sector===F_SCT);
 
   // Market cap filter (India + US — both now have per-stock mcap data; ETF skipped, no mcap concept)
@@ -14614,6 +14583,7 @@ async function loadMarket(market,force=false){
   await fetchBenchmark(market);
   rankRS(market);
   computeSectorStrength(market);       // medians move whenever the data does
+  mfCaptureSnapshot(market);            // compact daily state/participation history
   LOADED[market]=true;
   CACHE_SHOWN[market]=false;   // these numbers are fresh, whatever happens later
   renderTable(market); renderMetrics(market); updateStatus();
@@ -15394,7 +15364,7 @@ const COL_FILTERS={
   /* Filterable WHILE HIDDEN, like every other defOff column: the value comes
      from def, not from the rendered cell, so hiding the column cannot change
      what the filter sees. */
-  subind:  {t:'text', label:'Industry', val:(d,def)=>industryOf(def)},
+  subind:  {t:'text', label:'Sub-Industry', val:(d,def)=>subIndOf(def)},
   notes:   {t:'text', label:'Notes',   val:(d,def)=>NOTES[def.s]||''},
 
   /* ── category ───────────────────────────────────────────────────── */
@@ -16184,7 +16154,7 @@ const TOGGLEABLE_COLS=[
      table is already 66 columns wide and its width is the thing the owner
      guards, so a new column arrives switched OFF and earns its place from
      the Columns modal. It still sorts, filters and exports while hidden. */
-  {cls:'subind', label:'Industry', defOff:true},
+  {cls:'subind', label:'Sub-Industry', defOff:true},
   {cls:'status', label:'Status'},
   {cls:'ch1w',   label:'1W%'},
   {cls:'ch1m',   label:'1M%'},
@@ -17312,6 +17282,34 @@ async function ddLoadLive(){
   }
 }
 
+function exFmt(v,suffix=''){return v==null||!isFinite(v)?'—':String(v)+suffix;}
+function exStateLabel(s){return ({prime:'Prime',watch:'Watch',accumulation:'Accumulation',developing:'Developing',breakout:'Breakout'})[s]||'Developing';}
+function exDiag(k,v){
+  if(v==null)return 'Not available';
+  if(k==='trend') return v>=16?'Strong trend':v>=10?'Supportive trend':'Trend still building';
+  if(k==='rs') return v>=16?'Strong relative strength':v>=10?'RS improving':'RS needs work';
+  if(k==='compression') return v>=16?'Tight compression':v>=10?'Compression forming':'Base still loose';
+  if(k==='volume') return v>=16?'Healthy volume transition':v>=10?'Volume improving':'Volume not confirming';
+  if(k==='structure') return v>=16?'Close to trigger':v>=10?'Structure developing':'Trigger still distant';
+  return '';
+}
+function renderEarlyXray(sym){
+  const host=$('ddEarlyXray'); if(!host)return;
+  const d=SD[sym]||{}, e=d.early||{};
+  if(e.score==null){host.innerHTML='';return;}
+  const parts=[['Trend',e.trend,'trend'],['RS Lead',e.rs,'rs'],['Compression',e.compression,'compression'],['Volume',e.volume,'volume'],['Structure',e.structure,'structure']];
+  const legs=parts.map(([label,val,key])=>`<div class="ex-leg"><b>${label}</b><div class="ex-val">${exFmt(val,'/20')}</div><div class="ex-bar"><div class="ex-fill" style="width:${Math.max(0,Math.min(100,(val||0)*5))}%"></div></div><div class="ex-diag">${escHtml(exDiag(key,val))}</div></div>`).join('');
+  const hist=mfReadHistory(CUR), snaps=[];
+  hist.forEach(h=>{const r=(h.rows||[]).find(x=>x.s===sym);if(r&&r.score!=null)snaps.push({date:h.date,score:r.score,state:r.state,trend:r.trend,rs:r.rs,compression:r.compression,volume:r.volume,structure:r.structure});});
+  const recent=snaps.slice(-8);
+  const scoreLine=recent.map((x,i)=>`${i?'<span class="ex-arrow">→</span>':''}<span class="${i===recent.length-1?'ex-now':''}">${x.score}</span>`).join('');
+  const stateLine=recent.map((x,i)=>`${i?'<span class="ex-arrow">→</span>':''}<span class="${i===recent.length-1?'ex-now':''}">${escHtml(exStateLabel(x.state))}</span>`).join('');
+  const prior=snaps.length>1?snaps[snaps.length-2]:null;
+  let improved='';
+  if(prior){const names=[['Trend','trend'],['RS Lead','rs'],['Compression','compression'],['Volume','volume'],['Structure','structure']];const dif=names.map(([n,k])=>({n,d:(e[k]??null)-(prior[k]??null)})).filter(x=>x.d!==null&&isFinite(x.d)).sort((a,b)=>b.d-a.d);const pos=dif.filter(x=>x.d>0).slice(0,2).map(x=>`${x.n} +${x.d}`).join(', ');const neg=dif.filter(x=>x.d<0).slice(0,2).map(x=>`${x.n} ${x.d}`).join(', ');improved=`<div class="ex-muted" style="margin-top:4px">Since ${escHtml(prior.date)}: ${pos||'no component improvement'}${neg?` · softer: ${neg}`:''}</div>`;}
+  host.innerHTML=`<div class="ex-wrap"><div class="ex-head"><div><div class="ex-title">Early X-Ray</div><div class="ex-muted">Five components behind the current Early score</div></div><div style="text-align:right"><div class="ex-score">${e.score}/100</div><div class="ex-muted">${escHtml(exStateLabel(e.state))}</div></div></div><div class="ex-grid">${legs}</div><div class="ex-meta"><div class="ex-k"><span>Trigger distance</span><b>${exFmt(e.triggerDist,'%')}</b></div><div class="ex-k"><span>RSP lead / cross</span><b>${e.rsLead?'Lead':'—'}${e.rsCross?' · Cross':''}</b></div><div class="ex-k"><span>Volume phase</span><b>${escHtml(e.volumePhase||'—')}</b></div><div class="ex-k"><span>Market regime</span><b>${escHtml(e.marketRegime||'—')}</b></div></div>${recent.length>=2?`<div class="ex-traj"><div class="ex-title" style="font-size:11px">Score trajectory</div><div class="ex-traj-line">${scoreLine}</div><div class="ex-muted">${stateLine}</div>${improved}</div>`:`<div class="ex-traj"><div class="ex-title" style="font-size:11px">Score trajectory</div><div class="ex-muted">One snapshot is available. A second daily snapshot will unlock the trajectory.</div></div>`}</div>`;
+}
+
 function openDrill(sym){
   const ov=$('ddOv'); if(!ov) return;
   /* UNI[CUR], not a global sweep: the dialog belongs to the market on screen,
@@ -17335,6 +17333,7 @@ function openDrill(sym){
   DD_HOVER=-1;
   DD_VIEW={bars:[],ema:[],total:0};
   const rd=$('ddRead'); if(rd) rd.innerHTML='';
+  renderEarlyXray(sym);
   const lm=$('ddLiveMsg'); if(lm){ lm.innerHTML=''; lm.style.display='none'; }
   const tb=$('ddTvBox'); if(tb) tb.innerHTML='';   // the previous ticker's widget, if any
   /* BEFORE ddTab(): ddTab() looks its buttons up by id, and for a US ticker
@@ -17520,6 +17519,7 @@ function closeDrill(){
         <canvas id="ddCanvas" onmousemove="ddHover(event)" onmouseleave="ddHover(null)"></canvas>
       </div>
       <div class="dd-read" id="ddRead"></div>
+      <div id="ddEarlyXray"></div>
       </div>
       <!-- Empty until the Live tab is clicked. The TradingView script is not
            referenced anywhere in this markup, on purpose: naming it here would
@@ -17558,5 +17558,398 @@ function closeDrill(){
     </div>
   </div>
 </div>
+
+<div class="overlay" id="moneyFlowRadarModal">
+  <div class="modal rotation-v4">
+    <button class="modal-x" onclick="closeMoneyFlowRadar()">✕</button>
+    <h3>💸 Money Flow Radar</h3>
+    <div class="rot-v4-toolbar">
+      <div class="rot-v4-tabs" id="moneyFlowTabs"></div>
+      <select id="moneyFlowMarket" class="fsel" onchange="renderMoneyFlowRadar()"><option value="india">India</option><option value="usa">US</option><option value="etf">ETF</option></select>
+    </div>
+    <p class="rot-v4-note" id="moneyFlowNote"></p>
+    <div class="rot-v4-wrap"><table class="rot-v4-table"><thead id="moneyFlowHead"></thead><tbody id="moneyFlowBody"></tbody></table></div>
+    <div class="modal-actions"><button class="btn" onclick="closeMoneyFlowRadar()">Close</button></div>
+  </div>
+</div>
+
+<div class="overlay" id="rotationV4Modal">
+  <div class="modal rotation-v4">
+    <button class="modal-x" onclick="closeRotationV4()">✕</button>
+    <h3>🔄 Money Flow & Rotation</h3>
+    <div class="rot-v4-toolbar">
+      <div class="rot-v4-tabs" id="rotationV4Tabs"></div>
+      <select id="rotationV4Market" class="fsel" onchange="renderRotationV4()"><option value="india">India</option><option value="usa">US</option><option value="etf">ETF</option></select>
+    </div>
+    <p class="rot-v4-note" id="rotationV4Note"></p>
+    <div class="rot-v4-crumb" id="rotationV4Crumb"></div>
+    <div class="rot-v4-wrap"><table class="rot-v4-table"><thead id="rotationV4Head"></thead><tbody id="rotationV4Body"></tbody></table></div>
+    <div class="modal-actions"><button class="btn" onclick="closeRotationV4()">Close</button></div>
+  </div>
+</div>
+
+<script>
+
+/* ══════════════════════════════════════════════════════════════════════════
+   GLOBALSCREENER v7 — MONEY FLOW / ROTATION / DAILY HISTORY LAYER
+   Uses only the existing Google-Sheets universe + computed SD rows.
+   No additional price-data source, API or request is introduced.
+   Classification is deliberately labelled RESEARCH TAXONOMY until a complete
+   security-level official mapping is supplied. Existing SUBIND mappings are
+   used as the narrowest reliable group; residual sectors get deterministic
+   research groups rather than invented company classifications.
+══════════════════════════════════════════════════════════════════════════ */
+const ROT_V4_GROUPS={
+  'Financial Services':['Bank','Private Bank','PSU Bank','Housing Finance','Insurance','NBFC'],
+  'Healthcare':['Pharma','Hospitals'],
+  'Consumer':['Retail'],
+  'Industrials':['Cap Goods','Construction'],
+  'Materials':['Cement','Chemicals'],
+  'Telecom & Digital':['Telecommunications'],
+  'Energy':['Oil & Gas','Power'],
+  'Metals & Mining':['Metals & Mining'],
+};
+/* The universe currently stores a sector label, not a security-level NSE
+   Macro/Sector/Industry/Basic-Industry tuple. This layer therefore creates a
+   deterministic RESEARCH TAXONOMY from the existing sector labels. It keeps
+   the hierarchy explicit without pretending that every leaf is an official
+   NSE classification. When a complete security-level NSE mapping is supplied,
+   these helpers can be replaced without changing the rotation engine. */
+function rotV4Macro(def){
+  /* Existing universe sector labels are the macro bucket in this screener. */
+  const sec=String(def?.sector||'Other');
+  const map={
+    Financials:'Financial Services',Financial:'Financial Services',
+    FMCG:'Consumer Staples','Consumer Staples':'Consumer Staples','Consumer Defensive':'Consumer Staples',
+    'Consumer Services':'Consumer Discretionary','Consumer Cyclical':'Consumer Discretionary','Consumer Disc.':'Consumer Discretionary','Consumer Durables':'Consumer Discretionary',
+    Auto:'Consumer Discretionary','Auto & Components':'Consumer Discretionary',Retail:'Consumer Discretionary',
+    Healthcare:'Healthcare',Biotech:'Healthcare',Pharma:'Healthcare',
+    IT:'Information Technology',Technology:'Information Technology',Software:'Information Technology',Semiconductors:'Information Technology',
+    'Cap Goods':'Industrials',Industrials:'Industrials',Construction:'Industrials','Constr Materials':'Industrials',Services:'Industrials',
+    Chemicals:'Materials','Basic Materials':'Materials',Materials:'Materials','Metals & Mining':'Materials','Forest Materials':'Materials',Textiles:'Materials',
+    Power:'Energy & Utilities',Utilities:'Energy & Utilities','Oil & Gas':'Energy & Utilities',Energy:'Energy & Utilities','Uranium/Nuclear':'Energy & Utilities',
+    Realty:'Realty','Real Estate':'Realty',
+    Telecom:'Communication Services','Communication Services':'Communication Services',Media:'Communication Services',
+    Diversified:'Diversified',Other:'Other'
+  };
+  return map[sec]||sec;
+}
+function rotV4Sector(def){
+  /* Sector layer: use the existing narrow-index membership where available;
+     otherwise use a deterministic NSE-aligned sector grouping. */
+  const s=subIndOf(def);
+  if(s && s.indexOf(' (other)')<0) return s;
+  const sec=String(def?.sector||'Other');
+  const map={
+    Financials:'Financial Services',Financial:'Financial Services',
+    FMCG:'FMCG','Consumer Staples':'FMCG','Consumer Defensive':'FMCG',
+    'Consumer Services':'Consumer Services','Consumer Cyclical':'Consumer Services','Consumer Disc.':'Consumer Services','Consumer Durables':'Consumer Durables',Retail:'Consumer Services',
+    Auto:'Automobiles','Auto & Components':'Automobiles',
+    Healthcare:'Healthcare','Biotech':'Healthcare',Pharma:'Pharmaceuticals',
+    IT:'Information Technology',Technology:'Information Technology',Software:'IT Services',Semiconductors:'Semiconductors',
+    'Cap Goods':'Capital Goods',Industrials:'Capital Goods',Construction:'Construction','Constr Materials':'Construction Materials',
+    Chemicals:'Chemicals & Petrochemicals','Basic Materials':'Basic Materials',Materials:'Basic Materials','Metals & Mining':'Metals & Mining',Textiles:'Textiles',
+    Power:'Power','Oil & Gas':'Oil, Gas & Consumable Fuels',Energy:'Oil, Gas & Consumable Fuels',Utilities:'Utilities',
+    Realty:'Realty',Telecom:'Telecommunication','Communication Services':'Telecommunication',Media:'Media & Entertainment',
+    Services:'Commercial Services',Diversified:'Diversified',Other:'Other'
+  };
+  return map[sec]||sec;
+}
+function rotV4Industry(def){
+  const sec=String(def?.sector||'Other');
+  const map={
+    Financials:'Financial Services',Financial:'Financial Services',FMCG:'Food, Beverage & Tobacco','Consumer Staples':'Food, Beverage & Tobacco','Consumer Defensive':'Food, Beverage & Tobacco',
+    'Consumer Services':'Consumer Services','Consumer Cyclical':'Consumer Services','Consumer Disc.':'Consumer Services','Consumer Durables':'Consumer Durables',Retail:'Retailing',
+    Auto:'Automobiles','Auto & Components':'Automobiles',Healthcare:'Healthcare Services',Biotech:'Pharmaceuticals',Pharma:'Pharmaceuticals',
+    IT:'IT Services',Technology:'Technology Hardware & Equipment',Software:'Software',Semiconductors:'Semiconductors',
+    'Cap Goods':'Capital Goods',Industrials:'Capital Goods',Construction:'Construction','Constr Materials':'Construction Materials',Services:'Commercial Services',Diversified:'Diversified Services',
+    Chemicals:'Chemicals & Petrochemicals','Basic Materials':'Diversified Materials',Materials:'Diversified Materials','Metals & Mining':'Metals & Mining',Textiles:'Textiles',
+    Power:'Power','Oil & Gas':'Oil, Gas & Consumable Fuels',Energy:'Oil, Gas & Consumable Fuels',Utilities:'Utilities',
+    Realty:'Real Estate','Real Estate':'Real Estate',Telecom:'Telecommunication','Communication Services':'Telecommunication',Media:'Media & Entertainment',Other:'Other'
+  };
+  return map[sec]||sec;
+}
+function rotV4Narrow(def){
+  const s=subIndOf(def);
+  if(s && s.indexOf(' (other)')<0) return s;
+  return rotV4Industry(def);
+}
+function rotV4GroupKey(def,level){
+  if(level==='macro') return rotV4Macro(def);
+  if(level==='sector') return rotV4Sector(def);
+  if(level==='industry') return rotV4Industry(def);
+  return rotV4Narrow(def);
+}
+function rotV4MatchesParent(def,level,parentLevel,parentName){
+  if(!parentName) return true;
+  if(level==='sector' && parentLevel==='macro') return rotV4Macro(def)===parentName;
+  if(level==='industry' && parentLevel==='sector') return rotV4Sector(def)===parentName;
+  if(level==='narrow' && parentLevel==='industry') return rotV4Industry(def)===parentName;
+  return true;
+}
+function rotV4State(rows,all){
+  const valid=rows.filter(x=>x.rs!=null && x.rsChg!=null);
+  const universe=(all||[]).filter(x=>x.rs!=null && x.rsChg!=null);
+  if(valid.length<2 || universe.length<3) return '—';
+  const rs=median(valid.map(x=>x.rs)), ch=median(valid.map(x=>x.rsChg));
+  const rsMed=median(universe.map(x=>x.rs)), chMed=median(universe.map(x=>x.rsChg));
+  if(rs>=rsMed && ch>=chMed) return 'Powering Up';
+  if(rs<rsMed && ch>=chMed) return 'Turning Up';
+  if(rs>=rsMed && ch<chMed) return 'Cooling';
+  return 'Falling Back';
+}
+function rotV4Cls(v){return v==='Powering Up'?'rot-lead':v==='Turning Up'?'rot-up':v==='Cooling'?'rot-cool':v==='Falling Back'?'rot-lag':'rot-neu'}
+function rotV4Rows(market,level,parentLevel,parentName){
+  const defs=UNI[market]||[]; const groups={};
+  defs.forEach(def=>{
+    if(!rotV4MatchesParent(def,level,parentLevel,parentName)) return;
+    const d=SD[def.s]; if(!d) return;
+    const key=rotV4GroupKey(def,level)||'Unclassified';
+    const r=groups[key]||(groups[key]={name:key,n:0,rs:[],rsChg:[],early:0,prime:0,bo:0,above50:0,volUp:0});
+    r.n++;
+    if(d.rs55!=null) r.rs.push(d.rs55);
+    if(d.rsSlope!=null) r.rsChg.push(d.rsSlope); else if(d.rs21!=null&&d.rs55!=null) r.rsChg.push(d.rs21-d.rs55);
+    if(d.early?.score!=null){if(d.early.score>=70)r.early++;if(d.early.score>=80)r.prime++;}
+    if(d.boAge!=null || d.boGain!=null) r.bo++;
+    if(numOk(d.pct50e)&&d.pct50e>=0) r.above50++;
+    if(d.earlyVolTrend!=null&&d.earlyVolTrend>=1.15) r.volUp++;
+  });
+  const arr=Object.values(groups).map(r=>({...r,rs:r.rs.length?median(r.rs):null,rsChg:r.rsChg.length?median(r.rsChg):null,
+    breadth:r.n?100*r.above50/r.n:null,earlyPct:r.n?100*r.early/r.n:null,primePct:r.n?100*r.prime/r.n:null,boPct:r.n?100*r.bo/r.n:null,volPct:r.n?100*r.volUp/r.n:null}));
+  const rsVals=arr.map(r=>r.rs).filter(v=>v!=null).sort((a,b)=>a-b);
+  const chVals=arr.map(r=>r.rsChg).filter(v=>v!=null).sort((a,b)=>a-b);
+  const pctRank=(v,vals)=>v==null||!vals.length?null:100*vals.filter(x=>x<=v).length/vals.length;
+  arr.forEach(r=>{
+    const rp=pctRank(r.rs,rsVals), cp=pctRank(r.rsChg,chVals);
+    r.flowScore=(rp==null&&cp==null)?null:+(0.55*(rp??50)+0.30*(cp??50)+0.15*(r.earlyPct??0)).toFixed(0);
+  });
+  const universe=[];
+  Object.values(groups).forEach(r=>{ if(r.rs.length&&r.rsChg.length) universe.push({rs:median(r.rs),rsChg:median(r.rsChg)}); });
+  arr.forEach(r=>r.rotation=rotV4State([{rs:r.rs,rsChg:r.rsChg}],universe));
+  const rotRank={'Powering Up':4,'Turning Up':3,'Cooling':2,'Falling Back':1,'—':0};
+  return arr.filter(r=>r.n>=2).sort((a,b)=>{const rr=(rotRank[b.rotation]||0)-(rotRank[a.rotation]||0);if(rr)return rr;const fs=(b.flowScore??-1)-(a.flowScore??-1);if(fs)return fs;const pc=(b.primePct??-1)-(a.primePct??-1);if(pc)return pc;const ch=(b.rsChg??-999)-(a.rsChg??-999);if(ch)return ch;return (b.rs??-999)-(a.rs??-999);});
+}
+function rotV4SetLevel(level,parentLevel=null,parentName=null,macroName=null,sectorName=null){
+  window.ROT_V4_LEVEL=level;
+  window.ROT_V4_PARENT_LEVEL=parentLevel;
+  window.ROT_V4_PARENT_NAME=parentName;
+  window.ROT_V4_MACRO_NAME=macroName;
+  window.ROT_V4_SECTOR_NAME=sectorName;
+}
+function rotV4Crumb(level,parentLevel,parentName){
+  const macro=window.ROT_V4_MACRO_NAME||null, sector=window.ROT_V4_SECTOR_NAME||null;
+  const parts=[{label:'Macro',click:level!=='macro',fn:"rotV4SetLevel('macro');renderRotationV4()"}];
+  if(macro) parts.push({label:macro,click:level!=='sector'&&level!=='macro',fn:`rotV4SetLevel('sector','macro','${escAttr(macro)}','${escAttr(macro)}',null);renderRotationV4()`});
+  if(level!=='macro') parts.push({label:'Sector',click:level!=='sector',fn:`rotV4SetLevel('sector','macro','${escAttr(macro||'')}','${escAttr(macro||'')}',null);renderRotationV4()`});
+  if(sector) parts.push({label:sector,click:level==='industry'||level==='narrow',fn:`rotV4SetLevel('industry','sector','${escAttr(sector)}','${escAttr(macro||'')}','${escAttr(sector)}');renderRotationV4()`});
+  if(level==='industry'||level==='narrow') parts.push({label:'Industry',click:level==='narrow',fn:`rotV4SetLevel('industry','sector','${escAttr(sector||'')}','${escAttr(macro||'')}','${escAttr(sector||'')}');renderRotationV4()`});
+  if(level==='narrow') parts.push({label:parentName||'Narrow Group',click:false,fn:''});
+  return parts.map((p,i)=>`<button class="rot-crumb ${p.label===level?'active':''}" ${p.click?`onclick="${p.fn}"`:''}>${escHtml(p.label)}</button>${i<parts.length-1?'<span class="rot-arrow">›</span>':''}`).join('');
+}
+
+function rotV5StateRank(state){
+  state=String(state||'').toLowerCase();
+  return state==='prime'?5:state==='watch'?4:state==='accumulation'?3:state==='developing'?2:state==='breakout'?4:1;
+}
+function rotV5EarlyLabel(state){return ({prime:'Prime',watch:'Watch',accumulation:'Accumulation',developing:'Developing',breakout:'Breakout'})[state]||'—';}
+function rotV5StockRows(market){
+  const defs=UNI[market]||[];
+  return defs.map(def=>{
+    const d=SD[def.s]; if(!d) return null;
+    const e=d.early||{};
+    const rsChg=d.rsSlope!=null?d.rsSlope:(d.rs21!=null&&d.rs55!=null?d.rs21-d.rs55:null);
+    return {def,d,e,rsChg,macro:rotV4Macro(def),sector:rotV4Sector(def),industry:rotV4Industry(def),narrow:rotV4Narrow(def),state:e.state||'—'};
+  }).filter(Boolean).sort((a,b)=>{
+    const sr=rotV5StateRank(b.state)-rotV5StateRank(a.state); if(sr) return sr;
+    const ep=(b.e.score??-999)-(a.e.score??-999); if(ep) return ep;
+    return (b.d.rs55??-999)-(a.d.rs55??-999);
+  });
+}
+function renderRotationV5Stocks(m){
+  const rows=rotV5StockRows(m);
+  const stateFilter=window.ROT_V5_STOCK_FILTER||'all';
+  const filtered=rows.filter(x=>stateFilter==='all'||(stateFilter==='prime'&&x.state==='prime')||(stateFilter==='early'&&x.e.score>=70)||(stateFilter==='bo'&&(x.d.boAge!=null&&x.d.boAge<=5)));
+  $('rotationV4Note').textContent=`Stocks • ${filtered.length} shown • sorted by strongest Early state, then Early score, then RS55. Use the filter to see Prime / Early / Breakout names.`;
+  $('rotationV4Crumb').innerHTML='<div class="rot-stock-filters">'+[['all','All'],['prime','Prime'],['early','Early ≥70'],['bo','Recent BO']].map(([k,l])=>`<button class="rot-crumb ${stateFilter===k?'active':''}" onclick="window.ROT_V5_STOCK_FILTER='${k}';renderRotationV4()">${l}</button>`).join('')+'</div>';
+  $('rotationV4Head').innerHTML='<tr><th>Stock</th><th>Macro</th><th>Sector</th><th>Industry</th><th>RS55</th><th>RS Δ</th><th>Early</th><th>State</th><th>BO Gain</th><th>BO Date</th></tr>';
+  $('rotationV4Body').innerHTML=filtered.length?filtered.map(x=>`<tr class="rot-v4-row" onclick="openDrill('${escAttr(x.def.s)}')"><td><b>${escHtml(x.def.d||x.def.s)}</b><br><span style="font-size:9px;color:var(--muted)">${escHtml(x.def.s)}</span></td><td>${escHtml(x.macro)}</td><td>${escHtml(x.sector)}</td><td>${escHtml(x.industry)}</td><td>${x.d.rs55==null?'—':x.d.rs55.toFixed(1)}</td><td>${x.rsChg==null?'—':(x.rsChg>=0?'+':'')+x.rsChg.toFixed(1)}</td><td>${x.e.score==null?'—':x.e.score}</td><td><span class="rot-pill ${x.state==='prime'?'rot-lead':x.state==='watch'?'rot-up':x.state==='breakout'?'rot-lead':'rot-neu'}">${rotV5EarlyLabel(x.state)}</span></td><td>${x.d.boGain==null?'—':(x.d.boGain>=0?'+':'')+x.d.boGain+'%'}</td><td>${boDateC(x.d.boDate)||'—'}</td></tr>`).join(''):'<tr><td colspan="10" class="rot-v4-empty">No stocks match this filter.</td></tr>';
+}
+
+function renderRotationV4(){
+  const m=$('rotationV4Market')?.value||CUR||'india';
+  const level=window.ROT_V4_LEVEL||'macro';
+  const parentLevel=window.ROT_V4_PARENT_LEVEL||null, parentName=window.ROT_V4_PARENT_NAME||null;
+  if(level==='stocks'){ renderRotationV5Stocks(m); $('rotationV4Tabs').innerHTML=[['macro','Macro'],['sector','Sector'],['industry','Industry'],['narrow','Narrow Group'],['stocks','Stocks']].map(([k,l])=>`<button class="rot-v4-tab ${level===k?'active':''}" onclick="rotV4SetLevel('${k}',null,null,null,null);renderRotationV4()">${l}</button>`).join(''); return; }
+  const rows=rotV4Rows(m,level,parentLevel,parentName);
+  const title=level==='macro'?'Macro':level==='sector'?'Sector':level==='industry'?'Industry':'Narrow Group';
+  $('rotationV4Note').textContent=`Money-flow ranking • strongest first: Powering Up → Turning Up → Cooling → Falling Back. Flow = RS strength + RS improvement + Early participation. Hierarchy: Macro → Sector → Industry → Basic Industry / Narrow Group → Stocks. Click a row to drill down. Rotation is context, not a buy/sell rule.`;
+  $('rotationV4Crumb').innerHTML=rotV4Crumb(level,parentLevel,parentName);
+  $('rotationV4Head').innerHTML='<tr><th>'+title+'</th><th>RS55</th><th>RS Δ</th><th>Flow</th><th>≥50E</th><th>Early</th><th>Prime</th><th>BO</th><th>Vol↑</th><th>Rotation</th></tr>';
+  $('rotationV4Body').innerHTML=rows.length?rows.map(r=>`<tr class="rot-v4-row" onclick="rotationV4Drill('${escAttr(r.name)}','${level}','${m}')"><td><b>${escHtml(r.name)}</b><br><span style="font-size:9px;color:var(--muted)">${r.n} stocks</span></td><td>${r.rs==null?'—':r.rs.toFixed(1)}</td><td>${r.rsChg==null?'—':(r.rsChg>=0?'+':'')+r.rsChg.toFixed(1)}</td><td>${r.flowScore==null?'—':r.flowScore}</td><td>${r.breadth==null?'—':r.breadth.toFixed(0)+'%'}</td><td>${r.earlyPct==null?'—':r.earlyPct.toFixed(0)+'%'}</td><td>${r.primePct==null?'—':r.primePct.toFixed(0)+'%'}</td><td>${r.boPct==null?'—':r.boPct.toFixed(0)+'%'}</td><td>${r.volPct==null?'—':r.volPct.toFixed(0)+'%'}</td><td><span class="rot-pill ${rotV4Cls(r.rotation)}">${r.rotation}</span></td></tr>`).join(''):'<tr><td colspan="10" class="rot-v4-empty">No computed data yet.</td></tr>';
+  const tabs=[['macro','Macro'],['sector','Sector'],['industry','Industry'],['narrow','Narrow Group'],['stocks','Stocks']];
+  $('rotationV4Tabs').innerHTML=tabs.map(([k,l])=>`<button class="rot-v4-tab ${level===k?'active':''}" onclick="rotV4SetLevel('${k}',null,null,null,null);renderRotationV4()">${l}</button>`).join('');
+}
+function rotationV4Drill(name,level,market){
+  const macro=window.ROT_V4_MACRO_NAME||null, sector=window.ROT_V4_SECTOR_NAME||null;
+  if(level==='macro') return rotV4SetLevel('sector','macro',name,name,null),renderRotationV4();
+  if(level==='sector') return rotV4SetLevel('industry','sector',name,macro,name),renderRotationV4();
+  if(level==='industry') return rotV4SetLevel('narrow','industry',name,macro,sector),renderRotationV4();
+  const defs=(UNI[market]||[]).filter(def=>rotV4Narrow(def)===name && (window.ROT_V4_PARENT_LEVEL!=='industry'||rotV4Industry(def)===window.ROT_V4_PARENT_NAME));
+  const old=$('rotationV4Modal').querySelector('.rotation-v4');
+  const html=`<table class="rot-v4-table"><thead><tr><th>Stock</th><th>Macro</th><th>Sector</th><th>Industry</th><th>RS55</th><th>Early</th><th>State</th><th>BO Gain</th><th>BO Date</th></tr></thead><tbody>${defs.map(def=>{const d=SD[def.s]||{},e=d.early||{};const st=e.state||'—';return `<tr class="rot-v4-row" onclick="openDrill('${escAttr(def.s)}')"><td><b>${escHtml(def.d||def.s)}</b><br><span style="font-size:9px;color:var(--muted)">${escHtml(def.s)}</span></td><td>${escHtml(rotV4Macro(def))}</td><td>${escHtml(rotV4Sector(def))}</td><td>${escHtml(rotV4Industry(def))}</td><td>${d.rs55==null?'—':d.rs55.toFixed(1)}</td><td>${e.score==null?'—':e.score}</td><td><span class="rot-pill ${st==='Prime'?'rot-lead':st==='Watch'?'rot-up':'rot-neu'}">${escHtml(st)}</span></td><td>${d.boGain==null?'—':(d.boGain>=0?'+':'')+d.boGain+'%'}</td><td>${boDateC(d.boDate)||'—'}</td></tr>`}).join('')}</tbody></table><div style="padding:8px"><button class="btn" onclick="rotationV4Back()">← Back</button></div>`;
+  old.querySelector('.rot-v4-wrap').innerHTML=html;
+  $('rotationV4Crumb').innerHTML=`<button class="rot-crumb" onclick="rotationV4Back()">← Back</button>`;
+}
+function rotationV4Back(){renderRotationV4()}
+function openRotationV4(){rotV4SetLevel('macro',null,null,null,null);const sel=$('rotationV4Market');if(sel)sel.value=CUR||'india';renderRotationV4();$('rotationV4Modal').classList.add('open')}
+
+function mfStateRank(v){return v==='New Money'?4:v==='Prime Leader'?3:v==='Watching'?2:v==='Money Leaving'?1:0;}
+function mfRows(market){
+  const defs=UNI[market]||[];
+  return defs.map(def=>{
+    const d=SD[def.s]; if(!d) return null;
+    const e=d.early||{};
+    const rsChg=d.rsSlope!=null?d.rsSlope:(d.rs21!=null&&d.rs55!=null?d.rs21-d.rs55:null);
+    const score=e.score??null;
+    const prime=e.state==='prime';
+    const improving=rsChg!=null&&rsChg>0;
+    const weakening=rsChg!=null&&rsChg<0;
+    const above50=numOk(d.pct50e)&&d.pct50e>=0;
+    let state='';
+    if(score!=null&&score>=80&&improving) state='New Money';
+    else if(prime) state='Prime Leader';
+    else if(score!=null&&score>=70&&improving) state='Watching';
+    else if(weakening&&(score==null||score<70||!above50)) state='Money Leaving';
+    else return null;
+    return {def,d,e,rsChg,state,macro:rotV4Macro(def),sector:rotV4Sector(def),industry:rotV4Industry(def),narrow:rotV4Narrow(def)};
+  }).filter(Boolean).sort((a,b)=>{
+    const sr=mfStateRank(b.state)-mfStateRank(a.state); if(sr)return sr;
+    const ep=(b.e.score??-999)-(a.e.score??-999); if(ep)return ep;
+    return (b.rsChg??-999)-(a.rsChg??-999);
+  });
+}
+function renderMoneyFlowRadar(){
+  const m=$('moneyFlowMarket')?.value||CUR||'india';
+  const tab=window.MF_TAB||'new';
+  const rows=mfRows(m);
+  if(tab==='changes'){ renderMoneyFlowChanges(m); $('moneyFlowTabs').innerHTML=[['changes','What Changed'],['new','New Money'],['prime','Prime Leaders'],['watch','Watching'],['leaving','Money Leaving']].map(([k,l])=>`<button class="rot-v4-tab ${tab===k?'active':''}" onclick="window.MF_TAB='${k}';renderMoneyFlowRadar()">${l}</button>`).join(''); return; }
+  const filter=tab==='new'?x=>x.state==='New Money':tab==='prime'?x=>x.state==='Prime Leader':tab==='leaving'?x=>x.state==='Money Leaving':x=>x.state==='Watching';
+  const shown=rows.filter(filter);
+  const labels=[['changes','What Changed'],['new','New Money'],['prime','Prime Leaders'],['watch','Watching'],['leaving','Money Leaving']];
+  $('moneyFlowTabs').innerHTML=labels.map(([k,l])=>`<button class="rot-v4-tab ${tab===k?'active':''}" onclick="window.MF_TAB='${k}';renderMoneyFlowRadar()">${l}</button>`).join('');
+  $('moneyFlowNote').textContent='Current-state radar: New Money = strong Early + improving RS; Prime Leaders = Prime; Watching = Early ≥70 + improving RS; Money Leaving = weakening RS with deteriorating participation. These are rotation candidates, not historical day-over-day changes until daily snapshots are stored.';
+  $('moneyFlowHead').innerHTML='<tr><th>Stock</th><th>Macro</th><th>Sector</th><th>Industry</th><th>RS55</th><th>RS Δ</th><th>Early</th><th>State</th><th>BO Gain</th><th>BO Date</th></tr>';
+  $('moneyFlowBody').innerHTML=shown.length?shown.map(x=>`<tr class="rot-v4-row" onclick="openDrill('${escAttr(x.def.s)}')"><td><b>${escHtml(x.def.d||x.def.s)}</b><br><span style="font-size:9px;color:var(--muted)">${escHtml(x.def.s)}</span></td><td>${escHtml(x.macro)}</td><td>${escHtml(x.sector)}</td><td>${escHtml(x.industry)}</td><td>${x.d.rs55==null?'—':x.d.rs55.toFixed(1)}</td><td>${x.rsChg==null?'—':(x.rsChg>=0?'+':'')+x.rsChg.toFixed(1)}</td><td>${x.e.score==null?'—':x.e.score}</td><td><span class="rot-pill ${x.state==='Money Leaving'?'rot-lag':x.state==='Prime Leader'?'rot-lead':'rot-up'}">${x.state}</span></td><td>${x.d.boGain==null?'—':(x.d.boGain>=0?'+':'')+x.d.boGain+'%'}</td><td>${boDateC(x.d.boDate)||'—'}</td></tr>`).join(''):'<tr><td colspan="10" class="rot-v4-empty">No candidates in this bucket.</td></tr>';
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   DAILY MONEY-FLOW SNAPSHOTS
+   Compact browser-side history. This stores only the fields needed to detect
+   state/participation changes; it does NOT store full SD rows. Once the Worker
+   exists, the same compact snapshot shape can move to KV without changing the UI.
+══════════════════════════════════════════════════════════════════════════ */
+const MF_HIST_MAX=30;
+const mfHistKey=m=>`${CFG.VER}_mf_hist_${m}`;
+const mfToday=()=>today();
+function mfReadHistory(m){
+  try{const x=JSON.parse(localStorage.getItem(mfHistKey(m))||'[]');return Array.isArray(x)?x:[];}catch(e){return[];}
+}
+function mfWriteHistory(m,h){
+  try{localStorage.setItem(mfHistKey(m),JSON.stringify(h.slice(-MF_HIST_MAX)));return true;}catch(e){console.warn('Money-flow history save:',e.message);return false;}
+}
+function mfSnapshotRows(m){
+  return (UNI[m]||[]).map(def=>{
+    const d=SD[def.s]; if(!d) return null;
+    const e=d.early||{};
+    const rsChg=d.rsSlope!=null?d.rsSlope:(d.rs21!=null&&d.rs55!=null?d.rs21-d.rs55:null);
+    const state=e.state||'—';
+    return {s:def.s,n:def.d||def.s,macro:rotV4Macro(def),sector:rotV4Sector(def),industry:rotV4Industry(def),
+      score:e.score??null,state,trend:e.trend??null,rs:e.rs??null,compression:e.compression??null,volume:e.volume??null,structure:e.structure??null,
+      triggerDist:e.triggerDist??null,volumePhase:e.volumePhase??null,marketRegime:e.marketRegime??null,rsLead:!!e.rsLead,rsCross:!!e.rsCross,
+      scoreParts:e.score!=null?{trend:e.trend??null,rs:e.rs??null,compression:e.compression??null,volume:e.volume??null,structure:e.structure??null}:null,
+      rs55:d.rs55??null,rsChg:rsChg??null,boAge:d.boAge??null,boDate:d.boDate??null,boGain:d.boGain??null,
+      a20:(numOk(d.pct20e)&&d.pct20e>=0),a50:(numOk(d.pct50e)&&d.pct50e>=0)};
+  }).filter(Boolean);
+}
+function mfCaptureSnapshot(m){
+  const rows=mfSnapshotRows(m); if(!rows.length) return;
+  const h=mfReadHistory(m), stamp=mfToday();
+  const snap={date:stamp,rows};
+  const idx=h.findIndex(x=>x&&x.date===stamp);
+  if(idx>=0) h[idx]=snap; else h.push(snap);
+  mfWriteHistory(m,h);
+}
+function mfPreviousSnapshot(m){
+  const h=mfReadHistory(m); if(h.length<2) return null;
+  return h[h.length-2];
+}
+function mfStateBucket(e){
+  if(e==='prime') return 'Prime';
+  if(e==='watch') return 'Watch';
+  if(e==='accumulation') return 'Accumulation';
+  if(e==='developing') return 'Developing';
+  if(e==='breakout') return 'Breakout';
+  return e||'—';
+}
+function mfCurrentBucket(x){
+  if(x.state==='prime') return 'Prime';
+  if(x.state==='watch') return 'Watch';
+  if(x.score!=null&&x.score>=70) return 'Early';
+  if(x.state==='accumulation') return 'Accumulation';
+  if(x.state==='breakout') return 'Breakout';
+  return 'Developing';
+}
+function mfChanges(m){
+  const prev=mfPreviousSnapshot(m), cur=mfReadHistory(m).slice(-1)[0];
+  if(!prev||!cur) return {prev:null,cur,stocks:[],groups:[]};
+  const pm=new Map((prev.rows||[]).map(x=>[x.s,x]));
+  const stocks=[];
+  (cur.rows||[]).forEach(x=>{
+    const p=pm.get(x.s); if(!p) return;
+    const pb=mfCurrentBucket(p), cb=mfCurrentBucket(x);
+    const scoreDelta=(x.score!=null&&p.score!=null)?x.score-p.score:null;
+    const rsDelta=(x.rs55!=null&&p.rs55!=null)?x.rs55-p.rs55:null;
+    const important=(cb!==pb)||(scoreDelta!=null&&Math.abs(scoreDelta)>=5)||(rsDelta!=null&&Math.abs(rsDelta)>=3);
+    if(important) stocks.push({...x,prevBucket:pb,bucket:cb,scoreDelta,rsDelta});
+  });
+  const gm=new Map();
+  (cur.rows||[]).forEach(x=>{
+    const key=x.industry||x.sector||x.macro; const g=gm.get(key)||{name:key,macro:x.macro,sector:x.sector,n:0,early:0,prime:0,score:0,rs:0,validScore:0,validRs:0};
+    g.n++; if(x.score!=null){g.score+=x.score;g.validScore++;} if(x.rsChg!=null){g.rs+=x.rsChg;g.validRs++;}
+    if(x.score!=null&&x.score>=70)g.early++; if(x.state==='prime')g.prime++; gm.set(key,g);
+  });
+  const pg=new Map();
+  (prev.rows||[]).forEach(x=>{
+    const key=x.industry||x.sector||x.macro; const g=pg.get(key)||{early:0,prime:0,n:0};
+    g.n++; if(x.score!=null&&x.score>=70)g.early++; if(x.state==='prime')g.prime++; pg.set(key,g);
+  });
+  const groups=[...gm.values()].map(g=>{
+    const p=pg.get(g.name)||{early:0,prime:0,n:g.n};
+    return {...g,earlyDelta:g.early-(p.early||0),primeDelta:g.prime-(p.prime||0),earlyPct:g.n?100*g.early/g.n:null,primePct:g.n?100*g.prime/g.n:null,avgScore:g.validScore?g.score/g.validScore:null,avgRs:g.validRs?g.rs/g.validRs:null};
+  }).filter(g=>g.earlyDelta!==0||g.primeDelta!==0).sort((a,b)=>(b.primeDelta-a.primeDelta)||(b.earlyDelta-a.earlyDelta)||(b.avgRs??-999)-(a.avgRs??-999));
+  stocks.sort((a,b)=>(b.scoreDelta??-999)-(a.scoreDelta??-999)||(b.rsDelta??-999)-(a.rsDelta??-999));
+  return {prev,cur,stocks,groups};
+}
+function renderMoneyFlowChanges(m){
+  const ch=mfChanges(m);
+  if(!ch.prev){
+    $('moneyFlowNote').textContent='No prior daily snapshot exists yet. Refresh the live market once today and again on a later trading day; the screener will then show what entered/left Prime and where participation changed.';
+    $('moneyFlowHead').innerHTML='<tr><th>History</th></tr>';
+    $('moneyFlowBody').innerHTML='<tr><td class="rot-v4-empty">Daily history is ready, but it needs at least two snapshots to calculate changes.</td></tr>';
+    return;
+  }
+  $('moneyFlowNote').textContent=`Changes from ${ch.prev.date} → ${ch.cur.date}. Groups are sorted by rising Prime/Early participation; stocks are sorted by score/RS improvement. This is the first version of the daily change engine.`;
+  const gRows=ch.groups.slice(0,30).map(g=>`<tr><td><b>${escHtml(g.name)}</b><br><span style="font-size:9px;color:var(--muted)">${escHtml(g.sector||g.macro||'')} · ${g.n} stocks</span></td><td>${g.primeDelta>0?'+':''}${g.primeDelta}</td><td>${g.earlyDelta>0?'+':''}${g.earlyDelta}</td><td>${g.primePct==null?'—':g.primePct.toFixed(0)+'%'}</td><td>${g.earlyPct==null?'—':g.earlyPct.toFixed(0)+'%'}</td><td>${g.avgRs==null?'—':(g.avgRs>=0?'+':'')+g.avgRs.toFixed(1)}</td></tr>`).join('');
+  const sRows=ch.stocks.slice(0,40).map(x=>`<tr class="rot-v4-row" onclick="openDrill('${escAttr(x.s)}')"><td><b>${escHtml(x.n)}</b><br><span style="font-size:9px;color:var(--muted)">${escHtml(x.s)}</span></td><td>${escHtml(x.prevBucket)} → <b>${escHtml(x.bucket)}</b></td><td>${x.scoreDelta==null?'—':(x.scoreDelta>=0?'+':'')+x.scoreDelta}</td><td>${x.rsDelta==null?'—':(x.rsDelta>=0?'+':'')+x.rsDelta.toFixed(1)}</td><td>${x.state==='prime'?'Prime':x.state==='watch'?'Watch':x.score>=70?'Early':mfStateBucket(x.state)}</td><td>${x.boGain==null?'—':(x.boGain>=0?'+':'')+x.boGain+'%'}</td><td>${boDateC(x.boDate)||'—'}</td></tr>`).join('');
+  $('moneyFlowHead').innerHTML=`<tr><th colspan="6">GROUP PARTICIPATION CHANGES</th></tr><tr><th>Industry</th><th>Prime Δ</th><th>Early Δ</th><th>Prime%</th><th>Early%</th><th>Avg RS Δ</th></tr><tr><th colspan="7">STOCKS WITH MATERIAL CHANGE</th></tr><tr><th>Stock</th><th>State</th><th>Early Δ</th><th>RS55 Δ</th><th>Current</th><th>BO Gain</th><th>BO Date</th></tr>`;
+  $('moneyFlowBody').innerHTML=(gRows||'<tr><td colspan="6">No group participation change.</td></tr>')+(sRows||'<tr><td colspan="7">No material stock changes.</td></tr>');
+}
+
+function openMoneyFlowRadar(){window.MF_TAB='new';const sel=$('moneyFlowMarket');if(sel)sel.value=CUR||'india';renderMoneyFlowRadar();$('moneyFlowRadarModal').classList.add('open');}
+function closeMoneyFlowRadar(){$('moneyFlowRadarModal').classList.remove('open');}
+
+function closeRotationV4(){$('rotationV4Modal').classList.remove('open')}
+
+</script>
 </body>
 </html>
