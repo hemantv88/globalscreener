@@ -1428,6 +1428,16 @@ body.dd-lock{overflow:hidden}
   .search-bar input{width:80px}
 }
 
+
+/* v9 consistent status colouring / tooltips */
+.rot-v4-tab[data-mf='new']{border-color:#86efac}.rot-v4-tab[data-mf='prime']{border-color:#93c5fd}.rot-v4-tab[data-mf='watch']{border-color:#7dd3fc}.rot-v4-tab[data-mf='retest']{border-color:#fcd34d}.rot-v4-tab[data-mf='leaving']{border-color:#fca5a5}.rot-v4-tab[data-mf='changes']{border-color:#c4b5fd}
+.mf-state-new{background:#dcfce7;color:#166534}.mf-state-prime{background:#dbeafe;color:#1d4ed8}.mf-state-watch{background:#e0f2fe;color:#075985}.mf-state-retest{background:#fef3c7;color:#92400e}.mf-state-leaving{background:#fee2e2;color:#991b1b}
+.mf-positive{color:#166534;font-weight:800}.mf-negative{color:#991b1b;font-weight:800}.mf-neutral{color:var(--muted)}
+.ex-fill{background:var(--accent)}
+.early-cell{border-radius:6px;padding:2px 4px;transition:background .15s ease}.early-prime{background:#dcfce7}.early-watch{background:#e0f2fe}.early-accumulation{background:#fef3c7}.early-breakout{background:#ede9fe}.early-developing{background:var(--surface2)}
+.early-prime .early-score{color:#166534}.early-watch .early-score{color:#075985}.early-accumulation .early-score{color:#92400e}.early-breakout .early-score{color:#6d28d9}
+.ex-leg:nth-child(1) .ex-fill,.ex-leg:nth-child(2) .ex-fill,.ex-leg:nth-child(3) .ex-fill,.ex-leg:nth-child(4) .ex-fill,.ex-leg:nth-child(5) .ex-fill{background:var(--accent)}
+
 /* v4 rotation hierarchy */
 .rotation-v4{width:1050px;max-width:96vw;max-height:86vh;display:flex;flex-direction:column}
 .rot-v4-toolbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:8px 0 4px}
@@ -1549,8 +1559,8 @@ body.dd-lock{overflow:hidden}
     <div class="fsep"></div>
     <select class="fsel" id="sctFil" onchange="applyF()"><option value="">All Sectors</option></select>
     <button class="ref-btn" onclick="openSectorBreadth()" data-tip="See RSI, momentum, and breakout stats broken down by sector — click any row to filter the main table to just that sector">📊 Sector View</button>
-    <button class="ref-btn" onclick="openRotationV4()" data-tip="Sector → Industry → Narrow Group rotation and Early-setup density">🔄 Rotation</button>
-    <button class="ref-btn" onclick="openMoneyFlowRadar()" data-tip="See current New Money, Prime leaders and Money Leaving candidates across the hierarchy">💸 Money Flow</button>
+    <button class="ref-btn" onclick="openRotationV4()" data-tip="Rotation map: Macro → Sector → Industry → Narrow Group. Green = Powering Up, blue = Turning Up, amber = Cooling, red = Falling Back. Click a group to drill into its stocks.">🔄 Rotation</button>
+    <button class="ref-btn" onclick="openMoneyFlowRadar()" data-tip="Money Flow: New Money, Prime Leaders, Watching, Post-Breakout/Retest and Money Leaving. Uses current Early, RS, breakout and participation context; What Changed uses daily history.">💸 Money Flow</button>
     <button class="ref-btn" id="sortDefBtn" onclick="resetSort()" data-tip="Return to the default Setup Score order: quality setups first (starred in the Setup column), strongest sectors first within each group, then each stock's own 55-day relative strength. Clicking any column header sorts by that column instead — clicking the same header a third time also brings you back here.">↕ Default (Setup Score)</button>
     <button class="ref-btn" onclick="openRSSettings()" data-tip="Set the benchmark ticker that RS / MRS Rank is measured against">⚙️ RS Settings</button>
     <button class="ref-btn" id="advBtn" onclick="openAdvFilters()" data-tip="Consolidation, 52W high proximity, breakout age, RSI, volume ratio, minimum average traded value, EMA-crossover and EMA-convergence screens — each one switched on independently">⚙ Advanced Filters</button>
@@ -9600,7 +9610,7 @@ function earlyC(d){
   const label={breakout:'BO',prime:'Prime',watch:'Watch',accumulation:'Accum',developing:'Dev'}[e.state]||'Dev';
   const cls='early-'+e.state;
   const dist=e.triggerDist==null?'—':(e.triggerDist<=0?'0':e.triggerDist.toFixed(1)+'%');
-  const tip=`Early ${e.score}/100 · ${label}. Trend ${e.trend}/20 · RS ${e.rs}/20${e.rsLead?' · RSP lead':''}${e.rsCross?' · RSP cross':''} · Compression ${e.compression}/20 · Volume ${e.volume}/20 (${e.volumePhase}) · Structure ${e.structure}/20 · trigger ${dist} · market ${e.marketRegime}. Research signal only; not part of Setup/Stage2/MRS.`;
+  const tip=`Early ${e.score}/100 · ${label}. Trend ${e.trend}/20 · RS ${e.rs}/20${e.rsLead?' · RSP lead':''}${e.rsCross?' · RSP cross':''} · Compression ${e.compression}/20 · Volume ${e.volume}/20 (${e.volumePhase}) · Structure ${e.structure}/20 · trigger ${dist} · market ${e.marketRegime}. Click for Early X-Ray. Research signal only; not part of Setup/Stage2/MRS.`;
   return `<div class="early-cell ${cls}" data-tip="${escAttr(tip)}"><span class="early-score">${e.score}</span><span class="early-state">${label}</span><span class="early-sub">${dist}</span></div>`;
 }
 
@@ -14532,6 +14542,7 @@ async function loadMarket(market,force=false){
       // refreshed once more below, after fetchBenchmark has decided.
       rankRS(market);
       computeSectorStrength(market);   // medians move whenever the data does
+      await mfLoadRemoteHistory(market);
       renderTable(market); renderMetrics(market);
       setTag('cached'); updateStatus(); updateScanBanner(market);
       LOADING=false; rb.classList.remove('loading'); rb.innerHTML='↻ Refresh';
@@ -14583,7 +14594,8 @@ async function loadMarket(market,force=false){
   await fetchBenchmark(market);
   rankRS(market);
   computeSectorStrength(market);       // medians move whenever the data does
-  mfCaptureSnapshot(market);            // compact daily state/participation history
+  await mfLoadRemoteHistory(market);
+  await mfCaptureSnapshot(market);            // compact daily state/participation history
   LOADED[market]=true;
   CACHE_SHOWN[market]=false;   // these numbers are fresh, whatever happens later
   renderTable(market); renderMetrics(market); updateStatus();
@@ -17771,7 +17783,7 @@ function renderRotationV5Stocks(m){
   const filtered=rows.filter(x=>stateFilter==='all'||(stateFilter==='prime'&&x.state==='prime')||(stateFilter==='early'&&x.e.score>=70)||(stateFilter==='bo'&&(x.d.boAge!=null&&x.d.boAge<=5)));
   $('rotationV4Note').textContent=`Stocks • ${filtered.length} shown • sorted by strongest Early state, then Early score, then RS55. Use the filter to see Prime / Early / Breakout names.`;
   $('rotationV4Crumb').innerHTML='<div class="rot-stock-filters">'+[['all','All'],['prime','Prime'],['early','Early ≥70'],['bo','Recent BO']].map(([k,l])=>`<button class="rot-crumb ${stateFilter===k?'active':''}" onclick="window.ROT_V5_STOCK_FILTER='${k}';renderRotationV4()">${l}</button>`).join('')+'</div>';
-  $('rotationV4Head').innerHTML='<tr><th>Stock</th><th>Macro</th><th>Sector</th><th>Industry</th><th>RS55</th><th>RS Δ</th><th>Early</th><th>State</th><th>BO Gain</th><th>BO Date</th></tr>';
+  $('rotationV4Head').innerHTML='<tr><th>Stock</th><th>Macro</th><th>Sector</th><th>Industry</th><th>RS55</th><th>RS Δ</th><th>Early</th><th>State</th><th>BO Gain</th><th>BO Age</th><th>BO Date</th></tr>';
   $('rotationV4Body').innerHTML=filtered.length?filtered.map(x=>`<tr class="rot-v4-row" onclick="openDrill('${escAttr(x.def.s)}')"><td><b>${escHtml(x.def.d||x.def.s)}</b><br><span style="font-size:9px;color:var(--muted)">${escHtml(x.def.s)}</span></td><td>${escHtml(x.macro)}</td><td>${escHtml(x.sector)}</td><td>${escHtml(x.industry)}</td><td>${x.d.rs55==null?'—':x.d.rs55.toFixed(1)}</td><td>${x.rsChg==null?'—':(x.rsChg>=0?'+':'')+x.rsChg.toFixed(1)}</td><td>${x.e.score==null?'—':x.e.score}</td><td><span class="rot-pill ${x.state==='prime'?'rot-lead':x.state==='watch'?'rot-up':x.state==='breakout'?'rot-lead':'rot-neu'}">${rotV5EarlyLabel(x.state)}</span></td><td>${x.d.boGain==null?'—':(x.d.boGain>=0?'+':'')+x.d.boGain+'%'}</td><td>${boDateC(x.d.boDate)||'—'}</td></tr>`).join(''):'<tr><td colspan="10" class="rot-v4-empty">No stocks match this filter.</td></tr>';
 }
 
@@ -17803,43 +17815,47 @@ function rotationV4Drill(name,level,market){
 function rotationV4Back(){renderRotationV4()}
 function openRotationV4(){rotV4SetLevel('macro',null,null,null,null);const sel=$('rotationV4Market');if(sel)sel.value=CUR||'india';renderRotationV4();$('rotationV4Modal').classList.add('open')}
 
-function mfStateRank(v){return v==='New Money'?4:v==='Prime Leader'?3:v==='Watching'?2:v==='Money Leaving'?1:0;}
+function mfStateRank(v){return v==='New Money'?5:v==='Prime Leader'?4:v==='Watching'?3:v==='Post-Breakout / Retest'?2:v==='Money Leaving'?1:0;}
 function mfRows(market){
   const defs=UNI[market]||[];
   return defs.map(def=>{
     const d=SD[def.s]; if(!d) return null;
     const e=d.early||{};
+    const score=e.score;
     const rsChg=d.rsSlope!=null?d.rsSlope:(d.rs21!=null&&d.rs55!=null?d.rs21-d.rs55:null);
-    const score=e.score??null;
-    const prime=e.state==='prime';
+    const above50=numOk(d.pct50e)&&d.pct50e>=0;
+    const recentBO=d.boAge!=null&&isFinite(d.boAge)&&d.boAge<=15;
+    const positiveBO=recentBO&&d.boGain!=null&&d.boGain>=0;
+    const controlledRetest=positiveBO&&d.retrace!=null&&d.retrace>=-12&&above50;
+    const prime= e.state==='prime' || (score!=null&&score>=80&&e.triggerDist!=null&&e.triggerDist<=5&&e.volumePhase==='expanding');
     const improving=rsChg!=null&&rsChg>0;
     const weakening=rsChg!=null&&rsChg<0;
-    const above50=numOk(d.pct50e)&&d.pct50e>=0;
     let state='';
-    if(score!=null&&score>=80&&improving) state='New Money';
+    if(positiveBO && controlledRetest && (e.state==='breakout'||score==null||score<80)) state='Post-Breakout / Retest';
+    else if(score!=null&&score>=80&&improving) state='New Money';
     else if(prime) state='Prime Leader';
-    else if(score!=null&&score>=70&&improving) state='Watching';
-    else if(weakening&&(score==null||score<70||!above50)) state='Money Leaving';
+    else if(score!=null&&score>=70&&(improving||!weakening)) state='Watching';
+    else if(weakening && (score==null||score<60) && (!recentBO || !positiveBO || !controlledRetest)) state='Money Leaving';
     else return null;
-    return {def,d,e,rsChg,state,macro:rotV4Macro(def),sector:rotV4Sector(def),industry:rotV4Industry(def),narrow:rotV4Narrow(def)};
+    return {def,d,e,rsChg,state,macro:rotV4Macro(def),sector:rotV4Sector(def),industry:rotV4Industry(def),narrow:rotV4Narrow(def),recentBO,positiveBO,controlledRetest};
   }).filter(Boolean).sort((a,b)=>{
     const sr=mfStateRank(b.state)-mfStateRank(a.state); if(sr)return sr;
     const ep=(b.e.score??-999)-(a.e.score??-999); if(ep)return ep;
-    return (b.rsChg??-999)-(a.rsChg??-999);
+    return (b.d.rs55??-999)-(a.d.rs55??-999);
   });
 }
 function renderMoneyFlowRadar(){
   const m=$('moneyFlowMarket')?.value||CUR||'india';
   const tab=window.MF_TAB||'new';
   const rows=mfRows(m);
-  if(tab==='changes'){ renderMoneyFlowChanges(m); $('moneyFlowTabs').innerHTML=[['changes','What Changed'],['new','New Money'],['prime','Prime Leaders'],['watch','Watching'],['leaving','Money Leaving']].map(([k,l])=>`<button class="rot-v4-tab ${tab===k?'active':''}" onclick="window.MF_TAB='${k}';renderMoneyFlowRadar()">${l}</button>`).join(''); return; }
-  const filter=tab==='new'?x=>x.state==='New Money':tab==='prime'?x=>x.state==='Prime Leader':tab==='leaving'?x=>x.state==='Money Leaving':x=>x.state==='Watching';
+  if(tab==='changes'){ renderMoneyFlowChanges(m); $('moneyFlowTabs').innerHTML=[['changes','What Changed'],['new','New Money'],['prime','Prime Leaders'],['watch','Watching'],['retest','Post-Breakout / Retest'],['leaving','Money Leaving']].map(([k,l])=>`<button class="rot-v4-tab ${tab===k?'active':''}" data-mf="${k}" title="${k==='changes'?'Compare the latest two daily market snapshots':k==='new'?'Strong Early setup with improving relative strength':k==='prime'?'Stocks currently in the Prime Early state':k==='watch'?'Early setup is developing with constructive RS':k==='retest'?'Recent positive-volume breakout followed by a controlled pullback':'RS/participation deterioration without a constructive breakout retest'}" onclick="window.MF_TAB='${k}';renderMoneyFlowRadar()">${l}</button>`).join(''); return; }
+  const filter=tab==='new'?x=>x.state==='New Money':tab==='prime'?x=>x.state==='Prime Leader':tab==='watch'?x=>x.state==='Watching':tab==='retest'?x=>x.state==='Post-Breakout / Retest':x=>x.state==='Money Leaving';
   const shown=rows.filter(filter);
-  const labels=[['changes','What Changed'],['new','New Money'],['prime','Prime Leaders'],['watch','Watching'],['leaving','Money Leaving']];
-  $('moneyFlowTabs').innerHTML=labels.map(([k,l])=>`<button class="rot-v4-tab ${tab===k?'active':''}" onclick="window.MF_TAB='${k}';renderMoneyFlowRadar()">${l}</button>`).join('');
-  $('moneyFlowNote').textContent='Current-state radar: New Money = strong Early + improving RS; Prime Leaders = Prime; Watching = Early ≥70 + improving RS; Money Leaving = weakening RS with deteriorating participation. These are rotation candidates, not historical day-over-day changes until daily snapshots are stored.';
-  $('moneyFlowHead').innerHTML='<tr><th>Stock</th><th>Macro</th><th>Sector</th><th>Industry</th><th>RS55</th><th>RS Δ</th><th>Early</th><th>State</th><th>BO Gain</th><th>BO Date</th></tr>';
-  $('moneyFlowBody').innerHTML=shown.length?shown.map(x=>`<tr class="rot-v4-row" onclick="openDrill('${escAttr(x.def.s)}')"><td><b>${escHtml(x.def.d||x.def.s)}</b><br><span style="font-size:9px;color:var(--muted)">${escHtml(x.def.s)}</span></td><td>${escHtml(x.macro)}</td><td>${escHtml(x.sector)}</td><td>${escHtml(x.industry)}</td><td>${x.d.rs55==null?'—':x.d.rs55.toFixed(1)}</td><td>${x.rsChg==null?'—':(x.rsChg>=0?'+':'')+x.rsChg.toFixed(1)}</td><td>${x.e.score==null?'—':x.e.score}</td><td><span class="rot-pill ${x.state==='Money Leaving'?'rot-lag':x.state==='Prime Leader'?'rot-lead':'rot-up'}">${x.state}</span></td><td>${x.d.boGain==null?'—':(x.d.boGain>=0?'+':'')+x.d.boGain+'%'}</td><td>${boDateC(x.d.boDate)||'—'}</td></tr>`).join(''):'<tr><td colspan="10" class="rot-v4-empty">No candidates in this bucket.</td></tr>';
+  const labels=[['changes','What Changed'],['new','New Money'],['prime','Prime Leaders'],['watch','Watching'],['retest','Post-Breakout / Retest'],['leaving','Money Leaving']];
+  $('moneyFlowTabs').innerHTML=labels.map(([k,l])=>`<button class="rot-v4-tab ${tab===k?'active':''}" data-mf="${k}" title="${k==='changes'?'Compare the latest two daily market snapshots':k==='new'?'Strong Early setup with improving relative strength':k==='prime'?'Stocks currently in the Prime Early state':k==='watch'?'Early setup is developing with constructive RS':k==='retest'?'Recent positive-volume breakout followed by a controlled pullback': 'RS/participation deterioration without a constructive breakout retest'}" onclick="window.MF_TAB='${k}';renderMoneyFlowRadar()">${l}</button>`).join('');
+  $('moneyFlowNote').textContent='Current-state radar: New Money = strong Early + improving RS; Prime Leaders = Prime; Watching = Early ≥70 and constructive; Post-Breakout / Retest = recent positive-volume breakout followed by a controlled pullback while price remains above 50EMA; Money Leaving = genuine deterioration. A pullback after a successful breakout is not automatically negative.';
+  $('moneyFlowHead').innerHTML='<tr><th>Stock</th><th>Macro</th><th>Sector</th><th>Industry</th><th>RS55</th><th>RS Δ</th><th>Early</th><th>State</th><th>BO Gain</th><th>BO Age</th><th>BO Date</th></tr>';
+  $('moneyFlowBody').innerHTML=shown.length?shown.map(x=>`<tr class="rot-v4-row" onclick="openDrill('${escAttr(x.def.s)}')"><td><b>${escHtml(x.def.d||x.def.s)}</b><br><span style="font-size:9px;color:var(--muted)">${escHtml(x.def.s)}</span></td><td>${escHtml(x.macro)}</td><td>${escHtml(x.sector)}</td><td>${escHtml(x.industry)}</td><td>${x.d.rs55==null?'—':x.d.rs55.toFixed(1)}</td><td>${x.rsChg==null?'—':(x.rsChg>=0?'+':'')+x.rsChg.toFixed(1)}</td><td>${x.e.score==null?'—':x.e.score}</td><td><span class="rot-pill ${x.state==='Money Leaving'?'mf-state-leaving':x.state==='Prime Leader'?'mf-state-prime':x.state==='New Money'?'mf-state-new':x.state==='Post-Breakout / Retest'?'mf-state-retest':'mf-state-watch'}" title="${escAttr(x.state==='Post-Breakout / Retest'?'Recent breakout with controlled pullback; not automatically a sell signal':x.state)}">${x.state}</span></td><td>${x.d.boGain==null?'—':(x.d.boGain>=0?'+':'')+x.d.boGain+'%'}</td><td>${x.d.boAge==null?'—':x.d.boAge+'d'}</td><td>${boDateC(x.d.boDate)||'—'}</td></tr>`).join(''):'<tr><td colspan="11" class="rot-v4-empty">No candidates in this bucket.</td></tr>';
 }
 
 /* ══════════════════════════════════════════════════════════════════════════
@@ -17849,13 +17865,47 @@ function renderMoneyFlowRadar(){
    exists, the same compact snapshot shape can move to KV without changing the UI.
 ══════════════════════════════════════════════════════════════════════════ */
 const MF_HIST_MAX=30;
+const MF_REMOTE_API=(/github\.io$/i.test(location.hostname)||/githubusercontent\.com$/i.test(location.hostname))?'https://da34d214.globalscreener.pages.dev/api/mf-history':'/api/mf-history';
+const MF_REMOTE={india:null,us:null,etf:null};
 const mfHistKey=m=>`${CFG.VER}_mf_hist_${m}`;
 const mfToday=()=>today();
-function mfReadHistory(m){
+function mfReadLocalHistory(m){
   try{const x=JSON.parse(localStorage.getItem(mfHistKey(m))||'[]');return Array.isArray(x)?x:[];}catch(e){return[];}
 }
+function mfReadHistory(m){
+  if(Array.isArray(MF_REMOTE[m])) return MF_REMOTE[m];
+  return mfReadLocalHistory(m);
+}
 function mfWriteHistory(m,h){
-  try{localStorage.setItem(mfHistKey(m),JSON.stringify(h.slice(-MF_HIST_MAX)));return true;}catch(e){console.warn('Money-flow history save:',e.message);return false;}
+  const clean=h.slice(-MF_HIST_MAX);
+  try{localStorage.setItem(mfHistKey(m),JSON.stringify(clean));}catch(e){console.warn('Money-flow local history save:',e.message);}
+  MF_REMOTE[m]=clean;
+  return true;
+}
+async function mfLoadRemoteHistory(m){
+  try{
+    const r=await fetch(`${MF_REMOTE_API}?market=${encodeURIComponent(m)}`,{cache:'no-store'});
+    if(!r.ok) throw new Error('HTTP '+r.status);
+    const j=await r.json();
+    if(Array.isArray(j.history)){
+      MF_REMOTE[m]=j.history.slice(-MF_HIST_MAX);
+      try{localStorage.setItem(mfHistKey(m),JSON.stringify(MF_REMOTE[m]));}catch(e){}
+      return MF_REMOTE[m];
+    }
+  }catch(e){
+    MF_REMOTE[m]=mfReadLocalHistory(m);
+  }
+  return MF_REMOTE[m]||[];
+}
+async function mfSaveRemoteHistory(m,h){
+  const clean=h.slice(-MF_HIST_MAX); MF_REMOTE[m]=clean;
+  try{
+    const r=await fetch(MF_REMOTE_API,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({market:m,history:clean})});
+    if(!r.ok) throw new Error('HTTP '+r.status);
+    return true;
+  }catch(e){
+    return false;
+  }
 }
 function mfSnapshotRows(m){
   return (UNI[m]||[]).map(def=>{
@@ -17871,13 +17921,14 @@ function mfSnapshotRows(m){
       a20:(numOk(d.pct20e)&&d.pct20e>=0),a50:(numOk(d.pct50e)&&d.pct50e>=0)};
   }).filter(Boolean);
 }
-function mfCaptureSnapshot(m){
+async function mfCaptureSnapshot(m){
   const rows=mfSnapshotRows(m); if(!rows.length) return;
-  const h=mfReadHistory(m), stamp=mfToday();
+  const h=mfReadHistory(m).slice(), stamp=mfToday();
   const snap={date:stamp,rows};
   const idx=h.findIndex(x=>x&&x.date===stamp);
   if(idx>=0) h[idx]=snap; else h.push(snap);
   mfWriteHistory(m,h);
+  await mfSaveRemoteHistory(m,h);
 }
 function mfPreviousSnapshot(m){
   const h=mfReadHistory(m); if(h.length<2) return null;
