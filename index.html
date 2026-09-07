@@ -1482,13 +1482,6 @@ body.dd-lock{overflow:hidden}
 
 
 .rot-v4-crumb{display:flex;align-items:center;gap:5px;flex-wrap:wrap;margin:6px 0 8px}.rot-crumb{border:0;background:transparent;color:var(--muted);font-size:11px;padding:3px 5px;cursor:pointer}.rot-crumb.active{color:var(--text);font-weight:800}.rot-arrow{color:var(--muted)}.rot-stock-filters{display:flex;gap:5px;margin:4px 0 7px;width:100%}.rot-filter{border:1px solid var(--border);background:var(--surface2);color:var(--muted);border-radius:999px;padding:4px 8px;font-size:10px;font-weight:700;cursor:pointer}.rot-filter:hover{background:var(--blue-bg);color:var(--text)}.rot-filter.active{background:var(--blue-bg);border-color:#7dd3fc;color:var(--text);font-weight:800}.bo-date{font-size:9px;color:var(--muted);white-space:nowrap}</style>
-
-/* GLOBAL INDEX STRIP — compact live/delayed market context, above tabs */
-.index-strip{width:100%;border-top:1px solid var(--border);border-bottom:1px solid var(--border);background:var(--surface);overflow:hidden;min-height:48px;display:flex;align-items:center}
-.index-strip-inner{width:100%;max-width:100%;overflow:hidden}
-.index-strip tv-tickers{display:block;width:100%;min-height:46px}
-.index-strip-note{display:none}
-@media(max-width:700px){.index-strip{min-height:44px}.index-strip tv-tickers{min-height:42px}}
 </head>
 <body>
 
@@ -1519,25 +1512,6 @@ body.dd-lock{overflow:hidden}
     <button class="hbtn dark" onclick="openFeedback()">💬 Feedback</button>
   </div>
 </header>
-
-
-<!-- GLOBAL INDEX STRIP
-     TradingView's free embedded ticker supplies current market context without
-     requiring an API key. Exchange rules determine whether a symbol is real-time
-     or delayed; the widget handles that distinction. It is intentionally above
-     the market tabs so India/US/ETF context is visible from every tab. -->
-<div class="index-strip" aria-label="Global market indices">
-  <div class="index-strip-inner">
-    <tv-tickers
-      symbols="NSE:NIFTY,NSE:BANKNIFTY,NSE:CNX500,NSE:CNXMIDCAP,NASDAQ:IXIC,NASDAQ:NDX,DJ:DJI,SP:SPX,CBOE:RUT"
-      hide-chart
-      direction="horizontal"
-      item-size="compact"
-      locale="en"
-    ></tv-tickers>
-  </div>
-</div>
-<script type="module" src="https://widgets.tradingview-widget.com/w/en/tv-tickers.js"></script>
 
 <!-- MARKET TABS -->
 <div class="tabs-row">
