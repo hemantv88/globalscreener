@@ -924,8 +924,6 @@ body.asof-on .tbl-wrap{outline:3px solid var(--orange)}
 .early-watch .early-score{color:var(--amber)}
 .early-accum .early-score{color:var(--text2)}
 .early-dev .early-score{color:var(--text3)}
-.stgtrans{display:inline-flex;flex-direction:column;align-items:center;gap:1px;line-height:1.05;white-space:nowrap}.stgtrans-main{font-weight:800;font-size:10px}.stgtrans-score{font-size:9px;color:var(--text3);font-variant-numeric:tabular-nums}.stgtrans-base .stgtrans-main{color:var(--text3)}.stgtrans-turn .stgtrans-main{color:var(--amber)}.stgtrans-prime .stgtrans-main,.stgtrans-s2 .stgtrans-main{color:var(--green)}
-
 /* EARLY X-RAY */
 .ex-wrap{margin-top:12px;border:1px solid var(--border);border-radius:10px;background:var(--surface);padding:12px}
 .ex-head{display:flex;justify-content:space-between;gap:10px;align-items:flex-start;margin-bottom:10px}
@@ -1581,7 +1579,7 @@ body.dd-lock{overflow:hidden}
     <div class="fsep"></div>
     <select class="fsel" id="sctFil" onchange="applyF()"><option value="">All Sectors</option></select>
     <button class="ref-btn" onclick="openSectorBreadth()" data-tip="See RSI, momentum, and breakout stats broken down by sector — click any row to filter the main table to just that sector">📊 Sector View</button>
-    <button class="ref-btn" onclick="openRotationV4()" data-tip="Rotation map: Macro → Sector → Industry → Narrow Group. Green = Powering Up, blue = Turning Up, amber = Cooling, red = Falling Back. Click a group to drill into its stocks.">🔄 Rotation</button>
+    <button class="ref-btn" onclick="openRotationV4()" data-tip="Rotation map: Macro → Sector → Industry. Green = Powering Up, blue = Turning Up, amber = Cooling, red = Falling Back. Click an industry to drill into its stocks.">🔄 Rotation</button>
     <button class="ref-btn" onclick="openMoneyFlowRadar()" data-tip="Money Flow: New Money, Prime Leaders, Watching, Post-Breakout/Retest and Money Leaving. Uses current Early, RS, breakout and participation context; What Changed uses daily history.">💸 Money Flow</button>
     <button class="ref-btn" id="sortDefBtn" onclick="resetSort()" data-tip="Return to the default Setup Score order: quality setups first (starred in the Setup column), strongest sectors first within each group, then each stock's own 55-day relative strength. Clicking any column header sorts by that column instead — clicking the same header a third time also brings you back here.">↕ Default (Setup Score)</button>
     <button class="ref-btn" onclick="openRSSettings()" data-tip="Set the benchmark ticker that RS / MRS Rank is measured against">⚙️ RS Settings</button>
@@ -2178,10 +2176,6 @@ const CFG = {
      Do NOT paste the /dev URL — it only works for you, while the editor is
      open, and will strand every other reader on "Sign in to continue". */
   API_URL: '',
-
-  // Public NSE event bridge. On Cloudflare Pages this resolves to /api/events.
-  // Leave blank only if you intentionally disable live event enrichment.
-  EVENT_API_URL: '/api/events',
 
   /* ── THE SAME URL, NOT SPELLED OUT ─────────────────────────────
      API_URL above is a plain string, so it sits in the page source for
@@ -4835,7 +4829,7 @@ const SCREEN_GET={
   F_CAP:()=>F_CAP, F_SCT:()=>F_SCT, F_EMA:()=>F_EMA, F_RSI:()=>F_RSI,
   F_PIV:()=>F_PIV, F_WPIV:()=>F_WPIV, F_REV:()=>F_REV, F_ALIGN:()=>F_ALIGN, F_BO:()=>F_BO,
   F_DWA:()=>F_DWA, F_BOX:()=>F_BOX, F_RSIMA:()=>F_RSIMA, F_EMACV:()=>F_EMACV, F_SMZ:()=>F_SMZ,
-  F_SMZBOS:()=>F_SMZBOS, F_MOMO:()=>F_MOMO, F_STAGE:()=>F_STAGE, F_CUSTOM:()=>F_CUSTOM,
+  F_SMZBOS:()=>F_SMZBOS, F_MOMO:()=>F_MOMO, F_STAGE:()=>F_STAGE,
   MIN_MCAP:()=>MIN_MCAP, SEARCH:()=>SEARCH, SORT_C:()=>SORT_C, SORT_D:()=>SORT_D,
   /* Deep-cloned both ways: COLF holds nested arrays and objects, and a shared
      reference would make every saved screen mutate along with the live one —
@@ -4859,7 +4853,6 @@ const SCREEN_SET={
      because seedScreenObj() fills every SCREEN_FIELDS key from
      screenSeedBase(), which names F_SMZBOS explicitly. */
   F_SMZBOS:v=>{F_SMZBOS=!!v},
-  F_CUSTOM:v=>{F_CUSTOM=(v==='multifold'||v==='stageTransition')?v:''},
   /* Coerced like every other boolean here, and carrying the same contract
      F_SMZBOS's note above spells out: a screen saved before gs21 has no F_MOMO
      key, applyScreen()'s `sc[f]!==undefined` guard skips this setter rather
@@ -5151,7 +5144,7 @@ function screenSeedBase(){
   return {
     F_CAP:'All', F_SCT:'', F_EMA:'', F_RSI:'', F_PIV:'', F_WPIV:'', F_REV:'',
     F_ALIGN:false, F_BO:false, F_DWA:false, F_BOX:false, F_RSIMA:false, F_EMACV:false, F_SMZ:false,
-    F_SMZBOS:false, F_MOMO:false, F_STAGE:'', F_CUSTOM:'',
+    F_SMZBOS:false, F_MOMO:false, F_STAGE:'',
     MIN_MCAP:(MCAP_DEFAULTS[CUR] ?? 0), SEARCH:'', SORT_C:'', SORT_D:'desc',
     COLF:{}, HIST_DATE:'',
   };
@@ -5189,7 +5182,7 @@ function screenSeedBase(){
    `adv:` and needs no change to this function. Omitting `adv` reproduces the
    old behaviour byte for byte — the merge loop simply never runs — which is
    why the six screens that shipped before this are untouched. */
-function seedScreenObj(colf, adv, custom){
+function seedScreenObj(colf, adv){
   const base=screenSeedBase(), sc={};
   SCREEN_FIELDS.forEach(f=>{
     sc[f] = Object.prototype.hasOwnProperty.call(base,f)
@@ -5197,7 +5190,6 @@ function seedScreenObj(colf, adv, custom){
       : SCREEN_GET[f]();
   });
   sc.COLF=JSON.parse(JSON.stringify(colf));
-  sc.F_CUSTOM=(custom==='multifold'||custom==='stageTransition')?custom:'';
   sc.ADV=cloneAdv(ADV_DEFAULTS);   // deep, for the same reason captureScreen clones
   if(adv && typeof adv==='object'){
     Object.keys(ADV_DEFAULTS).forEach(k=>{
@@ -5218,23 +5210,6 @@ function seedScreenObj(colf, adv, custom){
    screen; 0 is the honest bound and the difference is not a stock anyone would
    want excluded on a technicality. */
 const SCREEN_SEEDS=[
-  {
-    name:'0 · Stage 1 → 2 Transition',
-    desc:'Current-state Weinstein Stage 1 → Stage 2 transition radar: improving RS, trend structure, compression/volume support and price moving toward the breakout area. Transition watch, not confirmed Stage 2.',
-    custom:'stageTransition',
-    colf:floor=>({transition:{min:60,max:null,blanks:false},rs55:{min:0,max:null,blanks:false},avgval:{min:floor,max:null,blanks:false}}),
-  },
-  {
-    name:'0 · Episodic Pivot / DEP',
-    desc:'Catalyst-style momentum screen: recent EP-like expansion or delayed EP continuation setup, with abnormal volume and controlled structure.',
-    colf:floor=>({ epScore:{min:60,max:null,blanks:false}, depScore:{min:60,max:null,blanks:false}, avgval:{min:floor,max:null,blanks:false} }),
-  },
-  {
-    name:'0 · Multifold Returns',
-    desc:'Research screen for a recent volume-confirmed breakout from a Stage 1-style base or IPO base: RS55 positive, breakout volume at least 1.5× its 20-day average, and trailing 20-day up-volume greater than down-volume. Base and IPO-base origins are OR paths; every other gate is required.',
-    colf:floor=>({}),
-    custom:'multifold',
-  },
   {
     name:'0 · Early Pre-Breakout',
     desc:'Research watchlist for Stage 1 → Stage 2 transition before the conventional breakout: Early Score 70+, still below an existing structural trigger, with the stock improving on trend, relative strength, compression and volume participation. Use Rewind to test the signal before later price movement.',
@@ -5615,7 +5590,7 @@ function seedDefaultScreens(){
     /* sd.adv is undefined for every seed that does not declare one, and
        seedScreenObj() then skips its merge entirely — so passing it
        unconditionally changes nothing for the screens that shipped without it. */
-    SCREENS[sd.name]=seedScreenObj(sd.colf(floor), sd.adv, sd.custom);
+    SCREENS[sd.name]=seedScreenObj(sd.colf(floor), sd.adv);
     added.push(sd.name);
   });
   if(added.length){
@@ -5709,7 +5684,6 @@ let F_MOMO=false;
    state the UI must not be able to reach. '' means no stage picked, which is
    also what clicking the lit stage a second time restores. */
 let F_STAGE='';
-let F_CUSTOM='';
 let SEARCH='', VISIBLE=CFG.INIT;
 let LOADING=false;
 
@@ -8627,141 +8601,6 @@ function smartMoneyZones(C,H,L,cfg){
   return out;
 }
 
-
-/* ══ EVENT INTELLIGENCE BRIDGE v20 ═══════════════════════════════════════
-   This layer deliberately contains NO fabricated earnings/news data.
-   The browser may consume a Cloudflare event feed when CFG.EVENT_API_URL is
-   configured. The feed is expected to return compact, already-normalized data:
-     {symbol,earningsDate,earningsDays,earningsStatus,newsImpact,newsCount,
-      peadScore,peadState,catalystType,catalystTitle,catalystDate}
-   The quantitative EP/DEP engine remains independent of this feed.
-*/
-const EVENT_CACHE_KEY='gs_event_cache_v20';
-const EVENT_CACHE_TTL=6*60*60*1000;
-const EVENT_MEM={};
-function eventEmpty(){return {earningsDate:null,earningsDays:null,earningsStatus:null,newsImpact:null,newsCount:null,peadScore:null,peadState:null,catalystType:null,catalystTitle:null,catalystDate:null,source:null,loaded:false};}
-function eventFor(sym){return EVENT_MEM[sym]||eventEmpty();}
-function eventRisk(e){
-  if(!e) return 'Unknown';
-  if(e.earningsDays!=null){ if(e.earningsDays<=1)return 'High'; if(e.earningsDays<=7)return 'Elevated'; if(e.earningsDays<=21)return 'Watch'; }
-  if(e.newsImpact==='Negative')return 'Elevated';
-  return e.loaded?'Normal':'Unknown';
-}
-function eventBadge(e){
-  if(!e||!e.loaded) return 'Not connected';
-  const bits=[];
-  if(e.earningsDays!=null) bits.push(e.earningsDays<=0?'Earnings now':`Earnings ${e.earningsDays}d`);
-  if(e.peadScore!=null) bits.push(`PEAD ${e.peadScore}`);
-  if(e.newsImpact) bits.push(`News ${e.newsImpact}`);
-  return bits.join(' · ')||'No event signal';
-}
-async function loadEventFor(sym){
-  if(!CFG.EVENT_API_URL) return eventEmpty();
-  const cached=EVENT_MEM[sym]; if(cached&&cached.loaded)return cached;
-  try{
-    const r=await fetch(CFG.EVENT_API_URL+'?symbol='+encodeURIComponent(sym),{cache:'no-store'});
-    if(!r.ok) throw new Error('event '+r.status);
-    const j=await r.json(); const e=Object.assign(eventEmpty(),j,{loaded:true,source:j.source||'NSE'});
-    EVENT_MEM[sym]=e; return e;
-  }catch(err){ return eventEmpty(); }
-}
-async function loadEventBatch(symbols){
-  if(!CFG.EVENT_API_URL || !symbols?.length) return;
-  const need=[...new Set(symbols.map(String))].filter(s=>!EVENT_MEM[s]?.loaded);
-  if(!need.length) return;
-  try{
-    const r=await fetch(CFG.EVENT_API_URL+'?symbols='+need.map(encodeURIComponent).join(','),{cache:'no-store'});
-    if(!r.ok) throw new Error('event '+r.status);
-    const j=await r.json();
-    const map=j.events||{};
-    Object.keys(map).forEach(k=>EVENT_MEM[k]=Object.assign(eventEmpty(),map[k],{loaded:true,source:map[k]?.source||j.source||'NSE'}));
-  }catch(err){ /* Event enrichment is optional; the screener remains fully usable. */ }
-}
-async function primeEventIntel(market){
-  try{
-    const rows=getRows().slice(0,Math.max(CFG.INIT||25,VISIBLE||25));
-    await loadEventBatch(rows.map(d=>d.s));
-    if(typeof renderTable==='function') renderTable(market||CUR);
-  }catch(err){}
-}
-function eventXrayHtml(d){
-  const e=eventFor(d?.s||'');
-  const risk=eventRisk(e);
-  const title=e.catalystTitle?escHtml(e.catalystTitle):'No connected catalyst headline';
-  return `<div class="ex-traj"><div class="ex-title" style="font-size:11px">Event & Catalyst Radar</div><div class="ex-meta"><div class="ex-k"><span>Earnings</span><b>${e.earningsDays!=null?escHtml(e.earningsDays<=0?'Due now':e.earningsDays+'d'):'—'}</b></div><div class="ex-k"><span>PEAD</span><b>${e.peadScore!=null?escHtml(String(e.peadScore)):'—'}</b></div><div class="ex-k"><span>Risk</span><b>${risk}</b></div><div class="ex-k"><span>News</span><b>${e.newsImpact?escHtml(e.newsImpact):'—'}</b></div></div><div class="ex-muted" style="margin-top:5px">${title}</div><div class="ex-muted">${escHtml(eventBadge(e))}</div></div>`;
-}
-function catalystData(d){
-  const e=eventFor(d?.s||'');
-  return {ep:d?.epScore??null,dep:d?.depScore??null,pead:e.peadScore??null,earningsDays:e.earningsDays??null,newsImpact:e.newsImpact??null,risk:eventRisk(e)};
-}
-
-function refreshEventIntel(sym){
-  return loadEventFor(sym).then(e=>{ if(typeof renderTable==='function') renderTable(); return e; });
-}
-function refreshEventIntelForRow(sym){
-  return refreshEventIntel(sym);
-}
-
-/* ══ EP / DEP CATALYST ENGINE v20 ═══════════════════════════════════════════
-   Research layer only. It does not rewrite Setup, Stage 2, Early or Multifold.
-   EP = Episodic Pivot: large gap/range expansion + abnormal volume + catalyst
-   reaction, preferably after a prior quiet/neglected period.
-   DEP = Delayed Episodic Pivot: the catalyst/EP move already happened, but the
-   stock is consolidating and setting up a lower-risk continuation entry.
-   This is an approximation from price/volume history until event/news data is
-   available from the Cloudflare event feed.
-*/
-function calcEPDEP(C,O,H,L,V,dates){
-  const n=Math.min(...[C,O,H,L,V].map(a=>Array.isArray(a)?a.length:0));
-  const none={epScore:null,epState:'None',epAge:null,epGap:null,epMove:null,epVol:null,depScore:null,depState:'None',depAge:null,depDist:null};
-  if(n<65) return none;
-  const fin=v=>typeof v==='number'&&isFinite(v);
-  const i=n-1, px=C[i]; if(!fin(px)) return none;
-  const avg=(arr,a,b)=>{let z=0,k=0;for(let j=a;j<=b;j++){if(fin(arr[j])){z+=arr[j];k++;}}return k?z/k:null};
-  const v20=avg(V,Math.max(0,i-21),i-1);
-  const c20=avg(C,Math.max(0,i-21),i-1);
-  if(!(v20>0)) return none;
-  const prev=C[i-1], op=O[i], hi=H[i], lo=L[i];
-  const gap=fin(op)&&fin(prev)?(op/prev-1)*100:null;
-  const dayMove=fin(prev)?(px/prev-1)*100:null;
-  const rangeMove=fin(op)&&op>0?(hi-op)/op*100:null;
-  const vol=fin(V[i])?V[i]/v20:null;
-  let baseHigh=-Infinity, baseLow=Infinity;
-  for(let j=i-60;j<i-10;j++){if(fin(H[j]))baseHigh=Math.max(baseHigh,H[j]);if(fin(L[j]))baseLow=Math.min(baseLow,L[j]);}
-  const baseRange=(baseLow>0&&isFinite(baseHigh))?(baseHigh/baseLow-1)*100:null;
-  const quiet=baseRange!=null&&baseRange<45;
-  const gapPts=gap!=null?(gap>=10?25:gap>=7?18:gap>=5?12:0):0;
-  const movePts=dayMove!=null?(dayMove>=10?25:dayMove>=7?18:dayMove>=5?12:0):0;
-  const volPts=vol>=4?25:vol>=3?20:vol>=2?15:vol>=1.5?8:0;
-  const quietPts=quiet?15:0;
-  const closePts=(rangeMove!=null&&rangeMove>=5)?10:0;
-  const epScore=Math.min(100,gapPts+movePts+volPts+quietPts+closePts);
-  if(epScore>=60){
-    none.epScore=epScore; none.epState=epScore>=80?'Strong EP':'EP Watch';
-    none.epGap=gap; none.epMove=dayMove; none.epVol=vol; none.epAge=0;
-  }
-  // Search back 30 sessions for the most recent strong EP-like day.
-  let found=-1, foundScore=0;
-  for(let j=Math.max(20,i-30);j<i;j++){
-    const pv=C[j-1], jo=O[j], jv=V[j]; if(!fin(pv)||!fin(jo)||!fin(jv)) continue;
-    const vg=avg(V,Math.max(0,j-21),j-1); if(!(vg>0)) continue;
-    const g=(jo/pv-1)*100, m=(C[j]/pv-1)*100, vr=jv/vg;
-    const sc=(g>=10?25:g>=7?18:g>=5?12:0)+(m>=10?25:m>=7?18:m>=5?12:0)+(vr>=4?25:vr>=3?20:vr>=2?15:vr>=1.5?8:0);
-    if(sc>=50 && sc>foundScore){found=j;foundScore=sc;}
-  }
-  if(found>=0){
-    const age=i-found;
-    const anchor=C[found], dist=anchor?((px/anchor)-1)*100:null;
-    const recentVol=v20>0?V[i]/v20:null;
-    const tight=(baseRange!=null&&baseRange<35);
-    const holding=age>=3&&age<=30;
-    const notBroken=dist!=null&&dist>-12;
-    const depScore=Math.min(100,(foundScore>=70?30:20)+(tight?20:0)+(holding?20:0)+(notBroken?15:0)+(recentVol!=null&&recentVol<1.3?15:0));
-    if(depScore>=60){none.depScore=depScore;none.depState=depScore>=80?'Prime DEP':'DEP Watch';none.depAge=age;none.depDist=dist;}
-  }
-  return none;
-}
-
 /* ══ EARLY BREAKOUT VOLUME TRANSITION ═══════════════════════════════════════
    Two separate volume questions, both no-lookahead:
    1) recent5/prior15 asks whether participation is STARTING TO EXPAND while
@@ -8804,23 +8643,6 @@ function earlyVolumeTransition(C,V,thrust){
   }
   if(thrust&&thrust.fade!=null) none.postThrustFade=thrust.fade;
   return none;
-}
-
-/* Volume balance used by the Multifold Returns screen. It compares total volume
-   on advancing closes with total volume on declining closes over the trailing
-   20 trading sessions. Flat days vote for neither side. Missing/unusable bars
-   make the measurement unavailable rather than a pass. */
-function upDownVolRatio(C,V,lookback=20){
-  if(!Array.isArray(C)||!Array.isArray(V)||C.length<lookback+1||V.length<C.length) return null;
-  let up=0,down=0;
-  const st=C.length-lookback;
-  for(let i=st;i<C.length;i++){
-    const a=C[i],b=C[i-1],v=V[i];
-    if(!fin(a)||!fin(b)||!fin(v)||v<0) return null;
-    if(a>b) up+=v; else if(a<b) down+=v;
-  }
-  if(down>0) return +(up/down).toFixed(2);
-  return up>0 ? 9.99 : null;
 }
 
 function computeTech(C,H,L,V,dates,sym,O,feedStart){
@@ -9217,7 +9039,7 @@ function computeTech(C,H,L,V,dates,sym,O,feedStart){
   const currency=sym.endsWith('.NS')?'INR':'USD';
 
   return{
-    sym,price,ch1d,ch1w,ch1m,ch3m,volume:todV,avgV,vRatio,upDownVol20:upDownVolRatio(C,V,20),avgValue,h52d,h52,l52,
+    sym,price,ch1d,ch1w,ch1m,ch3m,volume:todV,avgV,vRatio,avgValue,h52d,h52,l52,
     /* The Vol Spike pair. Same contract as adr and the EMA-distance columns:
        read by its own column, the sort, the column filters and the export, and
        by NOTHING that scores, ranks or blends. It is a RECENCY-weighted read of
@@ -9677,10 +9499,6 @@ function rankRS(market){
     d.rspHist21 = rspHistory(d.rsCloses,d.rsDates,bi,FRESH_RSP_LEN,FRESH_RSP_HIST);
     d.marketRegime=marketRegime;
     d.early=calcEarlyBreakout(d,market);
-    const epd=calcEPDEP(C,O,H,L,V,dates); d.epScore=epd.epScore; d.epState=epd.epState; d.epAge=epd.epAge; d.epGap=epd.epGap; d.epMove=epd.epMove; d.epVol=epd.epVol; d.depScore=epd.depScore; d.depState=epd.depState; d.depAge=epd.depAge; d.depDist=epd.depDist;
-    d.event=eventFor(d.s); d.earningsDays=d.event.earningsDays; d.peadScore=d.event.peadScore; d.newsImpact=d.event.newsImpact; d.eventRisk=eventRisk(d.event);
-    d.stageTransition=stageTransition(d);
-    d.catalystScore=catalystScore(d);
     d.rs=null; d.mrsRank=null;
   });
 
@@ -12540,7 +12358,7 @@ function dataRow(def,d,i){
     <td class="c-ch3m">${fmtCh(d.ch3m)}</td>
     <td class="c-hist">${histC(hist,d.currency)}</td>
     <td class="c-histg">${histGC(histGain(d.price,hist))}</td>
-    <td class="c-status">${statusC(d.s2)}<div style="margin-top:3px">${stageTransitionC(d)}</div></td>
+    <td class="c-status">${statusC(d.s2)}</td>
     <td>${rsiC(d.rsi14)}</td>
     <td class="c-wrsi">${rsiC(d.wRsi)}</td>
     <td class="c-vr">${vrC(d.vRatio)}</td>
@@ -13656,7 +13474,7 @@ function sortBySetupScore(items,market){
 // pivZone()'s return values.
 const PIV_RANK={'R2+':7,'R1→R2':6,'PP→R1':5,'PP':4,'S1→PP':3,'S2→S1':2,'<S2':1};
 const SORT_FN={
-  price:d=>d?.price,early:d=>d?.early?.score,transition:d=>d?.stageTransition?.score,catalyst:d=>d?.catalystScore,ch1d:d=>d?.ch1d,rsi:d=>d?.rsi14,wrsi:d=>d?.wRsi,
+  price:d=>d?.price,early:d=>d?.early?.score,ch1d:d=>d?.ch1d,rsi:d=>d?.rsi14,wrsi:d=>d?.wRsi,
   ch1w:d=>d?.ch1w,ch1m:d=>d?.ch1m,ch3m:d=>d?.ch3m,
   /* Historical price / gain. Keyed off def.s rather than off `d`, because the
      close series lives in the sheet map, not in the computed row. Both return
@@ -14213,60 +14031,6 @@ function isEmerging(d){
   return true;
 }
 
-/* ══ STAGE 1 → 2 TRANSITION ENGINE v18 ════════════════════════════════════════
-   Current-state diagnostic. It does not claim the stock was in Stage 1 yesterday.
-   Existing Stage 2 remains untouched. */
-const TRANSITION_NEAR_200=12;
-function stageTransition(d){
-  if(!d) return null;
-  const tests=[
-    ['Above 20 EMA', numOk(d.pct20e)?d.pct20e>0:null],
-    ['Above 50 EMA', numOk(d.pct50e)?d.pct50e>0:null],
-    ['Near 200 EMA', numOk(d.pct200e)?Math.abs(d.pct200e)<=TRANSITION_NEAR_200:null],
-    ['RS improving', numOk(d.rsSlope)?d.rsSlope>0:null],
-    ['RS55 positive', numOk(d.rs55)?d.rs55>0:null],
-    ['Compression', numOk(d.coil)?d.coil<=1:null],
-    ['Volume support', d.volDryRatio!=null?(d.volDryRatio<1 || (numOk(d.upDownVol20)&&d.upDownVol20>1)):null],
-    ['Near pivot', numOk(d.pctVsPivot)?d.pctVsPivot<=8:null],
-    ['200 EMA rising', d.slopeDir?d.slopeDir==='up':null],
-  ];
-  const usable=tests.filter(x=>x[1]!==null); if(!usable.length) return null;
-  const passed=usable.filter(x=>x[1]).length;
-  const score=Math.round(passed/usable.length*100);
-  const emerging=typeof isEmerging==='function' && isEmerging(d);
-  const s2=d.s2&&d.s2.total ? d.s2.score/d.s2.total : null;
-  let state='base';
-  if(s2!=null && s2>=0.8) state='stage2';
-  else if(score>=78 || emerging) state='prime';
-  else if(score>=56) state='turn';
-  const reasons=tests.filter(x=>x[1]).map(x=>x[0]);
-  const gaps=tests.filter(x=>x[1]===false).map(x=>x[0]);
-  return {score,state,passed,total:usable.length,tests,reasons,gaps,emerging,s2Pct:s2==null?null:Math.round(s2*100)};
-}
-function stageTransitionLabel(x){
-  if(!x) return '—';
-  return x.state==='stage2'?'Stage 2':x.state==='prime'?'Stage 1 → 2':x.state==='turn'?'Turning':'Stage 1';
-}
-function stageTransitionC(d){
-  const x=d&&d.stageTransition; if(!x) return '<span class="vm">—</span>';
-  return `<span class="stgtrans stgtrans-${x.state}" title="Stage 1 → 2 transition score ${x.score}/100 · ${x.passed}/${x.total} tests passing"><span class="stgtrans-main">${stageTransitionLabel(x)}</span><span class="stgtrans-score">${x.score}/100</span></span>`;
-}
-function catalystScore(d){
-  if(!d) return null;
-  const vals=[]; const t=d.stageTransition;
-  if(t) vals.push(t.score);
-  if(numOk(d.rs55)) vals.push(Math.max(0,Math.min(100,50+d.rs55*5)));
-  if(numOk(d.upDownVol20)) vals.push(Math.max(0,Math.min(100,50+d.upDownVol20*20)));
-  if(numOk(d.vRatio)) vals.push(Math.max(0,Math.min(100,d.vRatio/2*100)));
-  if(d.early&&numOk(d.early.score)) vals.push(d.early.score);
-  return vals.length?Math.round(vals.reduce((a,b)=>a+b,0)/vals.length):null;
-}
-function catalystLabel(v){return v==null?'—':v>=80?'High':v>=65?'Building':v>=50?'Watch':'Low';}
-function isStageTransitionScreen(d){
-  const t=d&&d.stageTransition;
-  return !!t && t.score>=60 && t.state!=='stage2' && numOk(d.rs55) && d.rs55>0;
-}
-
 const STAGE_DEFS=[
   {k:'emerging',label:'Emerging',
    tip:'The Stage 1 to Stage 2 turn, inside a base that has not triggered yet. All six must hold at once: above the 20 EMA, above the 50 EMA, within '+EMERGING_NEAR_200+'% either side of the 200 EMA, RS21 pulling ahead of RS55, the recent half of the 20-bar range at least '+Math.round((1-EMERGING_COIL_MAX)*100)+'% tighter than the half before it, and 20-day volume under its 50-day average. This is the earliest read the data supports: the trend has turned, the base is still tightening and volume has gone quiet. It is carved OUT of Forming, so a stock is in one or the other, never both. A missing measurement fails the test rather than passing it.'},
@@ -14334,25 +14098,6 @@ function stageCounts(rows){
    control that mirrors it — so colfOptions() can count "what would narrowing
    further do" rather than "what does this market contain". Every caller that
    wants the real table omits it. */
-/* ── MULTIFOLD RETURNS: saved research screen ───────────────────────────
-   Four AND-gates from the owner's specification, plus a recent volume-confirmed
-   breakout and a base-origin test. A normal Stage-1 base is represented by a
-   meaningful consolidation immediately before the recent breakout; an IPO base
-   is represented by the IPO-base engine having reached its breakout state. The
-   two origin paths are OR'ed deliberately because the request says Base / IPO
-   Base. Everything else is AND. This is a screen, not a new score. */
-function isMultifoldReturns(d){
-  if(!d) return false;
-  const recentBO=d.boAge!=null && isFinite(d.boAge) && d.boAge<=5;
-  if(!recentBO) return false;
-  if(!(typeof d.rs55==='number' && isFinite(d.rs55) && d.rs55>0)) return false;
-  if(!(typeof d.vRatio==='number' && isFinite(d.vRatio) && d.vRatio>=1.5)) return false;
-  if(!(typeof d.upDownVol20==='number' && isFinite(d.upDownVol20) && d.upDownVol20>1)) return false;
-  const stage1Base=(typeof d.consolDays==='number' && isFinite(d.consolDays) && d.consolDays>=5);
-  const ipoBase=(d.ipoState==='breakout' && typeof d.ipoBaseBars==='number' && d.ipoBaseBars>=IPO_MIN_BASE);
-  return stage1Base || ipoBase;
-}
-
 function getRows(market, exclCol){
   let items=UNI[market].slice();
   /* AS-OF MODE: a stock with no bar at or before the as-of date had not listed
@@ -14477,8 +14222,6 @@ function getRows(market, exclCol){
      moment it was picked would leave the user no way to see, or reach, the
      other three. With no stage picked the two calls return the same array. */
   if(F_STAGE && exclCol!=='stage') items=items.filter(def=>lifecycleStage(SD[def.s])===F_STAGE);
-  if(F_CUSTOM==='multifold' && exclCol!=='custom') items=items.filter(def=>isMultifoldReturns(SD[def.s]));
-  if(F_CUSTOM==='stageTransition' && exclCol!=='custom') items=items.filter(def=>isStageTransitionScreen(SD[def.s]));
   // Keyed off the symbol, not off SD — a starred stock stays visible even while
   // its indicators are still loading, which is the only sane behaviour for a
   // list the user curated by hand.
@@ -14876,9 +14619,6 @@ async function loadMarket(market,force=false){
   LOADED[market]=true;
   CACHE_SHOWN[market]=false;   // these numbers are fresh, whatever happens later
   renderTable(market); renderMetrics(market); updateStatus();
-  // Pull the visible universe's NSE events in one batched request. This keeps
-  // the browser from making one NSE request per stock and leaves EP/DEP local.
-  primeEventIntel(market);
   saveCache(market);
   updateScanBanner(market);
   hidePrg();
@@ -15009,7 +14749,7 @@ function switchMkt(market){
   if(!LOADING) GSHEET_DATA = GSHEET_BY_MARKET[market] || null;
   setGSheetStatus(market);
   F_CAP='All';F_SCT='';F_EMA='';F_RSI='';F_PIV='';F_WPIV='';
-  F_ALIGN=false;F_BO=false;F_DWA=false;F_BOX=false;F_STAGE='';F_CUSTOM='';
+  F_ALIGN=false;F_BO=false;F_DWA=false;F_BOX=false;F_STAGE='';
   $('emaFil').value='';$('rsiFil').value='';$('pivFil').value='';$('wpivFil').value='';
   // A column filter naming this market's sectors or caps means nothing in the
   // next market, so it is dropped with the rest of them.
@@ -15220,13 +14960,6 @@ const EXPORT_COLS=[
   ['RSI',         (def,d)=>d?.rsi14??''],
   ['W-RSI',       (def,d)=>d?.wRsi??''],
   ['VolRatio',    (def,d)=>d?.vRatio??''],
-  ['Up/Down Vol 20', (def,d)=>d?.upDownVol20??''],
-  ['EP Score',       (def,d)=>d?.epScore??''],
-  ['EP State',       (def,d)=>d?.epState??''],
-  ['DEP Score',      (def,d)=>d?.depScore??''],
-  ['DEP State',      (def,d)=>d?.depState??''],
-  ['DEP Age',        (def,d)=>d?.depAge??''],
-  ['DEP Dist',       (def,d)=>d?.depDist??''],
   /* Exported as TWO columns, because a spreadsheet has no reason to inherit
      the table's one-cell constraint and "2.4x · 6d" is not a number anything
      downstream can sort or filter on. */
@@ -15323,12 +15056,6 @@ const EXPORT_COLS=[
      line — the export is the place precision is wanted most. */
   ['Vol Dry',     (def,d)=>d?.volDryRatio??''],
   ['Monthly Setup',(def,d)=>d?.monthlySetup!=null?(d.monthlySetup?'Y':'N'):''],
-  ['Stage Transition',(def,d)=>d?.stageTransition?`${stageTransitionLabel(d.stageTransition)} ${d.stageTransition.score}/100`:'' ],
-  ['Catalyst Score',(def,d)=>d?.catalystScore??''],
-  ['Earnings Days',(def,d)=>d?.earningsDays??''],
-  ['PEAD Score',(def,d)=>d?.peadScore??''],
-  ['News Impact',(def,d)=>d?.newsImpact??''],
-  ['Event Risk',(def,d)=>d?.eventRisk??''],
   ['Status',      (def,d)=>d?.s2&&d.s2.total?(d.s2.score/d.s2.total>=0.8?'Stage 2':d.s2.score/d.s2.total>=0.5?'Setup':'Weak'):''],
   ['Stage2',      (def,d)=>d?.s2?`${d.s2.score}/${d.s2.total}`:''],
   ['BO Gain%',    (def,d)=>d?.boGain??''],
@@ -15753,10 +15480,6 @@ const COL_FILTERS={
 
   /* ── numeric ────────────────────────────────────────────────────── */
   early:   {t:'num',  label:'Early Score', val:d=>d&&d.early&&d.early.score},
-  transition:{t:'num', label:'Stage 1→2 Score', val:d=>d&&d.stageTransition&&d.stageTransition.score},
-  catalyst:{t:'num', label:'Catalyst Score', val:d=>d&&d.catalystScore},
-  pead:{t:'num', label:'PEAD Score', val:d=>d&&d.peadScore},
-  earnings:{t:'num', label:'Earnings Days', val:d=>d&&d.earningsDays},
   price:   {t:'num',  label:'Price',   val:d=>d&&d.price},
   ch1d:    {t:'num',  label:'1D%',     val:d=>d&&d.ch1d},
   ch1w:    {t:'num',  label:'1W%',     val:d=>d&&d.ch1w},
@@ -15767,7 +15490,6 @@ const COL_FILTERS={
   rsi:     {t:'num',  label:'RSI',     val:d=>d&&d.rsi14},
   wrsi:    {t:'num',  label:'W-RSI',   val:d=>d&&d.wRsi},
   vr:      {t:'num',  label:'Vol Ratio', val:d=>d&&d.vRatio},
-  udvol:   {t:'num',  label:'Up/Down Vol 20', val:d=>d&&d.upDownVol20},
   /* FILTERS ON THE MULTIPLE, for the same reason the sort does. "min 2" —
      "something really moved in the last two weeks" — is the screen this
      exists for, and it is a plain inclusive bound on the number the cell
@@ -17617,7 +17339,7 @@ function renderEarlyXray(sym){
   const prior=snaps.length>1?snaps[snaps.length-2]:null;
   let improved='';
   if(prior){const names=[['Trend','trend'],['RS Lead','rs'],['Compression','compression'],['Volume','volume'],['Structure','structure']];const dif=names.map(([n,k])=>({n,d:(e[k]??null)-(prior[k]??null)})).filter(x=>x.d!==null&&isFinite(x.d)).sort((a,b)=>b.d-a.d);const pos=dif.filter(x=>x.d>0).slice(0,2).map(x=>`${x.n} +${x.d}`).join(', ');const neg=dif.filter(x=>x.d<0).slice(0,2).map(x=>`${x.n} ${x.d}`).join(', ');improved=`<div class="ex-muted" style="margin-top:4px">Since ${escHtml(prior.date)}: ${pos||'no component improvement'}${neg?` · softer: ${neg}`:''}</div>`;}
-  host.innerHTML=`<div class="ex-wrap"><div class="ex-head"><div><div class="ex-title">Early X-Ray · Stage Transition</div><div class="ex-muted">Five components behind the current Early score</div></div><div style="text-align:right"><div class="ex-score">${e.score}/100</div><div class="ex-muted">${escHtml(exStateLabel(e.state))}</div></div></div><div class="ex-grid">${legs}</div><div class="ex-meta"><div class="ex-k"><span>Trigger distance</span><b>${exFmt(e.triggerDist,'%')}</b></div><div class="ex-k"><span>RSP lead / cross</span><b>${e.rsLead?'Lead':'—'}${e.rsCross?' · Cross':''}</b></div><div class="ex-k"><span>Volume phase</span><b>${escHtml(e.volumePhase||'—')}</b></div><div class="ex-k"><span>Market regime</span><b>${escHtml(e.marketRegime||'—')}</b></div></div>${recent.length>=2?`<div class="ex-traj"><div class="ex-title" style="font-size:11px">Score trajectory</div><div class="ex-traj-line">${scoreLine}</div><div class="ex-muted">${stateLine}</div>${improved}</div>`:`<div class="ex-traj"><div class="ex-title" style="font-size:11px">Score trajectory</div><div class="ex-muted">One snapshot is available. A second daily snapshot will unlock the trajectory.</div></div>`}${(()=>{const t=d.stageTransition,cs=d.catalystScore;if(!t&&!cs)return '';const r=t&&t.reasons.length?t.reasons.slice(0,4).join(' · '):'No strong transition evidence yet';const g=t&&t.gaps.length?t.gaps.slice(0,3).join(' · '):'No major gap';return `<div class="ex-traj"><div class="ex-title" style="font-size:11px">Stage 1 → 2 Radar</div><div class="ex-meta"><div class="ex-k"><span>Transition</span><b>${t?stageTransitionLabel(t):'—'} · ${t?t.score:'—'}/100</b></div><div class="ex-k"><span>Stage 2</span><b>${t&&t.s2Pct!=null?t.s2Pct+'%':'—'}</b></div><div class="ex-k"><span>Catalyst</span><b>${cs!=null?cs+' · '+catalystLabel(cs):'—'}</b></div><div class="ex-k"><span>Evidence</span><b>${t?t.passed+'/'+t.total:'—'}</b></div></div><div class="ex-muted" style="margin-top:5px">Supporting: ${escHtml(r)}</div><div class="ex-muted">Still needed / weaker: ${escHtml(g)}</div></div>`;})()}</div>`;
+  host.innerHTML=`<div class="ex-wrap"><div class="ex-head"><div><div class="ex-title">Early X-Ray</div><div class="ex-muted">Five components behind the current Early score</div></div><div style="text-align:right"><div class="ex-score">${e.score}/100</div><div class="ex-muted">${escHtml(exStateLabel(e.state))}</div></div></div><div class="ex-grid">${legs}</div><div class="ex-meta"><div class="ex-k"><span>Trigger distance</span><b>${exFmt(e.triggerDist,'%')}</b></div><div class="ex-k"><span>RSP lead / cross</span><b>${e.rsLead?'Lead':'—'}${e.rsCross?' · Cross':''}</b></div><div class="ex-k"><span>Volume phase</span><b>${escHtml(e.volumePhase||'—')}</b></div><div class="ex-k"><span>Market regime</span><b>${escHtml(e.marketRegime||'—')}</b></div></div>${recent.length>=2?`<div class="ex-traj"><div class="ex-title" style="font-size:11px">Score trajectory</div><div class="ex-traj-line">${scoreLine}</div><div class="ex-muted">${stateLine}</div>${improved}</div>`:`<div class="ex-traj"><div class="ex-title" style="font-size:11px">Score trajectory</div><div class="ex-muted">One snapshot is available. A second daily snapshot will unlock the trajectory.</div></div>`}</div>`;
 }
 
 function openDrill(sym){
@@ -18162,9 +17884,8 @@ function rotV4Crumb(level,parentLevel,parentName){
   const parts=[{label:'Macro',click:level!=='macro',fn:"rotV4SetLevel('macro');renderRotationV4()"}];
   if(macro) parts.push({label:macro,click:level!=='sector'&&level!=='macro',fn:`rotV4SetLevel('sector','macro','${escAttr(macro)}','${escAttr(macro)}',null);renderRotationV4()`});
   if(level!=='macro') parts.push({label:'Sector',click:level!=='sector',fn:`rotV4SetLevel('sector','macro','${escAttr(macro||'')}','${escAttr(macro||'')}',null);renderRotationV4()`});
-  if(sector) parts.push({label:sector,click:level==='industry'||level==='narrow',fn:`rotV4SetLevel('industry','sector','${escAttr(sector)}','${escAttr(macro||'')}','${escAttr(sector)}');renderRotationV4()`});
-  if(level==='industry'||level==='narrow') parts.push({label:'Industry',click:level==='narrow',fn:`rotV4SetLevel('industry','sector','${escAttr(sector||'')}','${escAttr(macro||'')}','${escAttr(sector||'')}');renderRotationV4()`});
-  if(level==='narrow') parts.push({label:parentName||'Narrow Group',click:false,fn:''});
+  if(sector) parts.push({label:sector,click:level==='industry',fn:`rotV4SetLevel('industry','sector','${escAttr(sector)}','${escAttr(macro||'')}','${escAttr(sector)}');renderRotationV4()`});
+  if(level==='industry') parts.push({label:parentName||'Industry',click:false,fn:''});
   return parts.map((p,i)=>`<button class="rot-crumb ${p.label===level?'active':''}" ${p.click?`onclick="${p.fn}"`:''}>${escHtml(p.label)}</button>${i<parts.length-1?'<span class="rot-arrow">›</span>':''}`).join('');
 }
 
@@ -18225,8 +17946,7 @@ function rotV4GoStocks(){
   let ctx={level:null,name:null,industry:null};
   if(level==='macro' && window.ROT_V4_MACRO_NAME) ctx={level:'macro',name:window.ROT_V4_MACRO_NAME,industry:null};
   else if(level==='sector' && window.ROT_V4_SECTOR_NAME) ctx={level:'sector',name:window.ROT_V4_SECTOR_NAME,industry:null};
-  else if(level==='industry' && window.ROT_V4_SECTOR_NAME) ctx={level:'sector',name:window.ROT_V4_SECTOR_NAME,industry:null};
-  else if(level==='narrow' && window.ROT_V4_PARENT_NAME) ctx={level:'industry',name:window.ROT_V4_PARENT_NAME,industry:window.ROT_V4_PARENT_NAME};
+  else if(level==='industry' && window.ROT_V4_INDUSTRY_NAME) ctx={level:'industry',name:window.ROT_V4_INDUSTRY_NAME,industry:null};
   window.ROT_V4_STOCK_CONTEXT=ctx;
   window.ROT_V4_LEVEL='stocks';
   window.ROT_V5_STOCK_FILTER='top';
@@ -18263,8 +17983,7 @@ function rotV5StockCrumb(){
   const parts=[];
   if(c.level==='macro'&&c.name) parts.push(['Macro',`rotV4SetLevel('macro',null,null,null,null);renderRotationV4()`]);
   if(c.level==='sector'&&c.name) parts.push(['Sector',`rotV4SetLevel('sector','macro','${escAttr(c.name)}','${escAttr(c.name)}',null);renderRotationV4()`]);
-  if(c.level==='industry'&&c.name) parts.push(['Industry',`rotV4SetLevel('narrow','industry','${escAttr(c.name)}','${escAttr(macro||'')}','${escAttr(sector||'')}');renderRotationV4()`]);
-  if(c.level==='narrow'&&c.name) parts.push(['Narrow Group',`rotV4SetLevel('narrow','industry','${escAttr(c.industry||'')}','${escAttr(macro||'')}','${escAttr(sector||'')}');window.ROT_V4_STOCK_CONTEXT={level:'narrow',name:'${escAttr(c.name)}',industry:'${escAttr(c.industry||'')}'};renderRotationV4()`]);
+  if(c.level==='industry'&&c.name) parts.push(['Industry',`rotV4SetLevel('industry','sector','${escAttr(sector||'')}','${escAttr(macro||'')}','${escAttr(sector||'')}');renderRotationV4()`]);
   const base=parts.map(([l,fn])=>`<button class="rot-crumb" onclick="${fn}">${escHtml(l)}</button><span class="rot-arrow">›</span>`).join('');
   return base+'<button class="rot-crumb active" title="Current stock list for the selected hierarchy">Stocks</button>';
 }
@@ -18283,15 +18002,15 @@ function renderRotationV4(){
   const m=CUR||'india'; setRotMarketBadge('rotationV4MarketBadge',m);
   const level=window.ROT_V4_LEVEL||'macro';
   const parentLevel=window.ROT_V4_PARENT_LEVEL||null, parentName=window.ROT_V4_PARENT_NAME||null;
-  if(level==='stocks'){ renderRotationV5Stocks(m); $('rotationV4Tabs').innerHTML=[['macro','Macro'],['sector','Sector'],['industry','Industry'],['narrow','Narrow Group'],['stocks','Stocks']].map(([k,l])=>`<button class="rot-v4-tab ${level===k?'active':''}" onclick="${k==='stocks'?'renderRotationV4()':`rotV4SetLevel('${k}',null,null,null,null);renderRotationV4()`}">${l}</button>`).join(''); return; }
+  if(level==='stocks'){ renderRotationV5Stocks(m); $('rotationV4Tabs').innerHTML=[['macro','Macro'],['sector','Sector'],['industry','Industry'],['stocks','Stocks']].map(([k,l])=>`<button class="rot-v4-tab ${level===k?'active':''}" onclick="${k==='stocks'?'renderRotationV4()':`rotV4SetLevel('${k}',null,null,null,null);renderRotationV4()`}">${l}</button>`).join(''); return; }
   const raw=rotV4Rows(m,level,parentLevel,parentName);
   const rows=ROT_SORT.rotation.key?rotSortRows(raw,ROT_SORT.rotation.key,ROT_SORT.rotation.dir):rotDefaultRotationSort(raw);
-  const title=level==='macro'?'Macro':level==='sector'?'Sector':level==='industry'?'Industry':'Narrow Group';
+  const title=level==='macro'?'Macro':level==='sector'?'Sector':'Industry';
   $('rotationV4Note').textContent=`${title} rotation • default order: Powering Up → Turning Up → Cooling → Falling Back, then Flow → Prime → Early → RS improvement. Click any column header to sort; click again to reverse. Rotation is context, not a buy/sell rule.`;
   $('rotationV4Crumb').innerHTML=rotV4Crumb(level,parentLevel,parentName);
   $('rotationV4Head').innerHTML='<tr>'+rotSortHead(title,'name','rotation',title+' name')+rotSortHead('RS55','rs','rotation','Median 55-day relative strength level')+rotSortHead('RS Δ','rsChg','rotation','Median relative-strength direction; positive is improving')+rotSortHead('Flow','flowScore','rotation','Combined ranking of RS strength, RS improvement and Early participation')+rotSortHead('≥50E','breadth','rotation','Percentage of stocks above the 50-day EMA')+rotSortHead('Early','earlyPct','rotation','Percentage of stocks with Early score ≥70')+rotSortHead('Prime','primePct','rotation','Percentage of stocks in Prime Early state')+rotSortHead('BO','boPct','rotation','Percentage with a breakout detected within the last 10 trading bars')+rotSortHead('Vol↑','volPct','rotation','Percentage showing improving volume transition')+rotSortHead('Rotation','rotation','rotation','Powering Up = strong and rising; Turning Up = weaker but rising; Cooling = strong but falling; Falling Back = weak and falling')+'</tr>';
   $('rotationV4Body').innerHTML=rows.length?rows.map(r=>`<tr class="rot-v4-row" onclick="rotationV4Drill('${escAttr(r.name)}','${level}','${m}')"><td><b>${escHtml(r.name)}</b><br><span style="font-size:9px;color:var(--muted)">${r.n} stocks</span></td><td>${r.rs==null?'—':r.rs.toFixed(1)}</td><td>${rotSignedPill(r.rsChg,1)}</td><td>${r.flowScore==null?'—':`<span class="sb-pill ${r.flowScore>=70?'sb-hi':r.flowScore>=50?'sb-mid':'sb-lo'}">${r.flowScore}</span>`}</td><td>${r.breadth==null?'—':pillFmt(Math.round(r.breadth))}</td><td>${r.earlyPct==null?'—':pillFmt(Math.round(r.earlyPct))}</td><td>${r.primePct==null?'—':pillFmt(Math.round(r.primePct))}</td><td>${r.boPct==null?'—':pillFmt(Math.round(r.boPct))}</td><td>${r.volPct==null?'—':pillFmt(Math.round(r.volPct))}</td><td><span class="sb-pill ${ROT_CLS[r.rotation]||'sb-mid'}">${r.rotation}</span></td></tr>`).join(''):'<tr><td colspan="10" class="rot-v4-empty">No computed data yet.</td></tr>';
-  const tabs=[['macro','Macro'],['sector','Sector'],['industry','Industry'],['narrow','Narrow Group'],['stocks','Stocks']];
+  const tabs=[['macro','Macro'],['sector','Sector'],['industry','Industry'],['stocks','Stocks']];
   $('rotationV4Tabs').innerHTML=tabs.map(([k,l])=>`<button class="rot-v4-tab ${level===k?'active':''}" onclick="${k==='stocks'?'rotV4GoStocks()':`rotV4SetLevel('${k}',null,null,null,null);renderRotationV4()`}">${l}</button>`).join('');
 }
 
@@ -18299,15 +18018,15 @@ function rotationV4Drill(name,level,market){
   const macro=window.ROT_V4_MACRO_NAME||null, sector=window.ROT_V4_SECTOR_NAME||null;
   if(level==='macro') return rotV4SetLevel('sector','macro',name,name,null),renderRotationV4();
   if(level==='sector') return rotV4SetLevel('industry','sector',name,macro,name),renderRotationV4();
-  if(level==='industry') return rotV4SetLevel('narrow','industry',name,macro,sector),renderRotationV4();
-  window.ROT_V4_STOCK_CONTEXT={level:'narrow',name,industry:window.ROT_V4_PARENT_NAME||null};
+  if(level==='industry'){ window.ROT_V4_INDUSTRY_NAME=name; window.ROT_V4_STOCK_CONTEXT={level:'industry',name,industry:null}; window.ROT_V4_LEVEL='stocks'; window.ROT_V5_STOCK_FILTER='top'; ROT_SORT.stocks={key:null,dir:-1}; return renderRotationV4(); }
+  window.ROT_V4_STOCK_CONTEXT={level:'industry',name,industry:null};
   window.ROT_V4_LEVEL='stocks';
   window.ROT_V5_STOCK_FILTER='top';
   ROT_SORT.stocks={key:null,dir:-1};
   renderRotationV4();
 }
 function rotationV4Back(){renderRotationV4()}
-function openRotationV4(){rotV4SetLevel('macro',null,null,null,null);window.ROT_V4_STOCK_CONTEXT=null;ROT_SORT.rotation={key:null,dir:-1};ROT_SORT.stocks={key:null,dir:-1};renderRotationV4();$('rotationV4Modal').classList.add('open')}
+function openRotationV4(){rotV4SetLevel('macro',null,null,null,null);window.ROT_V4_INDUSTRY_NAME=null;window.ROT_V4_STOCK_CONTEXT=null;ROT_SORT.rotation={key:null,dir:-1};ROT_SORT.stocks={key:null,dir:-1};renderRotationV4();$('rotationV4Modal').classList.add('open')}
 
 function mfStateRank(v){return v==='New Money'?5:v==='Prime Leader'?4:v==='Watching'?3:v==='Post-Breakout / Retest'?2:v==='Money Leaving'?1:0;}
 function mfRows(market){
