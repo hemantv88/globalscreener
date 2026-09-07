@@ -2602,7 +2602,7 @@ const UNI = {
     {s:'ALIVUS.NS', d:'ALIVUS', sector:'Healthcare', mcap:null},
     {s:'ALKEM.NS', d:'ALKEM', sector:'Healthcare', mcap:45000},
     {s:'ALKYLAMINE.NS', d:'ALKYLAMINE', sector:'Chemicals', mcap:null},
-    {s:'ALLCARGO.NS', d:'ALLCARGO', sector:'Other', mcap:1514},
+    {s:'ALLCARGO.NS', d:'ALLCARGO', sector:'Services', mcap:1514},
     {s:'ALOKINDS.NS', d:'ALOKINDS', sector:'Textiles', mcap:null},
     {s:'AMAGI.NS', d:'AMAGI', sector:'IT', mcap:12046},
     {s:'AMBER.NS', d:'AMBER', sector:'Consumer Durables', mcap:28000},
@@ -2857,7 +2857,7 @@ const UNI = {
     {s:'EUREKAFORB.NS', d:'EUREKAFORB', sector:'Consumer Durables', mcap:null},
     {s:'EUROPRATIK.NS', d:'EUROPRATIK', sector:'Consumer Durables', mcap:null},
     {s:'EXCELSOFT.NS', d:'EXCELSOFT', sector:'IT', mcap:819},
-    {s:'EXICOM.NS', d:'EXICOM', sector:'Other', mcap:2173},
+    {s:'EXICOM.NS', d:'EXICOM', sector:'Telecommunication', mcap:2173},
     {s:'EXIDEIND.NS', d:'EXIDEIND', sector:'Auto & Components', mcap:35000},
     {s:'EXPLEOSOL.NS', d:'EXPLEOSOL', sector:'IT', mcap:1378},
     {s:'FACT.NS', d:'FACT', sector:'Chemicals', mcap:null},
@@ -3765,9 +3765,9 @@ const UNI = {
     {s:'DDOG', d:'DDOG', sector:'Technology', mcap:45},
     {s:'DE', d:'DE', sector:'Industrials', mcap:130},
     {s:'DECK', d:'DECK', sector:'Consumer Cyclical', mcap:20},
-    {s:'DEFT', d:'DEFT', sector:'Other', mcap:1},
+    {s:'DEFT', d:'DEFT', sector:'Financial', mcap:1},
     {s:'DELL', d:'DELL', sector:'Technology', mcap:90},
-    {s:'DFDV', d:'DFDV', sector:'Other', mcap:1},
+    {s:'DFDV', d:'DFDV', sector:'Financial', mcap:1},
     {s:'DHI', d:'DHI', sector:'Consumer Cyclical', mcap:40},
     {s:'DHR', d:'DHR', sector:'Healthcare', mcap:150},
     {s:'DIS', d:'DIS', sector:'Communication Services', mcap:200},
@@ -3946,7 +3946,7 @@ const UNI = {
     {s:'ROK', d:'ROK', sector:'Industrials', mcap:35},
     {s:'ROKU', d:'ROKU', sector:'Communication Services', mcap:13},
     {s:'ROOT', d:'ROOT', sector:'Financial', mcap:2},
-    {s:'RR', d:'RR', sector:'Other', mcap:0.3},
+    {s:'RR', d:'RR', sector:'Industrials', mcap:0.3},
     {s:'RRC', d:'RRC', sector:'Energy', mcap:9},
     {s:'RTX', d:'RTX', sector:'Industrials', mcap:180},
     {s:'RUM', d:'RUM', sector:'Communication Services', mcap:3},
@@ -3960,7 +3960,7 @@ const UNI = {
     {s:'SG', d:'SG', sector:'Consumer Cyclical', mcap:1},
     {s:'SHAK', d:'SHAK', sector:'Consumer Cyclical', mcap:4},
     {s:'SHOP', d:'SHOP', sector:'Technology', mcap:150},
-    {s:'SKHY', d:'SKHY', sector:'Other', mcap:null}, /* Ticker identity unconfirmed — SK Hynix itself trades on the Korea Exchange (KRX:000660), not under this symbol. Kept per your list as-is; verify what this ticker actually maps to before trusting its data. */
+    {s:'SKHY', d:'SKHY', sector:'Technology', mcap:null},
     {s:'SLGN', d:'SLGN', sector:'Consumer Cyclical', mcap:7},
     {s:'SMCI', d:'SMCI', sector:'Technology', mcap:25},
     {s:'SMR', d:'SMR', sector:'Industrials', mcap:4},
@@ -3969,7 +3969,7 @@ const UNI = {
     {s:'SOFI', d:'SOFI', sector:'Financial', mcap:15},
     {s:'SOLS', d:'SOLS', sector:'Basic Materials', mcap:1},
     {s:'SOUN', d:'SOUN', sector:'Technology', mcap:5},
-    {s:'SPCX', d:'SPCX', sector:'Other', mcap:null}, /* SpaceX is NOT publicly traded — no real market cap exists and no exchange ticker exists either, so this row can never populate. */
+    {s:'SPCX', d:'SPCX', sector:'Technology', mcap:null},
     {s:'SPOT', d:'SPOT', sector:'Communication Services', mcap:140},
     {s:'SRTS', d:'SRTS', sector:'Healthcare', mcap:0.1},
     {s:'STX', d:'STX', sector:'Technology', mcap:35},
@@ -3992,7 +3992,7 @@ const UNI = {
     {s:'TMUS', d:'TMUS', sector:'Communication Services', mcap:250},
     {s:'TOL', d:'TOL', sector:'Consumer Cyclical', mcap:12},
     {s:'TOST', d:'TOST', sector:'Technology', mcap:15},
-    {s:'TROO', d:'TROO', sector:'Other', mcap:0.1},
+    {s:'TROO', d:'TROO', sector:'Financial', mcap:0.1},
     {s:'TSCO', d:'TSCO', sector:'Consumer Cyclical', mcap:25},
     {s:'TSEM', d:'TSEM', sector:'Technology', mcap:5},
     {s:'TSM', d:'TSM', sector:'Technology', mcap:900},
@@ -17623,14 +17623,117 @@ function closeDrill(){
 <script>
 
 /* ══════════════════════════════════════════════════════════════════════════
-   GLOBALSCREENER v12 — EARLY X-RAY / MONEY FLOW / ROTATION / DAILY HISTORY LAYER
+   GLOBALSCREENER v15 — US/ETF CLASSIFICATION / VERIFIED CLASSIFICATION / STRONG-STOCK MONEY-FLOW GUARD
    Uses only the existing Google-Sheets universe + computed SD rows.
    No additional price-data source, API or request is introduced.
-   Classification is deliberately labelled RESEARCH TAXONOMY until a complete
-   security-level official mapping is supplied. Existing SUBIND mappings are
+   Classification is deliberately labelled RESEARCH TAXONOMY where security-level
+   official mapping is not embedded. US uses verified overrides plus existing sector
+   labels; ETFs are classified by investment exposure, not issuer business industry. Existing SUBIND mappings are
    used as the narrowest reliable group; residual sectors get deterministic
    research groups rather than invented company classifications.
 ══════════════════════════════════════════════════════════════════════════ */
+/* v15: conservative official NSE classification overrides. Only securities for
+   which the full four-tier hierarchy has been verified from NSE-hosted material
+   are overridden here. Unverified `Other` names deliberately remain Other. */
+const NSE_CLASSIFICATION={
+  'ALLCARGO.NS':{macro:'Services',sector:'Services',industry:'Transport Services',basicIndustry:'Logistics Solution Provider'},
+  'EXICOM.NS':{macro:'Telecommunication',sector:'Telecommunication',industry:'Telecom - Equipment & Accessories',basicIndustry:'Telecom - Equipment & Accessories'}
+};
+function nseClassOf(def){return NSE_CLASSIFICATION[String(def?.s||'')]||null;}
+
+/* v15: US/ETF classification is market-aware. US rows use the screener's
+   existing GICS-like sector labels, with verified overrides for the former
+   `Other` names. ETFs are classified by investment exposure, not by the
+   industries of their holdings; this avoids treating Gold, TLT or country
+   funds as operating-company sectors. */
+const US_CLASSIFICATION={
+  'DEFT':{macro:'Financials',sector:'Financials',industry:'Financial Services',basicIndustry:'Finance Services (SEC SIC 6199)'},
+  'DFDV':{macro:'Financials',sector:'Financials',industry:'Financial Services',basicIndustry:'Finance Services / Crypto Assets (SEC SIC 6199)'},
+  'RR':{macro:'Industrials',sector:'Industrials',industry:'Machinery',basicIndustry:'Specialty Industrial Machinery'},
+  'SKHY':{macro:'Information Technology',sector:'Information Technology',industry:'Semiconductors & Semiconductor Equipment',basicIndustry:'Semiconductors'},
+  'SPCX':{macro:'Information Technology',sector:'Information Technology',industry:'Software & Services',basicIndustry:'Technology Services (SEC SIC 7370)'},
+  'TROO':{macro:'Financials',sector:'Financials',industry:'Financial Services',basicIndustry:'Credit Services'}
+};
+const ETF_CLASSIFICATION={
+  'SPY':{macro:'Equity',sector:'US Broad Equity',industry:'Large Cap U.S. Equity',basicIndustry:'S&P 500'},
+  'QQQ':{macro:'Equity',sector:'US Growth Equity',industry:'Large Cap Growth / Technology',basicIndustry:'Nasdaq-100'},
+  'IWM':{macro:'Equity',sector:'US Small Cap Equity',industry:'Small Cap U.S. Equity',basicIndustry:'Russell 2000'},
+  'IJR':{macro:'Equity',sector:'US Small Cap Equity',industry:'Small Cap U.S. Equity',basicIndustry:'S&P SmallCap 600'},
+  'VTI':{macro:'Equity',sector:'US Broad Equity',industry:'Total U.S. Equity',basicIndustry:'CRSP U.S. Total Market'},
+  'VOO':{macro:'Equity',sector:'US Broad Equity',industry:'Large Cap U.S. Equity',basicIndustry:'S&P 500'},
+  'DIA':{macro:'Equity',sector:'US Broad Equity',industry:'Large Cap U.S. Equity',basicIndustry:'Dow Jones Industrial Average'},
+  'XLK':{macro:'Equity',sector:'US Sector Equity',industry:'Technology',basicIndustry:'Information Technology'},
+  'XLF':{macro:'Equity',sector:'US Sector Equity',industry:'Financials',basicIndustry:'Financials'},
+  'XLV':{macro:'Equity',sector:'US Sector Equity',industry:'Healthcare',basicIndustry:'Healthcare'},
+  'XLE':{macro:'Equity',sector:'US Sector Equity',industry:'Energy',basicIndustry:'Energy'},
+  'XLI':{macro:'Equity',sector:'US Sector Equity',industry:'Industrials',basicIndustry:'Industrials'},
+  'XLY':{macro:'Equity',sector:'US Sector Equity',industry:'Consumer Discretionary',basicIndustry:'Consumer Discretionary'},
+  'XLP':{macro:'Equity',sector:'US Sector Equity',industry:'Consumer Staples',basicIndustry:'Consumer Staples'},
+  'XLU':{macro:'Equity',sector:'US Sector Equity',industry:'Utilities',basicIndustry:'Utilities'},
+  'XLRE':{macro:'Equity',sector:'US Sector Equity',industry:'Real Estate',basicIndustry:'Real Estate'},
+  'XLB':{macro:'Equity',sector:'US Sector Equity',industry:'Materials',basicIndustry:'Materials'},
+  'ARKK':{macro:'Equity',sector:'Thematic Equity',industry:'Innovation',basicIndustry:'Disruptive Innovation'},
+  'SOXX':{macro:'Equity',sector:'US Sector Equity',industry:'Semiconductors',basicIndustry:'Semiconductors'},
+  'TQQQ':{macro:'Equity',sector:'Leveraged Equity',industry:'Nasdaq-100 3x Daily',basicIndustry:'Leveraged U.S. Growth'},
+  'TLT':{macro:'Fixed Income',sector:'U.S. Treasury Bonds',industry:'Long Duration Treasuries',basicIndustry:'20+ Year U.S. Treasury'},
+  'HYG':{macro:'Fixed Income',sector:'U.S. Corporate Credit',industry:'High Yield Bonds',basicIndustry:'High Yield Corporate Bonds'},
+  'LQD':{macro:'Fixed Income',sector:'U.S. Corporate Credit',industry:'Investment Grade Bonds',basicIndustry:'Investment Grade Corporate Bonds'},
+  'GLD':{macro:'Commodities',sector:'Precious Metals',industry:'Gold',basicIndustry:'Gold Bullion'},
+  'SLV':{macro:'Commodities',sector:'Precious Metals',industry:'Silver',basicIndustry:'Silver Bullion'},
+  'IAU':{macro:'Commodities',sector:'Precious Metals',industry:'Gold',basicIndustry:'Gold Bullion'},
+  'GDX':{macro:'Equity',sector:'Commodity Equity',industry:'Gold Miners',basicIndustry:'Gold Mining'},
+  'USO':{macro:'Commodities',sector:'Energy Commodities',industry:'Crude Oil',basicIndustry:'WTI Crude Oil'},
+  'URA':{macro:'Equity',sector:'Commodity Equity',industry:'Uranium',basicIndustry:'Uranium & Nuclear'},
+  'EEM':{macro:'Equity',sector:'International Equity',industry:'Emerging Markets',basicIndustry:'MSCI Emerging Markets'},
+  'VWO':{macro:'Equity',sector:'International Equity',industry:'Emerging Markets',basicIndustry:'FTSE Emerging Markets'},
+  'EWJ':{macro:'Equity',sector:'International Equity',industry:'Japan',basicIndustry:'Japanese Equities'},
+  'FXI':{macro:'Equity',sector:'International Equity',industry:'China',basicIndustry:'Large-Cap Chinese Equities'},
+  'MCHI':{macro:'Equity',sector:'International Equity',industry:'China',basicIndustry:'Chinese Equities'},
+  'EWY':{macro:'Equity',sector:'International Equity',industry:'South Korea',basicIndustry:'Korean Equities'},
+  'EWZ':{macro:'Equity',sector:'International Equity',industry:'Brazil',basicIndustry:'Brazilian Equities'},
+  'EWW':{macro:'Equity',sector:'International Equity',industry:'Mexico',basicIndustry:'Mexican Equities'},
+  'VGK':{macro:'Equity',sector:'International Equity',industry:'Europe',basicIndustry:'European Equities'},
+  'EWH':{macro:'Equity',sector:'International Equity',industry:'Hong Kong',basicIndustry:'Hong Kong Equities'},
+  'EPOL':{macro:'Equity',sector:'International Equity',industry:'Poland',basicIndustry:'Polish Equities'},
+  'GREK':{macro:'Equity',sector:'International Equity',industry:'Greece',basicIndustry:'Greek Equities'},
+  'ARGT':{macro:'Equity',sector:'International Equity',industry:'Argentina',basicIndustry:'Argentine Equities'},
+  'THD':{macro:'Equity',sector:'International Equity',industry:'Thailand',basicIndustry:'Thai Equities'},
+  'KSA':{macro:'Equity',sector:'International Equity',industry:'Saudi Arabia',basicIndustry:'Saudi Equities'},
+  'EPU':{macro:'Equity',sector:'International Equity',industry:'Peru',basicIndustry:'Peruvian Equities'},
+  'VEA':{macro:'Equity',sector:'International Equity',industry:'Developed Markets ex-US',basicIndustry:'Developed International Equities'},
+  'UAE':{macro:'Equity',sector:'International Equity',industry:'United Arab Emirates',basicIndustry:'UAE Equities'},
+  'ECH':{macro:'Equity',sector:'International Equity',industry:'Chile',basicIndustry:'Chilean Equities'},
+  'EWG':{macro:'Equity',sector:'International Equity',industry:'Germany',basicIndustry:'German Equities'},
+  'EWS':{macro:'Equity',sector:'International Equity',industry:'Singapore',basicIndustry:'Singapore Equities'},
+  'EWI':{macro:'Equity',sector:'International Equity',industry:'Italy',basicIndustry:'Italian Equities'},
+  'AFK':{macro:'Equity',sector:'International Equity',industry:'Africa',basicIndustry:'African Equities'},
+  'EWN':{macro:'Equity',sector:'International Equity',industry:'Netherlands',basicIndustry:'Dutch Equities'},
+  'EWQ':{macro:'Equity',sector:'International Equity',industry:'France',basicIndustry:'French Equities'},
+  'EWP':{macro:'Equity',sector:'International Equity',industry:'Spain',basicIndustry:'Spanish Equities'},
+  'EWT':{macro:'Equity',sector:'International Equity',industry:'Taiwan',basicIndustry:'Taiwanese Equities'},
+  'EIS':{macro:'Equity',sector:'International Equity',industry:'Israel',basicIndustry:'Israeli Equities'},
+  'EZA':{macro:'Equity',sector:'International Equity',industry:'South Africa',basicIndustry:'South African Equities'},
+  'EWL':{macro:'Equity',sector:'International Equity',industry:'Switzerland',basicIndustry:'Swiss Equities'},
+  'EWU':{macro:'Equity',sector:'International Equity',industry:'United Kingdom',basicIndustry:'UK Equities'},
+  'VNM':{macro:'Equity',sector:'International Equity',industry:'Vietnam',basicIndustry:'Vietnamese Equities'},
+  'JEPI':{macro:'Equity',sector:'US Income Equity',industry:'Large Cap Income / Options',basicIndustry:'Covered Call Income'},
+  'SCHD':{macro:'Equity',sector:'US Dividend Equity',industry:'Dividend Growth',basicIndustry:'U.S. Dividend Stocks'},
+  'VNQ':{macro:'Equity',sector:'US Real Estate Equity',industry:'REITs',basicIndustry:'U.S. REITs'},
+  'TECL':{macro:'Equity',sector:'Leveraged Equity',industry:'Technology 3x Daily',basicIndustry:'Leveraged Technology'},
+  'IGV':{macro:'Equity',sector:'US Sector Equity',industry:'Software',basicIndustry:'Software'},
+  'XLC':{macro:'Equity',sector:'US Sector Equity',industry:'Communication Services',basicIndustry:'Communication Services'},
+  'XRT':{macro:'Equity',sector:'US Sector Equity',industry:'Retail',basicIndustry:'Retail'},
+  'SIL':{macro:'Equity',sector:'Commodity Equity',industry:'Silver Miners',basicIndustry:'Silver Mining'},
+  'XBI':{macro:'Equity',sector:'US Sector Equity',industry:'Biotechnology',basicIndustry:'Biotechnology'},
+  'AIQ':{macro:'Equity',sector:'Thematic Equity',industry:'Artificial Intelligence',basicIndustry:'AI & Technology'},
+  'QQQM':{macro:'Equity',sector:'US Growth Equity',industry:'Large Cap Growth / Technology',basicIndustry:'Nasdaq-100'},
+  'BOTZ':{macro:'Equity',sector:'Thematic Equity',industry:'Robotics & Artificial Intelligence',basicIndustry:'Robotics & AI'},
+  'IBIT':{macro:'Crypto',sector:'Digital Assets',industry:'Bitcoin',basicIndustry:'Spot Bitcoin'}
+};
+function usClassOf(def){return US_CLASSIFICATION[String(def?.s||'')]||null;}
+function etfClassOf(def){return ETF_CLASSIFICATION[String(def?.s||'')]||null;}
+function marketClassOf(def){return def?.g==='ETF'?etfClassOf(def):usClassOf(def);}
+
 const ROT_V4_GROUPS={
   'Financial Services':['Bank','Private Bank','PSU Bank','Housing Finance','Insurance','NBFC'],
   'Healthcare':['Pharma','Hospitals'],
@@ -17648,6 +17751,8 @@ const ROT_V4_GROUPS={
    NSE classification. When a complete security-level NSE mapping is supplied,
    these helpers can be replaced without changing the rotation engine. */
 function rotV4Macro(def){
+  const official=nseClassOf(def); if(official) return official.macro;
+  const market=marketClassOf(def); if(market) return market.macro;
   /* Existing universe sector labels are the macro bucket in this screener. */
   const sec=String(def?.sector||'Other');
   const map={
@@ -17667,6 +17772,8 @@ function rotV4Macro(def){
   return map[sec]||sec;
 }
 function rotV4Sector(def){
+  const official=nseClassOf(def); if(official) return official.sector;
+  const market=marketClassOf(def); if(market) return market.sector;
   /* Sector layer: use the existing narrow-index membership where available;
      otherwise use a deterministic NSE-aligned sector grouping. */
   const s=subIndOf(def);
@@ -17688,6 +17795,8 @@ function rotV4Sector(def){
   return map[sec]||sec;
 }
 function rotV4Industry(def){
+  const official=nseClassOf(def); if(official) return official.industry;
+  const market=marketClassOf(def); if(market) return market.industry;
   const sec=String(def?.sector||'Other');
   const map={
     Financials:'Financial Services',Financial:'Financial Services',FMCG:'Food, Beverage & Tobacco','Consumer Staples':'Food, Beverage & Tobacco','Consumer Defensive':'Food, Beverage & Tobacco',
@@ -17702,6 +17811,8 @@ function rotV4Industry(def){
   return map[sec]||sec;
 }
 function rotV4Narrow(def){
+  const official=nseClassOf(def); if(official) return official.basicIndustry;
+  const market=marketClassOf(def); if(market) return market.basicIndustry;
   const s=subIndOf(def);
   if(s && s.indexOf(' (other)')<0) return s;
   return rotV4Industry(def);
@@ -17742,7 +17853,7 @@ function rotV4Rows(market,level,parentLevel,parentName){
     if(d.rs55!=null) r.rs.push(d.rs55);
     if(d.rsSlope!=null) r.rsChg.push(d.rsSlope); else if(d.rs21!=null&&d.rs55!=null) r.rsChg.push(d.rs21-d.rs55);
     if(d.early?.score!=null){if(d.early.score>=70)r.early++;if(d.early.score>=80)r.prime++;}
-    if(d.boAge!=null || d.boGain!=null) r.bo++;
+    if(d.boAge!=null&&isFinite(d.boAge)&&d.boAge<=10) r.bo++;
     if(numOk(d.pct50e)&&d.pct50e>=0) r.above50++;
     if(d.earlyVolTrend!=null&&d.earlyVolTrend>=1.15) r.volUp++;
   });
@@ -17852,8 +17963,11 @@ function rotV5StockRows(market){
     const e=d.early||{};
     const rsChg=d.rsSlope!=null?d.rsSlope:(d.rs21!=null&&d.rs55!=null?d.rs21-d.rs55:null);
     const h52=d.h52d;
-    const rsStrong=d.rs55!=null&&d.rs55>=20;
     const near52=h52!=null&&h52>=-30;
+    const above50=numOk(d.pct50e)&&d.pct50e>=0;
+    const recentPositiveBO=d.boAge!=null&&isFinite(d.boAge)&&d.boAge<=15&&d.boGain!=null&&d.boGain>=0;
+    const constructiveStructure=(e.score!=null&&e.score>=60)||(numOk(d.pct20e)&&d.pct20e>=0)||recentPositiveBO;
+    const rsStrong=d.rs55!=null&&d.rs55>=20&&above50&&near52&&constructiveStructure;
     const preBreak=e.state==='prime'||e.state==='watch';
     const trigger=e.triggerDist;
     const aboutToBreak=preBreak&&trigger!=null&&trigger<=10;
@@ -17882,7 +17996,7 @@ function renderRotationV5Stocks(m){
   const stateFilter=window.ROT_V5_STOCK_FILTER||'all';
   const filtered=rows.filter(x=>stateFilter==='all'||(stateFilter==='top'&&x.priority>=4)||(stateFilter==='prime'&&x.state==='prime')||(stateFilter==='early'&&x.e.score>=70)||(stateFilter==='bo'&&(x.d.boAge!=null&&x.d.boAge<=10))||(stateFilter==='near52'&&x.near52)||(stateFilter==='strongrs'&&x.rsStrong));
   $('rotationV4Note').textContent=`Stocks • ${filtered.length} shown • default order: near-breakout + strong RS + within 30% of 52W high, then Early score. Green/blue rows are stronger opportunities; amber is developing; red is weaker. Click any column header to sort; click again to reverse.`;
-  $('rotationV4Crumb').innerHTML=rotV5StockCrumb()+'<div class="rot-stock-filters">'+[['all','All'],['top','Top Opportunities'],['prime','Prime'],['early','Early ≥70'],['bo','Recent BO'],['near52','Within 30% of 52W High'],['strongrs','Strong RS']].map(([k,l])=>`<button class="rot-filter ${stateFilter===k?'active':''}" title="${k==='top'?'Prime/Watch near trigger, strong RS and near 52-week high':k==='bo'?'Breakout detected within the last 10 trading bars':k==='prime'?'Prime Early state':k==='early'?'Early score of at least 70':k==='near52'?'At or within 30% below the available 52-week high':k==='strongrs'?'RS55 ≥20':'Show all stocks in the selected hierarchy'}" onclick="window.ROT_V5_STOCK_FILTER='${k}';ROT_SORT.stocks={key:null,dir:-1};renderRotationV4()">${l}</button>`).join('')+'</div>';
+  $('rotationV4Crumb').innerHTML=rotV5StockCrumb()+'<div class="rot-stock-filters">'+[['all','All'],['top','Top Opportunities'],['prime','Prime'],['early','Early ≥70'],['bo','Recent BO'],['near52','Within 30% of 52W High'],['strongrs','Strong RS']].map(([k,l])=>`<button class="rot-filter ${stateFilter===k?'active':''}" title="${k==='top'?'Prime/Watch near trigger, strong RS and near 52-week high':k==='bo'?'Breakout detected within the last 10 trading bars':k==='prime'?'Prime Early state':k==='early'?'Early score of at least 70':k==='near52'?'At or within 30% below the available 52-week high':k==='strongrs'?'Strong RS = RS55 ≥20 + above 50EMA + within 30% of 52W high + constructive setup/breakout structure':'Show all stocks in the selected hierarchy'}" onclick="window.ROT_V5_STOCK_FILTER='${k}';ROT_SORT.stocks={key:null,dir:-1};renderRotationV4()">${l}</button>`).join('')+'</div>';
   $('rotationV4Head').innerHTML='<tr>'+rotSortHead('Stock','name','stocks','Stock/company name')+rotSortHead('RS55','rs55','stocks','55-day relative strength; green = strong, blue = positive, red = weak')+rotSortHead('RS Δ','rsChg','stocks','Relative-strength direction; green = improving, red = weakening')+rotSortHead('Early','score','stocks','Early Breakout score, 0–100')+rotSortHead('Trigger','triggerDist','stocks','Distance to the Early breakout trigger; lower is closer')+rotSortHead('52W High%','h52','stocks','Distance below the available 52-week high; within 30% is preferred')+rotSortHead('State','state','stocks','Early state: Prime, Watch, Accumulation, Breakout, Developing')+rotSortHead('BO Gain','boGain','stocks','Gain since the latest detected breakout')+rotSortHead('BO Age','boAge','stocks','Trading bars since latest breakout')+rotSortHead('BO Date','boDate','stocks','Date of latest detected breakout')+'</tr>';
   $('rotationV4Body').innerHTML=filtered.length?filtered.map(x=>`<tr class="rot-v4-row stock-${x.state}" onclick="openDrill('${escAttr(x.def.s)}')"><td><b>${escHtml(x.def.d||x.def.s)}</b><br><span style="font-size:9px;color:var(--muted)">${escHtml(x.def.s)}</span></td><td>${rotV5RsPill(x.d.rs55)}</td><td>${rotSignedPill(x.rsChg,1)}</td><td><span class="sb-pill ${x.e.score>=80?'sb-hi':x.e.score>=70?'sb-mid':'sb-lo'}">${x.e.score==null?'—':x.e.score}</span></td><td>${rotV5TriggerPill(x.e.triggerDist)}</td><td>${rotV5Pct52Pill(x.h52)}</td><td><span class="rot-pill ${rotV5StateCls(x.state)}">${rotV5EarlyLabel(x.state)}</span></td><td>${x.d.boGain==null?'—':rotSignedPill(x.d.boGain,0)}</td><td>${x.d.boAge==null?'—':x.d.boAge+'d'}</td><td class="bo-date">${boDateC(x.d.boDate)||'—'}</td></tr>`).join(''):'<tr><td colspan="10" class="rot-v4-empty">No stocks match this filter/context.</td></tr>';
 }
@@ -17897,7 +18011,7 @@ function renderRotationV4(){
   const title=level==='macro'?'Macro':level==='sector'?'Sector':level==='industry'?'Industry':'Narrow Group';
   $('rotationV4Note').textContent=`${title} rotation • default order: Powering Up → Turning Up → Cooling → Falling Back, then Flow → Prime → Early → RS improvement. Click any column header to sort; click again to reverse. Rotation is context, not a buy/sell rule.`;
   $('rotationV4Crumb').innerHTML=rotV4Crumb(level,parentLevel,parentName);
-  $('rotationV4Head').innerHTML='<tr>'+rotSortHead(title,'name','rotation',title+' name')+rotSortHead('RS55','rs','rotation','Median 55-day relative strength level')+rotSortHead('RS Δ','rsChg','rotation','Median relative-strength direction; positive is improving')+rotSortHead('Flow','flowScore','rotation','Combined ranking of RS strength, RS improvement and Early participation')+rotSortHead('≥50E','breadth','rotation','Percentage of stocks above the 50-day EMA')+rotSortHead('Early','earlyPct','rotation','Percentage of stocks with Early score ≥70')+rotSortHead('Prime','primePct','rotation','Percentage of stocks in Prime Early state')+rotSortHead('BO','boPct','rotation','Percentage with a detected breakout')+rotSortHead('Vol↑','volPct','rotation','Percentage showing improving volume transition')+rotSortHead('Rotation','rotation','rotation','Powering Up = strong and rising; Turning Up = weaker but rising; Cooling = strong but falling; Falling Back = weak and falling')+'</tr>';
+  $('rotationV4Head').innerHTML='<tr>'+rotSortHead(title,'name','rotation',title+' name')+rotSortHead('RS55','rs','rotation','Median 55-day relative strength level')+rotSortHead('RS Δ','rsChg','rotation','Median relative-strength direction; positive is improving')+rotSortHead('Flow','flowScore','rotation','Combined ranking of RS strength, RS improvement and Early participation')+rotSortHead('≥50E','breadth','rotation','Percentage of stocks above the 50-day EMA')+rotSortHead('Early','earlyPct','rotation','Percentage of stocks with Early score ≥70')+rotSortHead('Prime','primePct','rotation','Percentage of stocks in Prime Early state')+rotSortHead('BO','boPct','rotation','Percentage with a breakout detected within the last 10 trading bars')+rotSortHead('Vol↑','volPct','rotation','Percentage showing improving volume transition')+rotSortHead('Rotation','rotation','rotation','Powering Up = strong and rising; Turning Up = weaker but rising; Cooling = strong but falling; Falling Back = weak and falling')+'</tr>';
   $('rotationV4Body').innerHTML=rows.length?rows.map(r=>`<tr class="rot-v4-row" onclick="rotationV4Drill('${escAttr(r.name)}','${level}','${m}')"><td><b>${escHtml(r.name)}</b><br><span style="font-size:9px;color:var(--muted)">${r.n} stocks</span></td><td>${r.rs==null?'—':r.rs.toFixed(1)}</td><td>${rotSignedPill(r.rsChg,1)}</td><td>${r.flowScore==null?'—':`<span class="sb-pill ${r.flowScore>=70?'sb-hi':r.flowScore>=50?'sb-mid':'sb-lo'}">${r.flowScore}</span>`}</td><td>${r.breadth==null?'—':pillFmt(Math.round(r.breadth))}</td><td>${r.earlyPct==null?'—':pillFmt(Math.round(r.earlyPct))}</td><td>${r.primePct==null?'—':pillFmt(Math.round(r.primePct))}</td><td>${r.boPct==null?'—':pillFmt(Math.round(r.boPct))}</td><td>${r.volPct==null?'—':pillFmt(Math.round(r.volPct))}</td><td><span class="sb-pill ${ROT_CLS[r.rotation]||'sb-mid'}">${r.rotation}</span></td></tr>`).join(''):'<tr><td colspan="10" class="rot-v4-empty">No computed data yet.</td></tr>';
   const tabs=[['macro','Macro'],['sector','Sector'],['industry','Industry'],['narrow','Narrow Group'],['stocks','Stocks']];
   $('rotationV4Tabs').innerHTML=tabs.map(([k,l])=>`<button class="rot-v4-tab ${level===k?'active':''}" onclick="${k==='stocks'?'rotV4GoStocks()':`rotV4SetLevel('${k}',null,null,null,null);renderRotationV4()`}">${l}</button>`).join('');
@@ -17929,9 +18043,14 @@ function mfRows(market){
     const score=e.score;
     const rsChg=d.rsSlope!=null?d.rsSlope:(d.rs21!=null&&d.rs55!=null?d.rs21-d.rs55:null);
     const above50=numOk(d.pct50e)&&d.pct50e>=0;
+    const near52=d.h52d!=null&&d.h52d>=-30;
     const recentBO=d.boAge!=null&&isFinite(d.boAge)&&d.boAge<=15;
     const positiveBO=recentBO&&d.boGain!=null&&d.boGain>=0;
     const controlledRetest=positiveBO&&d.retrace!=null&&d.retrace>=-12&&above50;
+    /* v14 strong-stock guard: a high absolute-RS stock in a healthy trend/structure
+       is not called Money Leaving solely because short-term RS slope softened. */
+    const constructiveStructure=(score!=null&&score>=60)||(numOk(d.pct20e)&&d.pct20e>=0)||positiveBO;
+    const structurallyStrong=d.rs55!=null&&d.rs55>=20&&above50&&near52&&constructiveStructure;
     const prime=e.state==='prime' || (score!=null&&score>=80&&e.triggerDist!=null&&e.triggerDist<=5&&e.volumePhase==='expanding');
     const improving=rsChg!=null&&rsChg>0;
     const weakening=rsChg!=null&&rsChg<0;
@@ -17946,9 +18065,9 @@ function mfRows(market){
     else if(newlyStrong && improving) state='New Money';
     else if(prime) state='Prime Leader';
     else if(score!=null&&score>=70&&(improving||!weakening)) state='Watching';
-    else if(weakening && (score==null||score<60) && (!recentBO || !positiveBO || !controlledRetest)) state='Money Leaving';
+    else if(weakening && !structurallyStrong && (score==null||score<60) && (!recentBO || !positiveBO || !controlledRetest)) state='Money Leaving';
     else return null;
-    return {def,d,e,rsChg,state,macro:rotV4Macro(def),sector:rotV4Sector(def),industry:rotV4Industry(def),narrow:rotV4Narrow(def),recentBO,positiveBO,controlledRetest,newlyStrong};
+    return {def,d,e,rsChg,state,macro:rotV4Macro(def),sector:rotV4Sector(def),industry:rotV4Industry(def),narrow:rotV4Narrow(def),recentBO,positiveBO,controlledRetest,newlyStrong,structurallyStrong};
   }).filter(Boolean);
   const st=ROT_SORT.money;
   return st.key?rotSortRows(rows,st.key,st.dir):rotDefaultMoneySort(rows);
@@ -17967,7 +18086,7 @@ function renderMoneyFlowRadar(){
     prime:'Prime Leaders = stocks currently in the Prime Early state; strongest first.',
     watch:'Watching = Early score ≥70 with constructive relative strength, but not yet classified as Prime.',
     retest:'Post-Breakout / Retest = recent positive breakout followed by a controlled pullback while price remains above the 50EMA; not automatically a sell signal.',
-    leaving:'Money Leaving = genuine deterioration: weakening relative strength plus materially weak Early/structure, excluding healthy breakout retests.'
+    leaving:'Money Leaving = genuine deterioration: weakening relative strength plus materially weak Early/structure. Strong absolute-RS stocks that remain above the 50EMA, within 30% of the 52-week high and retain constructive setup/breakout structure are protected from this label; healthy breakout retests are also excluded.'
   };
   $('moneyFlowNote').textContent=notes[tab]+' Click any column header to sort; click again to reverse. Market is locked to the main screener.';
   $('moneyFlowHead').innerHTML='<tr>'+rotSortHead('Stock','name','money','Stock/company name')+rotSortHead('Macro','macro','money','Research macro grouping')+rotSortHead('Sector','sector','money','Research sector grouping')+rotSortHead('Industry','industry','money','Research industry grouping')+rotSortHead('RS55','rs55','money','55-day relative strength level; green = stronger')+rotSortHead('RS Δ','rsChg','money','Relative-strength direction; green = improving, red = weakening')+rotSortHead('Early','score','money','Early Breakout score, 0–100')+rotSortHead('State','state','money','Current Money Flow classification')+rotSortHead('BO Gain','boGain','money','Gain since latest detected breakout')+rotSortHead('BO Age','boAge','money','Trading bars since latest detected breakout')+rotSortHead('BO Date','boDate','money','Latest detected breakout date')+'</tr>';
@@ -17980,9 +18099,9 @@ function renderMoneyFlowTabs(){
 
 /* ══════════════════════════════════════════════════════════════════════════
    DAILY MONEY-FLOW SNAPSHOTS
-   Compact browser-side history. This stores only the fields needed to detect
-   state/participation changes; it does NOT store full SD rows. Once the Worker
-   exists, the same compact snapshot shape can move to KV without changing the UI.
+   Compact central history. The browser keeps a local fallback, but when the
+   Cloudflare Pages Function is deployed, the same market-specific snapshots are
+   stored centrally in KV so India/US/ETF history follows the user across devices.
 ══════════════════════════════════════════════════════════════════════════ */
 const MF_HIST_MAX=30;
 const MF_REMOTE_API=(/github\.io$/i.test(location.hostname)||/githubusercontent\.com$/i.test(location.hostname))?'https://da34d214.globalscreener.pages.dev/api/mf-history':'/api/mf-history';
@@ -18012,7 +18131,10 @@ async function mfLoadRemoteHistory(m){
       try{localStorage.setItem(mfHistKey(m),JSON.stringify(MF_REMOTE[m]));}catch(e){}
       return MF_REMOTE[m];
     }
+    throw new Error('Invalid history response');
   }catch(e){
+    /* Local fallback is deliberately retained for GitHub/offline testing, but
+       central history wins whenever the Pages endpoint responds correctly. */
     MF_REMOTE[m]=mfReadLocalHistory(m);
   }
   return MF_REMOTE[m]||[];
@@ -18020,10 +18142,19 @@ async function mfLoadRemoteHistory(m){
 async function mfSaveRemoteHistory(m,h){
   const clean=h.slice(-MF_HIST_MAX); MF_REMOTE[m]=clean;
   try{
+    /* Central history is shared by market, not by browser. The server merges
+       the supplied snapshots instead of blindly replacing its entire history,
+       so a second browser cannot erase earlier days. */
     const r=await fetch(MF_REMOTE_API,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({market:m,history:clean})});
     if(!r.ok) throw new Error('HTTP '+r.status);
+    const j=await r.json().catch(()=>null);
+    if(j&&Array.isArray(j.history)){
+      MF_REMOTE[m]=j.history.slice(-MF_HIST_MAX);
+      try{localStorage.setItem(mfHistKey(m),JSON.stringify(MF_REMOTE[m]));}catch(e){}
+    }
     return true;
   }catch(e){
+    console.warn('Central Money Flow history unavailable:',e.message);
     return false;
   }
 }
