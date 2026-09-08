@@ -455,11 +455,6 @@ td:last-child{border-right:none}
 .ema-r{color:var(--red);font-size:11px;font-weight:600}
 
 /* EMA individual period badges (10/20/50/200 style chips) */
-.wemacv{display:inline-flex;align-items:center;gap:4px;white-space:nowrap}
-.wemacv-pass{color:var(--green);font-weight:700}
-.wemacv-no{color:var(--orange);font-weight:600}
-.wemacv-na{color:var(--text3);font-weight:500}
-.wemacv-spread{font-size:9.5px;color:var(--text3)}
 .ema-badges{display:flex;gap:4px}
 .ema-badge{display:inline-flex;align-items:center;justify-content:center;
   min-width:20px;padding:2px 5px;border-radius:var(--rs);font-size:10px;font-weight:700;
@@ -897,13 +892,20 @@ body.asof-on .tbl-wrap{outline:3px solid var(--orange)}
 .disc{font-size:10.5px;color:var(--text3);text-align:center;margin-top:2px}
 
 /* ─── COLUMN VISIBILITY ────────── */
+/* Dense badge cells: preserve the existing columns and wrap secondary facts
+   inside the cell instead of allowing text to paint into the neighbour. */
+.c-smz,.c-momo{width:180px;min-width:180px;max-width:180px;overflow:hidden;vertical-align:middle}
+.c-smz .cell-inline,.c-momo .cell-inline{display:flex;align-items:center;flex-wrap:wrap;gap:2px 4px;min-width:0;max-width:100%;overflow:hidden;line-height:1.25}
+.c-smz .smz,.c-momo .momo{flex:0 0 auto;max-width:100%}
+.c-smz .smz-dist,.c-momo .momo-why{min-width:0;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.c-smz .smz-bos{flex:0 0 auto;max-width:100%}
 /* GROUP A — force-hidden at ≤900px (the @media block below must list exactly
    these, and TOGGLEABLE_COLS must list every class in both groups).
    Note the historical-price pair is split across the two groups on purpose: on
    a narrow screen the % change since the chosen date is the answer and the raw
    historical price is only the working, so the price drops out first (group A)
    and the gain survives down to 480px (group B). */
-.c-wrsi,.c-wvol,.c-wpiv,.c-wema,.c-wemacv,.c-voldry,.c-retrace,.c-rstrend,.c-notes,
+.c-wrsi,.c-wvol,.c-wpiv,.c-wema,.c-voldry,.c-retrace,.c-rstrend,.c-notes,
 .c-wcross,.c-wpattern,.c-monthly,.c-rs10w,.c-rsslope,.c-rshist,.c-slope200,
 .c-followup,.c-hist,.c-wbox,.c-rsp55,.c-rsp21,
 /* SMZ is GROUP A, beside W-Box rather than beside D-Box, because it is read on
@@ -912,6 +914,7 @@ body.asof-on .tbl-wrap{outline:3px solid var(--orange)}
    entry itself. The cell is also the widest badge in the table — direction,
    state and distance on one line — so it is the first thing that should go
    when the viewport gets tight. */
+.c-smz,
 /* Momentum Base is GROUP A, beside SMZ, on the same argument and for the same
    two reasons. It is read on the same clock — a 42-bar thrust with a fortnight
    of rest hanging off it describes weeks, and weeks are the WORKING behind an
@@ -941,6 +944,7 @@ body.asof-on .tbl-wrap{outline:3px solid var(--orange)}
 .ex-traj{margin-top:10px;padding-top:9px;border-top:1px solid var(--border)}.ex-traj-line{font-size:11px;line-height:1.6;word-break:break-word}.ex-arrow{color:var(--text3);padding:0 3px}.ex-now{font-weight:900}
 @media(max-width:700px){.ex-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.ex-meta{grid-template-columns:repeat(2,minmax(0,1fr))}}
 
+.c-momo,
 /* %50E and %200E are GROUP A, not B: they answer "which regime am I in", which
    is the WORKING behind the decision rather than the decision itself. The one
    of the three that is a live stop level — %20E — is in group B below. */
@@ -949,14 +953,6 @@ body.asof-on .tbl-wrap{outline:3px solid var(--orange)}
 /* Vol Spike is GROUP B, with Vol Ratio: the two are read together (one says
    what today did, the other what the last two weeks did) and dropping one of
    the pair on a narrow screen leaves half an answer. */
-/* Dense badge cells: a fixed outer width plus a real inner shrink boundary.
-   This prevents SMZ/Momentum Base content from painting into the next column. */
-.c-smz,.c-momo{width:180px;min-width:180px;max-width:180px;overflow:hidden;white-space:nowrap}
-.cell-inline{display:flex;align-items:center;gap:4px;min-width:0;max-width:100%;overflow:hidden;white-space:nowrap}
-.cell-inline .smz,.cell-inline .momo{flex:0 0 auto}
-.cell-inline .smz-dist,.cell-inline .momo-why{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.cell-inline .smz-bos{flex:0 0 auto}
-
 .c-volspike,.c-thrust,
 .c-vr,.c-align,.c-ema,.c-bocnt,.c-squeeze,.c-mrsrank,.c-setup,.c-early,
 .c-sector,.c-subind,.c-status,.c-xcross,.c-pattern,.c-consol,.c-rs21,.c-rs55,
@@ -1403,7 +1399,7 @@ body.dd-lock{overflow:hidden}
   .metrics-row{grid-template-columns:repeat(4,1fr)}
   .c-wrsi,.c-wvol,.c-wpiv,.c-wema,.c-voldry,.c-retrace,.c-rstrend,.c-notes,
   .c-wcross,.c-wpattern,.c-monthly,.c-rs10w,.c-rsslope,.c-rshist,.c-slope200,
-  .c-followup,.c-hist,.c-wbox,.c-rsp55,.c-rsp21,.c-smz,.c-momo,.c-wemacv,
+  .c-followup,.c-hist,.c-wbox,.c-rsp55,.c-rsp21,.c-smz,.c-momo,
   .c-pct50e,.c-pct200e{display:none!important}
 }
 @media (max-width:768px){
@@ -1602,6 +1598,7 @@ body.dd-lock{overflow:hidden}
     <button class="ftog" id="boxTog" aria-pressed="false" onclick="toggleBox()" data-tip="The Darvas box screen in one click: price above the 20, 50 AND 200-day EMAs, and the daily Darvas box state is Inside, Near or Break — that is, the stock is in a confirmed uptrend and is still consolidating inside its box, sitting within 1% of the box top, or crossing it on the latest bar. Stocks already trading above the box are left out on purpose: the move has happened and a fresh entry there is late. A stock whose EMA 200 cannot be calculated (under 200 bars of history) is excluded rather than waved through. Combines with every other filter rather than replacing them.">📦 Box Setup</button>
     <button class="ftog" id="rsimaTog" aria-pressed="false" onclick="toggleRsiMa()" data-tip="Keep only stocks whose RSI(14) is trading above a 14-period moving average of the RSI line itself — momentum judged against its own recent trend rather than against a fixed 50 or 70 level. It can turn up while RSI is still well under 70, which is what makes it an entry screen rather than an overbought reading. Daily only: there is deliberately no weekly version of this test. A stock with under about 45 bars of history has no settled RSI average yet and is left OUT rather than waved through — 'we could not measure it' is never treated as a pass here. Combines with every other filter rather than replacing them.">📉 RSI &gt; MA</button>
     <button class="ftog" id="emacvTog" aria-pressed="false" onclick="toggleEmaCv()" data-tip="Keep only stocks where price is at or above every one of the 10, 20, 50 and 200-day EMAs AND those EMAs have run together — the gap from the highest to the lowest is 5% of price or less. Bunched on its own is not enough: a stock rolling over squeezes its averages together just as neatly, so price has to be sitting on top of the whole cluster. Daily only; there is deliberately no weekly version. A stock too young to have a 200 EMA is judged on the EMAs it does have, as long as at least two of them exist — one average is not agreement. The 5% is fixed for this button; the Advanced Filters panel carries its own editable percentage if you want it tighter. Combines with every other filter rather than replacing them.">🎯 EMAs Converge</button>
+    <button class="ftog" id="wemacvTog" aria-pressed="false" onclick="toggleWemaCv()" data-tip="Keep only stocks where the latest price is at or above BOTH the 10-week and 20-week EMA, and those two weekly EMAs are within 5% of the price. Uses the same weekly 10/20 values already shown by W-EMA; no 50-week EMA and no extra data download. Combines with every other filter rather than replacing them.">📅 W-EMA 10/20</button>
     <button class="ftog" id="smzTog" aria-pressed="false" onclick="toggleSmz()" data-tip="Stocks in BULL structure that have pulled back into or through the institutional zone: bias is bullish and the price is anywhere from the swing low up to the 0.618 line. Stocks still ABOVE the zone are left out on purpose — they have not pulled back yet, so there is nothing to buy into. A stock that closes below its swing low stops being bull structure altogether and drops off this list on its own the next day, so the button needs no separate stop rule. Use the SMZ column funnel to narrow further to just In IBZ and In SMZ; this button deliberately keeps Below zone too, because a retracement that overran is still a bull structure and still worth a look.">🧲 SMZ Setup</button>
     <button class="ftog" id="smzbosTog" aria-pressed="false" onclick="toggleSmzBos()" data-tip="The break-and-retest case: structure flipped BULLISH within the last 20 trading days AND price has since pulled back into or through the institutional zone. It is the 🧲 SMZ Setup screen narrowed to setups where the break itself is still fresh, so it is always a subset of that button. A stock that broke out and kept running will NOT appear — it is still above the zone, so it has not offered an entry yet, and it only shows up here if it comes back within those ten days. Bear structures are excluded outright: the ⚡ BOS marker in the SMZ column is neutral and marks both directions, but this button is bull-only. Stocks that have never broken structure have no break to date and are excluded too.">⚡ SMZ + BOS</button>
     <!-- 🔥 rather than the 🚀 this screen naturally wants: 🚀 is already the
@@ -1786,7 +1783,6 @@ body.dd-lock{overflow:hidden}
             <th class="c-pct50e" data-s="pct50e" data-tip="How far the latest close sits above or below the 50-day EMA, as a percentage of that EMA: %50E = 100 &times; ( Close &minus; EMA50 ) / EMA50. ITS ROLE: in a WEAK market the 50 EMA is the stop level, not the 20 — a pullback through the 20 EMA in a bad tape is ordinary behaviour, and the 50 is the line that says whether the trend is still intact. Read it with %20E: negative %20E and positive %50E is a pullback inside the trend, negative on both has left it. A POSITIVE number means the close is ABOVE the average, a NEGATIVE number means it is BELOW it. It reuses the EMA the EMA Align badges beside it are drawn from — no moving average is recomputed. A dash means the EMA could not be computed on the history available, or came back zero or negative; never a zero, because zero is a real reading: the close sitting exactly on the average. Sortable and filterable.">%50E<span class="sort-ico"></span></th>
             <th class="c-pct200e" data-s="pct200e" data-tip="How far the latest close sits above or below the 200-day EMA, as a percentage of that EMA: %200E = 100 &times; ( Close &minus; EMA200 ) / EMA200. ITS ROLE: the 200 EMA is the REGIME line, not a stop — the exit goes at the 20 EMA in a normal market and the 50 in a weak one. Its job here is to disqualify: a stock below its 200 EMA is not a long candidate however good the shorter-term shape looks, so a negative reading is a veto rather than a measurement. A POSITIVE number means the close is ABOVE the average, a NEGATIVE number means it is BELOW it. It reuses the EMA the EMA Align badges beside it are drawn from — no moving average is recomputed. A dash means the EMA could not be computed on the history available, or came back zero or negative; never a zero, because zero is a real reading: the close sitting exactly on the average. Sortable and filterable.">%200E<span class="sort-ico"></span></th>
             <th class="c-wema" data-s="wema" data-tip="The same alignment check on the weekly chart: price against the 10-week and 20-week moving averages.">W-EMA<span class="sort-ico"></span></th>
-            <th class="c-wemacv" data-s="wemacvg" data-tip="Weekly EMA convergence: price must be above every available 10-, 20- and 50-week EMA, with at least two weekly EMAs present, and the spread from the highest to lowest available EMA must be 5% of price or less. The 50-week EMA is shown only when 50 weekly bars are actually available; it is never fabricated.">W-EMA CVG<span class="sort-ico"></span></th>
             <!-- Label is written by syncXoverLabel() from CFG.XOVER, so changing
                  the pair in Advanced Filters renames the column instead of
                  leaving a stale hardcoded "10×20". -->
@@ -2384,7 +2380,7 @@ const CFG = {
      this window already found. */
   THRUST: {win:10},
 
-  VER:  'gs23_wema_cross4',     // gs22 -> gs23: computeTech() returns ONE more field — thrustFade,
+  VER:  'gs23',     // gs22 -> gs23: computeTech() returns ONE more field — thrustFade,
                     // mean volume SINCE the thrust over the thrust bar's own volume. A gs22
                     // cached row has no such key, and the fade leg would read it as a refusal.
                     // (thrustPct, thrustAge, thrustVol). All three describe ONE bar: the biggest
@@ -4840,7 +4836,7 @@ const SCREENS_LS_KEY='sm_saved_screens_v1';
 const SCREEN_GET={
   F_CAP:()=>F_CAP, F_SCT:()=>F_SCT, F_EMA:()=>F_EMA, F_RSI:()=>F_RSI,
   F_PIV:()=>F_PIV, F_WPIV:()=>F_WPIV, F_REV:()=>F_REV, F_ALIGN:()=>F_ALIGN, F_BO:()=>F_BO,
-  F_DWA:()=>F_DWA, F_BOX:()=>F_BOX, F_RSIMA:()=>F_RSIMA, F_EMACV:()=>F_EMACV, F_SMZ:()=>F_SMZ,
+  F_DWA:()=>F_DWA, F_BOX:()=>F_BOX, F_RSIMA:()=>F_RSIMA, F_EMACV:()=>F_EMACV, F_WEMACV:()=>F_WEMACV, F_SMZ:()=>F_SMZ,
   F_SMZBOS:()=>F_SMZBOS, F_MOMO:()=>F_MOMO, F_STAGE:()=>F_STAGE,
   MIN_MCAP:()=>MIN_MCAP, SEARCH:()=>SEARCH, SORT_C:()=>SORT_C, SORT_D:()=>SORT_D,
   /* Deep-cloned both ways: COLF holds nested arrays and objects, and a shared
@@ -4855,7 +4851,7 @@ const SCREEN_GET={
 const SCREEN_SET={
   F_CAP:v=>{F_CAP=v}, F_SCT:v=>{F_SCT=v}, F_EMA:v=>{F_EMA=v}, F_RSI:v=>{F_RSI=v},
   F_PIV:v=>{F_PIV=v}, F_WPIV:v=>{F_WPIV=v}, F_REV:v=>{F_REV=v}, F_ALIGN:v=>{F_ALIGN=!!v}, F_BO:v=>{F_BO=!!v},
-  F_DWA:v=>{F_DWA=!!v}, F_BOX:v=>{F_BOX=!!v}, F_RSIMA:v=>{F_RSIMA=!!v}, F_EMACV:v=>{F_EMACV=!!v}, F_SMZ:v=>{F_SMZ=!!v},
+  F_DWA:v=>{F_DWA=!!v}, F_BOX:v=>{F_BOX=!!v}, F_RSIMA:v=>{F_RSIMA=!!v}, F_EMACV:v=>{F_EMACV=!!v}, F_WEMACV:v=>{F_WEMACV=!!v}, F_SMZ:v=>{F_SMZ=!!v},
   /* Coerced like every other boolean here. A screen saved before gs20 carries
      no F_SMZBOS key at all, and applyScreen()'s `sc[f]!==undefined` guard then
      skips this setter entirely rather than calling it with undefined — so the
@@ -5155,7 +5151,7 @@ const SCREEN_LIQ_FLOOR={india:5, us:10, etf:10};
 function screenSeedBase(){
   return {
     F_CAP:'All', F_SCT:'', F_EMA:'', F_RSI:'', F_PIV:'', F_WPIV:'', F_REV:'',
-    F_ALIGN:false, F_BO:false, F_DWA:false, F_BOX:false, F_RSIMA:false, F_EMACV:false, F_SMZ:false,
+    F_ALIGN:false, F_BO:false, F_DWA:false, F_BOX:false, F_RSIMA:false, F_EMACV:false, F_WEMACV:false, F_SMZ:false,
     F_SMZBOS:false, F_MOMO:false, F_STAGE:'',
     MIN_MCAP:(MCAP_DEFAULTS[CUR] ?? 0), SEARCH:'', SORT_C:'', SORT_D:'desc',
     COLF:{}, HIST_DATE:'',
@@ -5223,7 +5219,7 @@ function seedScreenObj(colf, adv){
    want excluded on a technicality. */
 const SCREEN_SEEDS=[
   {
-    name:'0 · Early Pre-Breakout',
+    name:'1 · Early Pre-Breakout',
     desc:'Research watchlist for Stage 1 → Stage 2 transition before the conventional breakout: Early Score 70+, still below an existing structural trigger, with the stock improving on trend, relative strength, compression and volume participation. Use Rewind to test the signal before later price movement.',
     colf:floor=>({
       early:   {min:70,max:null,blanks:false},
@@ -5254,12 +5250,12 @@ const SCREEN_SEEDS=[
      nothing but a number that reads lower than the screen deserves. Read the
      list as 1, 2 and 7 being the three stalking screens. */
   {
-    name:'0 · 10/20 EMA Volume Cross',
+    name:'2 · 10/20 EMA Volume Cross',
     desc:'Fresh today-only momentum cross: the prior close was at or below both the 10-day and 20-day EMA, today closes above both, and today volume is at least 1.5× the prior 20-day average.',
     colf:floor=>({xvol:{sel:['Yes']}}),
   },
   {
-    name:'1 · Coiled & Ready',
+    name:'3 · Coiled & Ready',
     desc:'Pre-breakout. Tightening for 3+ sessions inside the base, above the 20 and 50 EMA, volume dried up, beating the benchmark, and still UNDER the pivot. The stalking list — nothing has triggered yet.',
     /* THE PRE-BREAKOUT WATCHLIST. Every condition here describes a base that is
        winding up: the range is contracting, volume has gone quiet, and price has
@@ -5279,7 +5275,7 @@ const SCREEN_SEEDS=[
     }),
   },
   {
-    name:'2 · Pullback to 20 EMA',
+    name:'4 · Pullback to 20 EMA',
     desc:'The lower-risk re-entry. Already broke out, has come back to within 3% either side of the 20 EMA, still holding the 50, RS55 still positive and the 200 EMA rising. Your stop sits just under the line.',
     /* RENAMED FROM "Near 20 EMA" and widened slightly: the old band was -2% to
        +5%, which is skewed above the line, and the better fills are at or just
@@ -5302,7 +5298,7 @@ const SCREEN_SEEDS=[
     }),
   },
   {
-    name:'3 · Breakout on Volume',
+    name:'5 · Breakout on Volume',
     desc:'The trigger day. At or just through the pivot on volume at least 1.5x its 20-day average, out of a base of 5+ sessions, above the 50 EMA and beating the benchmark.',
     /* THE 1.5x IS NOT ARBITRARY. It is the figure the breakout literature
        converges on for a range breakout worth acting on, and it is measured
@@ -5323,7 +5319,7 @@ const SCREEN_SEEDS=[
     }),
   },
   {
-    name:'4 · Power Pivot',
+    name:'6 · Power Pivot',
     desc:'The sudden wake-up. A 5%+ day on 3x its normal volume, above the 50 EMA. Catches names that gap on news out of a long quiet stretch — the one setup the other three cannot find, because there is no base to measure.',
     /* THE EPISODIC PIVOT, and it is deliberately the loosest screen here.
        It has no coil, no consolidation floor and no pivot test, because the
@@ -5345,7 +5341,7 @@ const SCREEN_SEEDS=[
     }),
   },
   {
-    name:'5 · 52-Week High',
+    name:'7 · 52-Week High',
     /* THE HONEST NAME PROBLEM, STATED IN THE DESCRIPTION THE USER CAN READ.
        hi52() takes the highest high over Math.min(n,H52_WIN) bars and refuses
        to answer below H52_MIN_BARS. The sheet holds ~250 trading bars, so on
@@ -5378,7 +5374,7 @@ const SCREEN_SEEDS=[
        else in the market, and Avg Value asks whether it can be traded. */
   },
   {
-    name:'6 · Weak-Market Pullback',
+    name:'8 · Weak-Market Pullback',
     desc:'Bad-tape pullback: below the 20 EMA but holding the 50 and the 200, still beating the benchmark on RS21, 200 EMA rising. Deliberately not Stage 2.',
     /* THE BAD-TAPE VERSION, and last in the list because it is the one you want
        least often — on a normal day screen 2 is the better pullback.
@@ -5402,7 +5398,7 @@ const SCREEN_SEEDS=[
     }),
   },
   {
-    name:'7 · Thrust Then Rest',
+    name:'9 · Thrust Then Rest',
     desc:'One violent up day on 2x+ its own prior volume in the last 10 sessions, since drifted back to the 10 and 20 EMA, still above the 50. VOLUME DRYNESS IS NOT SCREENED — Vol Dry counts the thrust itself and so reads high on exactly these stocks; check that column by eye. THE TRIGGER IS NOT SCREENED EITHER: buy by hand only when price takes out the high of the previous day. This is the watchlist, not the signal.',
     /* THE OWNER'S OWN ENTRY SETUP, and the first seed to carry an advanced
        filter — see seedScreenObj()'s `adv` note for the mechanism.
@@ -5596,8 +5592,38 @@ function migrateScreenNames(){
   return done;
 }
 
+const SCREEN_RENUMBER_KEY='sm_screen_renumber_v2';
+const SCREEN_RENUMBER=[
+  ['0 · Early Pre-Breakout','1 · Early Pre-Breakout'],
+  ['1 · Coiled & Ready','3 · Coiled & Ready'],
+  ['2 · Pullback to 20 EMA','4 · Pullback to 20 EMA'],
+  ['3 · Breakout on Volume','5 · Breakout on Volume'],
+  ['4 · Power Pivot','6 · Power Pivot'],
+  ['5 · 52-Week High','7 · 52-Week High'],
+  ['6 · Weak-Market Pullback','8 · Weak-Market Pullback'],
+  ['7 · Thrust Then Rest','9 · Thrust Then Rest'],
+];
+function migrateScreenNumbers(){
+  if(lsRead(SCREEN_RENUMBER_KEY)) return [];
+  const done=[];
+  const seeded=seededScreenNames();
+  SCREEN_RENUMBER.forEach(([from,to])=>{
+    if(!Object.prototype.hasOwnProperty.call(SCREENS,from)) return;
+    if(Object.prototype.hasOwnProperty.call(SCREENS,to)) return;
+    SCREENS[to]=SCREENS[from]; delete SCREENS[from];
+    if(ACTIVE_SCREEN===from) ACTIVE_SCREEN=to;
+    const i=seeded.indexOf(from); if(i!==-1) seeded.splice(i,1);
+    if(seeded.indexOf(to)===-1) seeded.push(to);
+    done.push(from+' -> '+to);
+  });
+  if(done.length){saveScreensLocal();lsWrite(SCREEN_SEED_KEY,JSON.stringify(seeded));}
+  lsWrite(SCREEN_RENUMBER_KEY,'1');
+  return done;
+}
+
 function seedDefaultScreens(){
   migrateScreenNames();
+  migrateScreenNumbers();
   const already=seededScreenNames();
   const floor=(SCREEN_LIQ_FLOOR[CUR]!=null)?SCREEN_LIQ_FLOOR[CUR]:SCREEN_LIQ_FLOOR.india;
   const added=[];
@@ -5662,6 +5688,9 @@ let F_RSIMA=false;
    holds an editable percentage, and having both on simply ANDs them. Two
    controls, two values, one shared predicate in emaConverged(). */
 let F_EMACV=false;
+/* Weekly EMA convergence uses the already-computed W-EMA 10/20 values.
+   It deliberately adds no weekly calculation or data request. */
+let F_WEMACV=false;
 /* SMART MONEY ZONE SETUP. Its own boolean for the same reason F_BOX is one: it
    is a conjunction of two independent readings — the direction structure points
    and where inside the retracement the price sits — and it has to stack with
@@ -8706,28 +8735,28 @@ function computeTech(C,H,L,V,dates,sym,O,feedStart){
   const xFastEma=n>=XF?ema(C,XF):null;
   const xSlowEma=n>=XS?ema(C,XS):null;
   const xState=(xFastEma!=null&&xSlowEma!=null)?(xFastEma>xSlowEma?'bull':'bear'):null;
-  let xBars=null, xFastSeries=null, xSlowSeries=null;
+  let xBars=null;
+  let ema1020CrossUp=false;
   if(n>=XMAX+2){
     const fs=emaSeries(C,XF), ss=emaSeries(C,XS);
-    xFastSeries=fs; xSlowSeries=ss;
+    if(XF===10 && XS===20 && fs[n-2]!=null && ss[n-2]!=null && fs[n-1]!=null && ss[n-1]!=null){
+      ema1020CrossUp = C[n-2] <= fs[n-2] && C[n-2] <= ss[n-2] &&
+                       C[n-1] > fs[n-1] && C[n-1] > ss[n-1];
+    }
     const st=[];
     for(let i=XMAX-1;i<n;i++) st.push(fs[i]>ss[i]);
     for(let i=st.length-1;i>0;i--){
       if(st[i]!==st[i-1]){ xBars=(st.length-1)-i; break; }
     }
   }
-
-  /* TODAY-ONLY 10/20 EMA CROSS WITH VOLUME. Prior close at/below both EMAs,
-     today close above both, and today's existing Vol Ratio >= 1.5x. */
-  let ema1020VolCross=false;
-  if(n>=21){
-    const f10=(XF===10&&XS===20&&xFastSeries)?xFastSeries:emaSeries(C,10);
-    const s20=(XF===10&&XS===20&&xSlowSeries)?xSlowSeries:emaSeries(C,20);
-    const i=n-1;
-    ema1020VolCross=f10[i]!=null&&s20[i]!=null&&f10[i-1]!=null&&s20[i-1]!=null
-      &&C[i-1]<=f10[i-1]&&C[i-1]<=s20[i-1]
-      &&C[i]>f10[i]&&C[i]>s20[i]
-      &&vRatio!=null&&vRatio>=1.5;
+  /* If the user changes the configurable EMA pair, the 10/20 saved screen still
+     keeps its own meaning. Compute the fixed pair only in that uncommon case;
+     with the normal 10/20 configuration this reuses the series above and adds
+     no extra EMA pass to the normal load. */
+  if(!(XF===10 && XS===20) && n>=22){
+    const fs1020=emaSeries(C,10), ss1020=emaSeries(C,20);
+    ema1020CrossUp = C[n-2] <= fs1020[n-2] && C[n-2] <= ss1020[n-2] &&
+                     C[n-1] > fs1020[n-1] && C[n-1] > ss1020[n-1];
   }
 
   /* Bars since the close last crossed ABOVE the 50 EMA — the first of the three
@@ -8786,6 +8815,7 @@ function computeTech(C,H,L,V,dates,sym,O,feedStart){
   // the same one the dial history asks for at every past bar.
   const avgV=volAvg20(V,n);
   const vRatio=avgV>0?+(todV/avgV).toFixed(2):null;
+  const ema1020VolCross = ema1020CrossUp && vRatio!=null && vRatio>=1.5;
   /* vRatio IS the RVol the brief describes — today's volume over the 20-bar
      average EXCLUDING today. It is not duplicated as a second column. */
   /* Vol Spike. The SAME volAvg20() baseline, asked at every bar of the last
@@ -8845,7 +8875,7 @@ function computeTech(C,H,L,V,dates,sym,O,feedStart){
   // ~1 year of data can reliably support (50 weeks needed vs ~52-60 available,
   // and often less for stocks with gaps/holidays) — so this uses only
   // 10 and 20-week EMAs, both comfortably achievable even with a thin history.
-  const we10=ema(wk.closes,10), we20=ema(wk.closes,20), we50=(wk.closes.length>=50?ema(wk.closes,50):null);
+  const we10=ema(wk.closes,10), we20=ema(wk.closes,20);
   // Same crossover rule as daily, on the weekly series. we20 needs 20 weekly
   // bars ≈ 100 trading days, so this is null for anything younger.
   const wxState=(we10!=null&&we20!=null)?(we10>we20?'bull':'bear'):null;
@@ -9114,7 +9144,7 @@ function computeTech(C,H,L,V,dates,sym,O,feedStart){
     // The price-only half of the Setup Age. The RS leg is applied later, at
     // render time, from rsHist — see the note above setupBaseAge().
     setupBaseAge:setupBaseA,
-    we10,we20,we50,weEmaScr,wxBars,wxApplicable,
+    we10,we20,weEmaScr,wxBars,wxApplicable,
     dpz,wpz,dPiv,wPiv,s2,sq,wVolRatio,
     dBoxTop:dBox.top, dBoxBot:dBox.bot, dBoxState:dBox.state,
     /* % VS PIVOT. Read off dBox.top — the very field on the line above — so the
@@ -11776,7 +11806,7 @@ function smzC(d){
      returns above are bias null and bias 0, and smzBosAge is null for exactly
      those two populations, so there is no arrangement in which a '— No
      structure' row could also claim a break of structure. */
-  return `<span class="cell-inline">${chip}${dist}${smzBosMark(d)}</span>`;
+  return `<div class="cell-inline">${chip}${dist}${smzBosMark(d)}</div>`;
 }
 
 /* THE MOMENTUM BASE CELL. Built on smzC()'s shape — a filled chip carrying the
@@ -11818,7 +11848,7 @@ function momoC(d){
   const move = (d.momoPct!=null && d.momoBars!=null)
     ? ` · ${Math.round(d.momoPct)}% in ${d.momoBars}d` : '';
   const rest = (!bo && d.momoBaseBars!=null) ? ` · ${d.momoBaseBars}d` : '';
-  return `<span class="cell-inline">${chip}${((move||rest) ? `<span class="momo-why">${move}${rest}</span>` : '')}</span>`;
+  return `<div class="cell-inline">${chip}${((move||rest) ? `<span class="momo-why">${move}${rest}</span>` : '')}</div>`;
 }
 
 /* ADR% renders flat: a number and a percent sign, two decimals like Retrace%
@@ -12054,25 +12084,6 @@ function statusC(s2){
   if(f>=0.5) return '<span class="stt stt-set">SETUP</span>';
   return '<span class="stt stt-wk">WEAK</span>';
 }
-/* WEEKLY EMA CONVERGENCE — persistent table column. */
-function weeklyEmaConvergence(d,maxPct=5){
-  if(!d||!(d.price>0)) return {pass:false,above:false,spread:null,n:0,periods:[]};
-  const av=[['10',d.we10],['20',d.we20],['50',d.we50]].filter(([,v])=>v!=null&&isFinite(v));
-  if(av.length<2) return {pass:false,above:false,spread:null,n:av.length,periods:av.map(x=>x[0])};
-  const vals=av.map(x=>x[1]);
-  const above=vals.every(v=>d.price>=v);
-  const spread=((Math.max(...vals)-Math.min(...vals))/d.price)*100;
-  return {pass:above&&spread<=maxPct,above,spread,n:av.length,periods:av.map(x=>x[0])};
-}
-function wemaCvgC(d){
-  const a=weeklyEmaConvergence(d,5);
-  if(a.n<2) return '<span class="wemacv wemacv-na">—</span>';
-  const p=a.periods.join('/');
-  if(a.pass) return `<span class="wemacv wemacv-pass" title="Weekly EMA convergence: price is above the available ${p}-week EMAs; spread ${a.spread.toFixed(1)}% of price (≤5%).">✓ ${p}</span><span class="wemacv-spread"> · ${a.spread.toFixed(1)}%</span>`;
-  if(!a.above) return `<span class="wemacv wemacv-no" title="Weekly EMA convergence: price is not above every available weekly EMA (${p}).">Below ${p}</span>`;
-  return `<span class="wemacv wemacv-no" title="Weekly EMA convergence: price is above all available weekly EMAs (${p}), but the EMA spread is ${a.spread.toFixed(1)}% of price, wider than the 5% threshold.">Wide ${p}</span><span class="wemacv-spread"> · ${a.spread.toFixed(1)}%</span>`;
-}
-
 // xFast/xSlow are the PERIODS in force; xFastEma/xSlowEma are the EMA values.
 // The chip therefore names the pair it actually used, per row.
 function xoverC(d){
@@ -12342,7 +12353,7 @@ function histGC(v){ return fmtCh(v); }
    skeleton rows WIDER than the data rows underneath, because only the data
    rows' cells get hidden. Length must equal (th count − 4). */
 const SKEL_COLS=['c-setup','c-early','c-align','c-fresh','c-sector','c-subind','','','c-ch1w','c-ch1m','c-ch3m','c-hist','c-histg','c-status','','c-wrsi','c-vr','c-volspike','c-thrust','c-wvol','c-avgval','','c-wpiv','c-dbox','c-pctpiv','c-wbox','c-smz','c-momo','',
-  'c-ema','c-pct10e','c-pct20e','c-pct50e','c-pct200e','c-wema','c-wemacv','c-xcross','c-wcross','c-slope200','c-pattern','c-wpattern','c-consol',
+  'c-ema','c-pct10e','c-pct20e','c-pct50e','c-pct200e','c-wema','c-xcross','c-wcross','c-slope200','c-pattern','c-wpattern','c-consol',
   'c-monthly','','c-bocnt','c-followup','c-voldry','c-retrace','c-squeeze','c-adr','c-tight','c-daysup','c-coil','c-vcp','c-vcplid','c-vcptolid','c-ipo','c-ipolid','c-ipotolid','','c-mrsrank','c-rs21',
   'c-rs55','c-rs10w','c-rsslope','c-rsp55','c-rsp21','c-rshist','','c-rstrend','c-notes'];
 
@@ -12430,7 +12441,6 @@ function dataRow(def,d,i){
     <td class="c-pct50e">${pctEmaC(d.pct50e)}</td>
     <td class="c-pct200e">${pctEmaC(d.pct200e)}</td>
     <td class="c-wema">${emaBadgeRow(d.price,[['10',d.we10],['20',d.we20]])}</td>
-    <td class="c-wemacv">${wemaCvgC(d)}</td>
     <td class="c-xcross">${xoverC(d)}</td>
     <td class="c-wcross">${wxC(d.wxState,d.wxBars,d.wxApplicable)}</td>
     <td class="c-slope200">${slopeC(d)}</td>
@@ -13539,7 +13549,7 @@ const SORT_FN={
      a ranking. Descending (the first click) is the useful direction. */
   volspike:d=>d?.volSpike,
   thrust:d=>d?.thrustPct,
-  vr:d=>d?.vRatio,wvol:d=>d?.wVolRatio,h52:d=>d?.h52d,ema:d=>d?.emaScr,wema:d=>d?.weEmaScr,wemacvg:d=>{const a=weeklyEmaConvergence(d,5);return a.n>=2?((a.pass?1000:0)-a.spread):null},
+  vr:d=>d?.vRatio,wvol:d=>d?.wVolRatio,h52:d=>d?.h52d,ema:d=>d?.emaScr,wema:d=>d?.weEmaScr,
   /* Sorted on the DISPLAY unit (₹ Cr / $M), not the raw currency amount. A
      table holding both INR and USD rows would otherwise rank a ₹1 Cr Indian
      stock (10,000,000 rupees) above a $50M US one (50,000,000 dollars) purely
@@ -13927,6 +13937,12 @@ function emaConverged(d, maxPct){
   return ((Math.max(...vals)-Math.min(...vals))/px)*100 <= maxPct;
 }
 
+function weeklyEmaConverged1020(d,maxPct=5){
+  if(!d || !(d.price>0) || !(d.we10>0) || !(d.we20>0)) return false;
+  if(d.price<d.we10 || d.price<d.we20) return false;
+  return (Math.abs(d.we10-d.we20)/d.price)*100 <= maxPct;
+}
+
 /* ══ THE THRUST-DAY TEST ══════════════════════════════════════
    Did this stock have ONE violent up day recently, on heavy volume?
 
@@ -14205,6 +14221,7 @@ function getRows(market, exclCol){
      percentage; with both switched on the row has to clear both, which is just
      the tighter of the two. */
   if(F_EMACV) items=items.filter(def=>emaConverged(SD[def.s],CFG.EMACV_PCT));
+  if(F_WEMACV) items=items.filter(def=>weeklyEmaConverged1020(SD[def.s],5));
   /* THE SMZ SETUP SCREEN. Bull structure only, and price anywhere from the
      swing low up to the 0.618 line — the three states that mean "the pullback
      has happened", with 'above' left out because it means it has not.
@@ -14852,7 +14869,7 @@ function applyF(){
    handlers flip the flag and call this, so a programmatic reset (clrF,
    switchMkt) lands on screen through the same one path. */
 function syncFilterToggles(){
-  [['alignTog',F_ALIGN],['dwaTog',F_DWA],['boTog',F_BO],['boxTog',F_BOX],['rsimaTog',F_RSIMA],['emacvTog',F_EMACV],['smzTog',F_SMZ],['smzbosTog',F_SMZBOS],['momoTog',F_MOMO],['wlTog',F_WL]].forEach(([id,on])=>{
+  [['alignTog',F_ALIGN],['dwaTog',F_DWA],['boTog',F_BO],['boxTog',F_BOX],['rsimaTog',F_RSIMA],['emacvTog',F_EMACV],['wemacvTog',F_WEMACV],['smzTog',F_SMZ],['smzbosTog',F_SMZBOS],['momoTog',F_MOMO],['wlTog',F_WL]].forEach(([id,on])=>{
     const el=$(id); if(!el) return;
     el.classList.toggle('on',on);
     el.setAttribute('aria-pressed',on?'true':'false');
@@ -14873,6 +14890,8 @@ function toggleRsiMa(){ F_RSIMA=!F_RSIMA; syncFilterToggles();
   VISIBLE=CFG.INIT; renderTable(CUR); updateStatus(); }
 function toggleEmaCv(){ F_EMACV=!F_EMACV; syncFilterToggles();
   VISIBLE=CFG.INIT; renderTable(CUR); updateStatus(); }
+function toggleWemaCv(){ F_WEMACV=!F_WEMACV; syncFilterToggles();
+  VISIBLE=CFG.INIT; renderTable(CUR); updateStatus(); }
 function toggleSmz(){ F_SMZ=!F_SMZ; syncFilterToggles();
   VISIBLE=CFG.INIT; renderTable(CUR); updateStatus(); }
 function toggleSmzBos(){ F_SMZBOS=!F_SMZBOS; syncFilterToggles();
@@ -14884,7 +14903,7 @@ function toggleWL(){ F_WL=!F_WL; syncFilterToggles();
 
 function clrF(){
   SEARCH='';F_CAP='All';F_SCT='';F_EMA='';F_RSI='';F_PIV='';F_WPIV='';F_REV='';
-  F_ALIGN=false;F_BO=false;F_DWA=false;F_WL=false;F_BOX=false;F_RSIMA=false;F_EMACV=false;F_SMZ=false;
+  F_ALIGN=false;F_BO=false;F_DWA=false;F_WL=false;F_BOX=false;F_RSIMA=false;F_EMACV=false;F_WEMACV=false;F_SMZ=false;
   F_SMZBOS=false;F_MOMO=false;
   // The stage panel is a filter like any other, so "Clear Filters" clears it.
   F_STAGE='';
@@ -15078,7 +15097,6 @@ const EXPORT_COLS=[
   ['52W Low',     (def,d)=>d?.l52??''],
   ['EMA Align',   (def,d)=>d?.emaScr??''],
   ['W-EMA',       (def,d)=>d?.weEmaScr??''],
-  ['W-EMA Convergence',(def,d)=>{const a=weeklyEmaConvergence(d,5); return a.n<2?'':(a.pass?'Pass':a.above?'Wide':'Below')+' '+a.periods.join('/')+(a.spread!=null?' '+a.spread.toFixed(2)+'%':'');}],
   ['EMA10',       (def,d)=>d?.e10??''],
   ['EMA20',       (def,d)=>d?.e20??''],
   ['EMA50',       (def,d)=>d?.e50??''],
@@ -15466,7 +15484,6 @@ const COL_FILTERS={
              const s=d&&d.emaScr; return s==null?null:(s>=0.8?'Bull':s>=0.5?'Part':'Bear'); }},
   wema:    {t:'cat',  label:'W-EMA',   val:d=>{
              const s=d&&d.weEmaScr; return s==null?null:(s>=0.8?'Bull':s>=0.5?'Part':'Bear'); }},
-  wemacvg: {t:'cat',  label:'W-EMA Convergence', val:d=>{const a=weeklyEmaConvergence(d,5); return a.n<2?'Insufficient':a.pass?'Pass':a.above?'Wide':'Below';}},
   pattern: {t:'cat',  label:'Pattern', val:d=>(d&&d.pattern)||null},
   wpattern:{t:'cat',  label:'W-Pattern', val:d=>(d&&d.wPattern)||null},
   dbox:    {t:'cat',  label:'D-Box',   val:d=>{const s=d&&d.dBoxState; return s?(DBOX_LABEL[s]||s):null;}},
@@ -16281,7 +16298,6 @@ const TOGGLEABLE_COLS=[
   {cls:'pct50e', label:'%50E'},
   {cls:'pct200e',label:'%200E'},
   {cls:'wema',   label:'W-EMA'},
-  {cls:'wemacv', label:'W-EMA Convergence'},
   {cls:'xcross', label:'EMA Cross'},
   {cls:'wcross', label:'W-Cross'},
   {cls:'slope200',label:'200EMA Slope'},
