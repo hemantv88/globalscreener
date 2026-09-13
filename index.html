@@ -905,7 +905,7 @@ body.asof-on .tbl-wrap{outline:3px solid var(--orange)}
    a narrow screen the % change since the chosen date is the answer and the raw
    historical price is only the working, so the price drops out first (group A)
    and the gain survives down to 480px (group B). */
-.c-wrsi,.c-wvol,.c-wpiv,.c-wema,.c-voldry,.c-retrace,.c-rstrend,.c-notes,
+.c-wrsi,.c-wvol,.c-wpiv,.c-wema,.c-voldry,.c-retrace,.c-rsmom,.c-notes,
 .c-wcross,.c-wpattern,.c-monthly,.c-rs10w,.c-rsslope,.c-rshist,.c-slope200,
 .c-followup,.c-hist,.c-wbox,.c-rsp55,.c-rsp21,
 /* SMZ is GROUP A, beside W-Box rather than beside D-Box, because it is read on
@@ -1043,7 +1043,7 @@ body.hide-ipo     .c-ipo,
 body.hide-ipolid  .c-ipolid,
 body.hide-ipotolid .c-ipotolid,
 body.hide-mrsrank .c-mrsrank,
-body.hide-rstrend .c-rstrend,
+body.hide-rsmom .c-rsmom,
 body.hide-notes   .c-notes,
 body.hide-sector  .c-sector,
 body.hide-subind  .c-subind,
@@ -1397,7 +1397,7 @@ body.dd-lock{overflow:hidden}
 }
 @media (max-width:900px){
   .metrics-row{grid-template-columns:repeat(4,1fr)}
-  .c-wrsi,.c-wvol,.c-wpiv,.c-wema,.c-voldry,.c-retrace,.c-rstrend,.c-notes,
+  .c-wrsi,.c-wvol,.c-wpiv,.c-wema,.c-voldry,.c-retrace,.c-rsmom,.c-notes,
   .c-wcross,.c-wpattern,.c-monthly,.c-rs10w,.c-rsslope,.c-rshist,.c-slope200,
   .c-followup,.c-hist,.c-wbox,.c-rsp55,.c-rsp21,.c-smz,.c-momo,
   .c-pct50e,.c-pct200e{display:none!important}
@@ -1772,8 +1772,8 @@ body.dd-lock{overflow:hidden}
             <th data-s="dpiv" data-tip="Where the price sits among the classic daily pivot levels, from below S2 (weakest) up to above R2 (strongest). Anything above the pivot point is the bullish half of the day's range.">D-Pivot<span class="sort-ico"></span></th>
             <th class="c-wpiv" data-s="wpiv" data-tip="The same pivot zones calculated from weekly bars — a slower read on whether the stock is holding the strong side of its range.">W-Pivot<span class="sort-ico"></span></th>
             <th class="c-dbox" data-s="dbox" data-tip="Darvas Box on daily bars, box length 5. HOW IT IS BUILT: a bar whose high beats the highest high of the previous 5 bars sets a candidate top; if the next 3 bars make no new high, that high becomes the box TOP and the lowest low of the 5 bars up to the confirming bar becomes the box BOTTOM. The box PERSISTS until the next one forms — a level to trade against, not a one-bar flag. THE STATES: Break = the close crossed above the top on the latest bar and was below it the day before — the freshest · Near = below the top but within 1% of it · Inside = between the bottom and the top, still consolidating · Above = already over the top, so the move is under way and a new entry is late · Below = under the box bottom, the setup has failed · a dash means no box has formed yet or there are fewer than 9 bars of history. Sorting puts Break and Near first, then Inside — the ones you can still act on.">D-Box<span class="sort-ico"></span></th>
-            <th class="c-pctpiv" data-s="pctpiv" data-tip="How far the latest close sits from the DAILY Darvas box TOP, as a percentage of that top: % vs Pivot = 100 &times; ( Close &minus; Box Top ) / Box Top. THE BOX TOP IS THE BREAKOUT LEVEL — the number printed as the upper figure in the D-Box cell beside this one, and drawn as the upper line on the chart — and the owner buys ABOVE it. So a NEGATIVE reading means NOT YET TRIGGERED, and its size is how far the stock still has to travel: &minus;4.10% is 4.1% under the trigger; a POSITIVE one means the level has already been taken out. %20E measures the distance to the STOP; this measures the distance to the ENTRY. It divides by the box top the D-Box column itself publishes — no box is recomputed here. A dash, never a zero, when no box has formed, when the top is missing or not positive, or when there is no close; zero is a real reading, sitting exactly on the pivot. Hidden by default — switch it on in Columns.">% vs Pivot<span class="sort-ico"></span></th>
             <th class="c-wbox" data-s="wbox" data-tip="The same Darvas Box construction run on WEEKLY bars, so both the box and the states describe months rather than days. A weekly box needs 9 weekly bars (roughly 45 trading days) before it can exist, and it moves far less often than the daily one — a weekly Break is a much rarer and heavier signal than a daily one. The five states mean exactly what they mean in the D-Box column.">W-Box<span class="sort-ico"></span></th>
+            <th class="c-pctpiv" data-s="pctpiv" data-tip="How far the latest close sits from the DAILY Darvas box TOP, as a percentage of that top: % vs Pivot = 100 &times; ( Close &minus; Box Top ) / Box Top. THE BOX TOP IS THE BREAKOUT LEVEL — the number printed as the upper figure in the D-Box cell beside this one, and drawn as the upper line on the chart — and the owner buys ABOVE it. So a NEGATIVE reading means NOT YET TRIGGERED, and its size is how far the stock still has to travel: &minus;4.10% is 4.1% under the trigger; a POSITIVE one means the level has already been taken out. %20E measures the distance to the STOP; this measures the distance to the ENTRY. It divides by the box top the D-Box column itself publishes — no box is recomputed here. A dash, never a zero, when no box has formed, when the top is missing or not positive, or when there is no close; zero is a real reading, sitting exactly on the pivot. Hidden by default — switch it on in Columns.">% vs Pivot<span class="sort-ico"></span></th>
             <th class="c-smz" data-s="smz" data-tip="Smart Money Zones, ported from the TradingView study. Structure comes from 5-bar pivots: a close through a swing high turns the bias bullish, through a swing low bearish. The zone is drawn back from the extreme of that move to the swing that began it — 0.618 to 0.786 is the IBZ (Institutional Buying Zone), 0.786 to 0.826 the deeper SMZ. The cell reads direction, then where price sits in that retracement, then how far it must still travel to the 0.618 edge — negative means already inside or through. ⚡ BOS dates the most recent break of structure and appears only for 20 trading days after it: on a Bull row the swing HIGH was taken out, on a Bear row the swing LOW. 'BOS today' means it flipped on the latest bar. '— No structure' is a finding: no swing was ever broken, so nothing anchors a zone. A plain dash is an absence: fewer than 60 bars, so it was never tried.">SMZ<span class="sort-ico"></span></th>
             <th class="c-momo" data-s="momo" data-tip="The thrust-then-rest shape, from the owner's own annotated charts. It finds a stock that has ALREADY made its violent move and has since gone quiet: a rise of at least 40% from a low to a later high inside the last 42 bars, more volume on that move's up days than on its down days, at least 80% of the bars since it began closing above the 20-day EMA, the close still above that EMA today, and then a rest of 8 bars or more whose range is no deeper than 25% off its own high. A WATCH signal, never an entry — the trade is the break of the base's own high, and this column exists to put the name on screen before that happens. The cell reads the state, then the size of the thrust and the bars it took, then how long the rest has run. All four thresholds are editable in Advanced Filters, and changing one re-runs the scan. A dash means a test failed.">Momentum Base<span class="sort-ico"></span></th>
             <th data-s="h52" data-tip="% below the highest high in the available window. The data source holds ~1 trading year (~250 bars), so in practice this is a ~50-week high, not a full 52. Shows — for stocks with under 120 bars of history.">52W High<span class="sort-ico"></span></th>
@@ -1819,7 +1819,7 @@ body.dd-lock{overflow:hidden}
             <th class="c-rsp21" data-s="rsp21" style="text-align:center" data-tip="Where the stock-to-benchmark price ratio sits inside its OWN last 21 bars, rescaled so the lowest bar of that window reads 1 and the highest reads 99 — the same reading as RSP 55 over roughly a month, so it turns sooner and whipsaws more. 99 means this stock's strength against the benchmark is at a 21-bar high FOR ITSELF, not that it is stronger than another stock: two stocks can both read 99 on completely different amounts of outperformance. For that reason it feeds nothing — not Setup Score, not MRS Rank, not any composite. RS21 answers by how much the stock beat the benchmark over 21 days; this answers whether that lead is at its best point within those 21 days, which is why it moves before RS21 does. Needs 21 bars pairable with a benchmark bar by date; fewer than that, no benchmark, or a flat ratio with no range shows a dash. Sortable like any other column.">RSP 21<span class="sort-ico"></span></th>
             <th class="c-rshist" data-s="rshist" data-tip="Last ~30 readings of the 21-day excess return, drawn as a sparkline. The grey line is zero — above it the stock was beating the benchmark.">RS Rank History<span class="sort-ico"></span></th>
             <th style="text-align:center" data-tip="Lit up only when all three relative-strength legs — 21-day, 55-day and 10-week — are positive against the benchmark at the same time, i.e. broad outperformance rather than one good stretch.">Lead RS</th>
-            <th class="c-rstrend" data-s="rst" data-tip="Bucketed straight from RS Slope, which is RS21 minus RS55: above +0.5 reads Up, below −0.5 reads Down, and anything in between is Flat. Because it compares the 21-day excess return against the 55-day one, Up does not merely mean the stock is beating the benchmark — it means the recent leg of that outperformance is running ahead of the medium-term leg, i.e. relative strength is accelerating.">RS Trend<span class="sort-ico"></span></th>
+            <th class="c-rsmom" data-s="rsmom" data-tip="RS Momentum (Direction) uses the same relative-strength direction value shown as RS Δ in 💸 Money Flow Radar: the stock's current RS movement over the rotation lookback, positive = improving and negative = weakening. It is a signed momentum/direction reading, not a bucketed Up/Flat/Down label.">RS Momentum (Direction)<span class="sort-ico"></span></th>
             <th class="c-notes" data-f="notes" data-tip="A free-text note you can type against any stock. It is saved in this browser, so it survives closing the tab, switching markets and a data refresh, and it is included in the Excel export. Clear Notes deletes the saved copy as well.">Notes</th>
           </tr>
         </thead>
@@ -12071,7 +12071,7 @@ function ldC(v){
   const cls=v?'ld-y':'ld-n';
   return `<div style="display:flex;justify-content:center"><div class="ldot ${cls}"></div></div>`;
 }
-/* rsTrend is the words 'up'/'flat'/'down'. The arrow glyphs are still accepted
+/* Legacy rsTrend remains in SD for compatibility; the visible column now uses signed RS Momentum (Direction). The arrow glyphs are still accepted
    because a row rehydrated from a cache written by the previous build carries
    them, and an unrecognised value here would render a bare dash on data that is
    perfectly good. */
@@ -12361,10 +12361,10 @@ function histGC(v){ return fmtCh(v); }
    reason: without them a table loading with columns switched off renders
    skeleton rows WIDER than the data rows underneath, because only the data
    rows' cells get hidden. Length must equal (th count − 4). */
-const SKEL_COLS=['c-setup','c-early','c-align','c-fresh','c-sector','c-subind','','','c-ch1w','c-ch1m','c-ch3m','c-hist','c-histg','c-status','','c-wrsi','c-vr','c-volspike','c-thrust','c-wvol','c-avgval','','c-wpiv','c-dbox','c-pctpiv','c-wbox','c-smz','c-momo','',
+const SKEL_COLS=['c-setup','c-early','c-align','c-fresh','c-sector','c-subind','','','c-ch1w','c-ch1m','c-ch3m','c-hist','c-histg','c-status','','c-wrsi','c-vr','c-volspike','c-thrust','c-wvol','c-avgval','','c-wpiv','c-dbox','c-wbox','c-pctpiv','c-smz','c-momo','',
   'c-ema','c-pct10e','c-pct20e','c-pct50e','c-pct200e','c-wema','c-xcross','c-wcross','c-slope200','c-pattern','c-wpattern','c-consol',
   'c-monthly','','c-bocnt','c-followup','c-voldry','c-retrace','c-squeeze','c-adr','c-tight','c-daysup','c-coil','c-vcp','c-vcplid','c-vcptolid','c-ipo','c-ipolid','c-ipotolid','','c-mrsrank','c-rs21',
-  'c-rs55','c-rs10w','c-rsslope','c-rsp55','c-rsp21','c-rshist','','c-rstrend','c-notes'];
+  'c-rs55','c-rs10w','c-rsslope','c-rsp55','c-rsp21','c-rshist','','c-rsmom','c-notes'];
 
 function skelRow(def,i){
   const sk=n=>`<div class="skel sk-${n}"></div>`;
@@ -12439,8 +12439,8 @@ function dataRow(def,d,i){
     <td>${pivC(d.dpz)}</td>
     <td class="c-wpiv">${pivC(d.wpz)}</td>
     <td class="c-dbox">${dboxC(d.dBoxState,d.dBoxTop,d.dBoxBot)}</td>
-    <td class="c-pctpiv">${pctEmaC(d.pctVsPivot)}</td>
     <td class="c-wbox">${dboxC(d.wBoxState,d.wBoxTop,d.wBoxBot)}</td>
+    <td class="c-pctpiv">${pctEmaC(d.pctVsPivot)}</td>
     <td class="c-smz">${smzC(d)}</td>
     <td class="c-momo">${momoC(d)}</td>
     <td>${h52C(d.h52d)}</td>
@@ -12483,7 +12483,7 @@ function dataRow(def,d,i){
     <td class="c-rsp21" style="text-align:center">${rsC(d.rsp21)}</td>
     <td class="c-rshist">${sparkC(d.rsHist)}</td>
     <td>${d.leadRS!=null?ldC(d.leadRS):'<span class="vm">—</span>'}</td>
-    <td class="c-rstrend">${rstC(d.rsTrend)}</td>
+    <td class="c-rsmom">${d.rsSlope==null?'<span class="vm">—</span>':rotSignedPill(d.rsSlope,1)}</td>
     <td class="c-notes"><input class="note-in" value="${escAttr(NOTES[def.s]||'')}" placeholder="Add note…"
       onchange="setNote('${safeSym}',this.value)"/></td>
   </tr>`;
@@ -13709,10 +13709,8 @@ const SORT_FN={
   ipolid:d=>d?.ipoLid,
   ipotolid:d=>d?.ipoToLid,
   rshist:d=>Array.isArray(d?.rsHist)&&d.rsHist.length?d.rsHist[d.rsHist.length-1]:null,
-  // rsTrend is now the words 'up'/'flat'/'down' (was the arrows ↑/→/↓).
-  // The arrow keys are kept so a row rehydrated from an older cache still
-  // sorts instead of collapsing to 0 and clumping at the bottom.
-  rst:d=>({up:3,flat:2,down:1,'↑':3,'→':2,'↓':1}[d?.rsTrend]||0),
+  // RS Momentum (Direction) is the same signed RS direction used by Money Flow Radar.
+  rsmom:d=>d?.rsSlope,
   // Explicit sort on the Setup column: qualifies / does not / no data.
   setup:d=>d?(isQualitySetup(d)?1:0):null,
   /* Align: SCORE first, then DENOMINATOR. Packed into one number because
@@ -15191,7 +15189,7 @@ const EXPORT_COLS=[
   // numbers even though it can't hold the drawing.
   ['RS History',  (def,d)=>Array.isArray(d?.rsHist)?d.rsHist.join(' '):''],
   ['Lead RS',     (def,d)=>d?.leadRS!=null?(d.leadRS?'Y':'N'):''],
-  ['RS Trend',    (def,d)=>d?.rsTrend??''],
+  ['RS Momentum (Direction)', (def,d)=>d?.rsSlope??''],
   ['Watchlist',   (def,d)=>isWatched(def.s)?'Y':''],
   ['Review',      (def,d)=>REV[def.s]||''],
   ['Notes',       (def,d)=>(typeof NOTES!=='undefined'&&NOTES[def.s])||''],
@@ -15548,10 +15546,7 @@ const COL_FILTERS={
      behind it is the thing worth screening on. */
   fresh:   {t:'cat',  label:'Fresh',   val:d=>{
              const f=freshFlags(d); return f.length?FRESH_LABEL[f[0].key]:null; }},
-  rst:     {t:'cat',  label:'RS Trend', val:d=>{
-             const v=d&&d.rsTrend; if(!v) return null;
-             const n={'↑':'up','→':'flat','↓':'down'}[v]||v;
-             return {up:'Up',flat:'Flat',down:'Down'}[n]||null; }},
+  rsmom:   {t:'num',  label:'RS Momentum (Direction)', val:d=>d&&d.rsSlope},
   // Bucketed on slopeDir, the same field slopeC() draws its arrow from. The raw
   // % lives in the tooltip; the column reads as a direction, so it filters as one.
   slope:   {t:'cat',  label:'200EMA Slope', val:d=>{
@@ -16346,7 +16341,7 @@ const TOGGLEABLE_COLS=[
   {cls:'rsp55',  label:'RSP 55'},
   {cls:'rsp21',  label:'RSP 21'},
   {cls:'rshist', label:'RS Rank History'},
-  {cls:'rstrend',label:'RS Trend'},
+  {cls:'rsmom',label:'RS Momentum (Direction)'},
   {cls:'notes',  label:'Notes'},
 ];
 const COL_VIS_KEY='sm_col_visibility';
@@ -18093,6 +18088,18 @@ function rotDefaultRotationSort(rows){
     (b.rsChg??-999)-(a.rsChg??-999)||
     (b.rs??-999)-(a.rs??-999));
 }
+function rotLeaderScore(x){
+  if(!x) return -Infinity;
+  const context=x.contextScore==null?0:x.contextScore;
+  const early=x.e&&x.e.score!=null?Math.max(0,Math.min(100,x.e.score)):0;
+  const rs=x.d&&x.d.rs55!=null?Math.max(0,Math.min(100,(x.d.rs55+20)*(100/60))):0;
+  const rsUp=x.rsChg==null?50:Math.max(0,Math.min(100,50+x.rsChg*2.5));
+  const trigger=x.e&&x.e.triggerDist!=null?Math.max(0,Math.min(100,100-x.e.triggerDist*5)):0;
+  const h52=x.h52==null?0:Math.max(0,Math.min(100,(x.h52+30)*(100/30)));
+  /* State is a tie-breaker, not an extra weighted component: the score below
+     therefore remains a true 100-point composite. */
+  return +(context*0.30 + early*0.20 + rsUp*0.20 + rs*0.15 + trigger*0.10 + h52*0.05).toFixed(2);
+}
 function rotDefaultStockSort(rows){
   return rows.slice().sort((a,b)=>rotLeaderScore(b)-rotLeaderScore(a)||
     (b.contextScore??-999)-(a.contextScore??-999)||
@@ -18321,7 +18328,7 @@ function renderMoneyFlowRadar(){
     leaving:'Money Leaving = genuine deterioration: weakening relative strength plus materially weak Early/structure. Strong absolute-RS stocks that remain above the 50EMA, within 30% of the 52-week high and retain constructive setup/breakout structure are protected from this label; healthy breakout retests are also excluded.'
   };
   $('moneyFlowNote').textContent=notes[tab]+' Click any column header to sort; click again to reverse. Market is locked to the main screener.';
-  $('moneyFlowHead').innerHTML='<tr>'+rotSortHead('Stock','name','money','Stock/company name')+rotSortHead('Macro','macro','money','Research macro grouping')+rotSortHead('Sector','sector','money','Research sector grouping')+rotSortHead('Industry','industry','money','Research industry grouping')+rotSortHead('RS55','rs55','money','55-day relative strength level; green = stronger')+rotSortHead('RS Δ','rsChg','money','Relative-strength direction; green = improving, red = weakening')+rotSortHead('Early','score','money','Early Breakout score, 0–100')+rotSortHead('State','state','money','Current Money Flow classification')+rotSortHead('BO Gain','boGain','money','Gain since latest detected breakout')+rotSortHead('BO Age','boAge','money','Trading bars since latest detected breakout')+rotSortHead('BO Date','boDate','money','Latest detected breakout date')+'</tr>';
+  $('moneyFlowHead').innerHTML='<tr>'+rotSortHead('Stock','name','money','Stock/company name')+rotSortHead('Macro','macro','money','Research macro grouping')+rotSortHead('Sector','sector','money','Research sector grouping')+rotSortHead('Industry','industry','money','Research industry grouping')+rotSortHead('RS55','rs55','money','55-day relative strength level; green = stronger')+rotSortHead('RS Momentum (Direction)','rsChg','money','Same signed relative-strength direction used by the main screener: positive = improving, negative = weakening')+rotSortHead('Early','score','money','Early Breakout score, 0–100')+rotSortHead('State','state','money','Current Money Flow classification')+rotSortHead('BO Gain','boGain','money','Gain since latest detected breakout')+rotSortHead('BO Age','boAge','money','Trading bars since latest detected breakout')+rotSortHead('BO Date','boDate','money','Latest detected breakout date')+'</tr>';
   $('moneyFlowBody').innerHTML=shown.length?shown.map(x=>`<tr class="rot-v4-row ${mfRowClass(x.state)}" onclick="openDrill('${escAttr(x.def.s)}')"><td><b>${escHtml(x.def.d||x.def.s)}</b><br><span style="font-size:9px;color:var(--muted)">${escHtml(x.def.s)}</span></td><td>${escHtml(x.macro)}</td><td>${escHtml(x.sector)}</td><td>${escHtml(x.industry)}</td><td>${rotV5RsPill(x.d.rs55)}</td><td>${rotSignedPill(x.rsChg,1)}</td><td><span class="sb-pill ${x.e.score>=80?'sb-hi':x.e.score>=70?'sb-mid':'sb-lo'}">${x.e.score==null?'—':x.e.score}</span></td><td><span class="rot-pill ${x.state==='Money Leaving'?'mf-state-leaving':x.state==='Prime Leader'?'mf-state-prime':x.state==='New Money'?'mf-state-new':x.state==='Post-Breakout / Retest'?'mf-state-retest':'mf-state-watch'}" title="${escAttr(x.state)}">${x.state}</span></td><td>${x.d.boGain==null?'—':rotSignedPill(x.d.boGain,0)}</td><td>${x.d.boAge==null?'—':x.d.boAge+'d'}</td><td>${boDateC(x.d.boDate)||'—'}</td></tr>`).join(''):'<tr><td colspan="11" class="rot-v4-empty">No candidates in this bucket for the current ${escHtml(rotMarketLabel(m)[1])} data.</td></tr>';
 }
 function renderMoneyFlowTabs(){
@@ -18473,7 +18480,7 @@ function renderMoneyFlowChanges(m){
     $('moneyFlowBody').innerHTML='<tr><td class="rot-v4-empty">Daily history is ready, but it needs at least two snapshots to calculate changes.</td></tr>';
     return;
   }
-  $('moneyFlowNote').textContent=`${m.toUpperCase()} changes from ${ch.prev.date} → ${ch.cur.date}. Groups default to rising Prime/Early participation; stocks default to improving Early/RS. Click any column header to sort.`;
+  $('moneyFlowNote').textContent=`${m.toUpperCase()} changes from ${ch.prev.date} → ${ch.cur.date}. Groups default to rising Prime/Early participation; stocks default to improving Early/RS Momentum (Direction). Click any column header to sort.`;
   const gs=ROT_SORT.changesGroups.key?rotSortRows(ch.groups.slice(0,30),ROT_SORT.changesGroups.key,ROT_SORT.changesGroups.dir):ch.groups.slice(0,30);
   const ss=ROT_SORT.changesStocks.key?rotSortRows(ch.stocks.slice(0,40),ROT_SORT.changesStocks.key,ROT_SORT.changesStocks.dir):ch.stocks.slice(0,40);
   const gRows=gs.map(g=>`<tr><td><b>${escHtml(g.name)}</b><br><span style="font-size:9px;color:var(--muted)">${escHtml(g.sector||g.macro||'')} · ${g.n} stocks</span></td><td>${g.primeDelta>0?'<span class="rot-change-up">+':''}${g.primeDelta}${g.primeDelta>0?'</span>':''}</td><td>${g.earlyDelta>0?'<span class="rot-change-up">+':''}${g.earlyDelta}${g.earlyDelta>0?'</span>':''}</td><td>${g.primePct==null?'—':pillFmt(Math.round(g.primePct))}</td><td>${g.earlyPct==null?'—':pillFmt(Math.round(g.earlyPct))}</td><td>${rotSignedPill(g.avgRs,1)}</td></tr>`).join('');
