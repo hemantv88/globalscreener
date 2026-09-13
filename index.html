@@ -1063,6 +1063,7 @@ body.hide-rsp55   .c-rsp55,
 body.hide-rsp21   .c-rsp21,
 body.hide-rshist  .c-rshist,
 body.hide-setup   .c-setup,
+body.hide-early   .c-early,
 body.hide-align   .c-align,
 body.hide-fresh   .c-fresh{display:none!important}
 
@@ -1453,7 +1454,7 @@ body.dd-lock{overflow:hidden}
 .rot-v4-tab.active{background:var(--accent-bg);border-color:var(--accent);font-weight:700}
 .rot-v4-note{font-size:10px;color:var(--muted);line-height:1.35;margin:0 0 8px}
 .rot-v4-wrap{overflow:auto;border:1px solid var(--border);border-radius:var(--r);flex:1;min-height:0}
-.rot-v4-table{width:100%;border-collapse:separate;border-spacing:0;font-size:11px;white-space:nowrap}
+.rot-v4-table{width:100%;border-collapse:separate;border-spacing:0;font-size:11px;white-space:nowrap;table-layout:fixed}.rot-v4-table th,.rot-v4-table td{overflow:hidden;text-overflow:ellipsis}.rot-v4-table th:nth-child(1),.rot-v4-table td:nth-child(1){width:180px}.rot-v4-table th:nth-child(2),.rot-v4-table td:nth-child(2){width:58px}.rot-v4-table th:nth-child(3),.rot-v4-table td:nth-child(3){width:66px}.rot-v4-table th:nth-child(4),.rot-v4-table td:nth-child(4){width:66px}.rot-v4-table th:nth-child(5),.rot-v4-table td:nth-child(5){width:58px}.rot-v4-table th:nth-child(6),.rot-v4-table td:nth-child(6){width:66px}.rot-v4-table th:nth-child(7),.rot-v4-table td:nth-child(7){width:62px}.rot-v4-table th:nth-child(8),.rot-v4-table td:nth-child(8){width:52px}.rot-v4-table th:nth-child(9),.rot-v4-table td:nth-child(9){width:52px}.rot-v4-table th:nth-child(10),.rot-v4-table td:nth-child(10){width:52px}.rot-v4-table th:nth-child(11),.rot-v4-table td:nth-child(11){width:52px}.rot-v4-table th:nth-child(12),.rot-v4-table td:nth-child(12){width:88px}.rot-v4-table th:nth-child(13),.rot-v4-table td:nth-child(13){width:72px}.rot-v4-table th:nth-child(14),.rot-v4-table td:nth-child(14){width:92px}
 .rot-v4-table th{position:sticky;top:0;z-index:2;background:var(--surface2);padding:7px 8px;text-align:right;font-size:9px;letter-spacing:.25px;border-bottom:1px solid var(--border)}
 .rot-v4-table td{padding:6px 8px;border-bottom:1px solid var(--border);text-align:right}
 .rot-v4-table th:first-child,.rot-v4-table td:first-child{text-align:left;position:sticky;left:0;background:var(--surface);z-index:1}
@@ -18208,7 +18209,7 @@ function rotV5StockRows(market){
     const aboutToBreak=preBreak&&trigger!=null&&trigger<=10;
     const priority=(aboutToBreak?5:preBreak?4:e.state==='accumulation'?3:e.state==='breakout'?2:1);
     const quality=(near52?2:0)+(rsStrong?2:0)+(rsChg!=null&&rsChg>0?1:0); /* legacy quality; Leader Score uses peer ranks */
-    return {def,d,e,rsChg,rsAccel,macro:rotV4Macro(def),sector:rotV4Sector(def),industry:rotV4Industry(def),narrow:rotV4Narrow(def),state:e.state||'—',h52,priority,quality,rsStrong,near52,aboutToBreak};
+    return {def,d,e,rsChg,rsAccel,macro:rotV4Macro(def),sector:rotV4Sector(def),industry:rotV4Industry(def),narrow:rotV4Narrow(def),state:e.state||'—',h52,priority,quality,rsStrong,near52,aboutToBreak,constructiveStructure};
   }).filter(Boolean);
   /* If the selected context has filtered rows, the rows above are still the
      market's complete valid stock set because rotV5MatchesContext() only gates
@@ -18236,7 +18237,7 @@ function rotV5StockRows(market){
     x.peerMomRank=rotPctRank(x.rsChg,momVals);
     x.peerAccelRank=rotPctRank(x.rsAccel,accVals);
     x.stockRotation=rotStockState(x.peerRsRank,x.peerMomRank);
-    x.rsStrong=x.peerRsRank!=null&&x.peerRsRank>=60&&above50&&x.near52&&constructiveStructure;
+    x.rsStrong=x.peerRsRank!=null&&x.peerRsRank>=60&&numOk(x.d.pct50e)&&x.d.pct50e>=0&&x.near52&&x.constructiveStructure;
     x.quality=(x.near52?2:0)+(x.rsStrong?2:0)+(x.peerMomRank!=null&&x.peerMomRank>=50?1:0);
   });
   /* Hierarchical context is deliberately a DISPLAY/RANKING layer only. It does
@@ -18355,37 +18356,65 @@ function mfRows(market){
   const hist=mfReadHistory(market);
   const prev=hist.length>=1?hist[hist.length-1]:null;
   const pm=new Map((prev?.rows||[]).map(x=>[x.s,x]));
+  /* Money Flow is a stock-level screen, so its RS direction is peer-relative
+     too. Industry is the first peer set; small industries fall back to Sector.
+     This prevents an entire market/industry pullback from making every good
+     stock look like "Money Leaving" merely because absolute RS Δ is negative. */
+  const valid=defs.map(def=>{
+    const d=SD[def.s]; if(!d||d.rs55==null) return null;
+    const ch=rsChangeOf(d)!=null?rsChangeOf(d):(d.rsSlope!=null?d.rsSlope:(d.rs21!=null&&d.rs55!=null?d.rs21-d.rs55:null));
+    const acc=stockRsAccelOf(d);
+    if(ch==null) return null;
+    return {def,d,industry:rotV4Industry(def),sector:rotV4Sector(def),rs:d.rs55,rsChg:ch,accel:acc};
+  }).filter(Boolean);
+  const ib={}, sb={};
+  valid.forEach(x=>{(ib[x.industry]||(ib[x.industry]=[])).push(x);(sb[x.sector]||(sb[x.sector]=[])).push(x);});
+  const peer={};
+  valid.forEach(x=>{
+    let peers=ib[x.industry]||[], level='Industry';
+    if(peers.length<STOCK_ROT_MIN_INDUSTRY_PEERS){peers=sb[x.sector]||[];level='Sector';}
+    const momVals=peers.map(p=>p.rsChg).filter(v=>v!=null);
+    const rsVals=peers.map(p=>p.rs).filter(v=>v!=null);
+    peer[x.def.s]={level,count:peers.length,momRank:rotPctRank(x.rsChg,momVals),rsRank:rotPctRank(x.rs,rsVals)};
+  });
   const rows=defs.map(def=>{
     const d=SD[def.s]; if(!d) return null;
     const e=d.early||{};
     const score=e.score;
-    const rsChg=d.rsSlope!=null?d.rsSlope:(d.rs21!=null&&d.rs55!=null?d.rs21-d.rs55:null);
+    const rsChg=rsChangeOf(d)!=null?rsChangeOf(d):(d.rsSlope!=null?d.rsSlope:(d.rs21!=null&&d.rs55!=null?d.rs21-d.rs55:null));
+    const above20=numOk(d.pct20e)&&d.pct20e>=0;
     const above50=numOk(d.pct50e)&&d.pct50e>=0;
     const near52=d.h52d!=null&&d.h52d>=-30;
     const recentBO=d.boAge!=null&&isFinite(d.boAge)&&d.boAge<=15;
     const positiveBO=recentBO&&d.boGain!=null&&d.boGain>=0;
     const controlledRetest=positiveBO&&d.retrace!=null&&d.retrace>=-12&&above50;
-    /* v14 strong-stock guard: a high absolute-RS stock in a healthy trend/structure
-       is not called Money Leaving solely because short-term RS slope softened. */
-    const constructiveStructure=(score!=null&&score>=60)||(numOk(d.pct20e)&&d.pct20e>=0)||positiveBO;
-    const structurallyStrong=d.rs55!=null&&d.rs55>=20&&above50&&near52&&constructiveStructure;
+    const constructiveStructure=(score!=null&&score>=60)||above20||positiveBO;
+    const emaStack= numOk(d.e10)&&numOk(d.e20)&&numOk(d.e50) && d.e10>=d.e20 && d.e20>=d.e50;
+    const priceHoldsCore=above20&&above50;
+    const bullCross=d.xState==='bull';
+    const longTrendHealthy=d.slopeDir==null||d.slopeDir!=='down';
+    const darvasHealthy=['inside','near','break'].includes(d.dBoxState)&&above50;
+    /* A cooling stock can have negative short-term RS movement while its trend
+       remains healthy. It must never enter Money Leaving just for that reason. */
+    const healthyTrend=(emaStack&&priceHoldsCore&&longTrendHealthy)||(bullCross&&above50&&longTrendHealthy)||darvasHealthy;
+    const structurallyStrong=(d.rs55!=null&&d.rs55>=20&&above50&&near52&&constructiveStructure)||healthyTrend;
+    const peerInfo=peer[def.s]||{};
+    const peerImproving=peerInfo.momRank!=null&&peerInfo.momRank>=50;
+    const peerWeakening=peerInfo.momRank!=null&&peerInfo.momRank<50;
     const prime=e.state==='prime' || (score!=null&&score>=80&&e.triggerDist!=null&&e.triggerDist<=5&&e.volumePhase==='expanding');
-    const improving=rsChg!=null&&rsChg>0;
-    const weakening=rsChg!=null&&rsChg<0;
-    const p=pm.get(def.s);
-    const prevScore=p?.score;
-    const prevState=p?.state;
+    const p=pm.get(def.s), prevScore=p?.score, prevState=p?.state;
     const newlyStrong=score!=null&&score>=70 && (prev==null || prevScore==null || prevScore<70 || !['watch','prime','breakout'].includes(String(prevState||'').toLowerCase()));
     let state='';
-    /* A controlled post-breakout retest is never labelled Money Leaving merely
-       because RS has softened. This is deliberately checked first. */
     if(positiveBO && controlledRetest && (e.state==='breakout'||score==null||score<80)) state='Post-Breakout / Retest';
-    else if(newlyStrong && improving) state='New Money';
+    else if(newlyStrong && peerImproving) state='New Money';
     else if(prime) state='Prime Leader';
-    else if(score!=null&&score>=70&&(improving||!weakening)) state='Watching';
-    else if(weakening && !structurallyStrong && (score==null||score<60) && (!recentBO || !positiveBO || !controlledRetest)) state='Money Leaving';
+    else if(score!=null&&score>=70&&(peerImproving||!peerWeakening)) state='Watching';
+    /* Money Leaving now requires BOTH peer-relative RS deterioration and
+       genuinely damaged structure. Healthy EMA stacks, bullish crossovers,
+       valid Darvas structures and controlled cooling are explicitly protected. */
+    else if(peerWeakening && !structurallyStrong && !healthyTrend && (score==null||score<60) && !controlledRetest) state='Money Leaving';
     else return null;
-    return {def,d,e,rsChg,state,macro:rotV4Macro(def),sector:rotV4Sector(def),industry:rotV4Industry(def),narrow:rotV4Narrow(def),recentBO,positiveBO,controlledRetest,newlyStrong,structurallyStrong};
+    return {def,d,e,rsChg,state,macro:rotV4Macro(def),sector:rotV4Sector(def),industry:rotV4Industry(def),narrow:rotV4Narrow(def),recentBO,positiveBO,controlledRetest,newlyStrong,structurallyStrong,healthyTrend,peerMomRank:peerInfo.momRank,peerRsRank:peerInfo.rsRank,peerLevel:peerInfo.level,peerCount:peerInfo.count};
   }).filter(Boolean);
   const st=ROT_SORT.money;
   return st.key?rotSortRows(rows,st.key,st.dir):rotDefaultMoneySort(rows);
@@ -18404,7 +18433,7 @@ function renderMoneyFlowRadar(){
     prime:'Prime Leaders = stocks currently in the Prime Early state; strongest first.',
     watch:'Watching = Early score ≥70 with constructive relative strength, but not yet classified as Prime.',
     retest:'Post-Breakout / Retest = recent positive breakout followed by a controlled pullback while price remains above the 50EMA; not automatically a sell signal.',
-    leaving:'Money Leaving = genuine deterioration: weakening relative strength plus materially weak Early/structure. Strong absolute-RS stocks that remain above the 50EMA, within 30% of the 52-week high and retain constructive setup/breakout structure are protected from this label; healthy breakout retests are also excluded.'
+    leaving:'Money Leaving = genuine deterioration: peer-relative RS momentum is weak AND Early/structure is materially damaged. Healthy EMA stacks, price above the core EMAs, bullish EMA crossover/long-term slope, valid Darvas structure, strong absolute RS and controlled breakout retests are protected from this label.'
   };
   $('moneyFlowNote').textContent=notes[tab]+' Click any column header to sort; click again to reverse. Market is locked to the main screener.';
   $('moneyFlowHead').innerHTML='<tr>'+rotSortHead('Stock','name','money','Stock/company name')+rotSortHead('Macro','macro','money','Research macro grouping')+rotSortHead('Sector','sector','money','Research sector grouping')+rotSortHead('Industry','industry','money','Research industry grouping')+rotSortHead('RS55','rs55','money','55-day relative strength level; green = stronger')+rotSortHead('RS Momentum (Direction)','rsChg','money','Same signed relative-strength direction used by the main screener: positive = improving, negative = weakening')+rotSortHead('Early','score','money','Early Breakout score, 0–100')+rotSortHead('State','state','money','Current Money Flow classification')+rotSortHead('BO Gain','boGain','money','Gain since latest detected breakout')+rotSortHead('BO Age','boAge','money','Trading bars since latest detected breakout')+rotSortHead('BO Date','boDate','money','Latest detected breakout date')+'</tr>';
