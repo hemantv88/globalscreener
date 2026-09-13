@@ -10698,8 +10698,8 @@ const SECTOR_ROT_LOOKBACK=10;      // trading sessions — two weeks of directio
    A 1- or 2-stock "sector" is a sample, not a signal, and a rotation label is
    a stronger claim than a number: it says LEAD or LAG in a word. */
 const SECTOR_ROT_MIN_MEMBERS=3;
-/* Strictly greater than this counts as rising, so an exactly-flat sector is
-   called falling rather than promoted. Named so the tie-break is visible. */
+/* Used only for the signed RS Momentum pill. Rotation state itself is relative
+   to the peer median, not an absolute zero-line test. */
 const SECTOR_ROT_RISING_MIN=0;
 
 /* ROTATION ENHANCEMENT v16
@@ -10728,14 +10728,14 @@ function rsChangeOf(d){
 /* strength level x direction -> one of four words, or null when either input
    is unknown. `split` is the median of the sectors and is passed in rather
    than looked up, because it cannot be known until every sector is measured. */
-function rotLabel(level,chg,split){
-  if(level==null||chg==null||split==null) return null;
+function rotLabel(level,chg,split,momSplit){
+  if(level==null||chg==null||split==null||momSplit==null) return null;
   const strong = level>=split;
-  const rising = chg>SECTOR_ROT_RISING_MIN;
+  const rising = chg>=momSplit;
   return strong ? (rising?'Leading':'Weakening')
                 : (rising?'Improving':'Lagging');
 }
-const ROT_CLS={Leading:'sb-hi', Weakening:'sb-mid', Improving:'sb-blu', Lagging:'sb-lo'};
+const ROT_CLS={Leading:'sb-hi', Weakening:'sb-mid', Improving:'sb-blu', Lagging:'sb-lo', 'Powering Up':'sb-hi', 'Turning Up':'sb-blu', Cooling:'sb-mid', 'Falling Back':'sb-lo'};
 
 /* WHY this walks getRows() and not UNI:
    the modal used to aggregate over UNI while skipping every stock without
@@ -10817,9 +10817,26 @@ function calcSectorBreadth(market){
      the whole market has moved, so the label always answers "relative to the
      rest of THIS list". Sectors with no level (too few members) are excluded
      from the split itself as well as from labelling. */
-  const levels=out.map(r=>r.medRs55).filter(v=>v!=null);
+  /* UNIFIED ROTATION ENGINE: use the exact same cross-sectional state logic
+     as Money Flow & Rotation. Level = sector median RS55; direction = sector
+     median RS movement. Both are compared with the median of the sectors visible
+     in this panel. A negative absolute RS move can therefore still be relatively
+     improving when peer sectors are deteriorating faster. */
+  const rotUniverse=out.filter(r=>r.medRs55!=null&&r.rsChg!=null)
+    .map(r=>({rs:r.medRs55,rsChg:r.rsChg}));
+  const levels=rotUniverse.map(r=>r.rs);
+  const directions=rotUniverse.map(r=>r.rsChg);
   const rotSplit = levels.length ? median(levels) : null;
-  out.forEach(r=>{ r.rot = rotLabel(r.medRs55, r.rsChg, rotSplit); });
+  const rotMomSplit = directions.length ? median(directions) : null;
+  out.forEach(r=>{
+    const state=rotV4State([{rs:r.medRs55,rsChg:r.rsChg}],rotUniverse);
+    r.rot = state==='Powering Up'?'Leading'
+      :state==='Cooling'?'Weakening'
+      :state==='Turning Up'?'Improving'
+      :state==='Falling Back'?'Lagging':'—';
+    r.rotState=state;
+    r.rotMomSplit=rotMomSplit;
+  });
 
   // `total` is the length of the very array the table renders, so the caller can
   // assert sum(count) === total instead of hoping.
@@ -10844,9 +10861,9 @@ const SECTOR_COLS=[
      invites being read as a fact about the sector itself. The lookback and the
      member floor are interpolated from the constants so the words cannot drift
      away from the code the way a hand-typed "10 days" would. */
-  {key:'rsChg',       label:`RS Δ ${SECTOR_ROT_LOOKBACK}d`,
-   fmt:v=>v==null?'<span class=\"sb-pill sb-zero\">—</span>':`<span class="sb-pill ${v>SECTOR_ROT_RISING_MIN?'sb-hi':'sb-lo'}">${v>=0?'+':''}${v.toFixed(2)}</span>`,
-   tip:`The MEDIAN across this sector's stocks of how far each one's 21-day relative strength has moved over the last ${SECTOR_ROT_LOOKBACK} sessions — its RS21 today minus its RS21 ${SECTOR_ROT_LOOKBACK} bars ago, read off the same RS history the RS sparkline draws. A median across the sector's members, not an average, so one runaway stock cannot speak for the whole group. Stocks with no RS history, or less than ${SECTOR_ROT_LOOKBACK} sessions of it, are LEFT OUT of the median rather than counted as zero — counting them as zero would drag the sector towards a false no-rotation reading. Positive means the sector has been GAINING ground on the benchmark over those ${SECTOR_ROT_LOOKBACK} sessions, negative means losing it. It describes where money HAS been moving. It is not a prediction.`},
+  {key:'rsChg',       label:'RS Momentum (Direction)',
+   fmt:v=>v==null?'<span class="sb-pill sb-zero">—</span>':`<span class="sb-pill ${v>SECTOR_ROT_RISING_MIN?'sb-hi':'sb-lo'}">${v>=0?'+':''}${v.toFixed(2)}</span>`,
+   tip:`Median RS direction across this sector's stocks over the last ${SECTOR_ROT_LOOKBACK} sessions. Positive means the sector is gaining relative strength in absolute terms; negative means it is losing relative strength. Rotation state does NOT use the zero line alone — it compares this direction with the other visible sectors using the same relative rotation engine as Money Flow & Rotation. A negative value can therefore still be relatively improving or leading when peers are weaker.`},
   /* THE STRENGTH LEVEL, finally visible. calcSectorBreadth() has always computed
      medRs55 — the Rotation column is built on it — but it was never shown and
      never sortable, so "which sectors are strongest" could not be answered from
@@ -10855,8 +10872,8 @@ const SECTOR_COLS=[
    fmt:v=>v==null?'<span class=\"sb-pill sb-zero\">—</span>':`<span class="sb-pill ${v>0?'sb-hi':'sb-lo'}">${v>=0?'+':''}${v.toFixed(1)}</span>`,
    tip:`The MEDIAN 55-day relative strength of this sector's stocks — how the typical member has performed against the benchmark over roughly the last quarter. This is the sector's STRENGTH LEVEL, and the table is sorted by it, so the strongest sectors sit at the top. A median across the sector's own members, not an average, so one runaway stock cannot speak for the group. A sector with fewer than ${SECTOR_ROT_MIN_MEMBERS} members carrying RS is left blank rather than scored, and blanks sort to the bottom — too small a sample to call. Read it beside RS Δ: this says where the sector IS, that one says which way it has been moving.`},
   {key:'rot',         label:'Rotation',
-   fmt:v=>v==null?'<span class=\"sb-pill sb-zero\">—</span>':`<span class="sb-pill ${ROT_CLS[v]||'sb-mid'}">${v}</span>`,
-   tip:`Direction on top of level. LEVEL is this sector's median RS55; DIRECTION is the median ${SECTOR_ROT_LOOKBACK}-session change in its members' RS21. Strong and rising = Leading. Strong and falling = Weakening. Weak and rising = Improving. Weak and falling = Lagging. Strong versus weak splits at the MEDIAN of the sectors on screen, never a fixed number, so the labels still divide the list when the whole market is up or down. Both figures are medians across this sector's own members, and members with no usable RS history are left out rather than counted as zero. A sector with fewer than ${SECTOR_ROT_MIN_MEMBERS} members carrying RS is left blank instead of labelled — too small a sample to call. Says where money HAS been moving over the last ${SECTOR_ROT_LOOKBACK} sessions; it is not a prediction.`},
+   fmt:v=>v==null?'<span class="sb-pill sb-zero">—</span>':`<span class="sb-pill ${ROT_CLS[v]||'sb-mid'}">${v}</span>`,
+   tip:`Unified relative rotation state. The engine compares this sector's median RS55 with the median RS55 of the visible sectors AND compares its RS Momentum (Direction) with the peer median. Leading = strong + relatively improving; Weakening = strong + relatively deteriorating; Improving = weak + relatively improving; Lagging = weak + relatively deteriorating. This is relative to the current sector universe, not an absolute +/− zero test. Money Flow & Rotation uses the same four quadrants under the names Powering Up / Cooling / Turning Up / Falling Back.`},
   {key:'avgRsi',      label:'Avg RSI',     fmt:v=>v==null?'—':v.toFixed(1)},
   {key:'avgCh',       label:'Avg 1D%',     fmt:v=>v==null?'—':(v>=0?'+':'')+v.toFixed(2)+'%'},
   {key:'advPct',      label:'Advancing',   fmt:v=>pillFmt(v)},
@@ -10887,7 +10904,7 @@ function renderSectorBreadth(){
     (agg.noData
       ? ` <b>${agg.noData}</b> of them have no computed data yet, so they are counted here but contribute nothing to the averages (those show — where nothing could be measured).`
       : ` All of them have computed data.`) +
-    ` Click any row to filter the main table to that sector.`;
+    ` Click any row to filter the main table to that sector.` + ` Rotation is relative: strength and RS Momentum are compared with the other visible sectors, so a negative RS Momentum can still be Leading/Improving when peers are weaker.`;
 
   const fn=SECTOR_COLS.find(c=>c.key===SECTOR_SORT_COL);
   rows.sort((a,b)=>{
@@ -18088,25 +18105,57 @@ function rotDefaultRotationSort(rows){
     (b.rsChg??-999)-(a.rsChg??-999)||
     (b.rs??-999)-(a.rs??-999));
 }
+/* Stock-level rotation is peer-relative, just like Sector/Industry rotation.
+   Prefer Industry peers; if the industry has too few usable observations, fall
+   back to the Sector. This is a display/ranking layer only and never changes
+   Setup, Early, Stage 2 or MRS calculations. */
+const STOCK_ROT_MIN_INDUSTRY_PEERS=5;
+function stockRsAccelOf(d){
+  const h=d&&d.rsHist;
+  const L=SECTOR_ROT_LOOKBACK, A=ROT_ACCEL_LOOKBACK;
+  if(!Array.isArray(h)||h.length<L+A+1) return null;
+  const n=h.length-1;
+  const now=h[n], then=h[n-L], priorEnd=n-A, priorStart=priorEnd-L;
+  if([now,then,h[priorEnd],h[priorStart]].some(v=>!numOk(v))) return null;
+  return +((now-then)-(h[priorEnd]-h[priorStart])).toFixed(2);
+}
+function rotPctRank(v,vals){
+  if(v==null||!vals||!vals.length) return null;
+  return +(100*vals.filter(x=>x<=v).length/vals.length).toFixed(1);
+}
+function rotStockState(rsRank,momRank){
+  if(rsRank==null||momRank==null) return '—';
+  const strong=rsRank>=50, rising=momRank>=50;
+  if(strong&&rising) return 'Powering Up';
+  if(!strong&&rising) return 'Turning Up';
+  if(strong&&!rising) return 'Cooling';
+  return 'Falling Back';
+}
 function rotLeaderScore(x){
   if(!x) return -Infinity;
   const context=x.contextScore==null?0:x.contextScore;
   const early=x.e&&x.e.score!=null?Math.max(0,Math.min(100,x.e.score)):0;
-  const rs=x.d&&x.d.rs55!=null?Math.max(0,Math.min(100,(x.d.rs55+20)*(100/60))):0;
-  const rsUp=x.rsChg==null?50:Math.max(0,Math.min(100,50+x.rsChg*2.5));
+  /* Peer-relative strength/momentum are deliberately used here. A stock can
+     have negative absolute RS movement and still be a leader if it is
+     outperforming its Industry/Sector peers. */
+  const rs=x.peerRsRank==null?50:x.peerRsRank;
+  const rsUp=x.peerMomRank==null?50:x.peerMomRank;
+  const accel=x.peerAccelRank==null?50:x.peerAccelRank;
   const trigger=x.e&&x.e.triggerDist!=null?Math.max(0,Math.min(100,100-x.e.triggerDist*5)):0;
   const h52=x.h52==null?0:Math.max(0,Math.min(100,(x.h52+30)*(100/30)));
-  /* State is a tie-breaker, not an extra weighted component: the score below
-     therefore remains a true 100-point composite. */
-  return +(context*0.30 + early*0.20 + rsUp*0.20 + rs*0.15 + trigger*0.10 + h52*0.05).toFixed(2);
+  /* True 100-point composite: Context 25 + Early 20 + peer RS 15 + peer
+     momentum 20 + peer acceleration 5 + trigger 10 + 52W position 5. */
+  return +(context*0.25 + early*0.20 + rs*0.15 + rsUp*0.20 + accel*0.05 + trigger*0.10 + h52*0.05).toFixed(2);
 }
 function rotDefaultStockSort(rows){
+  const rank={'Powering Up':4,'Turning Up':3,'Cooling':2,'Falling Back':1,'—':0};
   return rows.slice().sort((a,b)=>rotLeaderScore(b)-rotLeaderScore(a)||
+    (rank[b.stockRotation]||0)-(rank[a.stockRotation]||0)||
+    (b.peerMomRank??-999)-(a.peerMomRank??-999)||
+    (b.peerRsRank??-999)-(a.peerRsRank??-999)||
     (b.contextScore??-999)-(a.contextScore??-999)||
     (b.e.score??-999)-(a.e.score??-999)||
-    (b.rsChg??-999)-(a.rsChg??-999)||
-    (a.e.triggerDist??999)-(b.e.triggerDist??999)||
-    (b.d.rs55??-999)-(a.d.rs55??-999));
+    (a.e.triggerDist??999)-(b.e.triggerDist??999));
 }
 function rotDefaultMoneySort(rows){return rows.slice().sort((a,b)=>mfStateRank(b.state)-mfStateRank(a.state)||(b.newlyStrong-a.newlyStrong)||(b.e.score??-999)-(a.e.score??-999)||(b.rsChg??-999)-(a.rsChg??-999)||(b.d.rs55??-999)-(a.d.rs55??-999)||(a.e.triggerDist??999)-(b.e.triggerDist??999));}
 function rotNumCell(v,dec=1,unit=''){return v==null?'<span class="sb-pill sb-zero">—</span>':(isFinite(v)?Number(v).toFixed(dec)+unit:escHtml(String(v)));}
@@ -18147,19 +18196,49 @@ function rotV5StockRows(market){
     const d=SD[def.s]; if(!d) return null;
     const e=d.early||{};
     const rsChg=rsChangeOf(d)!=null?rsChangeOf(d):(d.rsSlope!=null?d.rsSlope:(d.rs21!=null&&d.rs55!=null?d.rs21-d.rs55:null));
+    const rsAccel=stockRsAccelOf(d);
     const h52=d.h52d;
     const near52=h52!=null&&h52>=-30;
     const above50=numOk(d.pct50e)&&d.pct50e>=0;
     const recentPositiveBO=d.boAge!=null&&isFinite(d.boAge)&&d.boAge<=15&&d.boGain!=null&&d.boGain>=0;
     const constructiveStructure=(e.score!=null&&e.score>=60)||(numOk(d.pct20e)&&d.pct20e>=0)||recentPositiveBO;
-    const rsStrong=d.rs55!=null&&d.rs55>=20&&above50&&near52&&constructiveStructure;
+    const rsStrong=false; /* assigned after peer-relative ranks are calculated */
     const preBreak=e.state==='prime'||e.state==='watch';
     const trigger=e.triggerDist;
     const aboutToBreak=preBreak&&trigger!=null&&trigger<=10;
     const priority=(aboutToBreak?5:preBreak?4:e.state==='accumulation'?3:e.state==='breakout'?2:1);
-    const quality=(near52?2:0)+(rsStrong?2:0)+(rsChg!=null&&rsChg>0?1:0);
-    return {def,d,e,rsChg,macro:rotV4Macro(def),sector:rotV4Sector(def),industry:rotV4Industry(def),narrow:rotV4Narrow(def),state:e.state||'—',h52,priority,quality,rsStrong,near52,aboutToBreak};
+    const quality=(near52?2:0)+(rsStrong?2:0)+(rsChg!=null&&rsChg>0?1:0); /* legacy quality; Leader Score uses peer ranks */
+    return {def,d,e,rsChg,rsAccel,macro:rotV4Macro(def),sector:rotV4Sector(def),industry:rotV4Industry(def),narrow:rotV4Narrow(def),state:e.state||'—',h52,priority,quality,rsStrong,near52,aboutToBreak};
   }).filter(Boolean);
+  /* If the selected context has filtered rows, the rows above are still the
+     market's complete valid stock set because rotV5MatchesContext() only gates
+     display. To guarantee that behavior, rebuild peers from every market def. */
+  const allRows=defs.map(def=>{
+    const d=SD[def.s]; if(!d||d.rs55==null) return null;
+    const ch=rsChangeOf(d); if(ch==null) return null;
+    return {def,d,industry:rotV4Industry(def),sector:rotV4Sector(def),rs:d.rs55,rsChg:ch,accel:stockRsAccelOf(d)};
+  }).filter(Boolean);
+  const fullBuckets={industry:{},sector:{}};
+  allRows.forEach(x=>{
+    (fullBuckets.industry[x.industry]||(fullBuckets.industry[x.industry]=[])).push(x);
+    (fullBuckets.sector[x.sector]||(fullBuckets.sector[x.sector]=[])).push(x);
+  });
+  rows.forEach(x=>{
+    let peers=fullBuckets.industry[x.industry]||[];
+    let peerLevel='Industry';
+    if(peers.length<STOCK_ROT_MIN_INDUSTRY_PEERS){ peers=fullBuckets.sector[x.sector]||[]; peerLevel='Sector'; }
+    const rsVals=peers.map(p=>p.rs).filter(v=>v!=null).sort((a,b)=>a-b);
+    const momVals=peers.map(p=>p.rsChg).filter(v=>v!=null).sort((a,b)=>a-b);
+    const accVals=peers.map(p=>p.accel).filter(v=>v!=null).sort((a,b)=>a-b);
+    x.peerLevel=peerLevel;
+    x.peerCount=peers.length;
+    x.peerRsRank=rotPctRank(x.d.rs55,rsVals);
+    x.peerMomRank=rotPctRank(x.rsChg,momVals);
+    x.peerAccelRank=rotPctRank(x.rsAccel,accVals);
+    x.stockRotation=rotStockState(x.peerRsRank,x.peerMomRank);
+    x.rsStrong=x.peerRsRank!=null&&x.peerRsRank>=60&&above50&&x.near52&&constructiveStructure;
+    x.quality=(x.near52?2:0)+(x.rsStrong?2:0)+(x.peerMomRank!=null&&x.peerMomRank>=50?1:0);
+  });
   /* Hierarchical context is deliberately a DISPLAY/RANKING layer only. It does
      not alter Setup, Early, Stage 2 or MRS. Each level is ranked against its
      siblings, then combined so a stock in a strong industry receives stronger
@@ -18213,7 +18292,7 @@ function rotV5StockCrumb(){
 }
 function rotLeaderPresetMatch(x,k){
   const ctx=x.contextScore!=null && x.contextScore>=55 && (x.contextState==='Powering Up'||x.contextState==='Turning Up');
-  const rsUp=x.rsChg!=null && x.rsChg>0;
+  const rsUp=x.peerMomRank!=null && x.peerMomRank>=50;
   const above50=numOk(x.d.pct50e)&&x.d.pct50e>=0;
   const near=x.near52;
   const early=x.e.score!=null;
@@ -18222,22 +18301,22 @@ function rotLeaderPresetMatch(x,k){
   const bo=x.d.boAge!=null&&isFinite(x.d.boAge)&&x.d.boAge<=10&&x.d.boGain!=null&&x.d.boGain>=0;
   if(k==='leader') return ctx && pre && x.e.score>=70 && rsUp && near && trigger!=null && trigger<=15;
   if(k==='emerging') return ctx && early && x.e.score>=60 && rsUp && near && trigger!=null && trigger<=20;
-  if(k==='strongleader') return x.contextScore!=null&&x.contextScore>=65&&x.d.rs55!=null&&x.d.rs55>=20&&above50&&near&&(!x.rsChg||x.rsChg>=0)&&((x.e.score!=null&&x.e.score>=60)||numOk(x.d.pct20e)&&x.d.pct20e>=0||bo);
-  if(k==='breakleader') return x.contextScore!=null&&x.contextScore>=55&&(x.contextState==='Powering Up'||x.contextState==='Turning Up')&&bo&&(!x.rsChg||x.rsChg>=0);
+  if(k==='strongleader') return x.contextScore!=null&&x.contextScore>=65&&x.peerRsRank!=null&&x.peerRsRank>=60&&above50&&near&&(x.peerMomRank==null||x.peerMomRank>=50)&&((x.e.score!=null&&x.e.score>=60)||numOk(x.d.pct20e)&&x.d.pct20e>=0||bo);
+  if(k==='breakleader') return x.contextScore!=null&&x.contextScore>=55&&(x.contextState==='Powering Up'||x.contextState==='Turning Up')&&bo&&(x.peerMomRank==null||x.peerMomRank>=50);
   return false;
 }
 function rotLeaderPresetTitle(k){
-  return ({leader:'Best early-leader hunt: strong/improving hierarchy context + Prime/Watch + Early ≥70 + improving RS + within 30% of 52W high + trigger ≤15%',emerging:'Emerging leaders: strong/improving hierarchy context + Early ≥60 + improving RS + within 30% of 52W high + trigger ≤20%',strongleader:'Established leaders: context ≥65 + RS55 ≥20 + above 50EMA + within 30% of 52W high + constructive structure',breakleader:'Fresh breakouts: strong/improving hierarchy context + positive breakout in the last 10 bars + non-negative RS direction'}[k]||'');
+  return ({leader:'Best early-leader hunt: strong/improving hierarchy context + Prime/Watch + Early ≥70 + peer-relative improving RS + within 30% of 52W high + trigger ≤15%',emerging:'Emerging leaders: strong/improving hierarchy context + Early ≥60 + peer-relative improving RS + within 30% of 52W high + trigger ≤20%',strongleader:'Established leaders: context ≥65 + peer-relative RS strength ≥60th percentile + above 50EMA + within 30% of 52W high + constructive structure',breakleader:'Fresh breakouts: strong/improving hierarchy context + positive breakout in the last 10 bars + non-negative peer-relative RS momentum'}[k]||'');
 }
 function renderRotationV5Stocks(m){
   setRotMarketBadge('rotationV4MarketBadge',m);
   const rows=rotV5StockRows(m);
   const stateFilter=window.ROT_V5_STOCK_FILTER||'all';
   const filtered=rows.filter(x=>stateFilter==='all'||(stateFilter==='top'&&x.priority>=4)||(stateFilter==='leader'&&rotLeaderPresetMatch(x,'leader'))||(stateFilter==='emerging'&&rotLeaderPresetMatch(x,'emerging'))||(stateFilter==='strongleader'&&rotLeaderPresetMatch(x,'strongleader'))||(stateFilter==='breakleader'&&rotLeaderPresetMatch(x,'breakleader'))||(stateFilter==='prime'&&x.state==='prime')||(stateFilter==='early'&&x.e.score>=70)||(stateFilter==='bo'&&(x.d.boAge!=null&&x.d.boAge<=10))||(stateFilter==='near52'&&x.near52)||(stateFilter==='strongrs'&&x.rsStrong));
-  $('rotationV4Note').textContent=`Stocks • ${filtered.length} shown • Leader Hunt is the default early-winner screen: strong/improving hierarchy context + constructive RS + Early setup + proximity to trigger. Use Emerging for earlier/lower-score candidates, Strong Leaders for established strength, and Breakout Leaders after the move starts. These are research screens, not automatic buy signals.`;
-  $('rotationV4Crumb').innerHTML=rotV5StockCrumb()+'<div class="rot-stock-filters">'+[['leader','★ Leader Hunt'],['emerging','Emerging'],['strongleader','Strong Leaders'],['breakleader','Breakout Leaders'],['top','Top Opportunities'],['all','All'],['prime','Prime'],['early','Early ≥70'],['bo','Recent BO'],['near52','Within 30% of 52W High'],['strongrs','Strong RS']].map(([k,l])=>`<button class="rot-filter ${stateFilter===k?'active':''}" title="${['leader','emerging','strongleader','breakleader'].includes(k)?rotLeaderPresetTitle(k):k==='top'?'Prime/Watch near trigger, strong RS and near 52-week high':k==='bo'?'Breakout detected within the last 10 trading bars':k==='prime'?'Prime Early state':k==='early'?'Early score of at least 70':k==='near52'?'At or within 30% below the available 52-week high':k==='strongrs'?'Strong RS = RS55 ≥20 + above 50EMA + within 30% of 52W high + constructive setup/breakout structure':'Show all stocks in the selected hierarchy'}" onclick="window.ROT_V5_STOCK_FILTER='${k}';ROT_SORT.stocks={key:null,dir:-1};renderRotationV4()">${l}</button>`).join('')+'</div>';
-  $('rotationV4Head').innerHTML='<tr>'+rotSortHead('Stock','name','stocks','Stock/company name')+rotSortHead('Leader','leaderScore','stocks','Composite early-leader ranking: hierarchy context + Early + RS direction/strength + trigger proximity + 52W position; ranking only')+rotSortHead('RS55','rs55','stocks','55-day relative strength; green = strong, blue = positive, red = weak')+rotSortHead('RS Δ','rsChg','stocks','Relative-strength direction over the rotation lookback; positive is improving')+rotSortHead('Context','contextScore','stocks','Macro + Sector + Industry leadership context score; display/ranking only')+rotSortHead('Context State','contextState','stocks','Dominant hierarchy rotation context; does not alter Setup/Early/MRS')+rotSortHead('Early','score','stocks','Early Breakout score, 0–100')+rotSortHead('Trigger','triggerDist','stocks','Distance to the Early breakout trigger; lower is closer')+rotSortHead('52W High%','h52','stocks','Distance below the available 52-week high; within 30% is preferred')+rotSortHead('State','state','stocks','Early state: Prime, Watch, Accumulation, Breakout, Developing')+rotSortHead('BO Gain','boGain','stocks','Gain since the latest detected breakout')+rotSortHead('BO Age','boAge','stocks','Trading bars since latest breakout')+rotSortHead('BO Date','boDate','stocks','Date of latest detected breakout')+'</tr>';
-  $('rotationV4Body').innerHTML=filtered.length?filtered.map(x=>`<tr class="rot-v4-row stock-${x.state}" onclick="openDrill('${escAttr(x.def.s)}')"><td><b>${escHtml(x.def.d||x.def.s)}</b><br><span style="font-size:9px;color:var(--muted)">${escHtml(x.def.s)}</span></td><td><span class="sb-pill ${x.leaderScore>=75?'sb-hi':x.leaderScore>=60?'sb-mid':x.leaderScore>=45?'sb-blu':'sb-lo'}">${x.leaderScore.toFixed(0)}</span></td><td>${rotV5RsPill(x.d.rs55)}</td><td>${rotSignedPill(x.rsChg,1)}</td><td>${rotContextPill(x.contextScore,x.contextState)}</td><td><span class="rot-pill ${rotV4Cls(x.contextState)}">${escHtml(x.contextState)}</span></td><td><span class="sb-pill ${x.e.score>=80?'sb-hi':x.e.score>=70?'sb-mid':'sb-lo'}">${x.e.score==null?'—':x.e.score}</span></td><td>${rotV5TriggerPill(x.e.triggerDist)}</td><td>${rotV5Pct52Pill(x.h52)}</td><td><span class="rot-pill ${rotV5StateCls(x.state)}">${rotV5EarlyLabel(x.state)}</span></td><td>${x.d.boGain==null?'—':rotSignedPill(x.d.boGain,0)}</td><td>${x.d.boAge==null?'—':x.d.boAge+'d'}</td><td class="bo-date">${boDateC(x.d.boDate)||'—'}</td></tr>`).join(''):'<tr><td colspan="20" class="rot-v4-empty">No stocks match this filter/context.</td></tr>';
+  $('rotationV4Note').textContent=`Stocks • ${filtered.length} shown • Leader Hunt is the default early-winner screen: strong/improving hierarchy context + peer-relative RS strength/momentum + Early setup + proximity to trigger. Stock rotation uses Industry peers, falling back to Sector when fewer than 5 valid Industry observations exist. Use Emerging for earlier/lower-score candidates, Strong Leaders for established strength, and Breakout Leaders after the move starts. These are research screens, not automatic buy signals.`;
+  $('rotationV4Crumb').innerHTML=rotV5StockCrumb()+'<div class="rot-stock-filters">'+[['leader','★ Leader Hunt'],['emerging','Emerging'],['strongleader','Strong Leaders'],['breakleader','Breakout Leaders'],['top','Top Opportunities'],['all','All'],['prime','Prime'],['early','Early ≥70'],['bo','Recent BO'],['near52','Within 30% of 52W High'],['strongrs','Strong RS']].map(([k,l])=>`<button class="rot-filter ${stateFilter===k?'active':''}" title="${['leader','emerging','strongleader','breakleader'].includes(k)?rotLeaderPresetTitle(k):k==='top'?'Prime/Watch near trigger, strong RS and near 52-week high':k==='bo'?'Breakout detected within the last 10 trading bars':k==='prime'?'Prime Early state':k==='early'?'Early score of at least 70':k==='near52'?'At or within 30% below the available 52-week high':k==='strongrs'?'Strong RS = peer-relative RS strength ≥60th percentile + above 50EMA + within 30% of 52W high + constructive setup/breakout structure':'Show all stocks in the selected hierarchy'}" onclick="window.ROT_V5_STOCK_FILTER='${k}';ROT_SORT.stocks={key:null,dir:-1};renderRotationV4()">${l}</button>`).join('')+'</div>';
+  $('rotationV4Head').innerHTML='<tr>'+rotSortHead('Stock','name','stocks','Stock/company name')+rotSortHead('Leader','leaderScore','stocks','Composite early-leader ranking: hierarchy context + Early + peer-relative RS strength/momentum/acceleration + trigger proximity + 52W position; ranking only')+rotSortHead('RS55','rs55','stocks','55-day relative strength level. Stock Rotation and Leader ranking compare this against Industry peers, falling back to Sector when the Industry is too small')+rotSortHead('RS Momentum (Direction)','rsChg','stocks','Absolute signed RS movement over the rotation lookback; stock rotation uses this relative to Industry peers, falling back to Sector when the Industry is too small')+rotSortHead('Stock Rotation','stockRotation','stocks','Peer-relative stock rotation: Powering Up = strong RS + improving momentum; Turning Up = weaker RS + improving momentum; Cooling = strong RS + deteriorating momentum; Falling Back = weak RS + deteriorating momentum')+rotSortHead('Context','contextScore','stocks','Macro + Sector + Industry leadership context score; display/ranking only')+rotSortHead('Context State','contextState','stocks','Dominant hierarchy rotation context; does not alter Setup/Early/MRS')+rotSortHead('Early','score','stocks','Early Breakout score, 0–100')+rotSortHead('Trigger','triggerDist','stocks','Distance to the Early breakout trigger; lower is closer')+rotSortHead('52W High%','h52','stocks','Distance below the available 52-week high; within 30% is preferred')+rotSortHead('State','state','stocks','Early state: Prime, Watch, Accumulation, Breakout, Developing')+rotSortHead('BO Gain','boGain','stocks','Gain since the latest detected breakout')+rotSortHead('BO Age','boAge','stocks','Trading bars since latest breakout')+rotSortHead('BO Date','boDate','stocks','Date of latest detected breakout')+'</tr>';
+  $('rotationV4Body').innerHTML=filtered.length?filtered.map(x=>`<tr class="rot-v4-row stock-${x.state}" onclick="openDrill('${escAttr(x.def.s)}')"><td><b>${escHtml(x.def.d||x.def.s)}</b><br><span style="font-size:9px;color:var(--muted)">${escHtml(x.def.s)}</span></td><td><span class="sb-pill ${x.leaderScore>=75?'sb-hi':x.leaderScore>=60?'sb-mid':x.leaderScore>=45?'sb-blu':'sb-lo'}">${x.leaderScore.toFixed(0)}</span></td><td>${rotV5RsPill(x.d.rs55)}</td><td>${rotSignedPill(x.rsChg,1)}</td><td><span class="rot-pill ${rotV4Cls(x.stockRotation)}" title="Peer group: ${escHtml(x.peerLevel||'—')} (${x.peerCount||0} valid stocks)">${escHtml(x.stockRotation||'—')}</span></td><td>${rotContextPill(x.contextScore,x.contextState)}</td><td><span class="rot-pill ${rotV4Cls(x.contextState)}">${escHtml(x.contextState)}</span></td><td><span class="sb-pill ${x.e.score>=80?'sb-hi':x.e.score>=70?'sb-mid':'sb-lo'}">${x.e.score==null?'—':x.e.score}</span></td><td>${rotV5TriggerPill(x.e.triggerDist)}</td><td>${rotV5Pct52Pill(x.h52)}</td><td><span class="rot-pill ${rotV5StateCls(x.state)}">${rotV5EarlyLabel(x.state)}</span></td><td>${x.d.boGain==null?'—':rotSignedPill(x.d.boGain,0)}</td><td>${x.d.boAge==null?'—':x.d.boAge+'d'}</td><td class="bo-date">${boDateC(x.d.boDate)||'—'}</td></tr>`).join(''):'<tr><td colspan="20" class="rot-v4-empty">No stocks match this filter/context.</td></tr>';
 }
 
 function renderRotationV4(){
