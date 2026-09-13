@@ -914,7 +914,7 @@ body.asof-on .tbl-wrap{outline:3px solid var(--orange)}
    entry itself. The cell is also the widest badge in the table — direction,
    state and distance on one line — so it is the first thing that should go
    when the viewport gets tight. */
-.c-smz,
+.c-smz{display:table-cell}
 /* Momentum Base is GROUP A, beside SMZ, on the same argument and for the same
    two reasons. It is read on the same clock — a 42-bar thrust with a fortnight
    of rest hanging off it describes weeks, and weeks are the WORKING behind an
@@ -17703,7 +17703,7 @@ function closeDrill(){
 <script>
 
 /* ══════════════════════════════════════════════════════════════════════════
-   GLOBALSCREENER v16 — US/ETF CLASSIFICATION / VERIFIED CLASSIFICATION / STRONG-STOCK MONEY-FLOW GUARD
+   GLOBALSCREENER v16.1 — US/ETF CLASSIFICATION / VERIFIED CLASSIFICATION / STRONG-STOCK MONEY-FLOW GUARD
    Uses only the existing Google-Sheets universe + computed SD rows.
    No additional price-data source, API or request is introduced.
    Classification is deliberately labelled RESEARCH TAXONOMY where security-level
@@ -17913,7 +17913,7 @@ function rotV4MatchesParent(def,level,parentLevel,parentName){
 function rotV4State(rows,all){
   const valid=rows.filter(x=>x.rs!=null && x.rsChg!=null);
   const universe=(all||[]).filter(x=>x.rs!=null && x.rsChg!=null);
-  if(valid.length<2 || universe.length<3) return '—';
+  if(valid.length<1 || universe.length<3) return '—';
   const rs=median(valid.map(x=>x.rs)), ch=median(valid.map(x=>x.rsChg));
   const rsMed=median(universe.map(x=>x.rs)), chMed=median(universe.map(x=>x.rsChg));
   if(rs>=rsMed && ch>=chMed) return 'Powering Up';
