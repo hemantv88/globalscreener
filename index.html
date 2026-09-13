@@ -18051,7 +18051,7 @@ function rotV4Crumb(level,parentLevel,parentName){
 }
 
 const ROT_SORT={rotation:{key:null,dir:-1},stocks:{key:null,dir:-1},money:{key:null,dir:-1},changesGroups:{key:null,dir:-1},changesStocks:{key:null,dir:-1}};
-function rotMarketLabel(m){return m==='usa'?['🇺🇸','US','usa']:m==='etf'?['📊','ETF','etf']:['🇮🇳','India','india'];}
+function rotMarketLabel(m){return m==='us'||m==='usa'?['🇺🇸','US','usa']:m==='etf'?['📊','ETF','etf']:['🇮🇳','India','india'];}
 function setRotMarketBadge(id,m){const el=$(id);if(!el)return;const [ico,label,cls]=rotMarketLabel(m);el.className='rot-market-badge '+cls;el.textContent=ico+' '+label;}
 function rotCmpVal(v){
   if(v==null||v==='—'||v==='') return {n:-Infinity,s:''};
