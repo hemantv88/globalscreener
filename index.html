@@ -18084,9 +18084,23 @@ function rotSortHead(label,key,scope,tip=''){
 }
 function rotDefaultRotationSort(rows){
   const rank={'Powering Up':4,'Turning Up':3,'Cooling':2,'Falling Back':1,'—':0};
-  return rows.slice().sort((a,b)=>(rank[b.rotation]||0)-(rank[a.rotation]||0)||(b.flowScore??-999)-(a.flowScore??-999)||(b.primePct??-999)-(a.primePct??-999)||(b.earlyPct??-999)-(a.earlyPct??-999)||(b.rsChg??-999)-(a.rsChg??-999)||(b.rs??-999)-(a.rs??-999));
+  return rows.slice().sort((a,b)=>(rank[b.rotation]||0)-(rank[a.rotation]||0)||
+    (b.flowScore??-999)-(a.flowScore??-999)||
+    (b.leadershipPct??-999)-(a.leadershipPct??-999)||
+    (b.accel??-999)-(a.accel??-999)||
+    (b.earlyPct??-999)-(a.earlyPct??-999)||
+    (b.primePct??-999)-(a.primePct??-999)||
+    (b.rsChg??-999)-(a.rsChg??-999)||
+    (b.rs??-999)-(a.rs??-999));
 }
-function rotDefaultStockSort(rows){return rows.slice().sort((a,b)=>rotV5StateRank(b.state)-rotV5StateRank(a.state)||(b.e.score??-999)-(a.e.score??-999)||(b.rsChg??-999)-(a.rsChg??-999)||(b.d.rs55??-999)-(a.d.rs55??-999));}
+function rotDefaultStockSort(rows){
+  return rows.slice().sort((a,b)=>rotLeaderScore(b)-rotLeaderScore(a)||
+    (b.contextScore??-999)-(a.contextScore??-999)||
+    (b.e.score??-999)-(a.e.score??-999)||
+    (b.rsChg??-999)-(a.rsChg??-999)||
+    (a.e.triggerDist??999)-(b.e.triggerDist??999)||
+    (b.d.rs55??-999)-(a.d.rs55??-999));
+}
 function rotDefaultMoneySort(rows){return rows.slice().sort((a,b)=>mfStateRank(b.state)-mfStateRank(a.state)||(b.newlyStrong-a.newlyStrong)||(b.e.score??-999)-(a.e.score??-999)||(b.rsChg??-999)-(a.rsChg??-999)||(b.d.rs55??-999)-(a.d.rs55??-999)||(a.e.triggerDist??999)-(b.e.triggerDist??999));}
 function rotNumCell(v,dec=1,unit=''){return v==null?'<span class="sb-pill sb-zero">—</span>':(isFinite(v)?Number(v).toFixed(dec)+unit:escHtml(String(v)));}
 function rotSignedPill(v,dec=1){if(v==null)return '<span class="sb-pill sb-zero">—</span>';const txt=(v>=0?'+':'')+Number(v).toFixed(dec);return `<span class="sb-pill ${v>=0?'sb-hi':'sb-lo'}">${txt}</span>`;}
@@ -18115,7 +18129,7 @@ function rotV4GoStocks(){
   else if(level==='industry' && window.ROT_V4_INDUSTRY_NAME) ctx={level:'industry',name:window.ROT_V4_INDUSTRY_NAME,industry:null};
   window.ROT_V4_STOCK_CONTEXT=ctx;
   window.ROT_V4_LEVEL='stocks';
-  window.ROT_V5_STOCK_FILTER='top';
+  window.ROT_V5_STOCK_FILTER='leader';
   ROT_SORT.stocks={key:null,dir:-1};
   renderRotationV4();
 }
@@ -18168,10 +18182,11 @@ function rotV5StockRows(market){
     x.contextState=x.contextScore==null?'—':x.contextScore>=70?'Powering Up':x.contextScore>=55?'Turning Up':x.contextScore>=45?'Cooling':'Falling Back';
     x.contextTier=x.contextScore==null?'—':x.contextScore>=75?'A':x.contextScore>=60?'B':x.contextScore>=45?'C':'D';
     x.contextPriority=(x.contextScore??0)+(x.contextState==='Powering Up'?10:x.contextState==='Turning Up'?6:x.contextState==='Cooling'?-3:-8);
+    x.leaderScore=rotLeaderScore(x);
   });
   const st=ROT_SORT.stocks;
   if(st.key) return rotSortRows(rows,st.key,st.dir);
-  return rows.slice().sort((a,b)=>b.priority-a.priority||b.contextPriority-a.contextPriority||b.rsStrong-a.rsStrong||b.near52-a.near52||b.quality-a.quality||(a.e.triggerDist??999)-(b.e.triggerDist??999)||(b.e.score??-999)-(a.e.score??-999)||(b.rs55??-999)-(a.rs55??-999)||(b.rsChg??-999)-(a.rsChg??-999));
+  return rotDefaultStockSort(rows);
 }
 function rotContextPill(v,state){
   if(v==null)return '<span class="sb-pill sb-zero">—</span>';
@@ -18189,15 +18204,33 @@ function rotV5StockCrumb(){
   const base=parts.map(([l,fn])=>`<button class="rot-crumb" onclick="${fn}">${escHtml(l)}</button><span class="rot-arrow">›</span>`).join('');
   return base+'<button class="rot-crumb active" title="Current stock list for the selected hierarchy">Stocks</button>';
 }
+function rotLeaderPresetMatch(x,k){
+  const ctx=x.contextScore!=null && x.contextScore>=55 && (x.contextState==='Powering Up'||x.contextState==='Turning Up');
+  const rsUp=x.rsChg!=null && x.rsChg>0;
+  const above50=numOk(x.d.pct50e)&&x.d.pct50e>=0;
+  const near=x.near52;
+  const early=x.e.score!=null;
+  const pre=x.state==='prime'||x.state==='watch';
+  const trigger=x.e.triggerDist;
+  const bo=x.d.boAge!=null&&isFinite(x.d.boAge)&&x.d.boAge<=10&&x.d.boGain!=null&&x.d.boGain>=0;
+  if(k==='leader') return ctx && pre && x.e.score>=70 && rsUp && near && trigger!=null && trigger<=15;
+  if(k==='emerging') return ctx && early && x.e.score>=60 && rsUp && near && trigger!=null && trigger<=20;
+  if(k==='strongleader') return x.contextScore!=null&&x.contextScore>=65&&x.d.rs55!=null&&x.d.rs55>=20&&above50&&near&&(!x.rsChg||x.rsChg>=0)&&((x.e.score!=null&&x.e.score>=60)||numOk(x.d.pct20e)&&x.d.pct20e>=0||bo);
+  if(k==='breakleader') return x.contextScore!=null&&x.contextScore>=55&&(x.contextState==='Powering Up'||x.contextState==='Turning Up')&&bo&&(!x.rsChg||x.rsChg>=0);
+  return false;
+}
+function rotLeaderPresetTitle(k){
+  return ({leader:'Best early-leader hunt: strong/improving hierarchy context + Prime/Watch + Early ≥70 + improving RS + within 30% of 52W high + trigger ≤15%',emerging:'Emerging leaders: strong/improving hierarchy context + Early ≥60 + improving RS + within 30% of 52W high + trigger ≤20%',strongleader:'Established leaders: context ≥65 + RS55 ≥20 + above 50EMA + within 30% of 52W high + constructive structure',breakleader:'Fresh breakouts: strong/improving hierarchy context + positive breakout in the last 10 bars + non-negative RS direction'}[k]||'');
+}
 function renderRotationV5Stocks(m){
   setRotMarketBadge('rotationV4MarketBadge',m);
   const rows=rotV5StockRows(m);
   const stateFilter=window.ROT_V5_STOCK_FILTER||'all';
-  const filtered=rows.filter(x=>stateFilter==='all'||(stateFilter==='top'&&x.priority>=4)||(stateFilter==='prime'&&x.state==='prime')||(stateFilter==='early'&&x.e.score>=70)||(stateFilter==='bo'&&(x.d.boAge!=null&&x.d.boAge<=10))||(stateFilter==='near52'&&x.near52)||(stateFilter==='strongrs'&&x.rsStrong));
-  $('rotationV4Note').textContent=`Stocks • ${filtered.length} shown • default order: near-breakout + strong RS + within 30% of 52W high, then Early score. Green/blue rows are stronger opportunities; amber is developing; red is weaker. Click any column header to sort; click again to reverse.`;
-  $('rotationV4Crumb').innerHTML=rotV5StockCrumb()+'<div class="rot-stock-filters">'+[['all','All'],['top','Top Opportunities'],['prime','Prime'],['early','Early ≥70'],['bo','Recent BO'],['near52','Within 30% of 52W High'],['strongrs','Strong RS']].map(([k,l])=>`<button class="rot-filter ${stateFilter===k?'active':''}" title="${k==='top'?'Prime/Watch near trigger, strong RS and near 52-week high':k==='bo'?'Breakout detected within the last 10 trading bars':k==='prime'?'Prime Early state':k==='early'?'Early score of at least 70':k==='near52'?'At or within 30% below the available 52-week high':k==='strongrs'?'Strong RS = RS55 ≥20 + above 50EMA + within 30% of 52W high + constructive setup/breakout structure':'Show all stocks in the selected hierarchy'}" onclick="window.ROT_V5_STOCK_FILTER='${k}';ROT_SORT.stocks={key:null,dir:-1};renderRotationV4()">${l}</button>`).join('')+'</div>';
-  $('rotationV4Head').innerHTML='<tr>'+rotSortHead('Stock','name','stocks','Stock/company name')+rotSortHead('RS55','rs55','stocks','55-day relative strength; green = strong, blue = positive, red = weak')+rotSortHead('RS Δ','rsChg','stocks','Relative-strength direction over the rotation lookback; positive is improving')+rotSortHead('Context','contextScore','stocks','Macro + Sector + Industry leadership context score; display/ranking only')+rotSortHead('Context State','contextState','stocks','Dominant hierarchy rotation context; does not alter Setup/Early/MRS')+rotSortHead('Early','score','stocks','Early Breakout score, 0–100')+rotSortHead('Trigger','triggerDist','stocks','Distance to the Early breakout trigger; lower is closer')+rotSortHead('52W High%','h52','stocks','Distance below the available 52-week high; within 30% is preferred')+rotSortHead('State','state','stocks','Early state: Prime, Watch, Accumulation, Breakout, Developing')+rotSortHead('BO Gain','boGain','stocks','Gain since the latest detected breakout')+rotSortHead('BO Age','boAge','stocks','Trading bars since latest breakout')+rotSortHead('BO Date','boDate','stocks','Date of latest detected breakout')+'</tr>';
-  $('rotationV4Body').innerHTML=filtered.length?filtered.map(x=>`<tr class="rot-v4-row stock-${x.state}" onclick="openDrill('${escAttr(x.def.s)}')"><td><b>${escHtml(x.def.d||x.def.s)}</b><br><span style="font-size:9px;color:var(--muted)">${escHtml(x.def.s)}</span></td><td>${rotV5RsPill(x.d.rs55)}</td><td>${rotSignedPill(x.rsChg,1)}</td><td>${rotContextPill(x.contextScore,x.contextState)}</td><td><span class="rot-pill ${rotV4Cls(x.contextState)}">${escHtml(x.contextState)}</span></td><td><span class="sb-pill ${x.e.score>=80?'sb-hi':x.e.score>=70?'sb-mid':'sb-lo'}">${x.e.score==null?'—':x.e.score}</span></td><td>${rotV5TriggerPill(x.e.triggerDist)}</td><td>${rotV5Pct52Pill(x.h52)}</td><td><span class="rot-pill ${rotV5StateCls(x.state)}">${rotV5EarlyLabel(x.state)}</span></td><td>${x.d.boGain==null?'—':rotSignedPill(x.d.boGain,0)}</td><td>${x.d.boAge==null?'—':x.d.boAge+'d'}</td><td class="bo-date">${boDateC(x.d.boDate)||'—'}</td></tr>`).join(''):'<tr><td colspan="10" class="rot-v4-empty">No stocks match this filter/context.</td></tr>';
+  const filtered=rows.filter(x=>stateFilter==='all'||(stateFilter==='top'&&x.priority>=4)||(stateFilter==='leader'&&rotLeaderPresetMatch(x,'leader'))||(stateFilter==='emerging'&&rotLeaderPresetMatch(x,'emerging'))||(stateFilter==='strongleader'&&rotLeaderPresetMatch(x,'strongleader'))||(stateFilter==='breakleader'&&rotLeaderPresetMatch(x,'breakleader'))||(stateFilter==='prime'&&x.state==='prime')||(stateFilter==='early'&&x.e.score>=70)||(stateFilter==='bo'&&(x.d.boAge!=null&&x.d.boAge<=10))||(stateFilter==='near52'&&x.near52)||(stateFilter==='strongrs'&&x.rsStrong));
+  $('rotationV4Note').textContent=`Stocks • ${filtered.length} shown • Leader Hunt is the default early-winner screen: strong/improving hierarchy context + constructive RS + Early setup + proximity to trigger. Use Emerging for earlier/lower-score candidates, Strong Leaders for established strength, and Breakout Leaders after the move starts. These are research screens, not automatic buy signals.`;
+  $('rotationV4Crumb').innerHTML=rotV5StockCrumb()+'<div class="rot-stock-filters">'+[['leader','★ Leader Hunt'],['emerging','Emerging'],['strongleader','Strong Leaders'],['breakleader','Breakout Leaders'],['top','Top Opportunities'],['all','All'],['prime','Prime'],['early','Early ≥70'],['bo','Recent BO'],['near52','Within 30% of 52W High'],['strongrs','Strong RS']].map(([k,l])=>`<button class="rot-filter ${stateFilter===k?'active':''}" title="${['leader','emerging','strongleader','breakleader'].includes(k)?rotLeaderPresetTitle(k):k==='top'?'Prime/Watch near trigger, strong RS and near 52-week high':k==='bo'?'Breakout detected within the last 10 trading bars':k==='prime'?'Prime Early state':k==='early'?'Early score of at least 70':k==='near52'?'At or within 30% below the available 52-week high':k==='strongrs'?'Strong RS = RS55 ≥20 + above 50EMA + within 30% of 52W high + constructive setup/breakout structure':'Show all stocks in the selected hierarchy'}" onclick="window.ROT_V5_STOCK_FILTER='${k}';ROT_SORT.stocks={key:null,dir:-1};renderRotationV4()">${l}</button>`).join('')+'</div>';
+  $('rotationV4Head').innerHTML='<tr>'+rotSortHead('Stock','name','stocks','Stock/company name')+rotSortHead('Leader','leaderScore','stocks','Composite early-leader ranking: hierarchy context + Early + RS direction/strength + trigger proximity + 52W position; ranking only')+rotSortHead('RS55','rs55','stocks','55-day relative strength; green = strong, blue = positive, red = weak')+rotSortHead('RS Δ','rsChg','stocks','Relative-strength direction over the rotation lookback; positive is improving')+rotSortHead('Context','contextScore','stocks','Macro + Sector + Industry leadership context score; display/ranking only')+rotSortHead('Context State','contextState','stocks','Dominant hierarchy rotation context; does not alter Setup/Early/MRS')+rotSortHead('Early','score','stocks','Early Breakout score, 0–100')+rotSortHead('Trigger','triggerDist','stocks','Distance to the Early breakout trigger; lower is closer')+rotSortHead('52W High%','h52','stocks','Distance below the available 52-week high; within 30% is preferred')+rotSortHead('State','state','stocks','Early state: Prime, Watch, Accumulation, Breakout, Developing')+rotSortHead('BO Gain','boGain','stocks','Gain since the latest detected breakout')+rotSortHead('BO Age','boAge','stocks','Trading bars since latest breakout')+rotSortHead('BO Date','boDate','stocks','Date of latest detected breakout')+'</tr>';
+  $('rotationV4Body').innerHTML=filtered.length?filtered.map(x=>`<tr class="rot-v4-row stock-${x.state}" onclick="openDrill('${escAttr(x.def.s)}')"><td><b>${escHtml(x.def.d||x.def.s)}</b><br><span style="font-size:9px;color:var(--muted)">${escHtml(x.def.s)}</span></td><td><span class="sb-pill ${x.leaderScore>=75?'sb-hi':x.leaderScore>=60?'sb-mid':x.leaderScore>=45?'sb-blu':'sb-lo'}">${x.leaderScore.toFixed(0)}</span></td><td>${rotV5RsPill(x.d.rs55)}</td><td>${rotSignedPill(x.rsChg,1)}</td><td>${rotContextPill(x.contextScore,x.contextState)}</td><td><span class="rot-pill ${rotV4Cls(x.contextState)}">${escHtml(x.contextState)}</span></td><td><span class="sb-pill ${x.e.score>=80?'sb-hi':x.e.score>=70?'sb-mid':'sb-lo'}">${x.e.score==null?'—':x.e.score}</span></td><td>${rotV5TriggerPill(x.e.triggerDist)}</td><td>${rotV5Pct52Pill(x.h52)}</td><td><span class="rot-pill ${rotV5StateCls(x.state)}">${rotV5EarlyLabel(x.state)}</span></td><td>${x.d.boGain==null?'—':rotSignedPill(x.d.boGain,0)}</td><td>${x.d.boAge==null?'—':x.d.boAge+'d'}</td><td class="bo-date">${boDateC(x.d.boDate)||'—'}</td></tr>`).join(''):'<tr><td colspan="20" class="rot-v4-empty">No stocks match this filter/context.</td></tr>';
 }
 
 function renderRotationV4(){
@@ -18220,10 +18253,10 @@ function rotationV4Drill(name,level,market){
   const macro=window.ROT_V4_MACRO_NAME||null, sector=window.ROT_V4_SECTOR_NAME||null;
   if(level==='macro') return rotV4SetLevel('sector','macro',name,name,null),renderRotationV4();
   if(level==='sector') return rotV4SetLevel('industry','sector',name,macro,name),renderRotationV4();
-  if(level==='industry'){ window.ROT_V4_INDUSTRY_NAME=name; window.ROT_V4_STOCK_CONTEXT={level:'industry',name,industry:null}; window.ROT_V4_LEVEL='stocks'; window.ROT_V5_STOCK_FILTER='top'; ROT_SORT.stocks={key:null,dir:-1}; return renderRotationV4(); }
+  if(level==='industry'){ window.ROT_V4_INDUSTRY_NAME=name; window.ROT_V4_STOCK_CONTEXT={level:'industry',name,industry:null}; window.ROT_V4_LEVEL='stocks'; window.ROT_V5_STOCK_FILTER='leader'; ROT_SORT.stocks={key:null,dir:-1}; return renderRotationV4(); }
   window.ROT_V4_STOCK_CONTEXT={level:'industry',name,industry:null};
   window.ROT_V4_LEVEL='stocks';
-  window.ROT_V5_STOCK_FILTER='top';
+  window.ROT_V5_STOCK_FILTER='leader';
   ROT_SORT.stocks={key:null,dir:-1};
   renderRotationV4();
 }
