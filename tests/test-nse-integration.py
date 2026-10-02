@@ -1,8 +1,5 @@
-import io
-import os
 import tempfile
 import re
-import zipfile
 from unittest import mock
 from pathlib import Path
 import sys
@@ -44,7 +41,6 @@ with tempfile.TemporaryDirectory() as td:
                 return responses[key]
             if "ind_close_all_" in url:
                 key = re.search(r"ind_close_all_(\d{8})\.csv$", url).group(1)
-                iso = f"{key[4:6]}-{key[2:4]}-{key[:2]}" if False else f"{key[4:6]}-{key[2:4]}-{key[:4]}"
                 # URL date is DDMMYYYY.
                 iso = f"{key[4:8]}-{key[2:4]}-{key[:2]}"
                 return index_csv(iso)
