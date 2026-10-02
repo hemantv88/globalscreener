@@ -32,7 +32,9 @@ const raw = {
   securities: [
     {ticker: 'AAA', isin: 'INEAAA000001', series: 'EQ', daily: makeBars(50, 0.15)},
     {ticker: 'BBB', isin: 'INEBBB000002', series: 'EQ', daily: makeBars(75, 0.1)},
-    {ticker: 'CCC', isin: 'INECCC000003', series: 'EQ', daily: makeBars(120, -0.05)}
+    {ticker: 'CCC', isin: 'INECCC000003', series: 'EQ', daily: makeBars(120, -0.05)},
+    {ticker: 'DDD_RE', isin: 'INEDDD000004', series: 'BE', daily: makeBars(25, 0.02)},
+    {ticker: 'EEE', isin: 'INEEEE000005', series: 'EQ', daily: makeBars(90, 0.05).slice(0, 299)}
   ],
   benchmarks: {
     'NIFTY 500': {name: 'NIFTY 500', daily: benchmarkDaily},
@@ -91,7 +93,7 @@ try {
   const report = JSON.parse(await fs.readFile(path.join(tmp, 'test-output', 'india-validation-report.json'), 'utf8'));
   assert.equal(report.ok, true);
   assert.equal(report.history.median_bars, 300);
-  assert.equal(report.history.securities_ge_300, 3);
+  assert.equal(report.history.securities_ge_300, 4);
   assert.equal(report.integrity.duplicate_dates, 0);
   assert.equal(report.integrity.invalid_ohlc, 0);
   assert.equal(report.integrity.negative_volume, 0);
