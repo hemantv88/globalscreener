@@ -1,0 +1,16 @@
+# Initial US validation set from the shared kit's S&P 500-oriented universe.
+AAPL
+MSFT
+NVDA
+AMZN
+META
+GOOGL
+TSLA
+AVGO
+JPM
+V
+JNJ
+WMT
+XOM
+SPY
+QQQ

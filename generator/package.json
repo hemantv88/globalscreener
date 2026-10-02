@@ -1,0 +1,9 @@
+{
+  "name":"globalscreener-data-pipeline-phase1-1",
+  "private":true,
+  "type":"module",
+  "scripts":{
+    "check":"node --check src/core.mjs && node --check src/build-india.mjs && node --check src/build-snapshot.mjs && node --check src/validate.mjs && python3 -m py_compile data_kit/common.py data_kit/nse.py data_kit/us.py",
+    "test":"node ../tests/test-core.mjs && python3 ../tests/test-nse-kit.py"
+  }
+}

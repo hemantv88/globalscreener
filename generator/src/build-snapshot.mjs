@@ -1,0 +1,15 @@
+import fs from 'node:fs/promises';
+import path from 'node:path';
+import { buildDerived, compactStock } from './core.mjs';
+const ROOT=path.resolve(process.cwd(),'..');
+const raw=JSON.parse(await fs.readFile(path.join(ROOT,'state','IN.raw.json'),'utf8'));
+const benchmark=raw.benchmarks['NIFTY 500']||raw.benchmarks['NIFTY 50'];
+const benchmarkForCalc=benchmark?{daily:benchmark.daily}:null;
+const securities=raw.securities.map(s=>compactStock(s,benchmarkForCalc));
+const latest=securities.map(s=>s.derived.updated).filter(Boolean).sort().at(-1)||raw.end_date;
+const snapshot={version:'gsde-data-v2',generated:new Date().toISOString(),market:'IN',latest_trade_date:latest,universe:securities.length,benchmarks:Object.keys(raw.benchmarks),benchmark_for_rs:benchmark?.name||null,adjustment_summary:{symbols_with_adjustments:Object.keys(raw.adjustment_report||{}).length,applied:Object.values(raw.adjustment_report||{}).reduce((n,x)=>n+(x.applied||[]).length,0),not_confirmed:Object.values(raw.adjustment_report||{}).reduce((n,x)=>n+(x.not_confirmed||[]).length,0)},securities};
+await fs.mkdir(path.join(ROOT,'public','data'),{recursive:true});
+await fs.writeFile(path.join(ROOT,'public','data','IN.json'),JSON.stringify(snapshot));
+await fs.writeFile(path.join(ROOT,'public','data','manifest.json'),JSON.stringify({version:'gsde-data-v2',generated:new Date().toISOString(),markets:{IN:true,US:false,ETF:false},source:'NSE UDiFF + NSE Full Bhavcopy enrichment + NSE corporate actions/index files'}));
+await fs.writeFile(path.join(ROOT,'test-output','adjustments-IN.json'),JSON.stringify(raw.adjustment_report,null,2));
+console.log(JSON.stringify({market:'IN',universe:snapshot.universe,latest_trade_date:latest,benchmarks:snapshot.benchmarks,benchmark_for_rs:snapshot.benchmark_for_rs,adjustment_summary:snapshot.adjustment_summary,bytes:JSON.stringify(snapshot).length},null,2));
