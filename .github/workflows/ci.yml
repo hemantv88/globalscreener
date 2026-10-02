@@ -3,9 +3,11 @@ name: GlobalScreener pipeline CI
 on:
   push:
     branches:
+      - main
       - data-pipeline-v2-2
   pull_request:
     branches:
+      - main
       - data-pipeline-v2-2
   workflow_dispatch:
 
