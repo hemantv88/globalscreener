@@ -38,6 +38,7 @@ with tempfile.TemporaryDirectory() as td:
         def fake_get(url, tries=3, timeout=30):
             if "sec_bhavdata_full_" in url:
                 key = re.search(r"sec_bhavdata_full_(\d{8})\.csv$", url).group(1)
+                key = f"{key[4:8]}{key[2:4]}{key[:2]}"  # DDMMYYYY -> YYYYMMDD
                 return responses[key]
             if "ind_close_all_" in url:
                 key = re.search(r"ind_close_all_(\d{8})\.csv$", url).group(1)
