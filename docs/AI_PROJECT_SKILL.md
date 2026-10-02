@@ -21,8 +21,9 @@ The browser should receive only the data/features required for the requested vie
 - Phase 1 stable PR #1 remains a draft/reference point.
 - Existing main index.html is the proven screener UI and has intentionally not been rewritten as part of the Phase 1 data-pipeline work.
 
-Latest development commit: ee9a968f345f06f937c5594d75c401c5d0333c4c.
-Latest CI run on this branch succeeded, including the full Node/Python syntax + fixture suite.
+Pre-skill checkpoint commit: ee9a968f345f06f937c5594d75c401c5d0333c4c.
+Skill/playbook commits: 6e0838e32597f4194f9e487910a270b10a607ffc and c48b6e93a04468439f843e9d94380b7c15a1c8ee.
+Latest completed CI before the skill commits: run #77 succeeded with the full Node/Python syntax + fixture suite. CI for the current skill update is tracked separately.
 
 ## 3. Existing screener contract — do not regress
 
