@@ -1,0 +1,9 @@
+PASS criteria for Phase 1.1
+- UDiFF parser fixture
+- NSE series selection fixture
+- corporate-action adjustment fixture
+- benchmark date alignment
+- JavaScript syntax
+- Python syntax
+
+Live NSE download is intentionally not run in this container because external market-data network access is unavailable here. The GitHub Action is the live acquisition test.

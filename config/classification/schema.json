@@ -1,0 +1,84 @@
+{
+  "version": "gs-classification-contract-v1",
+  "market_adapters": {
+    "IN": {
+      "levels": [
+        {
+          "field": "macro_economic_sector",
+          "codeField": "macro_code"
+        },
+        {
+          "field": "sector",
+          "codeField": "sector_code"
+        },
+        {
+          "field": "industry",
+          "codeField": "industry_code"
+        },
+        {
+          "field": "basic_industry",
+          "codeField": "basic_industry_code"
+        }
+      ],
+      "preferred_source": "NSE_Indices",
+      "requires_verified_mapping": true
+    },
+    "US": {
+      "levels": [
+        "sector",
+        "industry"
+      ],
+      "preferred_source": "US_metadata_adapter"
+    },
+    "ETF": {
+      "levels": [
+        "exposure_group",
+        "theme"
+      ],
+      "preferred_source": "ETF_exposure_adapter"
+    }
+  },
+  "mapping_fields": [
+    "market",
+    "sym",
+    "isin",
+    "classification_source",
+    "classification_version",
+    "macro_economic_sector",
+    "macro_code",
+    "sector",
+    "sector_code",
+    "industry",
+    "industry_code",
+    "basic_industry",
+    "basic_industry_code",
+    "mapping_status",
+    "effective_from",
+    "effective_to",
+    "verified_on",
+    "evidence_ref"
+  ],
+  "mapping_status": [
+    "verified",
+    "inferred",
+    "unmapped",
+    "historical"
+  ],
+  "policy": {
+    "production_requires": "verified",
+    "preserve_exact_narrow_mappings": true,
+    "never_guess_missing_levels": true,
+    "keep_classification_separate_from_instrument_eligibility": true
+  },
+  "nse_reference": {
+    "structure": "4-tier",
+    "counts": {
+      "macro_economic_sectors": 12,
+      "sectors": 22,
+      "industries": 59,
+      "basic_industries": 197
+    },
+    "source": "NSE Indices Industry Classification Structure, July 2023",
+    "source_url": "https://www.niftyindices.com/docs/default-source/default-document-library/nse-indices_industry-classification-structure-2023-07.pdf"
+  }
+}

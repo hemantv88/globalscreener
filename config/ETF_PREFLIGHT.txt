@@ -1,0 +1,5 @@
+# ETF live preflight universe
+SPY
+QQQ
+GLD
+SLV

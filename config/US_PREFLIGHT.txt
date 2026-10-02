@@ -1,0 +1,6 @@
+# Small live preflight universe
+AAPL
+MSFT
+NVDA
+SPY
+QQQ
