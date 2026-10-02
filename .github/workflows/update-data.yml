@@ -1,9 +1,6 @@
 name: GlobalScreener Phase 1.1 India validation (no R2)
 
 on:
-  push:
-    branches:
-      - data-pipeline-v2-2
   workflow_dispatch:
     inputs:
       target_sessions:
