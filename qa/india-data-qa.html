@@ -1,0 +1,201 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>GlobalScreener — India Data QA</title>
+<style>
+:root{font-family:Inter,system-ui,-apple-system,Segoe UI,Arial,sans-serif;color:#171717;background:#f5f6f8}
+*{box-sizing:border-box} body{margin:0} header{padding:20px 24px;background:#111827;color:#fff}
+h1{margin:0 0 6px;font-size:24px} .sub{opacity:.8;font-size:13px}
+main{max-width:1400px;margin:0 auto;padding:20px}
+.panel{background:#fff;border:1px solid #dfe3e8;border-radius:12px;padding:16px;margin-bottom:16px;box-shadow:0 1px 2px rgba(0,0,0,.03)}
+.row{display:flex;gap:12px;flex-wrap:wrap;align-items:center}
+button,input{font:inherit} input[type=file]{max-width:100%} input[type=text]{padding:9px 10px;border:1px solid #cfd5dc;border-radius:8px;min-width:240px}
+button{padding:9px 12px;border:1px solid #cfd5dc;border-radius:8px;background:#fff;cursor:pointer}
+button:hover{background:#f3f4f6}
+.grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+.card{border:1px solid #e1e5ea;border-radius:10px;padding:12px}.label{font-size:12px;color:#667085}.value{font-size:22px;font-weight:700;margin-top:4px}
+.status{display:inline-flex;align-items:center;padding:5px 9px;border-radius:999px;font-size:12px;font-weight:700}
+.ok{background:#e7f6ec}.warn{background:#fff5db}.bad{background:#fde8e8}
+table{width:100%;border-collapse:collapse;font-size:12px}th,td{padding:8px;border-bottom:1px solid #edf0f2;text-align:right;white-space:nowrap}th:first-child,td:first-child{text-align:left}
+.scroll{overflow:auto;max-height:480px;border:1px solid #edf0f2;border-radius:8px}
+.small{font-size:12px;color:#667085}.mono{font-family:ui-monospace,SFMono-Regular,Menlo,monospace}
+.error{color:#b42318}.success{color:#067647}.notice{padding:10px;border-radius:8px;background:#f2f4f7;font-size:13px}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+@media(max-width:900px){.grid{grid-template-columns:repeat(2,minmax(0,1fr))}.two{grid-template-columns:1fr}}
+@media(max-width:600px){main{padding:12px}.grid{grid-template-columns:1fr}h1{font-size:20px}}
+</style>
+</head>
+<body>
+<header>
+  <h1>GlobalScreener — India Data QA</h1>
+  <div class="sub">Load the Phase 1.1 artifact files locally and validate the market-data snapshot without changing the main screener.</div>
+</header>
+
+<main>
+  <section class="panel">
+    <div class="row">
+      <input id="files" type="file" multiple accept=".json,.JSON">
+      <button id="clear">Clear</button>
+      <span id="fileStatus" class="small">Select IN.json, india-validation-report.json and/or adjustments-IN.json from the downloaded artifact.</span>
+    </div>
+    <div class="notice" style="margin-top:12px">
+      Recommended: extract the GitHub Actions artifact and select <b>public/data/IN.json</b> plus <b>test-output/india-validation-report.json</b>.
+      The QA page works entirely in your browser; no data is uploaded anywhere.
+    </div>
+  </section>
+
+  <section class="grid" id="cards"></section>
+
+  <section class="panel">
+    <div class="row">
+      <input id="search" type="text" placeholder="Search ticker, e.g. RELIANCE">
+      <span id="selected" class="status warn">No stock selected</span>
+    </div>
+    <div id="stockDetail" style="margin-top:12px"></div>
+  </section>
+
+  <section class="two">
+    <section class="panel">
+      <h3 style="margin-top:0">Dataset integrity</h3>
+      <div id="integrity"></div>
+    </section>
+    <section class="panel">
+      <h3 style="margin-top:0">Corporate actions</h3>
+      <div id="actions"></div>
+    </section>
+  </section>
+
+  <section class="panel">
+    <h3 style="margin-top:0">Stock universe</h3>
+    <div class="scroll"><table id="stockTable"><thead></thead><tbody></tbody></table></div>
+  </section>
+</main>
+
+<script>
+const state={snapshot:null,report:null,actions:null,stocks:[],selected:null};
+const $=id=>document.getElementById(id);
+const esc=s=>String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+const fmt=(n,d=2)=>Number.isFinite(Number(n))?Number(n).toLocaleString(undefined,{maximumFractionDigits:d}):'—';
+const pct=(n,d=2)=>Number.isFinite(Number(n))?fmt(n,d)+'%':'—';
+
+function ema(values,len){
+  if(values.length<len)return null;
+  let s=0; for(let i=0;i<len;i++)s+=Number(values[i]);
+  let e=s/len, k=2/(len+1);
+  for(let i=len;i<values.length;i++)e=Number(values[i])*k+e*(1-k);
+  return e;
+}
+function recomputeChecks(stock){
+  const c=(stock.c||[]).map(Number).filter(Number.isFinite);
+  const v=(stock.v||[]).map(Number);
+  const em10=ema(c,10),em20=ema(c,20),em50=ema(c,50);
+  const h52=c.length?Math.max(...c.slice(-252)):null;
+  return {
+    ema10:em10, ema20:em20, ema50:em50, h52,
+    duplicateDates:0
+  };
+}
+function renderCards(){
+  const s=state.snapshot,r=state.report;
+  if(!s){$('cards').innerHTML='';return;}
+  const vals=[
+    ['Universe',s.universe],
+    ['Sessions',r?.sessions_on_file ?? '—'],
+    ['Full 300-bar stocks',r?.history?.securities_ge_300 ?? '—'],
+    ['Delivery coverage',r?.coverage?.delivery_pct!=null?fmt(r.coverage.delivery_pct,2)+'%':'—'],
+    ['NIFTY 500 bars',r?.benchmarks?.['NIFTY 500'] ?? '—'],
+    ['NIFTY 50 bars',r?.benchmarks?.['NIFTY 50'] ?? '—'],
+    ['India VIX bars',r?.benchmarks?.['INDIA VIX'] ?? '—'],
+    ['Latest trade date',s.latest_trade_date ?? '—']
+  ];
+  $('cards').innerHTML=vals.map(([l,v])=>'<div class="card"><div class="label">'+esc(l)+'</div><div class="value">'+esc(v)+'</div></div>').join('');
+}
+function renderIntegrity(){
+  const r=state.report;
+  if(!r){$('integrity').innerHTML='<div class="small">Load the validation report to see dataset-level checks.</div>';return;}
+  const checks=[
+    ['Overall',r.ok, r.ok?'PASS':'FAIL'],
+    ['Duplicate dates',r.integrity?.duplicate_dates===0, r.integrity?.duplicate_dates],
+    ['Out of order',r.integrity?.out_of_order_bars===0, r.integrity?.out_of_order_bars],
+    ['Invalid OHLC',r.integrity?.invalid_ohlc===0, r.integrity?.invalid_ohlc],
+    ['Negative volume',r.integrity?.negative_volume===0, r.integrity?.negative_volume],
+    ['Missing close',r.integrity?.missing_close===0, r.integrity?.missing_close],
+    ['Bad delivery %',r.integrity?.bad_delivery_pct===0, r.integrity?.bad_delivery_pct],
+    ['Short benchmark overlap',r.integrity?.securities_with_short_benchmark_overlap===0, r.integrity?.securities_with_short_benchmark_overlap]
+  ];
+  $('integrity').innerHTML=checks.map(([l,ok,v])=>
+    '<div class="row" style="justify-content:space-between;padding:7px 0;border-bottom:1px solid #edf0f2"><span>'+esc(l)+'</span><span class="status '+(ok?'ok':'bad')+'">'+esc(v)+'</span></div>'
+  ).join('');
+}
+function renderActions(){
+  const a=state.actions;
+  if(!a){$('actions').innerHTML='<div class="small">Load adjustments-IN.json or IN.raw.json.</div>';return;}
+  const entries=[];
+  for(const [sym,x] of Object.entries(a)){
+    const ap=(x.applied||[]).length, nc=(x.not_confirmed||[]).length;
+    if(ap||nc)entries.push({sym,ap,nc});
+  }
+  entries.sort((a,b)=>(b.ap+b.nc)-(a.ap+a.nc));
+  $('actions').innerHTML='<div class="small" style="margin-bottom:8px">'+entries.length+' symbols with corporate-action activity.</div>'+
+    '<div class="scroll" style="max-height:340px"><table><thead><tr><th>Symbol</th><th>Applied</th><th>Not confirmed</th></tr></thead><tbody>'+
+    entries.map(x=>'<tr><td>'+esc(x.sym)+'</td><td>'+x.ap+'</td><td>'+x.nc+'</td></tr>').join('')+
+    '</tbody></table></div>';
+}
+function stockMatches(q){
+  q=q.trim().toUpperCase();
+  return !q?state.stocks.slice(0,100):state.stocks.filter(s=>String(s.sym||'').toUpperCase().includes(q)).slice(0,100);
+}
+function renderTable(){
+  const rows=stockMatches($('search').value);
+  $('stockTable').querySelector('thead').innerHTML='<tr><th>Ticker</th><th>Bars</th><th>Latest</th><th>Close</th><th>EMA10</th><th>EMA20</th><th>EMA50</th><th>RS21</th><th>RS55</th><th>RS10W</th><th>Trend</th><th>52W High</th><th>RV20</th></tr>';
+  $('stockTable').querySelector('tbody').innerHTML=rows.map(s=>{
+    const d=s.derived||{};
+    return '<tr data-sym="'+esc(s.sym)+'">'+
+      '<td><button onclick="selectStock('+JSON.stringify(s.sym)+')">'+esc(s.sym)+'</button></td>'+
+      '<td>'+((s.c||[]).length)+'</td><td>'+esc(d.updated||'—')+'</td><td>'+fmt(d.price)+'</td>'+
+      '<td>'+fmt(d.ema10)+'</td><td>'+fmt(d.ema20)+'</td><td>'+fmt(d.ema50)+'</td>'+
+      '<td>'+fmt(d.rs21)+'</td><td>'+fmt(d.rs55)+'</td><td>'+fmt(d.rs10w)+'</td>'+
+      '<td>'+esc(d.trend||'—')+'</td><td>'+fmt(d.h52)+'</td><td>'+fmt(d.rv20)+'</td></tr>';
+  }).join('') || '<tr><td colspan="13" class="small">No matching stocks.</td></tr>';
+}
+function selectStock(sym){
+  const s=state.stocks.find(x=>x.sym===sym); if(!s)return;
+  state.selected=s;
+  $('selected').className='status ok'; $('selected').textContent=s.sym;
+  const d=s.derived||{}, c=s.c||[], v=s.v||[], del=s.del||[];
+  const rec=recomputeChecks(s);
+  const rows=c.map((x,i)=>({date:null,c:Number(x),v:Number(v[i]),del:del[i]}));
+  const tail=rows.slice(-30);
+  // Dates are not stored in compact snapshot; use derived.updated for latest and explain that the compact snapshot omits per-bar dates.
+  $('stockDetail').innerHTML=
+    '<div class="grid">'+
+      [['Close',fmt(d.price)],['EMA10',fmt(d.ema10)],['EMA20',fmt(d.ema20)],['EMA50',fmt(d.ema50)],['RS21',fmt(d.rs21)],['RS55',fmt(d.rs55)],['RS10W',fmt(d.rs10w)],['Trend',esc(d.trend||'—')],['52W High',fmt(d.h52)],['RV20',fmt(d.rv20)],['Bars',c.length],['Updated',esc(d.updated||'—')]].map(([l,v])=>'<div class="card"><div class="label">'+esc(l)+'</div><div class="value" style="font-size:18px">'+v+'</div></div>').join('')+
+    '</div>'+
+    '<div class="notice" style="margin-top:12px">Client-side spot checks: EMA10 '+(Number.isFinite(rec.ema10)?'recomputable':'insufficient history')+', EMA20 '+(Number.isFinite(rec.ema20)?'recomputable':'insufficient history')+', EMA50 '+(Number.isFinite(rec.ema50)?'recomputable':'insufficient history')+'. The compact snapshot intentionally stores price/volume arrays without individual dates, so the QA page does not invent bar dates.</div>'+
+    '<div style="margin-top:12px"><b>Last 10 closes / volume / delivery</b><div class="scroll" style="margin-top:8px"><table><thead><tr><th># from end</th><th>Close</th><th>Volume</th><th>Delivery %</th></tr></thead><tbody>'+
+    tail.slice(-10).map((x,i)=>'<tr><td>'+esc(i-9)+'</td><td>'+fmt(x.c)+'</td><td>'+fmt(x.v,0)+'</td><td>'+pct(x.del)+'</td></tr>').join('')+
+    '</tbody></table></div></div>';
+}
+window.selectStock=selectStock;
+$('search').addEventListener('input',renderTable);
+$('clear').addEventListener('click',()=>{state.snapshot=state.report=state.actions=null;state.stocks=[];state.selected=null;$('fileStatus').textContent='Cleared.';$('cards').innerHTML='';$('integrity').innerHTML='';$('actions').innerHTML='';renderTable();$('stockDetail').innerHTML='';$('selected').className='status warn';$('selected').textContent='No stock selected';});
+
+$('files').addEventListener('change',async e=>{
+  const files=[...e.target.files];
+  for(const f of files){
+    try{
+      const obj=JSON.parse(await f.text());
+      if(obj.market==='IN' && Array.isArray(obj.securities)){state.snapshot=obj;state.stocks=obj.securities;state.stocks.sort((a,b)=>String(a.sym).localeCompare(String(b.sym)));$('fileStatus').textContent='Loaded '+f.name;}
+      else if(obj.market==='IN' && obj.integrity){state.report=obj;$('fileStatus').textContent='Loaded '+f.name;}
+      else if(obj.market==='IN' && obj.version==='gsde-raw-v2.1' && obj.adjustment_report){state.actions=obj.adjustment_report;$('fileStatus').textContent='Loaded '+f.name;}
+      else if(obj.adjustment_summary || Object.values(obj)[0]?.applied){state.actions=obj.adjustment_report||obj;$('fileStatus').textContent='Loaded '+f.name;}
+    }catch(err){$('fileStatus').textContent='Could not read '+f.name+': '+err.message;}
+  }
+  renderCards();renderIntegrity();renderActions();renderTable();
+});
+renderTable();
+</script>
+</body>
+</html>
