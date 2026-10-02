@@ -14,11 +14,7 @@ export function classifyInstrument(stock, marketLatestDate) {
     };
   }
 
-  const seriesClass = series === 'EQ'
-    ? 'LISTED_EQUITY'
-    : series
-      ? 'LISTED_EQUITY_SPECIAL_SERIES'
-      : 'UNKNOWN_SERIES';
+  const seriesClass = series || null;
 
   if (!latest || latest !== marketLatestDate) {
     return {
