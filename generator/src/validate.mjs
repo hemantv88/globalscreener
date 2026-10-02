@@ -1,6 +1,6 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
-const ROOT=path.resolve(process.cwd(),'..');
+const ROOT=process.env.GS_ROOT?path.resolve(process.env.GS_ROOT):path.resolve(process.cwd(),'..');
 const state=JSON.parse(await fs.readFile(path.join(ROOT,'state','IN.raw.json'),'utf8'));
 const snap=JSON.parse(await fs.readFile(path.join(ROOT,'public','data','IN.json'),'utf8'));
 const target=Number(process.env.MIN_TARGET_SESSIONS||300), minUniverse=Number(process.env.MIN_UNIVERSE||1000), minMedian=Number(process.env.MIN_MEDIAN_HISTORY||250), requireBench=true;
