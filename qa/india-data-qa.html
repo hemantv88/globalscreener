@@ -131,7 +131,7 @@ function renderCards(){
   const vals=[
     ['Universe',s.universe],
     ['Sessions',r?.sessions_on_file ?? state.raw?.sessions_on_file ?? '—'],
-    ['Screening universe',s.screening_universe ?? '—'],
+    ['Screening universe',s.screening_universe ?? effectiveEligibilityCounts().current],
     ['Full 300-bar stocks',r?.history?.securities_ge_300 ?? '—'],
     ['Delivery coverage',r?.coverage?.delivery_pct!=null?fmt(r.coverage.delivery_pct,2)+'%':'—'],
     ['NIFTY 500 bars',r?.benchmarks?.['NIFTY 500'] ?? '—'],
@@ -193,11 +193,27 @@ function renderActions(){
     '</tbody></table></div>';
 }
 function isRightsEntitlement(sym){return /(?:[_-]RE\d*)$/i.test(String(sym||''));}
-function latestDateFor(s){return s?.derived?.updated||null;}
+function latestMarketDate(){
+  return state.snapshot?.latest_trade_date ||
+    state.report?.end_date ||
+    state.raw?.end_date ||
+    null;
+}
 function classifyStock(s){
   if(s?.screenEligible===true) return 'current';
+  if(s?.screenEligible===false){
+    if(isRightsEntitlement(s?.sym)||s?.eligibilityReason==='RIGHTS_ENTITLEMENT') return 'special';
+    return 'stale';
+  }
+  // Backward-compatible QA fallback for older compact snapshots that predate
+  // explicit eligibility fields. Never override explicit metadata.
   if(isRightsEntitlement(s?.sym)||s?.eligibilityReason==='RIGHTS_ENTITLEMENT') return 'special';
-  return 'stale';
+  return latestMarketDate() && s?.derived?.updated === latestMarketDate() ? 'current' : 'stale';
+}
+function effectiveEligibilityCounts(){
+  const counts={current:0,special:0,stale:0};
+  for(const s of state.stocks) counts[classifyStock(s)]++;
+  return counts;
 }
 function stockMatches(q){
   q=q.trim().toUpperCase();
@@ -319,7 +335,10 @@ $('files').addEventListener('change',async e=>{
       }
     }catch(err){loaded.push(f.name+' (error)');}
   }
-  $('fileStatus').textContent=loaded.length?'Loaded: '+loaded.join(', '):'No files loaded.';
+  const fallbackNote = state.snapshot && !state.stocks.some(s=>s?.screenEligible!==undefined)
+    ? ' | Older snapshot detected: eligibility derived from latest-date and RE rules'
+    : '';
+  $('fileStatus').textContent=loaded.length?'Loaded: '+loaded.join(', ')+fallbackNote:'No files loaded.';
   renderCards();renderRawInfo();renderIntegrity();renderActions();renderTable();
 });
 renderTable();
