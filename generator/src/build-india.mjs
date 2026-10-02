@@ -19,8 +19,7 @@ const env = {
   PYTHONPATH: path.resolve(process.cwd())
 };
 
-// The NSE data-kit writes progress messages to stdout while updating sessions.
-// Keep stdout reserved for the final JSON payload so Node can parse it reliably.
+// Keep stdout reserved for the final JSON payload. Diagnostics are emitted on stderr.
 const py = `
 import os, json, sys, io
 from contextlib import redirect_stdout
@@ -117,6 +116,7 @@ if (r.status !== 0) {
   console.error(r.stderr || r.stdout);
   process.exit(r.status || 1);
 }
+if (r.stderr) process.stderr.write(r.stderr);
 
 const raw = JSON.parse(r.stdout);
 await fs.writeFile(path.join(STATE_DIR,'IN.raw.json'), JSON.stringify(raw));
