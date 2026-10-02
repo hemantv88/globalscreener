@@ -23,7 +23,9 @@ def path(*parts):
 
 
 def log(*a):
-    print(*a, flush=True)
+    # Keep stdout machine-readable for Node/Python provider bridges; send diagnostics to stderr.
+    import sys
+    print(*a, file=sys.stderr, flush=True)
 
 
 def http_get(url, tries=3, timeout=30):
