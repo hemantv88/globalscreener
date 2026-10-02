@@ -2,11 +2,12 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 
-const ROOT = path.resolve(process.cwd(), '..');
+const ROOT = process.env.GS_ROOT ? path.resolve(process.env.GS_ROOT) : path.resolve(process.cwd(), '..');
 const DATA_DIR = path.join(ROOT, 'data');
 const STATE_DIR = path.join(ROOT, 'state');
 const PUBLIC_DIR = path.join(ROOT, 'public', 'data');
 const days = Number(process.env.BACKFILL_DAYS || 300);
+if (!Number.isInteger(days) || days < 1 || days > 320) throw new Error('BACKFILL_DAYS must be an integer from 1 to 320');
 const endDate = process.env.END_DATE || new Date().toISOString().slice(0,10);
 
 await fs.mkdir(STATE_DIR,{recursive:true});
