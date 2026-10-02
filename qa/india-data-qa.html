@@ -133,7 +133,7 @@ function renderRawInfo(){
     [['Version',r.version],['Market',r.market],['Sessions on file',r.sessions_on_file],['Securities',sec.length],
      ['Raw end date',r.end_date||'—'],['Action symbols',symbols],['Applied actions',applied],['Not confirmed',notConfirmed]]
      .map(([l,v])=>'<div class="card"><div class="label">'+esc(l)+'</div><div class="value" style="font-size:18px">'+esc(v)+'</div></div>').join('')+
-    '</div><div class="notice" style="margin-top:12px">The raw file is the acquisition/state layer. It does not contain the compact snapshot's derived fields such as EMA/RS, so those remain sourced from <b>IN.json</b>.';
+    '</div><div class="notice" style="margin-top:12px">The raw file is the acquisition/state layer. It does not contain the compact snapshot\'s derived fields such as EMA/RS, so those remain sourced from <b>IN.json</b>.</div>';
 }
 function renderIntegrity(){
   const r=state.report;
