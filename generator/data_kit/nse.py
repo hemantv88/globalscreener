@@ -319,11 +319,12 @@ def _factor(purpose):
     if m:
         a, b = int(m.group(1)), int(m.group(2))
         if a > 0 and b > 0: return b / (a + b), f"bonus {a}:{b}"
-    m = re.search(r"(?:SPLT|SPLIT|SUB.?DIVISION).*?(?:RS\.?|RE\.?)\s*([\d.]+).*?(?:TO|-)(?:RS\.?|RE\.?)?\s*([\d.]+)", p)
+    s = re.sub(r"\s+", " ", p.upper()).strip()
+    m = re.search(r"(?:FVSPLT|SPLT|SPLIT|SUB.?DIVISION).*?(?:FRM\s*)?(?:RS|RE)\s*([\d.]+)\s*(?:TO|-)\s*(?:RS|RE)?\s*([\d.]+)", s)
     if m:
         x, y = float(m.group(1)), float(m.group(2))
         if 0 < y < x: return y / x, f"split {x:g} -> {y:g}"
-    m = re.search(r"CONSOLIDAT.*?(?:RS\.?|RE\.?)\s*([\d.]+).*?(?:TO|-)(?:RS\.?|RE\.?)?\s*([\d.]+)", p)
+    m = re.search(r"CONSOLIDAT.*?(?:FRM\s*)?(?:RS|RE)\s*([\d.]+)\s*(?:TO|-)\s*(?:RS|RE)?\s*([\d.]+)", s)
     if m:
         x, y = float(m.group(1)), float(m.group(2))
         if 0 < x < y: return y / x, f"consolidation {x:g} -> {y:g}"
