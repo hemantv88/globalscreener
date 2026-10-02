@@ -251,6 +251,9 @@ Priority order:
 
 - `qa/india-data-qa.html`: snapshot/raw/validation viewer with eligibility and repeatable sampling.
 - `qa/india-parity.html`: browser-based parity comparison of the existing Google Sheets India CSV against `state/IN.raw.json`, with tolerance reporting, corporate-action separation, deterministic sampling, ticker drill-down, and mismatch CSV export.
+- `functions/api.js`: transitional Cloudflare Pages API boundary using a private R2 binding (`GS_DATA`) and the same `getData` / `getMktCap` contract expected by the existing frontend. It contains no screening logic.
+- `generator/src/build-api-snapshots.mjs`: converts private raw market history into compact `sm1` API payloads for later R2 upload; India adds `.NS` to match the existing frontend ticker contract and preserves the configured benchmark ETF tickers when acquired.
+- `_routes.json` limits Pages Function invocation to `/api/*` so ordinary static routes remain static.
 - Pipeline CI now runs on both `main` and `data-pipeline-v2-2`.
 
 ## 16. Definition of “best” for GlobalScreener
