@@ -41,8 +41,8 @@ table{width:100%;border-collapse:collapse;font-size:12px}th,td{padding:8px;borde
       <span id="fileStatus" class="small">Select IN.json, india-validation-report.json and/or adjustments-IN.json from the downloaded artifact.</span>
     </div>
     <div class="notice" style="margin-top:12px">
-      Recommended: extract the GitHub Actions artifact and select <b>public/data/IN.json</b> plus <b>test-output/india-validation-report.json</b>.
-      The QA page works entirely in your browser; no data is uploaded anywhere.
+      Recommended: extract the GitHub Actions artifact and select <b>public/data/IN.json</b>, <b>test-output/india-validation-report.json</b> and <b>state/IN.raw.json</b>.
+      The QA page works entirely in your browser; no data is uploaded anywhere. The default table is the explicit <b>screenEligible</b> universe.
     </div>
   </section>
 
@@ -58,7 +58,7 @@ table{width:100%;border-collapse:collapse;font-size:12px}th,td{padding:8px;borde
       <input id="search" type="text" placeholder="Search ticker, e.g. RELIANCE">
       <label class="small">View
         <select id="viewFilter" style="padding:9px 10px;border:1px solid #cfd5dc;border-radius:8px;margin-left:6px">
-          <option value="eligible" selected>Current regular instruments</option>
+          <option value="eligible" selected>Screen-eligible instruments</option>
           <option value="all">All acquired instruments</option>
           <option value="special">Rights / special instruments</option>
           <option value="stale">Non-current instruments</option>
@@ -116,12 +116,15 @@ function renderCards(){
   const vals=[
     ['Universe',s.universe],
     ['Sessions',r?.sessions_on_file ?? state.raw?.sessions_on_file ?? '—'],
+    ['Screening universe',s.screening_universe ?? '—'],
     ['Full 300-bar stocks',r?.history?.securities_ge_300 ?? '—'],
     ['Delivery coverage',r?.coverage?.delivery_pct!=null?fmt(r.coverage.delivery_pct,2)+'%':'—'],
     ['NIFTY 500 bars',r?.benchmarks?.['NIFTY 500'] ?? '—'],
     ['NIFTY 50 bars',r?.benchmarks?.['NIFTY 50'] ?? '—'],
     ['India VIX bars',r?.benchmarks?.['INDIA VIX'] ?? '—'],
-    ['Latest trade date',s.latest_trade_date ?? state.raw?.end_date ?? '—']
+    ['Latest trade date',s.latest_trade_date ?? state.raw?.end_date ?? '—'],
+    ['Rights / special',s.rights_entitlement_universe ?? '—'],
+    ['Stale non-RE',s.stale_non_re_universe ?? '—']
   ];
   $('cards').innerHTML=vals.map(([l,v])=>'<div class="card"><div class="label">'+esc(l)+'</div><div class="value">'+esc(v)+'</div></div>').join('');
 }
@@ -177,11 +180,8 @@ function renderActions(){
 function isRightsEntitlement(sym){return /(?:[_-]RE\d*)$/i.test(String(sym||''));}
 function latestDateFor(s){return s?.derived?.updated||null;}
 function classifyStock(s){
-  const re=isRightsEntitlement(s?.sym);
-  const latest=state.snapshot?.latest_trade_date||null;
-  const d=latestDateFor(s);
-  if(re) return 'special';
-  if(latest && d===latest) return 'current';
+  if(s?.screenEligible===true) return 'current';
+  if(isRightsEntitlement(s?.sym)||s?.eligibilityReason==='RIGHTS_ENTITLEMENT') return 'special';
   return 'stale';
 }
 function stockMatches(q){
