@@ -28,6 +28,25 @@ TEST,EQ,INE000000000,01-Oct-2026,99,101,98,100.5,98.5,12345,678900,42.5
     with mock.patch.object(nse,'http_get',side_effect=[RuntimeError('full unavailable'),data]):
         got,parsed=nse.fetch_bhav(__import__('datetime').date(2026,10,1))
         assert got=='2026-10-01' and parsed['TEST']['c']==100.5 and parsed['SKIP']['series']=='BE'
+    # Real NSE corporate-action syntax variants must parse correctly.
+    assert nse._factor("FVSPLT FRM RS 10 TO RE 1")[0] == 0.1
+    assert nse._factor("FVSPLT FRMRS 100 TO RE 1")[0] == 0.01
+    assert nse._factor("FVSPLT FRM RS 5 TO RS 2")[0] == 0.4
+    assert nse._factor("BONUS 2:1")[0] == 1/3
+    assert nse._factor("BONUS 4:1")[0] == 1/5
+
+    # Combined 2:1 bonus + 10:1 face-value split should be ~1/30 price factor.
+    rows_combined=[
+      ('2026-09-29',3000,3005,2990,3000,1000,50,None,'EQ'),
+      ('2026-10-01',100.5,101,99.5,100,30000,50,None,'EQ'),
+    ]
+    out,applied,refused=nse._adjust(
+        rows_combined,
+        [('2026-10-01',1/3,'bonus 2:1'),('2026-10-01',0.1,'split 10 -> 1')],
+        set()
+    )
+    assert applied and abs(out[0][1]-100) < 0.1 and abs(out[0][5]-30000) < 10
+
     # split adjustment fixture: 1:1 bonus halves prior price and doubles prior volume.
     os.environ['DATA_DIR']=td
     rows=[
