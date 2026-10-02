@@ -1,8 +1,8 @@
 export function classifyInstrument(stock, marketLatestDate) {
-  const ticker = String(stock?.ticker ?? '').trim().toUpperCase();
-  const series = String(stock?.series ?? '').trim().toUpperCase();
+  const ticker = String(stock?.ticker ?? stock?.sym ?? '').trim().toUpperCase();
+  const series = String(stock?.series ?? stock?.seriesClass ?? '').trim().toUpperCase();
   const daily = Array.isArray(stock?.daily) ? stock.daily.filter(x => x?.date) : [];
-  const latest = daily.at(-1)?.date ?? null;
+  const latest = daily.at(-1)?.date ?? stock?.derived?.updated ?? null;
 
   if (/_RE(?:$|_)/.test(ticker)) {
     return {
@@ -16,9 +16,15 @@ export function classifyInstrument(stock, marketLatestDate) {
 
   const seriesClass = series || null;
 
+  const instrumentType = series === 'EQ'
+    ? 'LISTED_EQUITY'
+    : series
+      ? 'LISTED_EQUITY_SPECIAL_SERIES'
+      : 'UNKNOWN_SERIES';
+
   if (!latest || latest !== marketLatestDate) {
     return {
-      instrumentType: seriesClass,
+      instrumentType,
       seriesClass,
       currentOnLatestSession: false,
       screenEligible: false,
@@ -27,7 +33,7 @@ export function classifyInstrument(stock, marketLatestDate) {
   }
 
   return {
-    instrumentType: seriesClass,
+    instrumentType,
     seriesClass,
     currentOnLatestSession: true,
     screenEligible: true,
