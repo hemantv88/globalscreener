@@ -56,7 +56,17 @@ try {
   assert.equal(build.status, 0, build.stderr || build.stdout);
 
   const snapshot = JSON.parse(await fs.readFile(path.join(tmp, 'public', 'data', 'IN.json'), 'utf8'));
-  assert.equal(snapshot.universe, 3);
+  assert.equal(snapshot.universe, 5);
+  assert.equal(snapshot.screening_universe, 3);
+  assert.equal(snapshot.rights_entitlement_universe, 1);
+  assert.equal(snapshot.stale_non_re_universe, 1);
+  assert.ok(snapshot.screening_symbols.includes('AAA'));
+  assert.ok(!snapshot.screening_symbols.includes('DDD_RE'));
+  assert.ok(!snapshot.screening_symbols.includes('EEE'));
+  assert.equal(snapshot.securities.find(s=>s.sym==='DDD_RE').screenEligible,false);
+  assert.equal(snapshot.securities.find(s=>s.sym==='DDD_RE').eligibilityReason,'RIGHTS_ENTITLEMENT');
+  assert.equal(snapshot.securities.find(s=>s.sym==='EEE').screenEligible,false);
+  assert.equal(snapshot.securities.find(s=>s.sym==='EEE').eligibilityReason,'NO_TRADE_ON_LATEST_MARKET_SESSION');
   assert.equal(snapshot.market, 'IN');
   assert.equal(snapshot.latest_trade_date, iso(299));
   assert.equal(snapshot.benchmark_for_rs, 'NIFTY 500');
@@ -72,7 +82,7 @@ try {
       GS_ROOT: tmp,
       MIN_TARGET_SESSIONS: '300',
       MIN_UNIVERSE: '3',
-      MIN_MEDIAN_HISTORY: '300'
+      MIN_MEDIAN_HISTORY: '299'
     },
     encoding: 'utf8'
   });
