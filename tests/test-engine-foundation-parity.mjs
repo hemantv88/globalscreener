@@ -49,10 +49,17 @@ const oracleSources = names.map(name => extractFunction(html, name));
 const sandbox = { console, Number, Math, Array, Object, String, isFinite, Infinity, NaN };
 vm.runInNewContext(oracleSources.join('\n\n'), sandbox, { filename: 'index.html:engine-oracle' });
 
+function comparable(value) {
+  if (Array.isArray(value)) return value.map(comparable);
+  if (value && typeof value === 'object') return Object.fromEntries(Object.entries(value).map(([k,v]) => [k, comparable(v)]));
+  return value;
+}
+
 function assertSame(name, ...args) {
-  const expected = sandbox[name](...args);
-  const actual = engine[name](...args);
-  assert.deepEqual(actual, expected, name + ' diverged from index.html baseline');
+  const expected = comparable(sandbox[name](...args));
+  const actual = comparable(engine[name](...args));
+  assert.deepStrictEqual(actual, expected, name + ' diverged from index.html baseline');
+}
 }
 
 const fixtures = [
