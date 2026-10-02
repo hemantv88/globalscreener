@@ -48,6 +48,11 @@ table{width:100%;border-collapse:collapse;font-size:12px}th,td{padding:8px;borde
 
   <section class="grid" id="cards"></section>
 
+  <section class="panel" id="rawInfoPanel">
+    <h3 style="margin-top:0">Raw India data</h3>
+    <div id="rawInfo" class="small">Load <b>state/IN.raw.json</b> to inspect the raw acquisition state and corporate-action ledger.</div>
+  </section>
+
   <section class="panel">
     <div class="row">
       <input id="search" type="text" placeholder="Search ticker, e.g. RELIANCE">
@@ -74,7 +79,7 @@ table{width:100%;border-collapse:collapse;font-size:12px}th,td{padding:8px;borde
 </main>
 
 <script>
-const state={snapshot:null,report:null,actions:null,stocks:[],selected:null};
+const state={snapshot:null,report:null,actions:null,raw:null,stocks:[],selected:null};
 const $=id=>document.getElementById(id);
 const esc=s=>String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
 const fmt=(n,d=2)=>Number.isFinite(Number(n))?Number(n).toLocaleString(undefined,{maximumFractionDigits:d}):'—';
@@ -102,15 +107,33 @@ function renderCards(){
   if(!s){$('cards').innerHTML='';return;}
   const vals=[
     ['Universe',s.universe],
-    ['Sessions',r?.sessions_on_file ?? '—'],
+    ['Sessions',r?.sessions_on_file ?? state.raw?.sessions_on_file ?? '—'],
     ['Full 300-bar stocks',r?.history?.securities_ge_300 ?? '—'],
     ['Delivery coverage',r?.coverage?.delivery_pct!=null?fmt(r.coverage.delivery_pct,2)+'%':'—'],
     ['NIFTY 500 bars',r?.benchmarks?.['NIFTY 500'] ?? '—'],
     ['NIFTY 50 bars',r?.benchmarks?.['NIFTY 50'] ?? '—'],
     ['India VIX bars',r?.benchmarks?.['INDIA VIX'] ?? '—'],
-    ['Latest trade date',s.latest_trade_date ?? '—']
+    ['Latest trade date',s.latest_trade_date ?? state.raw?.end_date ?? '—']
   ];
   $('cards').innerHTML=vals.map(([l,v])=>'<div class="card"><div class="label">'+esc(l)+'</div><div class="value">'+esc(v)+'</div></div>').join('');
+}
+function renderRawInfo(){
+  const r=state.raw;
+  if(!r){$('rawInfo').innerHTML='Load <b>state/IN.raw.json</b> to inspect the raw acquisition state and corporate-action ledger.';return;}
+  const sec=(r.securities||[]);
+  const actions=r.adjustment_report||{};
+  let applied=0,notConfirmed=0,symbols=0;
+  for(const x of Object.values(actions)){
+    const ap=Array.isArray(x?.applied)?x.applied.length:0;
+    const nc=Array.isArray(x?.not_confirmed)?x.not_confirmed.length:0;
+    if(ap||nc)symbols++;
+    applied+=ap; notConfirmed+=nc;
+  }
+  $('rawInfo').innerHTML='<div class="grid">'+
+    [['Version',r.version],['Market',r.market],['Sessions on file',r.sessions_on_file],['Securities',sec.length],
+     ['Raw end date',r.end_date||'—'],['Action symbols',symbols],['Applied actions',applied],['Not confirmed',notConfirmed]]
+     .map(([l,v])=>'<div class="card"><div class="label">'+esc(l)+'</div><div class="value" style="font-size:18px">'+esc(v)+'</div></div>').join('')+
+    '</div><div class="notice" style="margin-top:12px">The raw file is the acquisition/state layer. It does not contain the compact snapshot's derived fields such as EMA/RS, so those remain sourced from <b>IN.json</b>.';
 }
 function renderIntegrity(){
   const r=state.report;
@@ -131,16 +154,16 @@ function renderIntegrity(){
 }
 function renderActions(){
   const a=state.actions;
-  if(!a){$('actions').innerHTML='<div class="small">Load adjustments-IN.json or IN.raw.json.</div>';return;}
+  if(!a){$('actions').innerHTML='<div class="small">Load <b>test-output/adjustments-IN.json</b> or <b>state/IN.raw.json</b>.</div>';return;}
   const entries=[];
-  for(const [sym,x] of Object.entries(a)){
-    const ap=(x.applied||[]).length, nc=(x.not_confirmed||[]).length;
+  for(const [sym,x] of Object.entries(a||{})){
+    const ap=Array.isArray(x?.applied)?x.applied.length:0, nc=Array.isArray(x?.not_confirmed)?x.not_confirmed.length:0;
     if(ap||nc)entries.push({sym,ap,nc});
   }
-  entries.sort((a,b)=>(b.ap+b.nc)-(a.ap+a.nc));
+  entries.sort((a,b)=>(b.ap+b.nc)-(a.ap+a.nc)||a.sym.localeCompare(b.sym));
   $('actions').innerHTML='<div class="small" style="margin-bottom:8px">'+entries.length+' symbols with corporate-action activity.</div>'+
     '<div class="scroll" style="max-height:340px"><table><thead><tr><th>Symbol</th><th>Applied</th><th>Not confirmed</th></tr></thead><tbody>'+
-    entries.map(x=>'<tr><td>'+esc(x.sym)+'</td><td>'+x.ap+'</td><td>'+x.nc+'</td></tr>').join('')+
+    (entries.length?entries.map(x=>'<tr><td>'+esc(x.sym)+'</td><td>'+x.ap+'</td><td>'+x.nc+'</td></tr>').join(''):'<tr><td colspan="3">No corporate-action entries.</td></tr>')+
     '</tbody></table></div>';
 }
 function stockMatches(q){
@@ -180,20 +203,31 @@ function selectStock(sym){
 }
 window.selectStock=selectStock;
 $('search').addEventListener('input',renderTable);
-$('clear').addEventListener('click',()=>{state.snapshot=state.report=state.actions=null;state.stocks=[];state.selected=null;$('fileStatus').textContent='Cleared.';$('cards').innerHTML='';$('integrity').innerHTML='';$('actions').innerHTML='';renderTable();$('stockDetail').innerHTML='';$('selected').className='status warn';$('selected').textContent='No stock selected';});
+$('clear').addEventListener('click',()=>{state.snapshot=state.report=state.actions=state.raw=null;state.stocks=[];state.selected=null;$('fileStatus').textContent='Cleared.';$('cards').innerHTML='';$('integrity').innerHTML='';$('actions').innerHTML='';renderTable();$('stockDetail').innerHTML='';$('selected').className='status warn';$('selected').textContent='No stock selected';});
 
 $('files').addEventListener('change',async e=>{
   const files=[...e.target.files];
+  const loaded=[];
   for(const f of files){
     try{
       const obj=JSON.parse(await f.text());
-      if(obj.market==='IN' && Array.isArray(obj.securities)){state.snapshot=obj;state.stocks=obj.securities;state.stocks.sort((a,b)=>String(a.sym).localeCompare(String(b.sym)));$('fileStatus').textContent='Loaded '+f.name;}
-      else if(obj.market==='IN' && obj.integrity){state.report=obj;$('fileStatus').textContent='Loaded '+f.name;}
-      else if(obj.market==='IN' && obj.version==='gsde-raw-v2.1' && obj.adjustment_report){state.actions=obj.adjustment_report;$('fileStatus').textContent='Loaded '+f.name;}
-      else if(obj.adjustment_summary || Object.values(obj)[0]?.applied){state.actions=obj.adjustment_report||obj;$('fileStatus').textContent='Loaded '+f.name;}
-    }catch(err){$('fileStatus').textContent='Could not read '+f.name+': '+err.message;}
+      loaded.push(f.name);
+      if(obj.market==='IN' && Array.isArray(obj.securities)){
+        state.snapshot=obj;
+        state.stocks=Array.isArray(obj.securities)?obj.securities:[];
+        state.stocks.sort((a,b)=>String(a.sym).localeCompare(String(b.sym)));
+      }else if(obj.market==='IN' && obj.integrity){
+        state.report=obj;
+      }else if(obj.market==='IN' && obj.version==='gsde-raw-v2.1' && obj.adjustment_report){
+        state.raw=obj;
+        state.actions=obj.adjustment_report;
+      }else if(obj.adjustment_summary || Object.values(obj||{}).some(x=>x&&Array.isArray(x.applied))){
+        state.actions=obj.adjustment_report||obj;
+      }
+    }catch(err){loaded.push(f.name+' (error)');}
   }
-  renderCards();renderIntegrity();renderActions();renderTable();
+  $('fileStatus').textContent=loaded.length?'Loaded: '+loaded.join(', '):'No files loaded.';
+  renderCards();renderRawInfo();renderIntegrity();renderActions();renderTable();
 });
 renderTable();
 </script>
