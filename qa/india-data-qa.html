@@ -53,6 +53,21 @@ table{width:100%;border-collapse:collapse;font-size:12px}th,td{padding:8px;borde
     <div id="rawInfo" class="small">Load <b>state/IN.raw.json</b> to inspect the raw acquisition state and corporate-action ledger.</div>
   </section>
 
+  <section class="panel" id="samplingPanel">
+    <div class="row" style="justify-content:space-between">
+      <div>
+        <h3 style="margin:0 0 6px">Sampling QA</h3>
+        <div class="small">Generate a repeatable manual sample from the loaded dataset. This is a spot-check aid, not a substitute for the automated validation report.</div>
+      </div>
+      <button id="generateSample">Generate sample</button>
+    </div>
+    <div id="sampleSummary" class="notice" style="margin-top:12px">Load IN.json first, then generate a sample.</div>
+    <div class="scroll" style="margin-top:12px"><table id="sampleTable">
+      <thead><tr><th>Ticker</th><th>Sample reason</th><th>Bars</th><th>Latest</th><th>Close</th><th>RS55</th><th>Type</th></tr></thead>
+      <tbody><tr><td colspan="7" class="small">No sample generated.</td></tr></tbody>
+    </table></div>
+  </section>
+
   <section class="panel">
     <div class="row">
       <input id="search" type="text" placeholder="Search ticker, e.g. RELIANCE">
@@ -209,6 +224,56 @@ function renderTable(){
       '<td>'+esc(d.trend||'—')+'</td><td>'+fmt(d.h52)+'</td><td>'+fmt(d.rv20)+'</td></tr>';
   }).join('') || '<tr><td colspan="14" class="small">No matching stocks.</td></tr>';
 }
+function deterministicScore(sym){
+  let h=2166136261;
+  for(const ch of String(sym||'')){
+    h ^= ch.charCodeAt(0);
+    h = Math.imul(h,16777619);
+  }
+  return h >>> 0;
+}
+function eligibleStocks(){ return state.stocks.filter(s=>classifyStock(s)==='current'); }
+function addUniqueSample(arr,seen,sym,reason){
+  if(!sym || seen.has(sym)) return;
+  const stock=state.stocks.find(s=>s.sym===sym);
+  if(!stock) return;
+  seen.add(sym); arr.push({stock,reason});
+}
+function generateSample(){
+  const all=state.stocks||[], elig=eligibleStocks(), seen=new Set(), out=[];
+  const addSorted=(stocks,n,reason,scoreFn)=>{
+    [...stocks].sort((a,b)=>(scoreFn?scoreFn(b)-scoreFn(a):deterministicScore(a.sym)-deterministicScore(b.sym))).slice(0,n)
+      .forEach(s=>addUniqueSample(out,seen,s.sym,reason));
+  };
+  if(!all.length){
+    $('sampleSummary').textContent='Load IN.json first, then generate a sample.';
+    $('sampleTable').querySelector('tbody').innerHTML='<tr><td colspan="7" class="small">No sample generated.</td></tr>';
+    return;
+  }
+  addSorted(elig,8,'Random eligible spot-check');
+  addSorted(elig.filter(s=>(s.c||[]).length>=300),3,'300-bar history');
+  addSorted(elig.filter(s=>(s.c||[]).length>=200 && (s.c||[]).length<300),2,'200–299-bar history');
+  addSorted(elig.filter(s=>(s.c||[]).length<200),2,'Short history');
+  if(state.raw?.adjustment_report){
+    const actionSyms=Object.entries(state.raw.adjustment_report)
+      .filter(([,x])=>(x?.applied?.length||0)+(x?.not_confirmed?.length||0)>0)
+      .sort((a,b)=>deterministicScore(a[0])-deterministicScore(b[0]))
+      .slice(0,5).map(([sym])=>sym);
+    actionSyms.forEach(sym=>addUniqueSample(out,seen,sym,'Corporate-action spot-check'));
+  }
+  all.filter(s=>classifyStock(s)==='special')
+    .sort((a,b)=>deterministicScore(a.sym)-deterministicScore(b.sym))
+    .slice(0,3).forEach(s=>addUniqueSample(out,seen,s.sym,'Rights / special instrument'));
+  const rows=out.slice(0,25).map(({stock,reason})=>{
+    const d=stock.derived||{}, kind=classifyStock(stock);
+    return '<tr><td><button onclick="selectStock('+JSON.stringify(stock.sym)+')">'+esc(stock.sym)+'</button></td>'+
+      '<td>'+esc(reason)+'</td><td>'+((stock.c||[]).length)+'</td><td>'+esc(d.updated||'—')+'</td>'+
+      '<td>'+fmt(d.price)+'</td><td>'+fmt(d.rs55)+'</td><td>'+esc(kind==='special'?'Rights / Special':kind==='current'?'Current':'Not current')+'</td></tr>';
+  }).join('');
+  const categories=[...new Set(out.map(x=>x.reason))];
+  $('sampleSummary').innerHTML='<b>'+out.slice(0,25).length+' instruments</b> sampled across '+categories.length+' categories. Use each row to open the stock detail and compare the stored derived fields with the raw/acquisition information.';
+  $('sampleTable').querySelector('tbody').innerHTML=rows||'<tr><td colspan="7" class="small">No matching sample categories were available.</td></tr>';
+}
 function selectStock(sym){
   const s=state.stocks.find(x=>x.sym===sym); if(!s)return;
   state.selected=s;
@@ -228,6 +293,7 @@ function selectStock(sym){
     '</tbody></table></div></div>';
 }
 window.selectStock=selectStock;
+$('generateSample').addEventListener('click',generateSample);
 $('search').addEventListener('input',renderTable);
 $('viewFilter').addEventListener('change',renderTable);
 $('clear').addEventListener('click',()=>{state.snapshot=state.report=state.actions=state.raw=null;state.stocks=[];state.selected=null;$('fileStatus').textContent='Cleared.';$('cards').innerHTML='';$('integrity').innerHTML='';$('actions').innerHTML='';renderTable();$('stockDetail').innerHTML='';$('selected').className='status warn';$('selected').textContent='No stock selected';});
@@ -239,15 +305,15 @@ $('files').addEventListener('change',async e=>{
     try{
       const obj=JSON.parse(await f.text());
       loaded.push(f.name);
-      if(obj.market==='IN' && Array.isArray(obj.securities)){
+      if(obj.market==='IN' && obj.version==='gsde-data-v2' && Array.isArray(obj.securities)){
         state.snapshot=obj;
         state.stocks=Array.isArray(obj.securities)?obj.securities:[];
         state.stocks.sort((a,b)=>String(a.sym).localeCompare(String(b.sym)));
       }else if(obj.market==='IN' && obj.integrity){
         state.report=obj;
-      }else if(obj.market==='IN' && obj.version==='gsde-raw-v2.1' && obj.adjustment_report){
+      }else if(obj.market==='IN' && obj.version==='gsde-raw-v2.1' && Array.isArray(obj.securities)){
         state.raw=obj;
-        state.actions=obj.adjustment_report;
+        state.actions=obj.adjustment_report||{};
       }else if(obj.adjustment_summary || Object.values(obj||{}).some(x=>x&&Array.isArray(x.applied))){
         state.actions=obj.adjustment_report||obj;
       }
