@@ -11,6 +11,6 @@ const snapshot={version:'gsde-data-v2',generated:new Date().toISOString(),market
 await fs.mkdir(path.join(ROOT,'public','data'),{recursive:true});
 await fs.mkdir(path.join(ROOT,'test-output'),{recursive:true});
 await fs.writeFile(path.join(ROOT,'public','data','IN.json'),JSON.stringify(snapshot));
-await fs.writeFile(path.join(ROOT,'public','data','manifest.json'),JSON.stringify({version:'gsde-data-v2',generated:new Date().toISOString(),markets:{IN:true,US:false,ETF:false},source:'NSE UDiFF + NSE Full Bhavcopy enrichment + NSE corporate actions/index files'}));
+await fs.writeFile(path.join(ROOT,'public','data','manifest.json'),JSON.stringify({version:'gsde-data-v2',generated:new Date().toISOString(),markets:{IN:true,US:false,ETF:false},source:'NSE Full Bhavcopy/Security Deliverable + UDiFF fallback + NSE corporate actions/index files'}));
 await fs.writeFile(path.join(ROOT,'test-output','adjustments-IN.json'),JSON.stringify(raw.adjustment_report,null,2));
 console.log(JSON.stringify({market:'IN',universe:snapshot.universe,latest_trade_date:latest,benchmarks:snapshot.benchmarks,benchmark_for_rs:snapshot.benchmark_for_rs,adjustment_summary:snapshot.adjustment_summary,bytes:JSON.stringify(snapshot).length},null,2));
