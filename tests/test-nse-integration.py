@@ -1,6 +1,7 @@
 import io
 import os
 import tempfile
+import re
 import zipfile
 from unittest import mock
 from pathlib import Path
@@ -39,9 +40,14 @@ with tempfile.TemporaryDirectory() as td:
 
         def fake_get(url, tries=3, timeout=30):
             if "sec_bhavdata_full_" in url:
-                return responses[url.rsplit("_", 1)[-1].split(".")[0]]
+                key = re.search(r"sec_bhavdata_full_(\d{8})\.csv$", url).group(1)
+                return responses[key]
             if "ind_close_all_" in url:
-                return index_csv(url.rsplit("_", 1)[-1].split(".")[0])
+                key = re.search(r"ind_close_all_(\d{8})\.csv$", url).group(1)
+                iso = f"{key[4:6]}-{key[2:4]}-{key[:2]}" if False else f"{key[4:6]}-{key[2:4]}-{key[:4]}"
+                # URL date is DDMMYYYY.
+                iso = f"{key[4:8]}-{key[2:4]}-{key[:2]}"
+                return index_csv(iso)
             if "PR" in url or "symbolchange" in url:
                 return None
             raise AssertionError(f"Unexpected URL: {url}")
