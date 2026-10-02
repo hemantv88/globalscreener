@@ -4,7 +4,7 @@ export function classifyInstrument(stock, marketLatestDate) {
   const daily = Array.isArray(stock?.daily) ? stock.daily.filter(x => x?.date) : [];
   const latest = daily.at(-1)?.date ?? stock?.derived?.updated ?? null;
 
-  if (/_RE(?:$|_)/.test(ticker)) {
+  if (/[_-]RE\d*(?:$|_)/.test(ticker)) {
     return {
       instrumentType: 'RIGHTS_ENTITLEMENT',
       seriesClass: series || null,
