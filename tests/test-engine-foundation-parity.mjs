@@ -50,7 +50,7 @@ const sandbox = { console, Number, Math, Array, Object, String, isFinite, Infini
 vm.runInNewContext(oracleSources.join('\n\n'), sandbox, { filename: 'index.html:engine-oracle' });
 
 function comparable(value) {
-  if (Array.isArray(value)) return value.map(comparable);
+  if (Array.isArray(value)) return Array.from(value, comparable);
   if (value && typeof value === 'object') return Object.fromEntries(Object.entries(value).map(([k,v]) => [k, comparable(v)]));
   return value;
 }
