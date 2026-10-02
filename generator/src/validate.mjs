@@ -6,7 +6,13 @@ const snap=JSON.parse(await fs.readFile(path.join(ROOT,'public','data','IN.json'
 const target=Number(process.env.MIN_TARGET_SESSIONS||300), minUniverse=Number(process.env.MIN_UNIVERSE||1000), minMedian=Number(process.env.MIN_MEDIAN_HISTORY||250), requireBench=true;
 const securities=state.securities||[]; if(!securities.length)throw new Error('No India securities');
 if(snap.market!=='IN')throw new Error('Snapshot market mismatch');
+if(!Number.isInteger(snap.screening_universe)||!Array.isArray(snap.screening_symbols))throw new Error('Snapshot eligibility metadata missing');
 if(Number(snap.universe)!==securities.length)throw new Error('Snapshot/state universe mismatch');
+const eligible=securities.filter(s=>s.screenEligible);
+if(Number(snap.screening_universe)!==eligible.length)throw new Error('Snapshot screening-universe mismatch');
+const eligibleSet=new Set(eligible.map(s=>s.sym));
+for(const s of eligible){if(/_RE(?:$|_)/i.test(s.sym))throw new Error('Rights entitlement marked screen eligible: '+s.sym);if(s.derived?.updated!==snap.latest_trade_date)throw new Error('Stale security marked screen eligible: '+s.sym);}
+if(snap.screening_symbols.some(x=>!eligibleSet.has(x)))throw new Error('Snapshot screening symbol list mismatch');
 if(snap.benchmark_for_rs && !Object.prototype.hasOwnProperty.call(state.benchmarks,snap.benchmark_for_rs))throw new Error('Snapshot benchmark missing from state');
 const lens=securities.map(s=>(s.daily||[]).length); lens.sort((a,b)=>a-b); const median=lens.length?(lens.length%2?lens[(lens.length-1)/2]:(lens[lens.length/2-1]+lens[lens.length/2])/2):0;
 let bad=0,dup=0,invalid=0,negVol=0,badDelivery=0,missingClose=0,overlapShort=0; const latest=[];
