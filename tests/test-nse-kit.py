@@ -19,7 +19,9 @@ with tempfile.TemporaryDirectory() as td:
     rows=nse._rows(raw.decode())
     m=nse._udiff_mapping(rows)
     assert m['ticker']=='TckrSymb' and m['close']=='ClsPric'
-    full_csv=b'SYMBOL,SERIES,ISIN,DATE1,OPEN_PRICE,HIGH_PRICE,LOW_PRICE,CLOSE_PRICE,PREV_CLOSE,TTL_TRD_QNTY,TURNOVER_LACS,DELIV_PER\\nTEST,EQ,INE000000000,01-Oct-2026,99,101,98,100.5,98.5,12345,678900,42.5\\n'
+    full_csv=b"""SYMBOL,SERIES,ISIN,DATE1,OPEN_PRICE,HIGH_PRICE,LOW_PRICE,CLOSE_PRICE,PREV_CLOSE,TTL_TRD_QNTY,TURNOVER_LACS,DELIV_PER
+TEST,EQ,INE000000000,01-Oct-2026,99,101,98,100.5,98.5,12345,678900,42.5
+"""
     with mock.patch.object(nse,'http_get',return_value=full_csv):
         got,parsed=nse.fetch_bhav(__import__('datetime').date(2026,10,1))
         assert got=='2026-10-01' and parsed['TEST']['c']==100.5 and parsed['TEST']['delivery']==42.5
