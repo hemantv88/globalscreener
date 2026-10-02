@@ -1,7 +1,7 @@
 """NSE daily market-data store for GlobalScreener.
 
-Primary source: current NSE CM-UDiFF Common Bhavcopy Final ZIP.
-Enrichment: NSE Full Bhavcopy/Security Deliverable file for delivery % when available.
+Primary source: current NSE Full Bhavcopy + Security Deliverable data (delivery % included).
+Fallback: current NSE CM-UDiFF Common Bhavcopy Final ZIP when Full Bhavcopy is unavailable.
 Corporate actions and index closes come from NSE archives. The adjustment engine is adapted
 from the LazyScreen admin's shared kit, with the acquisition layer updated for current UDiFF.
 
@@ -93,64 +93,113 @@ def _udiff_mapping(rows):
     }
 
 
-def fetch_bhav(date):
-    """Return (session ISO, {symbol:[o,h,l,c,volume,delivery%]}) from current UDiFF.
-    The session is read from the file's own date column, preventing holiday/served-old-file errors.
-    """
-    url = UDIFF_URL % date.strftime("%Y%m%d")
-    b = http_get(url)
-    if not b:
-        return None, {}
-    name, raw_bytes = _zip_first_csv(b)
-    rows = _rows(raw_bytes.decode("utf-8", "replace"))
-    m = _udiff_mapping(rows)
-    session = next((parse_date(r.get(m["date"])) for r in rows if parse_date(r.get(m["date"]))), None)
+def _num(v):
+    try:
+        s = str(v).strip().replace(",", "")
+        if s in ("", "-", "NA", "N/A", "null", "None"):
+            return None
+        n = float(s)
+        return n if math.isfinite(n) else None
+    except (TypeError, ValueError):
+        return None
+
+
+def _udiff_mapping(rows):
+    """Return the current UDiFF-to-internal field mapping for compatibility/tests."""
+    sample = rows[0] if rows else {}
+    def key(*names):
+        return next((n for n in names if n in sample), names[0])
+    return {
+        "ticker": key("TckrSymb", "SYMBOL"),
+        "series": key("SctySrs", "SERIES"),
+        "isin": key("ISIN", "ISINNO"),
+        "date": key("TradDt", "TIMESTAMP", "DATE1", "DATE"),
+        "open": key("OpnPric", "OPEN_PRICE", "OPEN"),
+        "high": key("HghPric", "HIGH_PRICE", "HIGH"),
+        "low": key("LwPric", "LOW_PRICE", "LOW"),
+        "close": key("ClsPric", "CLOSE_PRICE", "CLOSE"),
+        "prev": key("PrvsClsgPric", "PREV_CLOSE", "PREVCLOSE"),
+        "volume": key("TtlTradgVol", "TTL_TRD_QNTY", "TOTTRDQTY"),
+        "turnover": key("TtlTrfVal", "TOTTRDVAL", "TURNOVER_LACS", "TURNOVER"),
+    }
+
+
+def _select_security_rows(rows):
+    """Normalize either NSE Full Bhavcopy or current UDiFF rows."""
+    sample = rows[0] if rows else {}
+    def key(*names):
+        return next((n for n in names if n in sample), names[0])
+
+    ticker_k = key("SYMBOL", "TckrSymb")
+    series_k = key("SERIES", "SctySrs")
+    isin_k = key("ISIN", "ISINNO")
+    date_k = key("DATE1", "TradDt", "TIMESTAMP", "DATE")
+    open_k = key("OPEN_PRICE", "OpnPric", "OPEN")
+    high_k = key("HIGH_PRICE", "HghPric", "HIGH")
+    low_k = key("LOW_PRICE", "LwPric", "LOW")
+    close_k = key("CLOSE_PRICE", "ClsPric", "CLOSE")
+    prev_k = key("PREV_CLOSE", "PrvsClsgPric", "PREVCLOSE")
+    vol_k = key("TTL_TRD_QNTY", "TtlTradgVol", "TOTTRDQTY")
+    turn_k = key("TURNOVER_LACS", "TtlTrfVal", "TOTTRDVAL", "TURNOVER")
+    del_k = key("DELIV_PER", "DELIVERY_PERCENTAGE", "DelvryPct")
+
+    session = next((parse_date(r.get(date_k)) for r in rows if parse_date(r.get(date_k))), None)
     if not session:
         return None, {}
+
     out, rank = {}, {}
     for r in rows:
-        series = (r.get(m["series"]) or "").strip().upper()
+        series = (r.get(series_k) or "").strip().upper()
         if series not in SERIES:
             continue
-        ticker = norm(r.get(m["ticker"]))
-        c = _num(r.get(m["close"]))
+        ticker = norm(r.get(ticker_k))
+        c = _num(r.get(close_k))
         if not ticker or c is None or c <= 0:
             continue
-        vals = [_num(r.get(m[k])) for k in ("open", "high", "low")]
-        v = _num(r.get(m["volume"])) or 0.0
-        tr = _num(r.get(m["turnover"]))
-        key = SERIES.index(series)
-        if key < rank.get(ticker, 99):
+        vals = [_num(r.get(k)) for k in (open_k, high_k, low_k)]
+        v = _num(r.get(vol_k)) or 0.0
+        tr = _num(r.get(turn_k))
+        dlv = _num(r.get(del_k))
+        if dlv is not None and not (0 <= dlv <= 100):
+            dlv = None
+        rk = SERIES.index(series)
+        if rk < rank.get(ticker, 99):
             out[ticker] = {
                 "o": vals[0], "h": vals[1], "l": vals[2], "c": c, "v": v,
-                "delivery": None, "isin": (r.get(m["isin"]) or "").strip() or None,
-                "series": series, "prevClose": _num(r.get(m["prev"])), "turnover": tr,
+                "delivery": dlv, "isin": (r.get(isin_k) or "").strip() or None,
+                "series": series, "prevClose": _num(r.get(prev_k)), "turnover": tr,
             }
-            rank[ticker] = key
+            rank[ticker] = rk
     return session.isoformat(), out
 
 
-def fetch_delivery(iso):
-    """Best-effort delivery % enrichment from NSE's Full Bhavcopy/Security Deliverable file."""
-    url = FULL_BHAV_URL % dt.date.fromisoformat(iso).strftime("%d%m%Y")
-    b = http_get(url)
+def _fetch_full_bhav(day):
+    # The current NSE Full Bhavcopy also carries DELIV_PER, so it removes a second request per session.
+    b = http_get(FULL_BHAV_URL % day.strftime("%d%m%Y"), tries=2, timeout=20)
     if not b:
-        return {}
+        return None, {}
     rows = _rows(b.decode("utf-8", "replace"))
-    sample = rows[0] if rows else {}
-    def key(*names): return next((n for n in names if n in sample), names[0])
-    symk = key("SYMBOL", "Symbol", "TckrSymb")
-    dlvk = key("DELIV_PER", "DELIVERY_PERCENTAGE", "DelvryPct")
-    datek = key("DATE1", "TradDt", "Date")
-    out = {}
-    for r in rows:
-        d = parse_date(r.get(datek))
-        if d and d.isoformat() != iso:
-            continue
-        s = norm(r.get(symk)); dlv = _num(r.get(dlvk))
-        if s and dlv is not None and 0 <= dlv <= 100:
-            out[s] = dlv
-    return out
+    return _select_security_rows(rows)
+
+
+def _fetch_udiff_bhav(day):
+    b = http_get(UDIFF_URL % day.strftime("%Y%m%d"), tries=2, timeout=20)
+    if not b:
+        return None, {}
+    _, raw_bytes = _zip_first_csv(b)
+    rows = _rows(raw_bytes.decode("utf-8", "replace"))
+    return _select_security_rows(rows)
+
+
+def fetch_bhav(day):
+    """Fetch one NSE session. Prefer current Full Bhavcopy; fall back to UDiFF."""
+    try:
+        session, rows = _fetch_full_bhav(day)
+        if session and rows:
+            return session, rows
+    except Exception as e:
+        log(f"  {day}: Full Bhavcopy failed ({e}); trying UDiFF")
+    return _fetch_udiff_bhav(day)
 
 
 def fetch_ca(iso):
@@ -179,7 +228,7 @@ def fetch_idx(iso):
 
 
 def _write_raw_session(iso, rows):
-    rows = dict(rows); rows["_meta"] = {"source": "NSE_CM_UDIFF", "session": iso}
+    rows = dict(rows); rows["_meta"] = {"source": "NSE_CM_Full_Bhavcopy_or_UDiFF", "session": iso}
     write_gz_json(os.path.join(_dir("bhav"), iso + ".json.gz"), rows)
 
 
@@ -195,7 +244,7 @@ def _merge_delivery(iso, delivery):
     if changed: write_gz_json(p, rows)
 
 
-def update_sessions(target_sessions=300, end_date=None, budget=None, sleep=0.5, enrich_delivery=True):
+def update_sessions(target_sessions=300, end_date=None, budget=None, sleep=0.35, enrich_delivery=True):
     """Fetch enough calendar dates backward to obtain target_sessions NSE trading sessions."""
     budget = budget or Budget(0)
     end = dt.date.fromisoformat(end_date) if end_date else dt.date.today()
@@ -218,7 +267,7 @@ def update_sessions(target_sessions=300, end_date=None, budget=None, sleep=0.5, 
             time.sleep(sleep); continue
         if session not in have:
             _write_raw_session(session, rows); have.add(session); saved += 1
-            if enrich_delivery:
+            if enrich_delivery and not any(v.get("delivery") is not None for v in rows.values() if isinstance(v, dict)):
                 try:
                     _merge_delivery(session, fetch_delivery(session))
                 except Exception as e:
