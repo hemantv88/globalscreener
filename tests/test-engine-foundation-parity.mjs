@@ -19,12 +19,11 @@ function extractFunction(source, name) {
   let depth = 0;
   let inString = null;
   let escaped = false;
-    if (inLineComment) { if (ch === '\n') inLineComment = false; continue; }
   let inBlockComment = false;
 
   for (let i = brace; i < source.length; i++) {
     const ch = source[i], next = source[i + 1];
-    if (inLineComment) { if (ch === '\\n') inLineComment = false; continue; }
+    if (inLineComment) { if (ch === '\n') inLineComment = false; continue; }
     if (inBlockComment) {
       if (ch === '*' && next === '/') { inBlockComment = false; i++; }
       continue;
