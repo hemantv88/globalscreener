@@ -60,7 +60,6 @@ function assertSame(name, ...args) {
   const actual = comparable(engine[name](...args));
   assert.deepStrictEqual(actual, expected, name + ' diverged from index.html baseline');
 }
-}
 
 const fixtures = [
   [Array.from({length: 5}, (_, i) => i + 1), 3],
