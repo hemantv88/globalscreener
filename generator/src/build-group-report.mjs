@@ -26,4 +26,4 @@ await fs.writeFile(path.join(ROOT,'public','data','GROUPS.json'),JSON.stringify(
 await fs.writeFile(path.join(ROOT,'test-output','group-analytics-report.json'),JSON.stringify({
   ok:true,version:out.version,markets:Object.fromEntries(Object.entries(out.markets).map(([m,x])=>[m,{latest_trade_date:x.latest_trade_date,verified:x.classification_coverage.verified,unmapped:x.classification_coverage.unmapped,sector_groups:x.hierarchy.sector.length,industry_groups:x.hierarchy.industry.length}]))
 },null,2));
-console.log(JSON.stringify(out.markets,Object.fromEntries?Object.entries(out.markets):out.markets,null,2));
+console.log(JSON.stringify(out.markets,null,2));
