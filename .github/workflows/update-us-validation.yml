@@ -1,6 +1,11 @@
 name: GlobalScreener Phase 1.2 US validation (no R2)
 
 on:
+  push:
+    branches:
+      - data-pipeline-v2-2
+    paths:
+      - .github/workflows/run-us-validation.trigger
   workflow_dispatch:
     inputs:
       target_sessions:
