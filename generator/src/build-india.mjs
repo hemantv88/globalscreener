@@ -106,7 +106,7 @@ const r = spawnSync('python3', ['-c', py], {
     ...env,
     GS_END_DATE: endDate,
     GS_TARGET_SESSIONS: String(days),
-    GS_BUDGET_SECONDS: String(Number(process.env.MAX_BUDGET_SECONDS || 0)),
+    GS_BUDGET_SECONDS: String(Number(process.env.MAX_BUDGET_SECONDS || ((Number(process.env.MAX_BUDGET_MINUTES) || 0) * 60) || 0)),
     GS_NSE_SLEEP: String(Number(process.env.NSE_SLEEP || 0.35))
   },
   encoding: 'utf8',
