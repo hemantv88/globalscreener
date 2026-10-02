@@ -19,6 +19,7 @@ function extractFunction(source, name) {
   let depth = 0;
   let inString = null;
   let escaped = false;
+  let inLineComment = false;
   let inBlockComment = false;
 
   for (let i = brace; i < source.length; i++) {
