@@ -1,0 +1,105 @@
+name: GlobalScreener Phase 2 combined market validation (no R2)
+
+on:
+  push:
+    branches:
+      - data-pipeline-v2-2
+    paths:
+      - .github/workflows/run-global-validation.trigger
+  workflow_dispatch:
+    inputs:
+      india_sessions:
+        description: "India trading sessions"
+        required: true
+        default: "300"
+      us_sessions:
+        description: "US trading sessions"
+        required: true
+        default: "300"
+      etf_sessions:
+        description: "ETF trading sessions"
+        required: true
+        default: "300"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: gs-phase2-global
+  cancel-in-progress: false
+
+jobs:
+  validate-global:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - name: Install dependencies
+        run: python -m pip install --disable-pip-version-check -q -r generator/requirements.txt
+      - name: Static and fixture checks
+        working-directory: generator
+        run: |
+          npm run check
+          npm test
+      - name: Build India
+        working-directory: generator
+        env:
+          BACKFILL_DAYS: ${{ inputs.india_sessions || '300' }}
+          MAX_BUDGET_MINUTES: "80"
+          NSE_SLEEP: "0.35"
+        run: |
+          node src/build-india.mjs
+          node src/build-snapshot.mjs
+          MIN_TARGET_SESSIONS=${{ inputs.india_sessions || '300' }} MIN_UNIVERSE=1000 MIN_MEDIAN_HISTORY=250 node src/validate.mjs
+      - name: Build US
+        working-directory: generator
+        env:
+          BACKFILL_DAYS: ${{ inputs.us_sessions || '300' }}
+          MAX_BUDGET_MINUTES: "30"
+          US_YEARS: "2"
+          US_UNIVERSE_FILE: ../config/US_UNIVERSE.txt
+        run: |
+          node src/build-us.mjs
+          node src/build-us-snapshot.mjs
+          MIN_TARGET_SESSIONS=${{ inputs.us_sessions || '300' }} node src/validate-us.mjs
+      - name: Build ETF
+        working-directory: generator
+        env:
+          BACKFILL_DAYS: ${{ inputs.etf_sessions || '300' }}
+          MAX_BUDGET_MINUTES: "30"
+          ETF_YEARS: "2"
+          ETF_UNIVERSE_FILE: ../config/ETF_UNIVERSE.txt
+        run: |
+          node src/build-etf.mjs
+          node src/build-etf-snapshot.mjs
+          MIN_TARGET_SESSIONS=${{ inputs.etf_sessions || '300' }} node src/validate-etf.mjs
+      - name: Build combined snapshot
+        working-directory: generator
+        run: node src/build-global.mjs
+      - name: Validate combined snapshot
+        working-directory: generator
+        run: node src/validate-global.mjs
+      - name: Upload combined validation artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: globalscreener-phase2-global-${{ github.run_id }}
+          path: |
+            public/data/IN.json
+            public/data/US.json
+            public/data/ETF.json
+            public/data/GLOBAL.json
+            public/data/manifest-GLOBAL.json
+            test-output/*validation-report.json
+          if-no-files-found: warn
+          retention-days: 7
