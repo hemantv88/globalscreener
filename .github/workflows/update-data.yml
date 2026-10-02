@@ -24,7 +24,7 @@ permissions:
 
 concurrency:
   group: gs-phase1-1-india
-  cancel-in-progress: false
+  cancel-in-progress: true
 
 jobs:
   validate-india:
