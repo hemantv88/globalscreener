@@ -56,6 +56,14 @@ table{width:100%;border-collapse:collapse;font-size:12px}th,td{padding:8px;borde
   <section class="panel">
     <div class="row">
       <input id="search" type="text" placeholder="Search ticker, e.g. RELIANCE">
+      <label class="small">View
+        <select id="viewFilter" style="padding:9px 10px;border:1px solid #cfd5dc;border-radius:8px;margin-left:6px">
+          <option value="eligible" selected>Current regular instruments</option>
+          <option value="all">All acquired instruments</option>
+          <option value="special">Rights / special instruments</option>
+          <option value="stale">Non-current instruments</option>
+        </select>
+      </label>
       <span id="selected" class="status warn">No stock selected</span>
     </div>
     <div id="stockDetail" style="margin-top:12px"></div>
@@ -166,22 +174,40 @@ function renderActions(){
     (entries.length?entries.map(x=>'<tr><td>'+esc(x.sym)+'</td><td>'+x.ap+'</td><td>'+x.nc+'</td></tr>').join(''):'<tr><td colspan="3">No corporate-action entries.</td></tr>')+
     '</tbody></table></div>';
 }
+function isRightsEntitlement(sym){return /(?:[_-]RE\d*)$/i.test(String(sym||''));}
+function latestDateFor(s){return s?.derived?.updated||null;}
+function classifyStock(s){
+  const re=isRightsEntitlement(s?.sym);
+  const latest=state.snapshot?.latest_trade_date||null;
+  const d=latestDateFor(s);
+  if(re) return 'special';
+  if(latest && d===latest) return 'current';
+  return 'stale';
+}
 function stockMatches(q){
   q=q.trim().toUpperCase();
-  return !q?state.stocks.slice(0,100):state.stocks.filter(s=>String(s.sym||'').toUpperCase().includes(q)).slice(0,100);
+  const mode=$('viewFilter').value;
+  let arr=state.stocks;
+  if(mode==='eligible') arr=arr.filter(s=>classifyStock(s)==='current');
+  else if(mode==='special') arr=arr.filter(s=>classifyStock(s)==='special');
+  else if(mode==='stale') arr=arr.filter(s=>classifyStock(s)==='stale');
+  return (q?arr.filter(s=>String(s.sym||'').toUpperCase().includes(q)):arr).slice(0,200);
 }
 function renderTable(){
   const rows=stockMatches($('search').value);
-  $('stockTable').querySelector('thead').innerHTML='<tr><th>Ticker</th><th>Bars</th><th>Latest</th><th>Close</th><th>EMA10</th><th>EMA20</th><th>EMA50</th><th>RS21</th><th>RS55</th><th>RS10W</th><th>Trend</th><th>52W High</th><th>RV20</th></tr>';
+  $('stockTable').querySelector('thead').innerHTML='<tr><th>Ticker</th><th>Type</th><th>Bars</th><th>Latest</th><th>Close</th><th>EMA10</th><th>EMA20</th><th>EMA50</th><th>RS21</th><th>RS55</th><th>RS10W</th><th>Trend</th><th>52W High</th><th>RV20</th></tr>';
   $('stockTable').querySelector('tbody').innerHTML=rows.map(s=>{
     const d=s.derived||{};
+    const kind=classifyStock(s);
+    const typeLabel=kind==='special'?'Rights / Special':kind==='current'?'Current':'Not current';
     return '<tr data-sym="'+esc(s.sym)+'">'+
       '<td><button onclick="selectStock('+JSON.stringify(s.sym)+')">'+esc(s.sym)+'</button></td>'+
+      '<td>'+esc(typeLabel)+'</td>'+
       '<td>'+((s.c||[]).length)+'</td><td>'+esc(d.updated||'—')+'</td><td>'+fmt(d.price)+'</td>'+
       '<td>'+fmt(d.ema10)+'</td><td>'+fmt(d.ema20)+'</td><td>'+fmt(d.ema50)+'</td>'+
       '<td>'+fmt(d.rs21)+'</td><td>'+fmt(d.rs55)+'</td><td>'+fmt(d.rs10w)+'</td>'+
       '<td>'+esc(d.trend||'—')+'</td><td>'+fmt(d.h52)+'</td><td>'+fmt(d.rv20)+'</td></tr>';
-  }).join('') || '<tr><td colspan="13" class="small">No matching stocks.</td></tr>';
+  }).join('') || '<tr><td colspan="14" class="small">No matching stocks.</td></tr>';
 }
 function selectStock(sym){
   const s=state.stocks.find(x=>x.sym===sym); if(!s)return;
@@ -203,6 +229,7 @@ function selectStock(sym){
 }
 window.selectStock=selectStock;
 $('search').addEventListener('input',renderTable);
+$('viewFilter').addEventListener('change',renderTable);
 $('clear').addEventListener('click',()=>{state.snapshot=state.report=state.actions=state.raw=null;state.stocks=[];state.selected=null;$('fileStatus').textContent='Cleared.';$('cards').innerHTML='';$('integrity').innerHTML='';$('actions').innerHTML='';renderTable();$('stockDetail').innerHTML='';$('selected').className='status warn';$('selected').textContent='No stock selected';});
 
 $('files').addEventListener('change',async e=>{
