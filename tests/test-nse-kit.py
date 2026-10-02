@@ -19,7 +19,11 @@ with tempfile.TemporaryDirectory() as td:
     rows=nse._rows(raw.decode())
     m=nse._udiff_mapping(rows)
     assert m['ticker']=='TckrSymb' and m['close']=='ClsPric'
-    with mock.patch.object(nse,'http_get',return_value=data):
+    full_csv=b'SYMBOL,SERIES,ISIN,DATE1,OPEN_PRICE,HIGH_PRICE,LOW_PRICE,CLOSE_PRICE,PREV_CLOSE,TTL_TRD_QNTY,TURNOVER_LACS,DELIV_PER\\nTEST,EQ,INE000000000,01-Oct-2026,99,101,98,100.5,98.5,12345,678900,42.5\\n'
+    with mock.patch.object(nse,'http_get',return_value=full_csv):
+        got,parsed=nse.fetch_bhav(__import__('datetime').date(2026,10,1))
+        assert got=='2026-10-01' and parsed['TEST']['c']==100.5 and parsed['TEST']['delivery']==42.5
+    with mock.patch.object(nse,'http_get',side_effect=[RuntimeError('full unavailable'),data]):
         got,parsed=nse.fetch_bhav(__import__('datetime').date(2026,10,1))
         assert got=='2026-10-01' and parsed['TEST']['c']==100.5 and parsed['SKIP']['series']=='BE'
     # split adjustment fixture: 1:1 bonus halves prior price and doubles prior volume.
@@ -34,3 +38,11 @@ with tempfile.TemporaryDirectory() as td:
 if old_data_dir is not None: os.environ['DATA_DIR']=old_data_dir
 else: os.environ.pop('DATA_DIR',None)
 print('PASS NSE UDiFF parser + adjustment engine fixtures')
+
+
+# Logging must not contaminate stdout used for machine-readable JSON bridges.
+from data_kit.common import log
+with mock.patch("sys.stderr") as err, mock.patch("sys.stdout") as out:
+    log("diagnostic")
+    assert out.write.call_count == 0
+    assert err.write.call_count > 0
