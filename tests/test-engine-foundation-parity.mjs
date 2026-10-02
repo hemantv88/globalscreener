@@ -19,7 +19,7 @@ function extractFunction(source, name) {
   let depth = 0;
   let inString = null;
   let escaped = false;
-  let inLineComment = false;
+    if (inLineComment) { if (ch === '\n') inLineComment = false; continue; }
   let inBlockComment = false;
 
   for (let i = brace; i < source.length; i++) {
@@ -31,7 +31,7 @@ function extractFunction(source, name) {
     }
     if (inString) {
       if (escaped) { escaped = false; continue; }
-      if (ch === '\\\\') { escaped = true; continue; }
+      if (ch === '\\') { escaped = true; continue; }
       if (ch === inString) inString = null;
       continue;
     }
