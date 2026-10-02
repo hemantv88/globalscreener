@@ -239,14 +239,21 @@ Never claim parity without testing it.
 
 Priority order:
 1. Finish combined IN/US/ETF validation and artifact inspection.
-2. Build a Google Sheets -> new snapshot parity harness using the actual current production CSVs.
-3. Complete verified classification mapping strategy without unauthorized taxonomy redistribution.
-4. Build server-side calculation/API boundary while keeping the existing UI contract.
-5. Add Cloudflare preview deployment for development/staging.
-6. Add production security controls and private storage.
-7. Migrate to private GitHub + Cloudflare production only after parity and regression testing.
+2. Use the new India parity QA harness to compare the Google Sheets feed with the new NSE raw acquisition on overlapping dates.
+3. Build the automated Google Sheets -> new snapshot parity harness using the actual current production CSVs.
+4. Complete verified classification mapping strategy without unauthorized taxonomy redistribution.
+5. Build server-side calculation/API boundary while keeping the existing UI contract.
+6. Add Cloudflare preview deployment for development/staging.
+7. Add production security controls and private storage.
+8. Migrate to private GitHub + Cloudflare production only after parity and regression testing.
 
-## 15. Definition of “best” for GlobalScreener
+## 15. QA tooling added
+
+- `qa/india-data-qa.html`: snapshot/raw/validation viewer with eligibility and repeatable sampling.
+- `qa/india-parity.html`: browser-based parity comparison of the existing Google Sheets India CSV against `state/IN.raw.json`, with tolerance reporting, corporate-action separation, deterministic sampling, ticker drill-down, and mismatch CSV export.
+- Pipeline CI now runs on both `main` and `data-pipeline-v2-2`.
+
+## 16. Definition of “best” for GlobalScreener
 
 The application is considered production-ready only when it is:
 - technically reproducible
