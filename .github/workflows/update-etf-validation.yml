@@ -1,6 +1,11 @@
 name: GlobalScreener Phase 1.3 ETF validation (no R2)
 
 on:
+  push:
+    branches:
+      - data-pipeline-v2-2
+    paths:
+      - .github/workflows/run-etf-validation.trigger
   workflow_dispatch:
     inputs:
       target_sessions:
