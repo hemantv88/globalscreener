@@ -9,7 +9,7 @@ const indexPath = path.resolve(new URL('../index.html', import.meta.url).pathnam
 const html = fs.readFileSync(indexPath, 'utf8');
 
 function extractFunction(source, name) {
-  const re = new RegExp('\\bfunction\\\\s+' + name + '\\s*\\(');
+  const re = new RegExp('\\\\bfunction\\\\s+' + name + '\\\\s*\\(');
   const m = re.exec(source);
   assert.ok(m, 'baseline function not found: ' + name);
   const start = m.index;
