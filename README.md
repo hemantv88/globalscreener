@@ -4,8 +4,7 @@ This phase replaces the original India provider with a stronger NSE data layer a
 
 ## Source design
 
-India primary market data: current NSE CM-UDiFF Common Bhavcopy Final ZIP.
-India enrichment: NSE Full Bhavcopy / Security Deliverable data for delivery percentage when available.
+India primary market data: current NSE Full Bhavcopy + Security Deliverable data (delivery % included); current NSE CM-UDiFF Common Bhavcopy Final ZIP is the fallback.
 Corporate actions: NSE PR/Bc daily corporate-action list.
 Indices: NSE daily index close archive (NIFTY 500, NIFTY 50, India VIX).
 Symbol continuity: NSE symbol-change list.
@@ -14,7 +13,7 @@ The shared kit's adjusted-history engine is retained with its conservative price
 
 ## Phase 1.1 goal
 
-No Cloudflare R2, no Cloudflare payment method, and no Cloudflare API token. GitHub Actions builds and validates the dataset and stores the result only as a temporary GitHub Actions artifact.
+No Cloudflare R2, no Cloudflare payment method, and no Cloudflare API token. GitHub Actions builds and validates the dataset and stores the result only as a temporary GitHub Actions artifact. The first-run acquisition avoids a second delivery request when Full Bhavcopy already provides DELIV_PER.
 
 ## Run locally
 
