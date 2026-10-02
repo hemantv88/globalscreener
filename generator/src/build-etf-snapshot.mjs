@@ -1,0 +1,14 @@
+import fs from 'node:fs/promises';
+import path from 'node:path';
+import { compactStock } from './core.mjs';
+const ROOT=process.env.GS_ROOT?path.resolve(process.env.GS_ROOT):path.resolve(process.cwd(),'..');
+const raw=JSON.parse(await fs.readFile(path.join(ROOT,'state','ETF.raw.json'),'utf8'));
+const benchmark=raw.benchmarks?.SPY;
+if(!benchmark) throw new Error('SPY benchmark missing from ETF raw state');
+const securities=raw.securities.map(s=>compactStock({...s,nm:s.ticker},benchmark));
+const latest=benchmark.daily?.at(-1)?.date||securities.flatMap(s=>[s.derived.updated]).filter(Boolean).sort().at(-1)||raw.end_date;
+const snapshot={version:'gsde-etf-v1',generated:new Date().toISOString(),market:'ETF',latest_trade_date:latest,universe:securities.length,requested_universe:raw.requested_symbols.length,benchmarks:Object.keys(raw.benchmarks||{}),benchmark_for_rs:benchmark.name,split_tickers:Object.keys(raw.split_ledger||{}).length,securities};
+await fs.mkdir(path.join(ROOT,'public','data'),{recursive:true}); await fs.mkdir(path.join(ROOT,'test-output'),{recursive:true});
+await fs.writeFile(path.join(ROOT,'public','data','ETF.json'),JSON.stringify(snapshot));
+await fs.writeFile(path.join(ROOT,'public','data','manifest-ETF.json'),JSON.stringify({version:'gsde-etf-v1',generated:new Date().toISOString(),market:'ETF',source:'Yahoo Finance via yfinance; persistent split ledger'}));
+console.log(JSON.stringify({market:'ETF',universe:snapshot.universe,requested_universe:snapshot.requested_universe,latest_trade_date:latest,benchmarks:snapshot.benchmarks,benchmark_for_rs:snapshot.benchmark_for_rs,split_tickers:snapshot.split_tickers,bytes:JSON.stringify(snapshot).length},null,2));
