@@ -1,0 +1,107 @@
+name: GlobalScreener Phase 1.2 US validation (no R2)
+
+on:
+  workflow_dispatch:
+    inputs:
+      target_sessions:
+        description: "Number of US trading sessions to retain"
+        required: true
+        default: "300"
+      max_minutes:
+        description: "Maximum generator runtime"
+        required: true
+        default: "30"
+      preflight_symbols:
+        description: "Comma-separated preflight symbols"
+        required: true
+        default: "AAPL,MSFT,SPY"
+
+permissions:
+  contents: read
+
+jobs:
+  preflight-live:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - name: Install dependencies
+        run: python -m pip install --disable-pip-version-check -q -r generator/requirements.txt
+      - name: Static checks and fixtures
+        working-directory: generator
+        run: |
+          npm run check
+          npm test
+      - name: Live US preflight
+        working-directory: generator
+        env:
+          BACKFILL_DAYS: "60"
+          MAX_BUDGET_MINUTES: "10"
+          US_YEARS: "1"
+          US_UNIVERSE_FILE: ../config/US_PREFLIGHT.txt
+        run: |
+          node src/build-us.mjs
+          node src/build-us-snapshot.mjs
+          MIN_TARGET_SESSIONS=60 node src/validate-us.mjs
+
+  validate-us:
+    needs: preflight-live
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - name: Install dependencies
+        run: python -m pip install --disable-pip-version-check -q -r generator/requirements.txt
+      - name: Static checks and fixtures
+        working-directory: generator
+        run: |
+          npm run check
+          npm test
+      - name: Build US dataset
+        working-directory: generator
+        env:
+          BACKFILL_DAYS: ${{ inputs.target_sessions || '300' }}
+          MAX_BUDGET_MINUTES: ${{ inputs.max_minutes || '30' }}
+          US_YEARS: "2"
+          US_UNIVERSE_FILE: ../config/US_UNIVERSE.txt
+        run: |
+          node src/build-us.mjs
+          node src/build-us-snapshot.mjs
+      - name: Validate dataset
+        working-directory: generator
+        env:
+          MIN_TARGET_SESSIONS: ${{ inputs.target_sessions || '300' }}
+        run: node src/validate-us.mjs
+      - name: Upload validation artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: globalscreener-phase1-2-us-${{ github.run_id }}
+          path: |
+            state/US.raw.json
+            public/data/US.json
+            public/data/manifest-US.json
+            test-output/
+            data/raw/us/
+          if-no-files-found: warn
+          retention-days: 7
