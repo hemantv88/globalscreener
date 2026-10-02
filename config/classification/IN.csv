@@ -1,0 +1,2 @@
+market,sym,isin,classification_source,classification_version,macro_economic_sector,macro_code,sector,sector_code,industry,industry_code,basic_industry,basic_industry_code,mapping_status,effective_from,effective_to,verified_on,evidence_ref
+# Add verified mappings only after the source/permission and evidence are established.
