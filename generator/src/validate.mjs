@@ -5,6 +5,9 @@ const state=JSON.parse(await fs.readFile(path.join(ROOT,'state','IN.raw.json'),'
 const snap=JSON.parse(await fs.readFile(path.join(ROOT,'public','data','IN.json'),'utf8'));
 const target=Number(process.env.MIN_TARGET_SESSIONS||300), minUniverse=Number(process.env.MIN_UNIVERSE||1000), minMedian=Number(process.env.MIN_MEDIAN_HISTORY||250), requireBench=true;
 const securities=state.securities||[]; if(!securities.length)throw new Error('No India securities');
+if(snap.market!=='IN')throw new Error('Snapshot market mismatch');
+if(Number(snap.universe)!==securities.length)throw new Error('Snapshot/state universe mismatch');
+if(snap.benchmark_for_rs && !Object.prototype.hasOwnProperty.call(state.benchmarks,snap.benchmark_for_rs))throw new Error('Snapshot benchmark missing from state');
 const lens=securities.map(s=>(s.daily||[]).length); lens.sort((a,b)=>a-b); const median=lens.length?(lens.length%2?lens[(lens.length-1)/2]:(lens[lens.length/2-1]+lens[lens.length/2])/2):0;
 let bad=0,dup=0,invalid=0,negVol=0,badDelivery=0,missingClose=0,overlapShort=0; const latest=[];
 for(const s of securities){const seen=new Set();let prev='';for(const b of s.daily||[]){if(seen.has(b.date))dup++;seen.add(b.date);if(prev&&b.date<prev)bad++;prev=b.date;const o=Number(b.o),h=Number(b.h),l=Number(b.l),c=Number(b.c),v=Number(b.v);if(!Number.isFinite(c))missingClose++;if([o,h,l,c].every(Number.isFinite)&& (h<Math.max(o,c,l)||l>Math.min(o,c,h)))invalid++;if(Number.isFinite(v)&&v<0)negVol++;if(b.delivery!=null&&(!Number.isFinite(Number(b.delivery))||Number(b.delivery)<0||Number(b.delivery)>100))badDelivery++;}if((s.daily||[]).length>=250)latest.push(s.daily.at(-1)?.date)}
