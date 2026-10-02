@@ -1,0 +1,18 @@
+# ETF / index-fund validation universe
+SPY
+QQQ
+DIA
+IWM
+XLK
+XLF
+XLE
+XLV
+XLI
+XLY
+XLP
+XLU
+XLC
+XLRE
+GLD
+SLV
+TLT
