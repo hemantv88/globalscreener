@@ -3,7 +3,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "check": "node --check src/core.mjs && node --check src/build-india.mjs && node --check src/build-snapshot.mjs && node --check src/validate.mjs && node --check ../tests/test-core.mjs && node --check ../tests/test-snapshot.mjs && python3 -m py_compile data_kit/common.py data_kit/nse.py data_kit/us.py ../tests/test-nse-kit.py",
-    "test": "node ../tests/test-core.mjs && python3 ../tests/test-nse-kit.py && node ../tests/test-snapshot.mjs"
+    "check": "node --check src/core.mjs && node --check src/build-india.mjs && node --check src/build-snapshot.mjs && node --check src/validate.mjs && node --check ../tests/test-core.mjs && node --check ../tests/test-snapshot.mjs && python3 -m py_compile data_kit/common.py data_kit/nse.py data_kit/us.py ../tests/test-nse-kit.py ../tests/test-nse-integration.py",
+    "test": "node ../tests/test-core.mjs && python3 ../tests/test-nse-kit.py && python3 ../tests/test-nse-integration.py && node ../tests/test-snapshot.mjs"
   }
 }
