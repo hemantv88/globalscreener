@@ -10,6 +10,8 @@ const VOL_SPIKE_WIN=10;
 const VOL_SPIKE_MULT=1.5;
 
 const AVG_VAL_BARS=20;
+const THRUST_MIN_BARS = 20 + 1 + 1;
+const CFG = { THRUST: { win: 10 } };
 
 export function wkMondayKey(dt){
   let k=WK_MONDAY.get(dt);
