@@ -12,6 +12,24 @@ const VOL_SPIKE_MULT=1.5;
 const AVG_VAL_BARS=20;
 const THRUST_MIN_BARS = 20 + 1 + 1;
 const CFG = { THRUST: { win: 10 } };
+const PIV_NEAR_PCT=1;
+const ABOVE_PIV_ZONES=['PP→R1','R1→R2','R2+'];
+const PIV_OPTS=[
+  {v:'ar1',  label:'Above R1', test:z=>z==='R1→R2'||z==='R2+'},
+  {v:'r2',   label:'R2',       test:z=>z==='R2+'},
+  {v:'r1b',  label:'R1',       test:z=>z==='R1→R2'},
+  {v:'nr1',  label:'Near R1',  test:(z,price,piv)=>piv!=null && piv.r1>0 && price!=null && Math.abs(price/piv.r1-1)*100<=PIV_NEAR_PCT},
+  {v:'ppr1', label:'PP–R1',    test:z=>z==='PP→R1'},
+  {v:'pp',   label:'Pivot',    test:z=>z==='PP'},
+  {v:'s1pp', label:'S1–PP',    test:z=>z==='S1→PP'},
+  {v:'s1b',  label:'S1',       test:z=>z==='S2→S1'},
+  {v:'s2',   label:'S2',       test:z=>z==='<S2'},
+];
+const PIV_LEGACY={
+  above: z=>ABOVE_PIV_ZONES.includes(z),
+  r1: z=>['R1→R2','R2+'].includes(z),
+  below: z=>['S1→PP','S2→S1','<S2'].includes(z),
+};
 
 export function wkMondayKey(dt){
   let k=WK_MONDAY.get(dt);
