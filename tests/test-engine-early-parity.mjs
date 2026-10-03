@@ -30,7 +30,7 @@ const sandbox={console,Number,Math,Array,Object,String,isFinite,Infinity,NaN};
 vm.runInNewContext(names.map(n=>extractFunction(html,n)).join('\n\n'),sandbox);
 
 function same(name,...args){
- assert.deepEqual(engine[name](...args),sandbox[name](...args),name+' diverged from index.html baseline');
+ assert.equal(JSON.stringify(engine[name](...args)),JSON.stringify(sandbox[name](...args)),name+' diverged from index.html baseline');
 }
 
 const d={price:100,dBoxTop:103,vcpLid:104,ipoLid:106,dBoxState:'near',vcpToLid:2,ipoToLid:4,
@@ -51,6 +51,6 @@ same('earlyStructureScore',d);
 
 const result=engine.calcEarlyBreakout(d,'IN');
 const expected=sandbox.calcEarlyBreakout(d,'IN');
-assert.deepEqual(result,expected);
+assert.equal(JSON.stringify(result),JSON.stringify(expected));
 assert.equal(result.score,result.trend+result.rs+result.compression+result.volume+result.structure);
 console.log('PASS Early breakout parity vs index.html baseline');
