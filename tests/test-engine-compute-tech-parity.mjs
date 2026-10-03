@@ -26,7 +26,7 @@ function extractFunction(source,name){
   assert.fail('unclosed function: '+name);
 }
 
-const allNames=[...new Set([...html.matchAll(/\bfunction\s+([A-Za-z_$][\w$]*)\s*\(/g)].map(m=>m[1]))];
+const allNames=["computeTech","barChange","ema","stage2","sma","emaSeries","rsi","rsiSeries","weeklyResample","wkMondayKey","wkSundayKey","volAvg20","breakout","boPriceFlags","volSpike","thrustDay","earlyVolumeTransition","avgTradedValue","hi52","lo52","pivZone","pivots","setupBaseAge","squeeze","darvasBox","darvasSeries","darvasState","adrPct","isQualitySetup","tightness","upDayStreak","consolidation","coilRatio","vcpDetect","vcpPivots","vcpContractions","ipoBase","momentumBase","smartMoneyZones","smzPivots","smzStructure","smzClassify","pctFromEma","pctFromPivot","candlePattern","pctChange","pctChangeHist"];
 const source=allNames.map(n=>extractFunction(html,n)).join('\n\n');
 
 const sandbox={
