@@ -54,7 +54,7 @@ jobs:
           mkdir -p state test-output
           curl --fail --location --retry 3 --retry-delay 2 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQT391ILoECK80YpMc7MGbvLZYlXCT-8ZpNELFdbT1tE_zJV_78H308sL2Mp1HVJLG9XnWvW6uPY6XA/pub?gid=0&single=true&output=csv' -o state/Data_India.csv
       - name: Compare control vs NSE raw
-        run: node qa/india-parity-cli.mjs state/Data_India.csv generator/state/IN.raw.json
+        run: node qa/india-parity-cli.mjs state/Data_India.csv state/IN.raw.json
       - name: Upload parity report
         if: always()
         uses: actions/upload-artifact@v4
@@ -62,6 +62,6 @@ jobs:
           name: globalscreener-india-parity-${{ github.run_id }}
           path: |
             test-output/india-parity-report.json
-            generator/state/IN.raw.json
+            state/IN.raw.json
             state/Data_India.csv
           retention-days: 7
