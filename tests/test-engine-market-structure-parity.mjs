@@ -43,7 +43,7 @@ vm.runInNewContext(names.map(name => extractFunction(html, name)).join('\n\n'), 
 function assertSame(name, ...args) {
   const expected = sandbox[name](...args);
   const actual = engine[name](...args);
-  assert.deepEqual(actual, expected, name + ' diverged from index.html baseline');
+  assert.equal(JSON.stringify(actual), JSON.stringify(expected), name + ' diverged from index.html baseline');
 }
 
 // Calendar/week bucketing.
