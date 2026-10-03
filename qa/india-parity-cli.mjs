@@ -18,6 +18,7 @@ function csvParse(text) {
   return rows;
 }
 const norm=s=>String(s??'').trim().toLowerCase().replace(/[ _-]+/g,'');
+const tickerKey=s=>String(s??'').trim().toUpperCase().replace(/\.NS$/,'');
 const num=v=>{const n=Number(String(v??'').replace(/,/g,''));return Number.isFinite(n)?n:null};
 function date(v){
   const s=String(v??'').trim();
@@ -38,7 +39,7 @@ if(Object.values(idx).some(v=>v<0)) throw new Error('Data_India CSV is missing r
 
 const sheet=new Map();
 for(const r of rows.slice(1)){
-  const sym=String(r[idx.ticker]??'').trim().toUpperCase(), d=date(r[idx.date]);
+  const sym=tickerKey(r[idx.ticker]), d=date(r[idx.date]);
   if(!sym||!d) continue;
   if(!sheet.has(sym)) sheet.set(sym,new Map());
   sheet.get(sym).set(d,{o:num(r[idx.open]),h:num(r[idx.high]),l:num(r[idx.low]),c:num(r[idx.close]),v:num(r[idx.volume])});
@@ -47,7 +48,7 @@ const result=[];
 let commonBars=0, withinBars=0, exactBars=0, closeBad=0, volumeBad=0, missing=0;
 const rawLatest=raw.securities?.flatMap(s=>(s.daily||[]).map(b=>b.date)).sort().at(-1)||null;
 for(const s of raw.securities||[]){
-  const sym=String(s.ticker||'').trim().toUpperCase(), sm=sheet.get(sym), rm=new Map((s.daily||[]).map(b=>[b.date,{o:num(b.o),h:num(b.h),l:num(b.l),c:num(b.c),v:num(b.v)}]));
+  const sym=tickerKey(s.ticker), sm=sheet.get(sym), rm=new Map((s.daily||[]).map(b=>[b.date,{o:num(b.o),h:num(b.h),l:num(b.l),c:num(b.c),v:num(b.v)}]));
   if(!sm){missing++;continue;}
   const dates=[...rm.keys()].filter(d=>sm.has(d)).sort();
   let ex=0, wi=0, cb=0, vb=0;
