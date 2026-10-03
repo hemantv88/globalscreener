@@ -53,6 +53,21 @@ jobs:
         run: |
           mkdir -p state test-output
           curl --fail --location --retry 3 --retry-delay 2 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQT391ILoECK80YpMc7MGbvLZYlXCT-8ZpNELFdbT1tE_zJV_78H308sL2Mp1HVJLG9XnWvW6uPY6XA/pub?gid=0&single=true&output=csv' -o state/Data_India.csv
+      - name: Inspect ticker key overlap
+        run: |
+          python - <<'PY'
+          import csv, json
+          with open('state/Data_India.csv', newline='', encoding='utf-8-sig') as f:
+              r=csv.DictReader(f)
+              sheet=[str(x.get('Ticker') or x.get('ticker') or x.get('Symbol') or '').strip() for _,x in zip(range(20),r)]
+          with open('state/IN.raw.json', encoding='utf-8') as f:
+              raw=json.load(f)
+          nse=[str(x.get('ticker') or '').strip() for x in raw.get('securities',[])[:20]]
+          print('SHEET_SAMPLE=', sheet)
+          print('NSE_SAMPLE=', nse)
+          print('SHEET_NORMALIZED=', [x.upper().replace('.NS','') for x in sheet])
+          print('NSE_NORMALIZED=', [x.upper().replace('.NS','') for x in nse])
+          PY
       - name: Compare control vs NSE raw
         run: node qa/india-parity-cli.mjs state/Data_India.csv state/IN.raw.json
       - name: Upload parity report
