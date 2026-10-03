@@ -45,8 +45,8 @@ jobs:
       - name: Build NSE raw comparison dataset
         working-directory: generator
         env:
-          BACKFILL_DAYS: ${{ inputs.target_sessions || '5' }}
-          MAX_BUDGET_MINUTES: ${{ inputs.max_minutes || '15' }}
+          BACKFILL_DAYS: ${{ github.event_name == 'workflow_dispatch' && inputs.target_sessions || '300' }}
+          MAX_BUDGET_MINUTES: ${{ github.event_name == 'workflow_dispatch' && inputs.max_minutes || '80' }}
           NSE_SLEEP: "0.35"
         run: node src/build-india.mjs
       - name: Fetch Google Sheets Data_India control
