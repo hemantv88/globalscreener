@@ -100,9 +100,28 @@ const dates = ['2026-09-28','2026-09-29','2026-09-30','2026-10-01','2026-10-02']
 const closes = [50, 51, 52, 51.5, 53];
 
 assertSame('benchPctBetween', bi, dates[0], dates.at(-1));
-assertSame('benchLegPct', bi, closes, 2);
+assertSame('benchLegPct', bi, dates, 2);
 assertSame('rsPosition', closes, dates, bi, 4);
 assertSame('rspHistory', closes, dates, bi, 4, 3);
+
+
+/* Explicit boundary fixtures: parity must hold for the baseline's actual
+   insufficient-history, zero/invalid, flat-ratio and benchmark-hole behavior. */
+for (const [values, period] of [
+  [[], 10],
+  [[1, 2, 3], 5],
+  [[0, 1, 2, 3], 3],
+  [[1, 1, 1, 1], 3]
+]) {
+  assertSame('ema', values, period);
+  assertSame('sma', values, period);
+  assertSame('emaSeries', values, period);
+  assertSame('pctChange', values, period);
+  assertSame('barChange', values, period);
+}
+
+assertSame('pctChange', [0, 1, 2, 3], 1);
+assertSame('pctChangeHist', [0,1,2,3,4,5,6,7], 2, 3);
 
 const holeDates = ['2026-09-28','2026-09-29','2026-09-30','2026-10-01','2026-10-02'];
 const holeBi = { at: d => d === '2026-09-30' ? null : benchMap.get(d) ?? null };
