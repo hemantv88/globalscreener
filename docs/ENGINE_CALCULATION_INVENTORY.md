@@ -14,7 +14,7 @@ This phase does **not** change `index.html`, Google Sheets loading, the live scr
 | Volume/participation | `volAvg20`, `volSpike`, `thrustDay`, `earlyVolumeTransition`, `avgTradedValue` | Baseline only; next extraction |
 | Breakout/price structure | `boPriceFlags`, `breakout`, `pivots`, `pivZone`, `pivMatch`, `hi52`, `lo52` | Baseline only; next extraction |
 | Setup / quality | `setupBaseAge`, `squeeze`, `darvasSeries`, `darvasState`, `darvasBox`, `isQualitySetup`, `boxSetup`, `emaConverged`, `weeklyEmaConverged1020`, `hasBreakout` | Baseline only; next extraction |
-| VCP / IPO / Momentum Base | `vcpPivots`, `vcpContractions`, `vcpDetect`, `ipoBase`, `momentumBase` | Baseline only; next extraction |
+| VCP / IPO / Momentum Base / SMZ | `vcpPivots`, `vcpContractions`, `vcpDetect`, `ipoBase`, `momentumBase`, `smzPivots`, `smzStructure`, `smzClassify`, `smartMoneyZones` | Mirrored in `frontend-pattern-engine.mjs`; direct parity test added |
 | Smart Money Zone | `smzPivots`, `smzStructure`, `smzClassify`, `smartMoneyZones` | Baseline only; next extraction |
 | Early breakout | `earlyFinite`, `earlyMinTrigger`, `earlyRSPLead`, `earlyCompression`, `earlyVolumeScore`, `earlyTrendScore`, `earlyStructureScore`, `calcEarlyBreakout` | Baseline only; next extraction |
 | Stock row assembly | `computeTech`, `rankRS`, `calcMetrics` | Baseline only; highest-risk extraction after foundations |
