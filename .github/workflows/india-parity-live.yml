@@ -14,11 +14,11 @@ on:
       target_sessions:
         description: "NSE sessions to compare"
         required: true
-        default: "5"
+        default: "300"
       max_minutes:
         description: "Maximum NSE acquisition runtime"
         required: true
-        default: "15"
+        default: "80"
 
 permissions:
   contents: read
