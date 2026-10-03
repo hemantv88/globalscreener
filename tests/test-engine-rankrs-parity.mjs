@@ -27,7 +27,7 @@ function extractFunction(source,name){
   assert.fail('unclosed function: '+name);
 }
 
-const depNames=['benchIndex','benchLegPctBetween','benchLegPctHist','benchLegPct','wkMondayKey','wkSundayKey','weeklyResample','emaSeries','rsPosition','rspHistory','earlyFinite','earlyMinTrigger','earlyRSPLead','earlyCompression','earlyVolumeScore','earlyTrendScore','earlyStructureScore','calcEarlyBreakout','rankRS'];
+const depNames=['benchIndex','benchPctBetween','benchLegPctHist','benchLegPct','wkMondayKey','wkSundayKey','weeklyResample','emaSeries','rsPosition','rspHistory','earlyFinite','earlyMinTrigger','earlyRSPLead','earlyCompression','earlyVolumeScore','earlyTrendScore','earlyStructureScore','calcEarlyBreakout','rankRS'];
 const sandbox={
  console,Number,Math,Array,Object,String,Map,Date,Set,isFinite,Infinity,NaN,
  WK_MONDAY:new Map(),WK_SUNDAY:new Map(),
