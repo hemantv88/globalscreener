@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>GlobalScreener Engine Browser QA</title>
+<style>
+  body{font-family:system-ui,-apple-system,Segoe UI,sans-serif;margin:24px;line-height:1.45;background:#f7f7f7;color:#111}
+  main{max-width:980px;margin:auto}
+  h1{margin:0 0 6px}
+  .muted{color:#666}
+  .card{background:#fff;border:1px solid #ddd;border-radius:10px;padding:16px;margin-top:14px}
+  .pass{font-weight:700}
+  .fail{font-weight:700}
+  table{border-collapse:collapse;width:100%;margin-top:12px}
+  th,td{border-bottom:1px solid #eee;padding:8px;text-align:left;font-size:14px}
+  code{font-family:ui-monospace,SFMono-Regular,monospace}
+  #status{white-space:pre-wrap}
+</style>
+</head>
+<body>
+<main>
+  <h1>GlobalScreener Engine Browser QA</h1>
+  <div class="muted">GitHub-only staging check. This page does not modify <code>index.html</code> and does not use Cloudflare.</div>
+
+  <div class="card">
+    <div id="status">Loading ES modules…</div>
+  </div>
+
+  <div class="card">
+    <strong>Deterministic browser fixture</strong>
+    <table id="results">
+      <thead><tr><th>Check</th><th>Result</th><th>Detail</th></tr></thead>
+      <tbody></tbody>
+    </table>
+  </div>
+
+  <div class="card">
+    <strong>Sample engine output</strong>
+    <pre id="sample">Waiting…</pre>
+  </div>
+</main>
+
+<script type="module">
+import { computeTech } from '../generator/src/engine/frontend-compute-tech.mjs';
+import { rankRSItems } from '../generator/src/engine/frontend-rankrs.mjs';
+
+const status=document.getElementById('status');
+const body=document.querySelector('#results tbody');
+const sample=document.getElementById('sample');
+
+function row(name,ok,detail){
+  const tr=document.createElement('tr');
+  tr.innerHTML='<td>'+name+'</td><td class="'+(ok?'pass':'fail')+'">'+(ok?'PASS':'FAIL')+'</td><td></td>';
+  tr.lastElementChild.textContent=String(detail??'');
+  body.appendChild(tr);
+  return ok;
+}
+
+try{
+  const n=240;
+  const dates=Array.from({length:n},(_,i)=>{
+    const d=new Date(Date.UTC(2026,0,1+i));
+    return d.toISOString().slice(0,10);
+  });
+  const benchmarkC=Array.from({length:n},(_,i)=>100+i*0.18+Math.sin(i/5));
+  const benchmarkH=benchmarkC.map(x=>x+1.2);
+  const benchmarkL=benchmarkC.map(x=>x-1.0);
+  const benchmarkV=Array(n).fill(10000);
+
+  const rows=[];
+  for(let s=0;s<5;s++){
+    const C=benchmarkC.map((x,i)=>x*(1+(s-2)*i/3000)+Math.sin((i+s)/7)*0.8);
+    const H=C.map((x,i)=>x+1.5+(i%9===0?0.4:0));
+    const L=C.map((x,i)=>x-1.2-(i%13===0?0.3:0));
+    const V=Array.from({length:n},(_,i)=>4500+(i%11)*140+i*10);
+    const O=C.map((x,i)=>x+(i%2?0.2:-0.2));
+    rows.push(computeTech(C,H,L,V,dates,'BROWSER'+s+'.NS',O,dates[0]));
+  }
+
+  const required=['price','e10','e20','e50','e200','h52d','vRatio','pc21','pc55','pc10w','rsDates','rsCloses'];
+  const base=row('computeTech module executed',rows.every(Boolean),'5/5 fixture rows returned');
+  const shape=row('row shape',rows.every(d=>required.every(k=>k in d)),'required derived fields present');
+
+  const ranked=rankRSItems(rows,{dates,C:benchmarkC,H:benchmarkH,L:benchmarkL,V:benchmarkV},'india');
+  const rsOk=ranked.every(d=>d.rs21!=null&&d.rs55!=null&&d.rsp21!=null&&d.rsp55!=null);
+  row('benchmark-relative RS attachment',rsOk,rsOk?'RS21/RS55/RSP fields populated for all fixtures':'one or more RS fields missing');
+
+  const earlyOk=ranked.every(d=>d.early&&typeof d.early.score==='number');
+  row('Early breakout attachment',earlyOk,earlyOk?'Early score/state attached to all fixtures':'Early output missing');
+
+  const finiteScore=ranked.every(d=>Number.isFinite(d.early.score));
+  row('browser numeric stability',finiteScore,finiteScore?'all Early scores are finite numbers':'non-finite Early score found');
+
+  const allOk=base&&shape&&rsOk&&earlyOk&&finiteScore;
+  status.textContent=allOk
+    ? 'BROWSER QA PASSED — the extracted engine module graph executes successfully in a browser-style ES-module context.'
+    : 'BROWSER QA FAILED — see the checks below.';
+  status.className=allOk?'pass':'fail';
+
+  sample.textContent=JSON.stringify({
+    ticker:ranked[0]?.sym,
+    price:ranked[0]?.price,
+    rs21:ranked[0]?.rs21,
+    rs55:ranked[0]?.rs55,
+    rsp21:ranked[0]?.rsp21,
+    rsp55:ranked[0]?.rsp55,
+    early:ranked[0]?.early,
+    marketRegime:ranked[0]?.marketRegime
+  },null,2);
+}catch(err){
+  status.textContent='BROWSER QA FAILED\n'+(err?.stack||err);
+  status.className='fail';
+  row('module execution',false,err?.message||err);
+}
+</script>
+</body>
+</html>
