@@ -102,7 +102,7 @@ volumes[60]=100000;
 assertSame('breakout', flagsCloses,volumes);
 
 const pv = sandbox.pivots(110,100,105);
-assert.deepEqual(engine.pivots(110,100,105), pv);
+assert.equal(JSON.stringify(engine.pivots(110,100,105)), JSON.stringify(pv));
 for (const price of [90,100,105,110,120,130]) assertSame('pivZone', price,pv);
 for (const args of [
   [null, 'R1→R2', 105, pv],
