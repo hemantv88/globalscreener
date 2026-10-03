@@ -40,7 +40,7 @@ sandbox.UNI={india:items.map((_,i)=>({s:'T'+i}))};
 sandbox.SD={T0:items[0],T1:items[1],T2:items[2]};
 const expected=sandbox.calcMetrics('india');
 const actual=calcMetrics(items);
-assert.deepEqual(actual,expected);
+assert.equal(JSON.stringify(actual),JSON.stringify(expected));
 assert.equal(calcMetrics([]),null);
 assert.equal(calcMetrics([{price:100,h52d:null,e20:90,e200:80,rsi14:60,dpz:'R2+',vRatio:2,boGain:1,boCnt:1}],['R2+']).total,1);
 console.log('PASS aggregate metrics parity vs index.html baseline');
