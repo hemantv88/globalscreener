@@ -17,7 +17,6 @@ const VCP_LEG_TOL=1.10;
 const VCP_CONTRACT_RATIO=0.60;
 const VCP_VOL_DRY=0.75;
 const VCP_VOL_TAIL=5;
-const VCP_PIVOT_ZONE=2;
 const VCP_BO_AGE=5;
 const VCP_BO_VOL=1.5;
 const VCP_PIVOT_ZONE=2;
