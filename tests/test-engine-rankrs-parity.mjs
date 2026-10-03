@@ -70,7 +70,7 @@ items.forEach((d)=>{
  const c=d.rsCloses;
  d.pc21=(c.at(-1)/c.at(-22)-1)*100;
  d.pc55=(c.at(-1)/c.at(-56)-1)*100;
- const wkC=engine.weeklyResample(c,c.map(x=>x+1),c.map(x=>x-1),Array(c.length).fill(1000),d.rsDates).closes;
+ const wkC=weeklyResample(c,c.map(x=>x+1),c.map(x=>x-1),Array(c.length).fill(1000),d.rsDates).closes;
  d.pc10w=wkC.length>10?(wkC.at(-1)/wkC.at(-11)-1)*100:null;
  d.pcHist21=Array.from({length:30},(_,i)=>{
    const k=c.length-30+i; return (c[k]/c[k-21]-1)*100;
