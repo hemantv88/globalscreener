@@ -1,0 +1,65 @@
+name: GlobalScreener India smoke dataset
+
+on:
+  workflow_dispatch:
+    inputs:
+      target_sessions:
+        description: "NSE trading sessions"
+        required: true
+        default: "30"
+      symbols:
+        description: "Comma-separated symbols"
+        required: true
+        default: "RELIANCE,TCS,INFY,HDFCBANK,ICICIBANK,SBIN,LT,ITC,BHARTIARTL,AXISBANK"
+      max_minutes:
+        description: "Maximum generator runtime"
+        required: true
+        default: "20"
+
+permissions:
+  contents: write
+
+jobs:
+  build-smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install dependencies
+        run: python -m pip install --disable-pip-version-check -q -r generator/requirements.txt
+
+      - name: Build controlled India dataset
+        working-directory: generator
+        env:
+          BACKFILL_DAYS: ${{ inputs.target_sessions }}
+          MAX_BUDGET_MINUTES: ${{ inputs.max_minutes }}
+          NSE_SLEEP: "0.35"
+          SMOKE_SYMBOLS: ${{ inputs.symbols }}
+        run: |
+          npm run check
+          node src/build-india.mjs
+          node src/build-snapshot.mjs
+
+      - name: Publish smoke dataset into staging branch
+        run: |
+          mkdir -p qa/data
+          cp public/data/IN.json qa/data/india-smoke.json
+          cp public/data/manifest.json qa/data/india-smoke-manifest.json
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add qa/data/india-smoke.json qa/data/india-smoke-manifest.json
+          git diff --cached --quiet && echo "No dataset changes" || git commit -m "qa: publish India smoke dataset"
+          git push
