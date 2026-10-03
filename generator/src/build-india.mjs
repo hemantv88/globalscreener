@@ -9,6 +9,8 @@ const PUBLIC_DIR = path.join(ROOT, 'public', 'data');
 const days = Number(process.env.BACKFILL_DAYS || 300);
 if (!Number.isInteger(days) || days < 1 || days > 320) throw new Error('BACKFILL_DAYS must be an integer from 1 to 320');
 const endDate = process.env.END_DATE || new Date().toISOString().slice(0,10);
+const smokeSymbols = String(process.env.SMOKE_SYMBOLS || '').split(',').map(s=>s.trim().toUpperCase()).filter(Boolean);
+const isSmoke = smokeSymbols.length > 0;
 
 await fs.mkdir(STATE_DIR,{recursive:true});
 await fs.mkdir(PUBLIC_DIR,{recursive:true});
@@ -119,6 +121,14 @@ if (r.status !== 0) {
 if (r.stderr) process.stderr.write(r.stderr);
 
 const raw = JSON.parse(r.stdout);
+if (isSmoke) {
+  const wanted = new Set(smokeSymbols.map(s => s.replace(/\\.(NS|BO)$/i,'')));
+  raw.securities = raw.securities.filter(s => {
+    const t = String(s.ticker || '').toUpperCase().replace(/\\.(NS|BO)$/,'');
+    return wanted.has(t);
+  });
+  raw.smoke = { symbols: smokeSymbols, requested: smokeSymbols.length, matched: raw.securities.length };
+}
 await fs.writeFile(path.join(STATE_DIR,'IN.raw.json'), JSON.stringify(raw));
 
 console.log(JSON.stringify({
