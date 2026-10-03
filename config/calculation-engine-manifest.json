@@ -1,0 +1,151 @@
+{
+  "version": "1.0",
+  "branch": "data-pipeline-v2-2",
+  "baseline": {
+    "file": "index.html",
+    "sha": "c2ade50a605a5d7c32df3e679d02e03e763fd4c4",
+    "rule": "read-only until parity is proven"
+  },
+  "modules": [
+    {
+      "id": "core-series",
+      "source": "index.html",
+      "functions": [
+        "ema",
+        "emaSeries",
+        "sma",
+        "smaSeries",
+        "rsi",
+        "atr",
+        "volAvg20",
+        "barChange"
+      ],
+      "purpose": "shared technical primitives"
+    },
+    {
+      "id": "darvas",
+      "source": "index.html",
+      "functions": [
+        "darvasBox",
+        "darvasState",
+        "boBarsSince",
+        "hasBreakout",
+        "boxSetup"
+      ],
+      "purpose": "Darvas/base lifecycle and breakout"
+    },
+    {
+      "id": "vcp",
+      "source": "index.html",
+      "functions": [
+        "vcpPivots",
+        "vcpContractions",
+        "vcpDetect"
+      ],
+      "purpose": "VCP detection"
+    },
+    {
+      "id": "ipo",
+      "source": "index.html",
+      "functions": [
+        "feedStartFor",
+        "ipoBase"
+      ],
+      "purpose": "IPO base detection"
+    },
+    {
+      "id": "smz",
+      "source": "index.html",
+      "functions": [
+        "smartMoneyZones"
+      ],
+      "purpose": "Smart Money Zone detection"
+    },
+    {
+      "id": "momentum",
+      "source": "index.html",
+      "functions": [
+        "momentumBase"
+      ],
+      "purpose": "Momentum Base"
+    },
+    {
+      "id": "stage2",
+      "source": "index.html",
+      "functions": [
+        "stage2"
+      ],
+      "purpose": "Stage 2 score/details"
+    },
+    {
+      "id": "early",
+      "source": "index.html",
+      "functions": [
+        "earlyFinite",
+        "earlyMinTrigger",
+        "earlyRSPLead",
+        "calcEarlyBreakout"
+      ],
+      "purpose": "Early Breakout"
+    },
+    {
+      "id": "rs",
+      "source": "index.html",
+      "functions": [
+        "benchIndex",
+        "benchLegPct",
+        "benchLegPctHist",
+        "rsPosition",
+        "rspHistory",
+        "rankRS"
+      ],
+      "purpose": "benchmark-relative RS and cross-sectional rank"
+    },
+    {
+      "id": "lifecycle",
+      "source": "index.html",
+      "functions": [
+        "isEmerging",
+        "lifecycleStage"
+      ],
+      "purpose": "Emerging/Forming/Fresh/Climbing/Played classification"
+    },
+    {
+      "id": "orchestrator",
+      "source": "index.html",
+      "functions": [
+        "computeTech"
+      ],
+      "purpose": "single-stock calculation orchestration"
+    },
+    {
+      "id": "projection",
+      "source": "index.html",
+      "functions": [
+        "getRows"
+      ],
+      "purpose": "filtering/render projection; keep outside calculation engine"
+    }
+  ],
+  "parityGates": [
+    "single-stock field parity",
+    "benchmark date alignment parity",
+    "cross-sectional RS rank parity",
+    "Stage 2 post-RS patch parity",
+    "SMZ state/levels/BOS age parity",
+    "VCP state/levels parity",
+    "IPO base state/levels parity",
+    "Momentum Base state/measurements parity",
+    "Early score/state/component parity",
+    "Lifecycle stage exclusivity parity",
+    "as-of historical parity",
+    "India/US/ETF parity",
+    "null and insufficient-history parity"
+  ],
+  "forbiddenBeforePass": [
+    "Cloudflare Worker calculation migration",
+    "changing Google Sheets production path",
+    "changing index.html calculation formulas",
+    "replacing browser calculations with generator approximations"
+  ]
+}
