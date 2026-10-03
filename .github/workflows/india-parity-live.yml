@@ -70,6 +70,8 @@ jobs:
           PY
       - name: Compare control vs NSE raw
         run: node qa/india-parity-cli.mjs state/Data_India.csv state/IN.raw.json
+      - name: Compare derived screener metrics
+        run: node qa/india-derived-parity-cli.mjs state/Data_India.csv state/IN.raw.json
       - name: Upload parity report
         if: always()
         uses: actions/upload-artifact@v4
