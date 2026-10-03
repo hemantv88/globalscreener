@@ -1,0 +1,57 @@
+name: GlobalScreener India parity fixture
+
+on:
+  push:
+    branches: [data-pipeline-v2-2]
+    paths:
+      - ".github/workflows/india-parity-fixture.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build-parity-fixture:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install dependencies
+        run: python -m pip install --disable-pip-version-check -q -r generator/requirements.txt
+
+      - name: Build 300-session controlled India fixture
+        working-directory: generator
+        env:
+          BACKFILL_DAYS: "300"
+          MAX_BUDGET_MINUTES: "35"
+          NSE_SLEEP: "0.35"
+          SMOKE_SYMBOLS: "RELIANCE,TCS,INFY,HDFCBANK,ICICIBANK,SBIN,LT,ITC,BHARTIARTL,AXISBANK"
+        run: |
+          npm run check
+          node src/build-india.mjs
+          node src/build-snapshot.mjs
+
+      - name: Publish parity fixture
+        run: |
+          mkdir -p qa/data
+          cp public/data/IN.json qa/data/india-parity-300.json
+          cp public/data/manifest.json qa/data/india-parity-300-manifest.json
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add qa/data/india-parity-300.json qa/data/india-parity-300-manifest.json
+          git diff --cached --quiet && echo "No fixture changes" || git commit -m "qa: publish India 300-session parity fixture"
+          git push
