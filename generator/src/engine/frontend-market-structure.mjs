@@ -86,6 +86,38 @@ export function volAvg20(V,end){
   return cnt?sum/cnt:0;
 }
 
+export function earlyVolumeTransition(C,V,thrust){
+  const n=Math.min(Array.isArray(C)?C.length:0,Array.isArray(V)?V.length:0);
+  const none={recent5Prior15:null,upDown10:null,postThrustPre:null,postThrustFade:null};
+  if(n<21) return none;
+  const fin=v=>typeof v==='number'&&isFinite(v)&&v>=0;
+  // Exclude today's bar from both windows so the signal cannot grade itself.
+  let r5=0,r5n=0,p15=0,p15n=0;
+  for(let i=Math.max(0,n-6);i<n-1;i++){const v=V[i];if(fin(v)){r5+=v;r5n++;}}
+  for(let i=Math.max(0,n-21);i<n-6;i++){const v=V[i];if(fin(v)){p15+=v;p15n++;}}
+  if(r5n===5&&p15n===15&&p15>0) none.recent5Prior15=+(r5/5/(p15/15)).toFixed(2);
+
+  let up=0,down=0;
+  for(let i=Math.max(1,n-11);i<n-1;i++){
+    const v=V[i], c=C[i], p=C[i-1];
+    if(!fin(v)||!isFinite(c)||!isFinite(p)) continue;
+    if(c>p) up+=v; else if(c<p) down+=v;
+  }
+  if(up>0||down>0) none.upDown10=+(down>0?up/down:9.99).toFixed(2);
+
+  const age=thrust&&thrust.age!=null?thrust.age:null;
+  const idx=age==null?null:n-1-age;
+  if(idx!=null&&idx>=20&&idx<n-1){
+    let pre=0,prec=0,post=0,postc=0;
+    for(let i=idx-20;i<idx;i++){const v=V[i];if(fin(v)){pre+=v;prec++;}}
+    // Use the first 10 post-thrust bars or the available tail, never the thrust bar.
+    for(let i=idx+1;i<Math.min(n,idx+11);i++){const v=V[i];if(fin(v)){post+=v;postc++;}}
+    if(prec===20&&postc>=3&&pre>0) none.postThrustPre=+(post/postc/(pre/prec)).toFixed(2);
+  }
+  if(thrust&&thrust.fade!=null) none.postThrustFade=thrust.fade;
+  return none;
+}
+
 export function avgTradedValue(C,V,bars){
   const n=(C&&C.length)||0;
   const b=bars||AVG_VAL_BARS;
