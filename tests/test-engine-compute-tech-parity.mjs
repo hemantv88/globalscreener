@@ -26,7 +26,7 @@ function extractFunction(source,name){
   assert.fail('unclosed function: '+name);
 }
 
-const allNames=[...new Set([...html.matchAll(/\\bfunction\\s+([A-Za-z_$][\\w$]*)\\s*\\(/g)].map(m=>m[1]))];
+const allNames=[...new Set([...html.matchAll(/\bfunction\s+([A-Za-z_$][\w$]*)\s*\(/g)].map(m=>m[1]))];
 const source=allNames.map(n=>extractFunction(html,n)).join('\n\n');
 
 const sandbox={
