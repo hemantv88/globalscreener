@@ -35,7 +35,7 @@ function extractFunction(source, name) {
 }
 
 const names = ["wkMondayKey","wkSundayKey","weeklyResample","volAvg20","avgTradedValue","volSpike","thrustDay","hi52","lo52","boPriceFlags","breakout","pivots","pivZone","pivMatch"];
-const sandbox = { console, Number, Math, Array, Object, String, Date, Map, isFinite, Infinity, NaN, WK_MONDAY: new Map(), WK_SUNDAY: new Map() };
+const sandbox = { console, Number, Math, Array, Object, String, Date, Map, isFinite, Infinity, NaN, WK_MONDAY: new Map(), WK_SUNDAY: new Map(), VOL_SPIKE_WIN: 10, VOL_SPIKE_MULT: 1.5, AVG_VAL_BARS: 20, H52_MIN_BARS: 120, H52_WIN: 252, BO_LOOKBACK: 52, PIV_OPTS: [], PIV_LEGACY: {} };
 vm.runInNewContext(names.map(name => extractFunction(html, name)).join('\n\n'), sandbox, {
   filename: 'index.html:market-structure-oracle'
 });
