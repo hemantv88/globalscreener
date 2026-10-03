@@ -104,10 +104,10 @@ assertSame('breakout', flagsCloses,volumes);
 const pv = sandbox.pivots(110,100,105);
 assert.deepEqual(engine.pivots(110,100,105), pv);
 for (const price of [90,100,105,110,120,130]) assertSame('pivZone', price,pv);
-for (const x of [
-  [105, 5, true],
-  [105, 6, false],
-  [110, 5, false]
-]) assertSame('pivMatch', ...x);
+for (const args of [
+  [null, 'R1→R2', 105, pv],
+  ['', 'PP→R1', 105, pv],
+  ['future-value', '—', 105, pv]
+]) assertSame('pivMatch', ...args);
 
 console.log('PASS market-structure engine parity vs index.html baseline');
