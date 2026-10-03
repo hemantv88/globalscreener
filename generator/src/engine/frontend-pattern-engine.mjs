@@ -22,6 +22,7 @@ const VCP_BO_VOL=1.5;
 const VCP_PIVOT_ZONE=2;
 const IPO_MIN_BASE=15;
 const IPO_MAX_BASE=90;
+const IPO_MAX_BARS=250;
 const IPO_MAX_DEPTH=35;
 const IPO_MIN_BARS=40;
 const MOMO_VOL_RATIO_CAP=99;
