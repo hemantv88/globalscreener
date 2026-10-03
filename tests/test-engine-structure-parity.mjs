@@ -39,7 +39,7 @@ vm.runInNewContext(names.map(name => extractFunction(html, name)).join('\n\n'), 
 });
 
 function assertSame(name, ...args) {
-  assert.deepEqual(engine[name](...args), sandbox[name](...args), name + ' diverged from index.html baseline');
+  assert.equal(JSON.stringify(engine[name](...args)), JSON.stringify(sandbox[name](...args)), name + ' diverged from index.html baseline');
 }
 
 const C = Array.from({length:240},(_,i)=>100 + i*0.15 + Math.sin(i/5)*2);
