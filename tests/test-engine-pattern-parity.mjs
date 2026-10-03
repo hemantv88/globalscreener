@@ -66,7 +66,7 @@ function comparable(value) {
 function assertSame(name, ...args) {
   const expected = comparable(sandbox[name](...args));
   const actual = comparable(engine[name](...args));
-  assert.deepStrictEqual(actual, expected, name + ' diverged from index.html baseline');
+  assert.equal(JSON.stringify(actual), JSON.stringify(expected), name + ' diverged from index.html baseline');
 }
 
 const n = 240;
