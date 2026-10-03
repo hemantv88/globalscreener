@@ -17,12 +17,12 @@ This phase does **not** change `index.html`, Google Sheets loading, the live scr
 | VCP / IPO / Momentum Base / SMZ | `vcpPivots`, `vcpContractions`, `vcpDetect`, `ipoBase`, `momentumBase`, `smzPivots`, `smzStructure`, `smzClassify`, `smartMoneyZones` | Mirrored in `frontend-pattern-engine.mjs`; direct parity test passes |
 
 | Early breakout | `earlyFinite`, `earlyMinTrigger`, `earlyRSPLead`, `earlyCompression`, `earlyVolumeScore`, `earlyTrendScore`, `earlyStructureScore`, `calcEarlyBreakout` | Mirrored in `frontend-early.mjs`; parity test added |
-| Stock row assembly | `computeTech`, `rankRS`, `calcMetrics` | Baseline only; highest-risk extraction after foundations |
+| Stock row assembly | `computeTech`, `rankRS`, `calcMetrics` | `computeTech` and `rankRS` mirrored; CI parity in progress; `calcMetrics` remains baseline-only |
 | Rotation / leader | `rotV4*`, `rotV5*`, `rotStockState`, `rotLeaderScore`, `mf*` | Existing GitHub analytics plus baseline-specific stock layer; next parity phase |
 
 ## Current extraction status
 
-Already mirrored and parity-tested on this branch: calculation foundations, market structure/volume, Setup/Stage-2 structure helpers, VCP/IPO/Momentum Base/SMZ, and Early breakout scoring. The remaining high-risk work is the benchmark attachment (`rankRS`), full `computeTech` row assembly, and the rotation/leader stock layer.
+Already mirrored and parity-tested on this branch: calculation foundations, market structure/volume, Setup/Stage-2 structure helpers, VCP/IPO/Momentum Base/SMZ, and Early breakout scoring. The benchmark attachment (`rankRS`) and full `computeTech` row assembly are now extracted and under CI parity testing. The remaining high-risk work is the rotation/leader stock layer and then browser-level GitHub staging validation.
 
 The repository already contains the market-structure and pattern-engine parity modules from earlier Phase 2/3 work; new extraction work must extend those modules or create a genuinely separate dependency group rather than duplicating functions.
 
