@@ -1,6 +1,7 @@
 /* GitHub-only Phase 2 mirror of frontend weekly/volume/price-structure functions. */
 
 const H52_MIN_BARS=120, H52_WIN=252;
+const WK_MONDAY=new Map(), WK_SUNDAY=new Map();
 
 const BO_LOOKBACK=52;
 
