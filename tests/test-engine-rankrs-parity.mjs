@@ -4,6 +4,7 @@ import path from 'node:path';
 import vm from 'node:vm';
 
 import * as engine from '../generator/src/engine/frontend-rankrs.mjs';
+import { weeklyResample } from '../generator/src/engine/frontend-market-structure.mjs';
 
 const html=fs.readFileSync(path.resolve(new URL('../index.html',import.meta.url).pathname),'utf8');
 
@@ -53,7 +54,7 @@ const bH=bC.map(x=>x+1),bL=bC.map(x=>x-1),bV=Array(n).fill(10000);
 function makeItem(mult,withS2=true){
  const c=bC.map((x,i)=>x*(1+mult*i/1000));
  const rsTail=c.slice(-56), rsDates=dates.slice(-56);
- const wk=engine.weeklyResample(c,c.map(x=>x+1),c.map(x=>x-1),Array(n).fill(1000),dates);
+ const wk=weeklyResample(c,c.map(x=>x+1),c.map(x=>x-1),Array(n).fill(1000),dates);
  return {
   s:'TEST'+mult,pc21:null,pc55:null,pc10w:null,
   pcHist21:null,rsDates,rsCloses:rsTail,rsWkDates:wk.dates.slice(-11),
