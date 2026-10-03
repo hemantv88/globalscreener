@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>GlobalScreener — India Smoke Dataset QA</title>
+<style>
+body{font-family:system-ui,sans-serif;max-width:1100px;margin:32px auto;padding:0 16px}
+table{border-collapse:collapse;width:100%}th,td{border:1px solid #ccc;padding:8px;text-align:left}
+.ok{font-weight:700}.err{font-weight:700}.muted{color:#666}
+</style>
+</head>
+<body>
+<h1>India Smoke Dataset QA</h1>
+<p class="muted">Controlled GitHub staging check. This page does not modify the production index.html.</p>
+<div id="status">Loading…</div>
+<div id="meta"></div>
+<div id="sample"></div>
+<script>
+(async()=>{
+  const status=document.getElementById('status');
+  try{
+    const r=await fetch('./data/india-smoke.json',{cache:'no-store'});
+    if(!r.ok) throw new Error('HTTP '+r.status);
+    const d=await r.json();
+    const rows=d.securities||[];
+    status.className='ok';
+    status.textContent='PASS — dataset loaded from the GitHub staging branch.';
+    document.getElementById('meta').innerHTML=[
+      ['Market',d.market],['Latest trade date',d.latest_trade_date],
+      ['Universe rows',rows.length],['Screening rows',d.screening_universe],
+      ['Benchmark for RS',d.benchmark_for_rs],['Benchmarks', (d.benchmarks||[]).join(', ')],
+      ['Dataset version',d.version]
+    ].map(x=>'<p><b>'+x[0]+':</b> '+(x[1]??'—')+'</p>').join('');
+    document.getElementById('sample').innerHTML='<h2>Sample securities</h2><table><thead><tr><th>Ticker</th><th>Bars</th><th>Latest</th><th>EMA20</th><th>EMA50</th><th>RS21</th><th>RS55</th></tr></thead><tbody>'+
+      rows.map(s=>'<tr><td>'+s.sym+'</td><td>'+((s.c||[]).length)+'</td><td>'+fmt(s.derived?.price)+'</td><td>'+fmt(s.derived?.ema20)+'</td><td>'+fmt(s.derived?.ema50)+'</td><td>'+fmt(s.derived?.rs21)+'</td><td>'+fmt(s.derived?.rs55)+'</td></tr>').join('')+
+      '</tbody></table>';
+  }catch(e){
+    status.className='err';
+    status.textContent='FAIL — '+e.message;
+  }
+  function fmt(v){return v==null?'—':Number(v).toFixed(2)}
+})();
+</script>
+</body>
+</html>
