@@ -27,7 +27,7 @@ function extractFunction(source,name){
 }
 
 const names=['numOk','rsChangeOf','stockRsAccelOf','rotPctRank','rotStockState','rotLeaderScore','rotV5StateRank','rotV5EarlyLabel'];
-const sandbox={console,Number,Math,Array,Object,String,isFinite,Infinity,NaN};
+const sandbox={console,Number,Math,Array,Object,String,isFinite,Infinity,NaN,SECTOR_ROT_LOOKBACK:5,ROT_ACCEL_LOOKBACK:3};
 vm.runInNewContext(names.map(n=>extractFunction(html,n)).join('\n\n'),sandbox);
 
 function same(name,...args){
