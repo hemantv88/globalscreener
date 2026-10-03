@@ -27,7 +27,7 @@ function extractFunction(source,name){
 }
 
 const names=['ema','sma','emaSeries','wkMondayKey','wkSundayKey','weeklyResample','hi52','lo52','stage2','isQualitySetup','setupBaseAge','consolidation','candlePattern'];
-const sandbox={console,Number,Math,Array,Object,String,Date,Map,Set,isFinite,Infinity,NaN,H52_MIN_BARS:120,H52_WIN:252,WK_MONDAY:new Map(),WK_SUNDAY:new Map()};
+const sandbox={console,Number,Math,Array,Object,String,Date,Map,Set,isFinite,Infinity,NaN,H52_MIN_BARS:120,H52_WIN:252,SETUP_AGE_MAX:30,WK_MONDAY:new Map(),WK_SUNDAY:new Map()};
 vm.runInNewContext(names.map(n=>extractFunction(html,n)).join('\n\n'),sandbox);
 
 function same(name,...args){
