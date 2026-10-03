@@ -35,7 +35,12 @@ function extractFunction(source, name) {
 }
 
 const names = ["wkMondayKey","wkSundayKey","weeklyResample","volAvg20","avgTradedValue","volSpike","thrustDay","hi52","lo52","boPriceFlags","breakout","pivots","pivZone","pivMatch"];
-const sandbox = { console, Number, Math, Array, Object, String, Date, Map, isFinite, Infinity, NaN, WK_MONDAY: new Map(), WK_SUNDAY: new Map(), VOL_SPIKE_WIN: 10, VOL_SPIKE_MULT: 1.5, AVG_VAL_BARS: 20, H52_MIN_BARS: 120, H52_WIN: 252, BO_LOOKBACK: 52, THRUST_MIN_BARS: 22, PIV_OPTS: [], PIV_LEGACY: {} };
+const sandbox = { console, Number, Math, Array, Object, String, Date, Map, isFinite, Infinity, NaN, WK_MONDAY: new Map(), WK_SUNDAY: new Map(), VOL_SPIKE_WIN: 10, VOL_SPIKE_MULT: 1.5, AVG_VAL_BARS: 20, H52_MIN_BARS: 120, H52_WIN: 252, BO_LOOKBACK: 52, THRUST_MIN_BARS: 22, PIV_NEAR_PCT: 1, PIV_OPTS: [
+  {v:'ar1',test:z=>z==='R1→R2'||z==='R2+'},{v:'r2',test:z=>z==='R2+'},{v:'r1b',test:z=>z==='R1→R2'},
+  {v:'nr1',test:(z,price,piv)=>piv!=null&&piv.r1>0&&price!=null&&Math.abs(price/piv.r1-1)*100<=PIV_NEAR_PCT},
+  {v:'ppr1',test:z=>z==='PP→R1'},{v:'pp',test:z=>z==='PP'},{v:'s1pp',test:z=>z==='S1→PP'},
+  {v:'s1b',test:z=>z==='S2→S1'},{v:'s2',test:z=>z==='<S2'}
+], PIV_LEGACY: {above:z=>['PP→R1','R1→R2','R2+'].includes(z),r1:z=>['R1→R2','R2+'].includes(z),below:z=>['S1→PP','S2→S1','<S2'].includes(z)} };
 vm.runInNewContext(names.map(name => extractFunction(html, name)).join('\n\n'), sandbox, {
   filename: 'index.html:market-structure-oracle'
 });
