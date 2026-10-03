@@ -67,5 +67,5 @@ result.sort((a,b)=>b.commonBars-a.commonBars||a.ticker.localeCompare(b.ticker));
 const report={ok:commonBars>0,generatedAt:new Date().toISOString(),rawLatest,sheetTickers:sheet.size,rawTickers:(raw.securities||[]).length,tickersCompared:result.length,rawTickersMissingFromSheet:missing,commonBars,exactBars,withinToleranceBars:withinBars,exactRate:commonBars?+(exactBars/commonBars*100).toFixed(2):0,withinToleranceRate:commonBars?+(withinBars/commonBars*100).toFixed(2):0,closeMismatchesOver0_1pct:closeBad,volumeMismatchesOver0_5pct:volumeBad,tickers:result};
 await fs.mkdir('test-output',{recursive:true});
 await fs.writeFile(outPath,JSON.stringify(report,null,2));
-console.log(JSON.stringify({ok:report.ok,rawLatest,sheetTickers:report.sheetTickers,tickersCompared:report.tickersCompared,commonBars,exactRate:report.exactRate,withinToleranceRate:report.withinToleranceRate,closeMismatchesOver0_1pct:closeBad,volumeMismatchesOver0_5pct:volumeBad},null,2));
+console.log(JSON.stringify({...report, tickers:undefined, missingRawTickers:result.filter(x=>x.commonBars===0).map(x=>x.ticker), volumeMismatchTickers:result.filter(x=>x.volumeMismatchesOver0_5pct>0).map(x=>({ticker:x.ticker,latestCommon:x.latestCommon,mismatches:x.volumeMismatchesOver0_5pct}))},null,2));
 if(!report.ok) process.exit(1);
