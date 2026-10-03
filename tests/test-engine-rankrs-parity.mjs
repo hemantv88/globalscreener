@@ -29,7 +29,8 @@ function extractFunction(source,name){
 
 const depNames=['benchIndex','benchLegPctHist','benchLegPct','wkMondayKey','wkSundayKey','weeklyResample','emaSeries','rsPosition','rspHistory','earlyFinite','earlyMinTrigger','earlyRSPLead','earlyCompression','earlyVolumeScore','earlyTrendScore','earlyStructureScore','calcEarlyBreakout','rankRS'];
 const sandbox={
- console,Number,Math,Array,Object,String,Map,Date,isFinite,Infinity,NaN,
+ console,Number,Math,Array,Object,String,Map,Date,Set,isFinite,Infinity,NaN,
+ WK_MONDAY:new Map(),WK_SUNDAY:new Map(),
  FRESH_RSP_LEN:21,FRESH_LOOKBACK:{rsp:5},FRESH_RSP_BASE:5,FRESH_RSP_HIST:11
 };
 vm.runInNewContext(depNames.filter(n=>n!=='benchLegPct').map(n=>extractFunction(html,n)).join('\n\n'),sandbox);
